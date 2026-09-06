@@ -1,5 +1,11 @@
 import { ApiProperty } from '@nestjs/swagger';
-import { AtelierDayHours, AtelierOpeningHours, AtelierTimeSlot } from '@angaly/types';
+import {
+  AtelierDayHours,
+  AtelierDto,
+  AtelierMediaDto as SharedAtelierMediaDto,
+  AtelierOpeningHours,
+  AtelierTimeSlot,
+} from '@angaly/types';
 
 export class AtelierTimeSlotDto implements AtelierTimeSlot {
   @ApiProperty({ example: '09:00' })
@@ -40,7 +46,7 @@ export class AtelierOpeningHoursDto implements AtelierOpeningHours {
   sunday!: AtelierDayHoursDto;
 }
 
-export class AtelierMediaDto {
+export class AtelierMediaDto implements SharedAtelierMediaDto {
   @ApiProperty()
   id!: string;
 
@@ -54,7 +60,7 @@ export class AtelierMediaDto {
   sortOrder!: number;
 }
 
-export class AtelierResponseDto {
+export class AtelierResponseDto implements AtelierDto {
   @ApiProperty()
   id!: string;
 

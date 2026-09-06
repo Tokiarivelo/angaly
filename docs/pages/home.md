@@ -1,6 +1,6 @@
 # Page — `home`
 
-**Statut : ⬜ À faire.** Phase 1 — Présence digitale.
+**Statut : ✅ Fait.** Phase 1 — Présence digitale.
 
 ## Objet
 
@@ -60,10 +60,12 @@ Toute logique (fetch, état du carrousel, validation du formulaire) vit dans `ho
 
 | Endpoint | Module | Usage |
 | --- | --- | --- |
-| `GET /api/content/sections?page=accueil` | `content` | Textes/images éditables de chaque section |
-| `GET /api/testimonials?featured=true` | `reviews` | Témoignages mis en avant |
-| `GET /api/creations?featured=true&limit=6` | `creations` | Sélection de créations vedettes |
-| `POST /api/newsletter/subscribe` | `notifications` (ou `customers` si compte requis) | Inscription newsletter |
+| `GET /api/content/sections?page=accueil` | `content` | **Non implémenté (Phase 6)** — copie codée en dur dans `useHomeContent.ts` en attendant |
+| `GET /api/testimonials?featured=true` | `reviews` | **Non implémenté (Phase 2)** — mocké via MSW (`src/lib/msw/handlers/home.handlers.ts`) |
+| `GET /api/creations?isFeatured=true&limit=6` | `creations` | Réel — alimente la section "La Une" (le nom du paramètre est `isFeatured`, pas `featured` comme initialement supposé ici avant l'implémentation du module) |
+| `GET /api/ateliers` | `ateliers` | Réel — alimente "Nos Ateliers" (3 premiers), **ajouté à l'implémentation** : non listé ici à l'origine (fiche écrite avant le module `ateliers`), câblé en vrai plutôt que de laisser un teaser statique |
+| `GET /api/blog-posts?limit=4` | `blog` | Réel — alimente "Le Journal Angaly", même note que `ateliers` ci-dessus |
+| `POST /api/newsletter/subscribe` | `notifications` (ou `customers` si compte requis) | **Non implémenté (Phase 2)** — mocké via MSW, formulaire fonctionnel (validation Zod, états succès/erreur) prêt à basculer sur l'API réelle |
 
 ## Modèles Prisma touchés
 
@@ -83,11 +85,52 @@ relation), `Category`.
 
 ## Checklist d'acceptation
 
-- [ ] Toutes les sections de `stitch-prompts/01-home.md` sont présentes et fidèles à la palette ANGALY
-- [ ] Hero en LCP < 2.5s (Lighthouse), image optimisée
-- [ ] Carrousel témoignages navigable au clavier et par swipe mobile
-- [ ] Formulaire newsletter : validation Zod, état de succès/erreur, pas de rechargement de page
-- [ ] `<title>`/meta description définis (spec §70)
-- [ ] Sélecteur de langue FR/MG fonctionnel dans le footer
-- [ ] Tests : `useHomeContent.test.ts`, `useNewsletterForm.test.ts`, `HomePage.test.tsx` (rendu + a11y de base)
-- [ ] `docs/checklist-implementation.md` et `docs/mockup-reference.md` mis à jour à ✅
+- [x] Toutes les sections de `stitch-prompts/01-home.md` sont présentes (Hero, La Une, Maison,
+      Catégories, Sur Mesure, Patron Premium, Témoignages, Ateliers, Journal, Newsletter) et
+      fidèles à la palette ANGALY — pas de photographie réelle disponible (Phase 6/`content`
+      pour l'upload média) : blocs dégradés navy/champagne/ivoire en attendant
+- [ ] Hero en LCP < 2.5s (Lighthouse) — **non mesuré** : pas de vraie photographie/`next/image`
+      tant que `content` (Phase 6) ne fournit pas d'image hero réelle
+- [x] Carrousel témoignages navigable au clavier (boutons précédent/suivant/points) et par
+      swipe mobile (testé : `TestimonialsCarousel.test.tsx`)
+- [x] Formulaire newsletter : validation Zod, état de succès **et d'erreur** (visible, la
+      requête réelle échoue en 404 tant que `notifications` n'existe pas), pas de rechargement
+      de page (`handleSubmit` intercepte le submit)
+- [x] `<title>`/meta description définis (spec §70)
+- [x] Sélecteur de langue FR/MG fonctionnel dans le footer (Zustand persisté — ne traduit pas
+      encore le contenu, voir `docs/pages/navigation-mobile.md`)
+- [x] Tests : `useHomeContent.test.ts`, `useNewsletterForm.test.ts`, `NewsletterForm.test.tsx`,
+      `TestimonialsCarousel.test.tsx`, `useFeaturedCreations.test.ts`, `useAteliersTeaser.test.ts`,
+      `useJournalTeaser.test.ts`, `useTestimonials.test.ts`, `HomePage.test.tsx` — 24 tests,
+      99.8%/90%/100%/99.8% de couverture (stmts/branches/fonctions/lignes)
+- [x] `docs/checklist-implementation.md` et `docs/mockup-reference.md` mis à jour à ✅
+
+## Notes d'implémentation
+
+- **`HomePage.tsx` est un Client Component**, pas Server Component comme envisagé plus haut :
+  il appelle des hooks react-query (`useFeaturedCreations`, etc.), impossibles dans un Server
+  Component. Simplification assumée pour Phase 1 — un passage SSR/hydratation
+  (`dehydrate`/`HydrationBoundary`) pourrait être ajouté plus tard comme optimisation de
+  performance, hors périmètre de cette implémentation.
+- **`AteliersTeaser`/`JournalTeaser` sont câblés aux vraies API** `ateliers`/`blog` plutôt que
+  d'être de simples teasers statiques — ces modules n'existaient pas quand cette fiche a été
+  écrite ; les brancher en vrai est une amélioration délibérée par rapport au contrat
+  d'origine.
+- **`@angaly/types`** s'est enrichi de `CreationDto`, `AtelierDto`, `BlogPostDto`/
+  `BlogPostDetailDto` (avec leurs DTOs enfants) — ces types n'existaient pas encore ; les DTOs
+  backend correspondants (`CreationResponseDto`, `AtelierResponseDto`,
+  `BlogPostResponseDto`/`BlogPostDetailResponseDto`) ont été rétrofités pour les `implements`,
+  garantissant que front et back restent structurellement synchronisés (même schéma que
+  `MediaDto`).
+- **Composants partagés créés à cette occasion** (première page du site) : `Header`/`Footer`/
+  `LanguageSwitcher` (`components/layout/`), `Button` (`components/ui/`, variantes
+  default/secondary/premium/ghost), le store Zustand `useLocaleStore`
+  (`stores/locale.store.ts`), la config MSW (`lib/msw/`), le helper de test react-query
+  (`lib/test-utils.tsx`), et `lib/routes.ts` (chemins canoniques de toutes les pages, y
+  compris celles pas encore construites). Réutilisés par toute page suivante — la nav
+  mobile (`docs/pages/navigation-mobile.md`) les complètera (drawer, bottom bar, FAB
+  WhatsApp) sans les reconstruire.
+- Les liens de nav/footer pointent vers les routes réelles même quand la page cible n'existe
+  pas encore (ex. `/sur-mesure`, `/pattern-studio`, `/prendre-rendez-vous`) — 404 attendu
+  jusqu'à ce que ces pages soient traitées, conforme à la consigne de ne jamais laisser un
+  lien mort/absent en prod.

@@ -1,7 +1,14 @@
 import { ApiProperty } from '@nestjs/swagger';
-import { CreationAvailability, PaginatedResponse } from '@angaly/types';
+import {
+  CreationAvailability,
+  CreationCategoryDto as SharedCreationCategoryDto,
+  CreationCollectionDto as SharedCreationCollectionDto,
+  CreationDto,
+  CreationMediaDto as SharedCreationMediaDto,
+  PaginatedResponse,
+} from '@angaly/types';
 
-export class CreationMediaDto {
+export class CreationMediaDto implements SharedCreationMediaDto {
   @ApiProperty()
   id!: string;
 
@@ -15,7 +22,7 @@ export class CreationMediaDto {
   sortOrder!: number;
 }
 
-export class CreationCategoryDto {
+export class CreationCategoryDto implements SharedCreationCategoryDto {
   @ApiProperty()
   id!: string;
 
@@ -26,7 +33,7 @@ export class CreationCategoryDto {
   name!: string;
 }
 
-export class CreationCollectionDto {
+export class CreationCollectionDto implements SharedCreationCollectionDto {
   @ApiProperty()
   id!: string;
 
@@ -37,7 +44,7 @@ export class CreationCollectionDto {
   name!: string;
 }
 
-export class CreationResponseDto {
+export class CreationResponseDto implements CreationDto {
   @ApiProperty()
   id!: string;
 

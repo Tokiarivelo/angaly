@@ -1,7 +1,14 @@
 import { ApiProperty } from '@nestjs/swagger';
-import { PaginatedResponse } from '@angaly/types';
+import {
+  BlogPostAuthorDto as SharedBlogPostAuthorDto,
+  BlogPostCategoryDto as SharedBlogPostCategoryDto,
+  BlogPostDetailDto,
+  BlogPostDto,
+  BlogPostMediaDto as SharedBlogPostMediaDto,
+  PaginatedResponse,
+} from '@angaly/types';
 
-export class BlogPostMediaDto {
+export class BlogPostMediaDto implements SharedBlogPostMediaDto {
   @ApiProperty()
   id!: string;
 
@@ -15,7 +22,7 @@ export class BlogPostMediaDto {
   sortOrder!: number;
 }
 
-export class BlogPostCategoryDto {
+export class BlogPostCategoryDto implements SharedBlogPostCategoryDto {
   @ApiProperty()
   id!: string;
 
@@ -26,7 +33,7 @@ export class BlogPostCategoryDto {
   name!: string;
 }
 
-export class BlogPostAuthorDto {
+export class BlogPostAuthorDto implements SharedBlogPostAuthorDto {
   @ApiProperty()
   id!: string;
 
@@ -35,7 +42,7 @@ export class BlogPostAuthorDto {
 }
 
 /** Shape returned by GET /api/blog-posts and /api/blog-posts/:slug/related — no article body. */
-export class BlogPostResponseDto {
+export class BlogPostResponseDto implements BlogPostDto {
   @ApiProperty()
   id!: string;
 
@@ -68,7 +75,7 @@ export class BlogPostResponseDto {
 }
 
 /** Shape returned by GET /api/blog-posts/:slug — adds the full article body. */
-export class BlogPostDetailResponseDto extends BlogPostResponseDto {
+export class BlogPostDetailResponseDto extends BlogPostResponseDto implements BlogPostDetailDto {
   @ApiProperty()
   content!: string;
 }

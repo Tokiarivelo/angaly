@@ -39,7 +39,8 @@ phase n'a pas été traitée en session dédiée (voir `.cursor/rules/006-phase-
 ## 🏛️ PHASE 1 — Présence digitale (14 pages, 7 modules)
 
 ### Pages
-- [ ] ⬜ **home** — Page d'accueil
+- [x] ✅ **home** — Page d'accueil (`docs/pages/home.md`) — sections statiques + créations
+      vedettes/ateliers/journal en direct, témoignages/newsletter mockés MSW (Phase 2)
 - [ ] ⬜ **la-une** — Vitrine éditoriale
 - [ ] ⬜ **nos-creations-galerie** — Galerie complète des créations
 - [ ] ⬜ **creation-detail** — Fiche détail d'une création

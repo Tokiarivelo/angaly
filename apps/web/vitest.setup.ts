@@ -1,9 +1,12 @@
 import '@testing-library/jest-dom';
 import { cleanup } from '@testing-library/react';
-import { afterEach, vi } from 'vitest';
+import { afterAll, afterEach, beforeAll, vi } from 'vitest';
 
-// MSW server wiring is added in docs/phases/phase-1-digital-presence.md once
-// the first feature makes real API calls — see docs/testing.md.
+import { server } from './src/lib/msw/server';
+
+beforeAll(() => server.listen({ onUnhandledRequest: 'error' }));
+afterEach(() => server.resetHandlers());
+afterAll(() => server.close());
 
 afterEach(() => {
   cleanup();

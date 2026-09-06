@@ -189,6 +189,111 @@ export interface MediaDto {
 }
 
 // ============================================================
+// Creations — GET /api/creations, GET /api/creations/:slug
+// ============================================================
+
+export interface CreationMediaDto {
+  id: string;
+  url: string;
+  altText: string;
+  sortOrder: number;
+}
+
+export interface CreationCategoryDto {
+  id: string;
+  slug: string;
+  name: string;
+}
+
+export interface CreationCollectionDto {
+  id: string;
+  slug: string;
+  name: string;
+}
+
+export interface CreationDto extends Timestamps {
+  id: string;
+  slug: string;
+  name: string;
+  description: string;
+  materials: string | null;
+  techniques: string | null;
+  availability: CreationAvailability;
+  reproducible: boolean;
+  isFeatured: boolean;
+  featuredFrom: string | null;
+  featuredUntil: string | null;
+  category: CreationCategoryDto;
+  collection: CreationCollectionDto | null;
+  media: CreationMediaDto[];
+}
+
+// ============================================================
+// Ateliers — GET /api/ateliers, GET /api/ateliers/:slug
+// ============================================================
+
+export interface AtelierMediaDto {
+  id: string;
+  url: string;
+  altText: string;
+  sortOrder: number;
+}
+
+export interface AtelierDto extends Timestamps {
+  id: string;
+  slug: string;
+  name: string;
+  address: string;
+  city: string;
+  phone: string | null;
+  openingHours: AtelierOpeningHours;
+  services: AtelierServices;
+  latitude: number | null;
+  longitude: number | null;
+  media: AtelierMediaDto[];
+}
+
+// ============================================================
+// Blog — GET /api/blog-posts, GET /api/blog-posts/:slug
+// ============================================================
+
+export interface BlogPostMediaDto {
+  id: string;
+  url: string;
+  altText: string;
+  sortOrder: number;
+}
+
+export interface BlogPostCategoryDto {
+  id: string;
+  slug: string;
+  name: string;
+}
+
+/** `User` is an identity model, not an editorial profile — see docs/pages/journal-article.md. */
+export interface BlogPostAuthorDto {
+  id: string;
+  email: string;
+}
+
+/** Shape returned by GET /api/blog-posts and /api/blog-posts/:slug/related — no article body. */
+export interface BlogPostDto extends Timestamps {
+  id: string;
+  slug: string;
+  title: string;
+  excerpt: string;
+  publishedAt: string | null;
+  category: BlogPostCategoryDto;
+  author: BlogPostAuthorDto;
+  media: BlogPostMediaDto[];
+}
+
+/** Shape returned by GET /api/blog-posts/:slug — adds the full article body. */
+export interface BlogPostDetailDto extends BlogPostDto {
+  content: string;
+}
+
+// ============================================================
 // Identity
 // ============================================================
 
