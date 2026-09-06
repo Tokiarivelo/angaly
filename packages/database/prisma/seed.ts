@@ -19,20 +19,28 @@ async function main() {
   });
   console.log('✅ Admin user ready (admin@angaly.mg)');
 
+  const weekdayHours = { isOpen: true, slots: [{ open: '09:00', close: '18:00' }] };
+  // Shape validated by apps/api/src/ateliers/domain/value-objects/opening-hours.vo.ts
+  // (mirrors AtelierOpeningHours in @angaly/types — keep both in sync).
+  const atelierData = {
+    name: 'Atelier Antananarivo Centre',
+    address: 'À compléter',
+    city: 'Antananarivo',
+    openingHoursJson: {
+      monday: weekdayHours,
+      tuesday: weekdayHours,
+      wednesday: weekdayHours,
+      thursday: weekdayHours,
+      friday: weekdayHours,
+      saturday: { isOpen: true, slots: [{ open: '09:00', close: '13:00' }] },
+      sunday: { isOpen: false, slots: [] },
+    },
+    servicesJson: ['Essayage', 'Consultation', 'Retouche'],
+  };
   await prisma.atelier.upsert({
     where: { slug: 'antananarivo-centre' },
-    update: {},
-    create: {
-      slug: 'antananarivo-centre',
-      name: 'Atelier Antananarivo Centre',
-      address: 'À compléter',
-      city: 'Antananarivo',
-      openingHoursJson: {
-        lundi_vendredi: '9h-18h',
-        samedi: '9h-13h',
-        dimanche: 'Fermé',
-      },
-    },
+    update: atelierData,
+    create: { slug: 'antananarivo-centre', ...atelierData },
   });
   console.log('✅ Atelier principal créé');
 

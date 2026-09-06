@@ -55,7 +55,7 @@ phase n'a pas été traitée en session dédiée (voir `.cursor/rules/006-phase-
 - [ ] ⬜ **navigation-mobile** — Drawer, bottom bar, recherche, WhatsApp FAB
 
 ### Modules backend
-- [ ] ⬜ **ateliers** · **blog** · **search**
+- [ ] ⬜ **blog** · **search**
 - [x] ✅ **media** — upload présigné + confirm + upload buffer serveur + list + delete,
       Clean Architecture complète, testé de bout en bout contre MinIO/Postgres réels
       (`docs/features/media.md`)
@@ -68,6 +68,9 @@ phase n'a pas été traitée en session dédiée (voir `.cursor/rules/006-phase-
 - [x] ✅ **collections** — liste publiée uniquement (`creationsCount`) + détail par slug
       (créations + médias), testé de bout en bout contre Postgres réel
       (`docs/features/collections.md`)
+- [x] ✅ **ateliers** — liste (tri ville/nom, sans pagination) + détail par slug avec
+      horaires/services typés (`@angaly/types`), testé de bout en bout contre Postgres réel
+      (a corrigé le seed Phase 0 au passage — voir `docs/features/ateliers.md`)
 
 ---
 

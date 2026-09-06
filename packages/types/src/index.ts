@@ -209,6 +209,38 @@ export interface CustomerDto extends Timestamps {
 }
 
 // ============================================================
+// Ateliers — typed shape for Atelier.openingHoursJson / servicesJson
+// (Json columns in schema.prisma — never left as Record<string, unknown>,
+// see docs/features/ateliers.md "Points d'attention")
+// ============================================================
+
+export const ATELIER_WEEKDAYS = [
+  'monday',
+  'tuesday',
+  'wednesday',
+  'thursday',
+  'friday',
+  'saturday',
+  'sunday',
+] as const;
+
+export type AtelierWeekday = (typeof ATELIER_WEEKDAYS)[number];
+
+export interface AtelierTimeSlot {
+  open: string; // "HH:mm"
+  close: string; // "HH:mm"
+}
+
+export interface AtelierDayHours {
+  isOpen: boolean;
+  slots: AtelierTimeSlot[];
+}
+
+export type AtelierOpeningHours = Record<AtelierWeekday, AtelierDayHours>;
+
+export type AtelierServices = string[];
+
+// ============================================================
 // Angaly Pattern Studio — shared contracts with apps/ai-service
 // ============================================================
 
