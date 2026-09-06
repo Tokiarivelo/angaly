@@ -294,6 +294,42 @@ export interface BlogPostDetailDto extends BlogPostDto {
 }
 
 // ============================================================
+// Collections — GET /api/collections, GET /api/collections/:slug
+// ============================================================
+
+export interface CollectionMediaDto {
+  id: string;
+  url: string;
+  altText: string;
+  sortOrder: number;
+}
+
+export interface CollectionCreationDto {
+  id: string;
+  slug: string;
+  name: string;
+  coverImageUrl: string | null;
+}
+
+/** Shape returned by GET /api/collections — creationsCount only, never the full Creation[]. */
+export interface CollectionDto extends Timestamps {
+  id: string;
+  slug: string;
+  name: string;
+  description: string | null;
+  story: string | null;
+  seasonYear: number | null;
+  publishedAt: string | null;
+  media: CollectionMediaDto[];
+  creationsCount: number;
+}
+
+/** Shape returned by GET /api/collections/:slug — adds the ordered Creation[]. */
+export interface CollectionDetailDto extends CollectionDto {
+  creations: CollectionCreationDto[];
+}
+
+// ============================================================
 // Identity
 // ============================================================
 

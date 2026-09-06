@@ -1,7 +1,13 @@
 import { ApiProperty } from '@nestjs/swagger';
-import { PaginatedResponse } from '@angaly/types';
+import {
+  CollectionCreationDto as SharedCollectionCreationDto,
+  CollectionDetailDto,
+  CollectionDto,
+  CollectionMediaDto as SharedCollectionMediaDto,
+  PaginatedResponse,
+} from '@angaly/types';
 
-export class CollectionMediaDto {
+export class CollectionMediaDto implements SharedCollectionMediaDto {
   @ApiProperty()
   id!: string;
 
@@ -15,7 +21,7 @@ export class CollectionMediaDto {
   sortOrder!: number;
 }
 
-export class CollectionCreationDto {
+export class CollectionCreationDto implements SharedCollectionCreationDto {
   @ApiProperty()
   id!: string;
 
@@ -30,7 +36,7 @@ export class CollectionCreationDto {
 }
 
 /** Shape returned by GET /api/collections — creationsCount only, never the full Creation[] (see docs/features/collections.md). */
-export class CollectionResponseDto {
+export class CollectionResponseDto implements CollectionDto {
   @ApiProperty()
   id!: string;
 
@@ -66,7 +72,7 @@ export class CollectionResponseDto {
 }
 
 /** Shape returned by GET /api/collections/:slug — adds the ordered Creation[]. */
-export class CollectionDetailResponseDto extends CollectionResponseDto {
+export class CollectionDetailResponseDto extends CollectionResponseDto implements CollectionDetailDto {
   @ApiProperty({ type: [CollectionCreationDto] })
   creations!: CollectionCreationDto[];
 }
