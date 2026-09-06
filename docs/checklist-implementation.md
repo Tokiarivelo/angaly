@@ -55,7 +55,10 @@ phase n'a pas été traitée en session dédiée (voir `.cursor/rules/006-phase-
 - [ ] ⬜ **navigation-mobile** — Drawer, bottom bar, recherche, WhatsApp FAB
 
 ### Modules backend
-- [ ] ⬜ **creations** · **collections** · **ateliers** · **blog** · **media** · **i18n** · **search**
+- [ ] ⬜ **creations** · **collections** · **ateliers** · **blog** · **i18n** · **search**
+- [x] ✅ **media** — upload présigné + confirm + upload buffer serveur + list + delete,
+      Clean Architecture complète, testé de bout en bout contre MinIO/Postgres réels
+      (`docs/features/media.md`)
 
 ---
 

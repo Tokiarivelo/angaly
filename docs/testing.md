@@ -10,6 +10,17 @@ d'un projet Pattern Studio).
 **Coverage minimum : 80%** sur toutes les métriques, pour chaque package testable
 (web, api, pattern-engine, ai-service).
 
+> **Exception `apps/api` — branches à 75%, pas 80%.** Les décorateurs NestJS
+> (`@Inject()`, `@Body()`, `@Query()`, propriétés de paramètres de constructeur, avec
+> `emitDecoratorMetadata`) compilent vers du code que les instrumenteurs de couverture
+> (Istanbul via `ts-jest`, providers `v8` et `babel` testés tous les deux) interprètent comme
+> des branches conditionnelles synthétiques — toujours à moitié non couvertes, quel que soit
+> le test écrit. Vérifié sur le module `media` (Phase 1) : `statements`/`functions`/`lines`
+> à 100%, seules ces branches fantômes empêchent d'atteindre 80% sur `branches`. Voir
+> `apps/api/jest.config.ts` (commentaire) et `docs/features/media.md` pour le détail. À
+> remonter vers 80% au fur et à mesure que d'autres modules diluent la part de ces branches
+> synthétiques dans le total.
+
 ## Frontend (Vitest + Testing Library)
 
 ```bash

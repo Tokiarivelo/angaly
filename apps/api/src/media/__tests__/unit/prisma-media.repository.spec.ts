@@ -1,0 +1,169 @@
+import { PrismaMediaRepository } from '../../infrastructure/repositories/prisma-media.repository';
+import { MediaEntity } from '../../domain/entities/media.entity';
+import { MediaEntityRef } from '../../domain/value-objects/media-entity-ref.vo';
+import type { PrismaService } from '../../../prisma/prisma.service';
+
+interface MockMediaDelegate {
+  create: jest.Mock;
+  findUnique: jest.Mock;
+  findMany: jest.Mock;
+  count: jest.Mock;
+  delete: jest.Mock;
+}
+
+function buildPrismaServiceMock(): { prisma: PrismaService; media: MockMediaDelegate } {
+  const media: MockMediaDelegate = {
+    create: jest.fn(),
+    findUnique: jest.fn(),
+    findMany: jest.fn(),
+    count: jest.fn(),
+    delete: jest.fn(),
+  };
+  const prisma = { media } as unknown as PrismaService;
+  return { prisma, media };
+}
+
+function sampleEntity(): MediaEntity {
+  return MediaEntity.create({
+    id: 'media-1',
+    bucket: 'creations',
+    objectKey: 'abc.jpg',
+    url: 'http://localhost:9000/creations/abc.jpg',
+    altText: 'Robe éternelle',
+    mimeType: 'image/jpeg',
+    sizeBytes: 100,
+    width: null,
+    height: null,
+    entityRef: MediaEntityRef.create('CREATION', 'creation-1'),
+    sortOrder: 0,
+    uploadedById: null,
+    createdAt: new Date('2026-01-01T00:00:00.000Z'),
+  });
+}
+
+function samplePrismaRecord() {
+  return {
+    id: 'media-1',
+    bucket: 'creations',
+    objectKey: 'abc.jpg',
+    url: 'http://localhost:9000/creations/abc.jpg',
+    altText: 'Robe éternelle',
+    mimeType: 'image/jpeg',
+    sizeBytes: 100,
+    width: null,
+    height: null,
+    entityType: 'CREATION',
+    entityId: 'creation-1',
+    sortOrder: 0,
+    uploadedById: null,
+    createdAt: new Date('2026-01-01T00:00:00.000Z'),
+  };
+}
+
+describe('PrismaMediaRepository', () => {
+  it('create() persists the entity via prisma.media.create and remaps the row', async () => {
+    const { prisma, media } = buildPrismaServiceMock();
+    media.create.mockResolvedValue(samplePrismaRecord());
+    const repository = new PrismaMediaRepository(prisma);
+
+    const result = await repository.create(sampleEntity());
+
+    const call = media.create.mock.calls[0] as [{ data: { id: string; bucket: string; altText: string } }];
+    expect(call[0].data).toMatchObject({ id: 'media-1', bucket: 'creations', altText: 'Robe éternelle' });
+    expect(result.id).toBe('media-1');
+  });
+
+  it('findById() returns null when no row matches', async () => {
+    const { prisma, media } = buildPrismaServiceMock();
+    media.findUnique.mockResolvedValue(null);
+    const repository = new PrismaMediaRepository(prisma);
+
+    expect(await repository.findById('missing')).toBeNull();
+  });
+
+  it('findById() maps the row to a domain entity when found', async () => {
+    const { prisma, media } = buildPrismaServiceMock();
+    media.findUnique.mockResolvedValue(samplePrismaRecord());
+    const repository = new PrismaMediaRepository(prisma);
+
+    const result = await repository.findById('media-1');
+
+    expect(result?.id).toBe('media-1');
+  });
+
+  it('list() applies the bucket filter, pagination, and returns the total count', async () => {
+    const { prisma, media } = buildPrismaServiceMock();
+    media.findMany.mockResolvedValue([samplePrismaRecord()]);
+    media.count.mockResolvedValue(1);
+    const repository = new PrismaMediaRepository(prisma);
+
+    const result = await repository.list({ bucket: 'creations', page: 2, limit: 10 });
+
+    expect(media.findMany).toHaveBeenCalledWith(
+      expect.objectContaining({ where: { bucket: 'creations' }, skip: 10, take: 10 }),
+    );
+    expect(result.total).toBe(1);
+    expect(result.items).toHaveLength(1);
+  });
+
+  it('list() applies the entityType and entityId filters', async () => {
+    const { prisma, media } = buildPrismaServiceMock();
+    media.findMany.mockResolvedValue([]);
+    media.count.mockResolvedValue(0);
+    const repository = new PrismaMediaRepository(prisma);
+
+    await repository.list({ entityType: 'CREATION', entityId: 'creation-1', page: 1, limit: 20 });
+
+    expect(media.findMany).toHaveBeenCalledWith(
+      expect.objectContaining({ where: { entityType: 'CREATION', entityId: 'creation-1' } }),
+    );
+  });
+
+  it('list() applies no filter when none is given', async () => {
+    const { prisma, media } = buildPrismaServiceMock();
+    media.findMany.mockResolvedValue([]);
+    media.count.mockResolvedValue(0);
+    const repository = new PrismaMediaRepository(prisma);
+
+    await repository.list({ page: 1, limit: 20 });
+
+    expect(media.findMany).toHaveBeenCalledWith(expect.objectContaining({ where: {} }));
+  });
+
+  it('delete() forwards to prisma.media.delete', async () => {
+    const { prisma, media } = buildPrismaServiceMock();
+    const repository = new PrismaMediaRepository(prisma);
+
+    await repository.delete('media-1');
+
+    expect(media.delete).toHaveBeenCalledWith({ where: { id: 'media-1' } });
+  });
+
+  it('countActiveReferences() sums every polymorphic relation count', async () => {
+    const { prisma, media } = buildPrismaServiceMock();
+    media.findUnique.mockResolvedValue({
+      _count: {
+        creationRefs: 1,
+        productRefs: 0,
+        collectionRefs: 2,
+        atelierRefs: 0,
+        blogPostRefs: 0,
+        testimonialRefs: 0,
+        patternInspirationOf: 0,
+        patternExportOf: 0,
+        pageSectionRefs: 0,
+      },
+    });
+    const repository = new PrismaMediaRepository(prisma);
+
+    expect(await repository.countActiveReferences('media-1')).toBe(3);
+  });
+
+  it('countActiveReferences() returns 0 when the media does not exist', async () => {
+    const { prisma, media } = buildPrismaServiceMock();
+    media.findUnique.mockResolvedValue(null);
+    const repository = new PrismaMediaRepository(prisma);
+
+    expect(await repository.countActiveReferences('missing')).toBe(0);
+  });
+});
