@@ -1,6 +1,6 @@
 # Feature — `search`
 
-**Statut : ⬜ À faire.** Phase 1 — Présence digitale.
+**Statut : ✅ Fait.** Phase 1 — Présence digitale.
 
 ## Objet
 
@@ -81,9 +81,26 @@ lignes par table), réévaluer le choix full-text Postgres au profit d'un moteur
 
 ## Vérification
 
-- [ ] `global-search` testé (résultats groupés par type, exclusion du contenu non publié,
+- [x] `global-search` testé (résultats groupés par type, exclusion du contenu non publié,
       chaîne vide/trop courte rejetée)
-- [ ] `search.controller.spec.ts` couvre le code 200 et une requête vide (400)
-- [ ] Toutes les requêtes `$queryRaw` sont paramétrées (revue de code dédiée, pas seulement
-      un test automatisé)
-- [ ] `docs/checklist-implementation.md` : `search` passé à ✅
+- [x] `search.controller.spec.ts` couvre les codes 200/400 (`q` manquant, requête trop courte)
+- [x] Toutes les requêtes `$queryRaw` sont paramétrées via `Prisma.sql` (interpolation
+      `${...}`, jamais de concaténation) — vérifié par relecture des 5 requêtes ET par un
+      test dédié qui envoie une chaîne porteuse d'une tentative d'injection
+      (`"robe'; DROP TABLE creations; --"`) et vérifie qu'elle n'apparaît jamais dans le
+      texte SQL envoyé (seulement dans les `values` paramétrées)
+- [x] Testé manuellement de bout en bout contre Postgres réel : recherche cross-entités
+      (`creations`/`blog_posts`/`ateliers`) avec classement par pertinence, exclusion d'un
+      article de blog non publié confirmée
+- [x] `docs/checklist-implementation.md` : `search` passé à ✅
+
+## Bug trouvé et corrigé pendant la vérification manuelle
+
+`LEFT(text, ${EXCERPT_MAX_LENGTH})` échouait en base réelle
+(`function left(text, bigint) does not exist`) alors que les tests unitaires (mock
+`$queryRaw`) ne pouvaient pas le détecter : Postgres n'a pas de surcharge
+`LEFT(text, bigint)`, et Prisma envoie les paramètres numériques interpolés comme `bigint`
+par défaut. Corrigé en castant explicitement chaque longueur/limite interpolée
+(`${EXCERPT_MAX_LENGTH}::integer`, `${limit}::integer}`) dans les 5 requêtes — un bon
+rappel que `$queryRaw` mérite toujours un test contre une vraie base, pas seulement des
+mocks, avant d'être considéré vérifié.
