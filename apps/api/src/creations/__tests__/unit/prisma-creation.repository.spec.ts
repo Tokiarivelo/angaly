@@ -97,6 +97,19 @@ describe('PrismaCreationRepository', () => {
     );
   });
 
+  it('list() sorts by featuredFrom when sort=featuredFrom', async () => {
+    const { prisma, creation } = buildPrismaServiceMock();
+    creation.findMany.mockResolvedValue([]);
+    creation.count.mockResolvedValue(0);
+    const repository = new PrismaCreationRepository(prisma);
+
+    await repository.list({ sort: 'featuredFrom', page: 1, limit: 20 });
+
+    expect(creation.findMany).toHaveBeenCalledWith(
+      expect.objectContaining({ orderBy: [{ featuredFrom: 'desc' }, { createdAt: 'desc' }] }),
+    );
+  });
+
   it('list() applies no filter when none is given', async () => {
     const { prisma, creation } = buildPrismaServiceMock();
     creation.findMany.mockResolvedValue([]);

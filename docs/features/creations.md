@@ -77,8 +77,8 @@ __tests__/
 
 ## Note d'implémentation
 
-`sort` accepte `newest` (défaut, `createdAt desc`) et `featured` (`isFeatured desc` puis
-`createdAt desc`) — pas d'autre valeur documentée dans les specs/maquettes à ce jour ; à
-étendre si un besoin de tri supplémentaire apparaît dans une phase ultérieure. Le DTO de
-réponse n'a pas de champ `isFavorite` (voir "Points d'intégration" ci-dessus — dépend de
+`sort` accepte `newest` (défaut, `createdAt desc`), `featured` (`isFeatured desc` puis
+`createdAt desc`) et `featuredFrom` (`featuredFrom desc` puis `createdAt desc`, ajouté pour
+`docs/pages/la-une.md` — tri par date de mise en avant plutôt que par simple booléen). Le DTO
+de réponse n'a pas de champ `isFavorite` (voir "Points d'intégration" ci-dessus — dépend de
 `customers`/Phase 2).

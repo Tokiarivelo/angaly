@@ -102,6 +102,16 @@ describe('CreationsController (integration)', () => {
     await request(server()).get('/creations').query({ sort: 'oldest' }).expect(400);
   });
 
+  it('GET /creations accepts sort=featuredFrom (used by the la-une page)', async () => {
+    listCreationsUseCase.execute.mockResolvedValue({ items: [], total: 0 });
+
+    await request(server()).get('/creations').query({ sort: 'featuredFrom' }).expect(200);
+
+    expect(listCreationsUseCase.execute).toHaveBeenCalledWith(
+      expect.objectContaining({ sort: 'featuredFrom' }),
+    );
+  });
+
   it('GET /creations/:slug returns the creation', async () => {
     getCreationBySlugUseCase.execute.mockResolvedValue(sampleCreation());
 

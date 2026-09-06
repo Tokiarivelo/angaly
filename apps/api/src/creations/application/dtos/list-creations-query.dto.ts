@@ -19,10 +19,10 @@ export class ListCreationsQueryDto {
   @IsBoolean()
   isFeatured?: boolean;
 
-  @ApiProperty({ required: false, enum: ['newest', 'featured'] })
+  @ApiProperty({ required: false, enum: ['newest', 'featured', 'featuredFrom'] })
   @IsOptional()
-  @IsIn(['newest', 'featured'])
-  sort?: 'newest' | 'featured';
+  @IsIn(['newest', 'featured', 'featuredFrom'])
+  sort?: 'newest' | 'featured' | 'featuredFrom';
 
   @ApiProperty({ required: false, default: 1, minimum: 1 })
   @IsOptional()

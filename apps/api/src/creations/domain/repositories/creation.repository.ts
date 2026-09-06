@@ -6,7 +6,7 @@ export interface CreationListFilter {
   categoryId?: string;
   collectionId?: string;
   isFeatured?: boolean;
-  sort?: 'newest' | 'featured';
+  sort?: 'newest' | 'featured' | 'featuredFrom';
   page: number;
   limit: number;
 }

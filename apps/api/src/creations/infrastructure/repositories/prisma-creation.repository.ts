@@ -38,6 +38,9 @@ function buildOrderBy(sort: CreationListFilter['sort']): Prisma.CreationOrderByW
   if (sort === 'featured') {
     return [{ isFeatured: 'desc' }, { createdAt: 'desc' }];
   }
+  if (sort === 'featuredFrom') {
+    return [{ featuredFrom: 'desc' }, { createdAt: 'desc' }];
+  }
   return [{ createdAt: 'desc' }];
 }
 
