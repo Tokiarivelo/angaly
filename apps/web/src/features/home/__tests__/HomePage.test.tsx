@@ -16,9 +16,9 @@ describe('HomePage', () => {
     expect(screen.getByRole('link', { name: 'Prendre rendez-vous' })).toBeInTheDocument();
 
     // Static sections
-    expect(screen.getByText('Une maison de couture pensée pour vous')).toBeInTheDocument();
+    expect(screen.getByText('Une maison de couture pensée pour vous.')).toBeInTheDocument();
     expect(screen.getByText('Angaly Pattern Studio')).toBeInTheDocument();
-    expect(screen.getByText('Votre patron, créé selon vos mesures.')).toBeInTheDocument();
+    expect(screen.getByRole('heading', { name: "L'Expérience Sur Mesure" })).toBeInTheDocument();
     expect(screen.getByText('Elles nous ont fait confiance')).toBeInTheDocument();
 
     // API-backed sections resolve

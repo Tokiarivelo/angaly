@@ -10,7 +10,7 @@ describe('useHomeContent', () => {
     expect(result.current.isLoading).toBe(false);
     expect(result.current.error).toBeNull();
     expect(result.current.data.hero.headline).toBe('ANGALY');
-    expect(result.current.data.categories).toHaveLength(5);
+    expect(result.current.data.categories.items).toHaveLength(4);
     expect(result.current.data.surMesure.steps).toHaveLength(7);
   });
 });
