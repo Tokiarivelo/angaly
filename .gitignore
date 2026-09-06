@@ -1,0 +1,46 @@
+# Dependencies
+node_modules/
+.pnpm-store/
+
+# Build outputs
+.next/
+dist/
+build/
+out/
+*.tsbuildinfo
+
+# Turbo
+.turbo/
+
+# Env
+.env
+.env.local
+.env.*.local
+!.env.example
+
+# Prisma
+packages/database/generated/
+
+# Testing
+coverage/
+playwright-report/
+test-results/
+
+# Python (ai-service)
+apps/ai-service/.venv/
+apps/ai-service/__pycache__/
+apps/ai-service/**/__pycache__/
+apps/ai-service/ml/notebooks/.ipynb_checkpoints/
+*.pyc
+
+# Editors / OS
+.DS_Store
+.idea/
+
+# Local Claude settings (keep shared, ignore personal overrides)
+.claude/settings.local.json
+
+# Logs
+*.log
+npm-debug.log*
+pnpm-debug.log*

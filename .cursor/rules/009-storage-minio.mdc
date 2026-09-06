@@ -1,0 +1,41 @@
+---
+description: Stockage des médias — MinIO (packages/storage)
+globs: ["packages/storage/**/*", "apps/api/src/media/**/*"]
+---
+
+# Stockage des médias — MinIO
+
+## Principe (spec §76)
+Aucune image ou vidéo n'est stockée en base de données ni sur le disque local de l'API.
+Tout média passe par MinIO (compatible S3), via `@angaly/storage`.
+
+## Frontière stricte
+Le client `minio` (npm) n'est importé **nulle part ailleurs** que
+`packages/storage/src/storage-client.ts`. Tout accès aux médias depuis `apps/api` passe par
+le module `media`, qui utilise `@angaly/storage` — jamais un contrôleur/use-case d'un autre
+module n'importe `@angaly/storage` directement.
+
+## Buckets (un par dossier de la spec)
+```
+creations · products · collections · ateliers · customers · patterns · blog · avatars
+```
+Définis dans `packages/storage/src/buckets.ts` (`STORAGE_BUCKETS`) — garder synchronisé avec
+l'enum `MediaEntityType` de `@angaly/types` et le script `docker/minio/init-buckets.sh`.
+
+## Upload
+- Petits fichiers / uploads serveur → `StorageClient.uploadBuffer()`
+- Uploads volumineux depuis le navigateur (médiathèque admin) → URL présignée
+  (`StorageClient.getPresignedUploadUrl()`), le navigateur envoie directement à MinIO, puis
+  le backend enregistre la ligne `Media` correspondante
+- Toujours enregistrer `bucket` + `objectKey` en base (modèle `Media`), jamais l'URL seule —
+  `buildPublicUrl()` la reconstruit à la demande (permet de changer `MINIO_PUBLIC_URL`/CDN
+  sans migration)
+
+## Suppression
+Vérifier qu'aucune autre ligne `Media.entityId` n'y fait référence avant `deleteObject()` —
+voir la contrainte "Utilisée dans" de la maquette Médiathèque
+(`docs/pages/admin-mediatheque.md`). Ne jamais supprimer un objet encore référencé.
+
+## Alt text
+`Media.altText` est obligatoire à la création pour l'accessibilité et le SEO (spec §74/§71) —
+le valider côté DTO (`class-validator`), pas seulement côté UI.

@@ -1,0 +1,45 @@
+---
+description: Règles générales du monorepo ANGALY
+globs: ["**/*"]
+---
+
+# Monorepo ANGALY — Règles Générales
+
+## Structure
+- Turborepo 2.x + pnpm 9.x
+- `apps/web` — Next.js 15 (port 3000) — vitrine + boutique + espace client + back-office
+- `apps/api` — NestJS 11, Clean Architecture (port 3001)
+- `apps/ai-service` — FastAPI Python (port 8000) — DL pour Angaly Pattern Studio
+- `packages/database` — Prisma 6 schema + seed (PostgreSQL 16)
+- `packages/types` — Types TypeScript partagés front/back
+- `packages/config` — Configs ESLint, TypeScript, Vitest partagées
+- `packages/storage` — Client MinIO (upload/presign/delete)
+- `packages/pattern-engine` — Moteur de patronage géométrique déterministe (le "rules set")
+
+## Règles de base
+1. **Toujours utiliser `@angaly/types`** pour les types partagés entre front et back
+2. **TypeScript strict** — pas de `any`, pas de `!` non justifié
+3. **Imports absolus** avec les alias : `@/` pour apps, `@angaly/` pour packages
+4. **Conventional Commits** obligatoires : `feat(scope): description` — scopes définis dans `commitlint.config.ts`
+5. **Tests obligatoires** pour tout nouveau composant interactif ou use-case (voir `004-testing.mdc`)
+6. **Une phase par session** — voir `006-phase-workflow.mdc`
+
+## Commandes utiles
+```bash
+pnpm dev          # web + api
+pnpm build        # Build tout via Turborepo
+pnpm test         # Tests Node (web + api + packages)
+pnpm lint         # Lint tout
+pnpm typecheck    # Type-check tout
+pnpm format       # Format tout avec Prettier
+make dev.ai       # apps/ai-service (Python, hors turborepo)
+make test.ai      # pytest apps/ai-service
+```
+
+## Ne jamais
+- Importer depuis `apps/*` dans `packages/*`
+- Mettre des variables d'environnement en dur dans le code
+- Utiliser `console.log` en production (Logger NestJS côté api, rien côté web en prod)
+- Committer `.env`, `.env.local`, ou tout secret (utiliser les `.env.example`)
+- Appeler MinIO directement en dehors de `packages/storage` / du module `media` (voir `009-storage-minio.mdc`)
+- Appeler `apps/ai-service` depuis autre chose que les modules `ai-inference`/`pattern-engine` (voir `008-ai-service-integration.mdc`)

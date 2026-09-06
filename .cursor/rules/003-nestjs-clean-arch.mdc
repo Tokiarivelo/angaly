@@ -1,0 +1,75 @@
+---
+description: Clean Architecture NestJS 11
+globs: ["apps/api/src/**/*"]
+---
+
+# Clean Architecture — NestJS 11
+
+## Règle fondamentale : Dépendances unidirectionnelles
+
+```
+Domain ← Application ← Infrastructure
+                    ← Presentation
+```
+
+**Le Domain ne dépend de RIEN** — pas de Prisma, pas de NestJS, pas de `@angaly/types`,
+pas de `@angaly/storage`, pas d'appel à `apps/ai-service`.
+
+## Domain Layer (`domain/`)
+- **Entities** : classes TypeScript pures, pas de décorateurs
+- **Repository Interfaces** : `interface IXxxRepository { ... }` + `Symbol('IXxxRepository')`
+- **Value Objects** : classe immutable avec validation dans le constructeur
+- **Règle** : si tu importes `@nestjs/*`, `@prisma/client`, ou `@angaly/storage` ici → INTERDIT
+
+## Application Layer (`application/`)
+- **Use Cases** : `@Injectable()` accepté, mais injecte uniquement des interfaces du Domain
+- **DTOs** : classes avec `class-validator` (+ décorateurs Swagger)
+- **Règle** : si tu importes `PrismaService` directement ici → INTERDIT (passer par le repository)
+
+## Infrastructure Layer (`infrastructure/`)
+- **Repositories** : implémentent les interfaces Domain avec Prisma (`PrismaService`)
+- **Mappers** : `PrismaModel → DomainEntity` et `DomainEntity → DTO`
+- **Services tiers** : `@angaly/storage` (MinIO), client HTTP vers `apps/ai-service`, JWT
+
+## Presentation Layer (`presentation/`)
+- **Controllers** : délèguent AUX use-cases, zéro logique métier
+- **Guards** : `JwtGuard`, `RolesGuard`
+- **Decorators** : `@CurrentUser()`, `@Public()`, `@Roles()`
+
+## Module — structure type
+```typescript
+@Module({
+  providers: [
+    MyUseCase,
+    { provide: MY_REPOSITORY, useClass: MyPrismaRepository },
+    MyMapper,
+  ],
+  controllers: [MyController],
+})
+export class MyModule {}
+```
+
+## Exemples
+
+```typescript
+// ✅ Controller — délègue au use-case
+@Post()
+async create(@Body() dto: CreateDto, @CurrentUser() user: CurrentUser) {
+  return this.createUseCase.execute({ ...dto, actorId: user.id });
+}
+
+// ❌ Controller — logique métier (INTERDIT)
+@Post()
+async create(@Body() dto: CreateDto) {
+  const existing = await this.prisma.creation.findFirst(...); // NON
+  if (existing) throw new ConflictException(...);
+}
+```
+
+## Swagger — documentation obligatoire
+Tout endpoint : `@ApiOperation`, `@ApiResponse`, `@ApiBearerAuth('access-token')` si protégé.
+Tout champ DTO : `@ApiProperty({ description, example })`.
+
+## Modules non implémentés
+`apps/api/src/<module>/README.md` marque un module comme scaffoldé mais vide — ne pas y
+ajouter de code hors d'une session de phase dédiée (voir `006-phase-workflow.mdc`).

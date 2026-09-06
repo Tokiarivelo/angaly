@@ -1,0 +1,47 @@
+---
+description: Le moteur de patronage géométrique (packages/pattern-engine)
+globs: ["packages/pattern-engine/**/*", "apps/api/src/pattern-engine/**/*"]
+---
+
+# Pattern Engine — le "rules set" d'Angaly Pattern Studio
+
+## Principe (spec §25)
+```
+IA (apps/ai-service)  →  suggère des PatternParameters (style, coupe, détails)
+                           jamais de géométrie
+                          ↓
+@angaly/pattern-engine →  transforme PatternParameters + mesures en géométrie exacte
+  (déterministe)           (PatternPieceGeometry) via des IPatternRule
+                          ↓
+apps/api pattern-engine → orchestre les deux, persiste PatternVersion/PatternPiece,
+  module                  déclenche la vérification professionnelle (REVIEW_REQUIRED)
+```
+
+## Règles absolues
+1. **`packages/pattern-engine` ne dépend de rien d'externe** — pas de Prisma, pas de NestJS,
+   pas d'appel réseau vers `apps/ai-service`. Entrées/sorties en mémoire uniquement
+   (`PatternParameters` + `MeasurementSet` → `PatternGenerationResult`).
+2. **Une règle (`IPatternRule`) = un `GarmentType`** — jamais une règle qui gère plusieurs
+   types de vêtements avec un gros `switch`.
+3. **Toujours valider les mesures requises** avant de construire la géométrie — lever
+   `PatternEngineValidationError` avec la liste des clés manquantes plutôt que de deviner
+   une valeur par défaut.
+4. **Le résultat de l'IA n'est jamais appliqué aveuglément** — `PatternParameters` doit être
+   confirmé (implicitement ou explicitement) par l'utilisateur/couturière avant d'être passé
+   au moteur (voir statut `REVIEW_REQUIRED`/`VALIDATED` de `PatternStatus`).
+5. **Nouvelle règle → nouveau fichier** dans `packages/pattern-engine/src/rules/`, jamais
+   dans `pattern-engine.ts`. Utiliser le skill `pattern-engine-rule` pour le scaffolder.
+
+## Où vit quoi
+- `packages/pattern-engine/src/types.ts` — tous les contrats (source de vérité)
+- `packages/pattern-engine/src/pattern-engine.ts` — l'orchestrateur, ne change quasiment
+  jamais une fois Phase 0 terminée
+- `packages/pattern-engine/src/rules/*.rule.ts` — une implémentation par `GarmentType`
+  (Phase 4, `docs/phases/phase-4-premium-pattern-studio.md`)
+- `apps/api/src/pattern-engine/` — le module NestJS qui instancie `PatternEngine`,
+  enregistre les règles, et l'expose via des use-cases
+
+## Tests
+Chaque règle est pure — la tester avec des jeux de mesures fixes, sans mock (voir
+`004-testing.mdc`). L'orchestrateur (`PatternEngine`) est testé indépendamment des règles
+concrètes avec des règles stub (voir `src/__tests__/pattern-engine.test.ts`).

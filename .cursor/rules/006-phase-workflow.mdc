@@ -1,0 +1,43 @@
+---
+description: Processus de traitement d'une page/fonctionnalité (agents IA & développeurs)
+globs: ["**/*"]
+---
+
+# Processus par phase — ANGALY
+
+S'applique à tout agent IA (Claude Code, Cursor, Antigravity, Windsurf, etc.) et à tout
+développeur, **avant toute implémentation**. Suivre ces étapes dans l'ordre :
+
+0. **Ouvrir `docs/mockup-reference.md`** — référence croisée obligatoire Page ↔ Maquette
+   Stitch ↔ Section de spécification ↔ Phase. Localiser la ligne de la page/fonctionnalité
+   concernée (ou l'ajouter si absente).
+1. **Consulter la maquette Stitch** (lien du projet + titre de l'écran depuis
+   `docs/mockup-reference.md`) — c'est la référence visuelle et de contenu à respecter.
+2. **Consulter `docs/checklist-implementation.md`** pour situer l'élément dans le périmètre
+   global et connaître son statut actuel (✅ Fait · 🟡 Partiel · ⬜ À faire · 🔍 À vérifier).
+3. **Ouvrir la fiche dédiée** — `docs/pages/<slug>.md` pour une page frontend, ou
+   `docs/features/<slug>.md` pour un module backend — et la fiche de phase correspondante
+   dans `docs/phases/`.
+4. **Traiter une phase par session** — implémenter les pages/fonctionnalités d'une seule
+   phase (`docs/phases/phase-N-*.md`) par session, jamais plusieurs phases ni tout le
+   périmètre en un seul passage.
+5. **Ajouter les tests à chaque implémentation** — voir `004-testing.mdc`.
+6. **Vérifier systématiquement que tous les tests passent** avant de considérer une page ou
+   un module terminé.
+7. **Documenter** — mettre à jour la fiche `docs/pages/<slug>.md` ou
+   `docs/features/<slug>.md` concernée (statut, écarts connus par rapport à la maquette,
+   décisions prises), et **`docs/deployment.md`/`docs/development.md`** si le changement
+   touche l'infrastructure, une variable d'environnement, ou la façon de lancer le projet.
+8. **Mettre à jour `docs/checklist-implementation.md` et `docs/mockup-reference.md`** pour
+   refléter le nouveau statut.
+
+## Pas de Trello/Figma ici
+Ce monorepo utilise les maquettes **Google Stitch** (`stitch-prompts/*.md` +
+https://stitch.withgoogle.com/projects/3703874896720765754) comme unique source visuelle,
+et `docs/checklist-implementation.md` comme unique tracker de statut — il n'y a pas de
+board externe à synchroniser.
+
+## Documentation d'infrastructure — toujours à jour
+Toute décision ou changement touchant le déploiement, Docker, une variable d'environnement,
+un port, ou la procédure de lancement **doit** être répercuté immédiatement dans
+`docs/deployment.md` et/ou `docs/development.md` dans le même changement — jamais différé.

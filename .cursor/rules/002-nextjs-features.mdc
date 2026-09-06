@@ -1,0 +1,60 @@
+---
+description: Architecture feature-sliced Next.js 15
+globs: ["apps/web/src/**/*"]
+---
+
+# Architecture Feature-Sliced — Next.js 15
+
+## Règle fondamentale
+**Les pages Next.js ne contiennent AUCUNE logique.** Elles importent uniquement le composant racine d'une feature.
+
+```tsx
+// ✅ CORRECT — page.tsx
+import { HomePage } from '@/features/home';
+export default function Page() { return <HomePage />; }
+
+// ❌ INTERDIT — logique dans une page
+export default function Page() {
+  const [data, setData] = useState([]); // NON
+  return <div>{data.map(...)}</div>;    // NON
+}
+```
+
+## Structure d'une feature
+```
+features/<feature-name>/
+├── ui/          # Composants PUREMENT présentationnels
+├── hooks/       # Logique métier (useState, useEffect, callbacks)
+├── api/         # Queries/mutations react-query (seul endroit autorisé à appeler @/lib/api-client)
+├── schemas/     # Validation Zod
+├── consts/      # Constantes (QUERY_KEYS, etc.)
+├── types/       # Types locaux à la feature
+├── utils/       # Fonctions pures (pas de hooks)
+├── __tests__/   # Tests
+└── index.ts     # Export public (barrel)
+```
+
+Chaque page/route de `docs/pages/*.md` correspond à exactly une feature ici. Utiliser
+le skill `new-page-from-stitch` pour scaffolder une nouvelle feature depuis sa fiche.
+
+## Composants UI — règles
+- `useState` autorisé UNIQUEMENT pour état UI local (isOpen, activeTab, showPassword)
+- Pas de `fetch`, pas d'appels API directs, pas de `useQuery`/`useMutation` direct
+- Les callbacks (onSubmit, onDelete) viennent en props depuis le hook parent
+
+## Hooks — règles
+- Toute la logique métier ici : `useState`, `useEffect`, react-query, `useRouter`, Zustand
+- Retournent un objet nommé (jamais un tableau) : `{ data, isLoading, error, doAction }`
+
+## API (react-query) — règles
+- `useQuery` pour les lectures, `useMutation` pour les écritures
+- Appellent uniquement `@/lib/api-client` — jamais `fetch`/`axios` directement
+- Query keys organisées par domaine dans `consts/`
+
+## Zod Schemas — règles
+- Définis dans `schemas/index.ts`, partagés avec `react-hook-form` via `@hookform/resolvers/zod`
+- Types inférés avec `z.infer<typeof schema>`
+
+## État global
+Zustand pour les états globaux transverses (panier, favoris, sidebar admin) — jamais React
+Context pour cet usage. Store dans `apps/web/src/stores/`, jamais dans une feature.

@@ -1,0 +1,10 @@
+node_modules
+.next
+dist
+build
+coverage
+.turbo
+packages/database/generated
+pnpm-lock.yaml
+apps/ai-service/.venv
+apps/ai-service/ml/notebooks/*.ipynb

@@ -1,0 +1,58 @@
+---
+description: Stratégie et règles de tests
+globs: ["**/__tests__/**/*", "**/*.test.*", "**/*.spec.*", "apps/ai-service/tests/**/*"]
+---
+
+# Stratégie de Tests — ANGALY
+
+## Ce qui doit toujours être testé
+
+| Ce qu'on implémente          | Tests obligatoires                                          |
+| ----------------------------- | ------------------------------------------------------------ |
+| Hook frontend                  | `__tests__/<hookName>.test.ts` (Vitest + Testing Library)    |
+| Composant UI interactif        | `__tests__/<ComponentName>.test.tsx`                          |
+| Util / fonction pure            | `__tests__/<name>.test.ts`                                    |
+| Use case backend                | `__tests__/unit/<use-case>.spec.ts` (Jest)                    |
+| Controller backend              | `__tests__/integration/<controller>.spec.ts` (Supertest)      |
+| Rule `@angaly/pattern-engine`  | `src/__tests__/<rule>.test.ts` (Vitest, pure — pas de mock nécessaire) |
+| Endpoint `apps/ai-service`     | `tests/test_<route>.py` (pytest + FastAPI `TestClient`)        |
+| Parcours critique (frontend)   | `apps/web/e2e/<feature>/<parcours>.spec.ts` (Playwright)      |
+
+## Frontend (Vitest + Testing Library)
+
+### Quoi tester ?
+- Chaque hook (`useLogin`, `usePatternWizard`, etc.)
+- Chaque composant interactif (formulaires, boutons avec callback, modals)
+- Pas les composants purement visuels sans logique (voir `vitest.config.ts` coverage excludes)
+
+### Pattern de test — Hook
+```typescript
+describe('useLogin', () => {
+  it('redirects on success', async () => {
+    mockSignIn.mockResolvedValueOnce({ ok: true });
+    const { result } = renderHook(() => useLogin());
+    await act(async () => { await result.current.login(validCreds); });
+    expect(mockPush).toHaveBeenCalledWith('/espace-client');
+  });
+});
+```
+
+### MSW pour les API
+Handlers dans `src/lib/msw/handlers/`, server dans `src/lib/msw/server.ts`, importé dans
+`vitest.setup.ts` — ajoutés dès que la première feature fait un vrai appel API (Phase 1).
+
+## Backend (Jest + Supertest)
+- Tests unitaires (use-cases) : mocker toutes les dépendances avec `jest.fn()`, tester les cas
+  normaux ET les cas d'erreur, `Test.createTestingModule()`.
+- Tests d'intégration (controllers) : `createNestApplication()` + Supertest.
+
+## `packages/pattern-engine` (Vitest, Node environment)
+Chaque `IPatternRule` est pure — tester directement `computePieces()` avec des mesures fixes,
+sans mock. Voir `packages/pattern-engine/src/__tests__/pattern-engine.test.ts` pour le pattern
+de référence (orchestrateur testé indépendamment des règles concrètes).
+
+## `apps/ai-service` (pytest)
+`TestClient(app)` de FastAPI, pas de mock réseau nécessaire tant que le modèle est un
+placeholder (Phase 0-4). Voir `apps/ai-service/tests/test_pattern_suggestions.py`.
+
+## Coverage minimum : 80% sur toutes les métriques (web, api, pattern-engine, ai-service)

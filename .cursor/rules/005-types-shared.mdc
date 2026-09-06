@@ -1,0 +1,43 @@
+---
+description: Utilisation des types partagés @angaly/types
+globs: ["**/*.ts", "**/*.tsx"]
+---
+
+# Types Partagés — @angaly/types
+
+## Principe
+`@angaly/types` contient tous les enums et DTOs partagés entre `apps/web` et `apps/api`,
+et les contrats échangés avec `apps/ai-service` (`PatternAiSuggestionRequest/Response`).
+
+## Utilisation
+
+```typescript
+// ✅ Importer depuis @angaly/types
+import { Role, PatternStatus, type UserDto } from '@angaly/types';
+
+// ❌ Ne pas redéfinir un type déjà présent dans @angaly/types
+type Role = 'CLIENT' | 'COUTURIERE' | 'MANAGER' | 'ADMIN'; // INTERDIT
+```
+
+## Ce qui se trouve dans @angaly/types
+- **Enums** : `Role`, `AppointmentStatus`, `OrderStatus`, `PaymentStatus`, `QuoteStatus`,
+  `PatternStatus`, `PatternExportFormat`, `MediaEntityType`, `NotificationType`, etc.
+  (miroir exact des enums de `packages/database/prisma/schema.prisma`)
+- **DTOs** : `UserDto`, `CustomerDto`, `MediaDto`, etc. — ajoutés au fil des phases
+- **Pagination** : `PaginationMeta`, `PaginatedResponse<T>`
+- **Angaly Pattern Studio** : `PatternAiSuggestionRequest`, `PatternAiSuggestionResponse` —
+  le contrat exact que `apps/api` envoie/reçoit de `apps/ai-service` (Pydantic côté Python,
+  voir `apps/ai-service/app/schemas.py` — garder les deux fichiers synchronisés à la main)
+
+## Quand ajouter dans @angaly/types ?
+- Le type est utilisé à la fois dans `apps/web` ET `apps/api`
+- Le type fait partie d'un contrat API (request/response), y compris avec `apps/ai-service`
+
+## Types locaux à une feature/module
+Si un type n'est utilisé que dans une feature frontend, le mettre dans
+`features/<name>/types/index.ts`. Si utilisé seulement dans un module backend, le garder
+dans ce module (DTOs `application/dtos/`, pas dans `@angaly/types`).
+
+## Prisma enums
+Un enum ajouté dans `schema.prisma` doit être répliqué **avec les mêmes noms et valeurs**
+dans `@angaly/types` — jamais l'inverse (Prisma est la source de vérité du schéma DB).

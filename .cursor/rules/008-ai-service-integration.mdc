@@ -1,0 +1,41 @@
+---
+description: Intégration avec apps/ai-service (FastAPI, Python)
+globs: ["apps/ai-service/**/*", "apps/api/src/ai-inference/**/*"]
+---
+
+# Intégration AI Service
+
+## Frontière stricte
+`apps/ai-service` n'est **jamais** appelé directement par `apps/web` ni par un contrôleur
+autre que ceux du module `ai-inference` (`apps/api/src/ai-inference/`). Tout appel passe par :
+
+```
+apps/web → apps/api (ai-inference module) → apps/ai-service (HTTP interne, AI_SERVICE_URL)
+```
+
+## Contrat
+`PatternAiSuggestionRequest`/`PatternAiSuggestionResponse` dans `packages/types/src/index.ts`
+sont le contrat TypeScript ; `apps/ai-service/app/schemas.py` en est le miroir Pydantic
+(mêmes noms de champs via les `alias` camelCase). **Modifier les deux ensemble.**
+
+## Ce que le service ne fait JAMAIS
+- Ne construit pas de géométrie de patron (c'est `@angaly/pattern-engine`, voir
+  `007-pattern-engine.mdc`)
+- Ne parle pas directement à PostgreSQL ni à MinIO — il reçoit une URL d'image publique en
+  entrée (`inspirationImageUrl`, déjà servie par MinIO) et ne persiste rien lui-même
+- Ne prétend jamais reproduire une photo d'inspiration à l'identique (spec §21) — toute
+  réponse doit rester des *suggestions de paramètres*, jamais un rendu final
+
+## État du modèle (Phase 0-4 : pas de modèle entraîné)
+`app/inference.py` retourne des réponses placeholder (`modelVersion:
+"placeholder-0.0.0"`, `confidence: 0.0`). Le module `ai-inference` côté NestJS doit
+gérer ce cas explicitement (ne jamais afficher une suggestion à confiance nulle comme
+un résultat définitif — la marquer clairement "à valider" côté UI Pattern Studio).
+
+## Déploiement
+- Healthcheck : `GET /health` → `{ status, modelLoaded }`
+- Timeout : respecter `AI_SERVICE_TIMEOUT_MS` (voir `.env.example`) côté client NestJS — si
+  dépassé, dégrader proprement (statut `PatternStatus.DRAFT` conservé, message d'erreur
+  explicite, jamais un plantage de la requête de génération)
+- `ml/` (notebooks + scripts d'entraînement) n'est **jamais** copié dans l'image Docker
+  servie (voir `apps/ai-service/Dockerfile` et `.dockerignore`)

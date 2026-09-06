@@ -1,0 +1,159 @@
+@import 'tailwindcss';
+@plugin 'tailwindcss-animate';
+
+/*
+ * ANGALY brand palette — docs/specifications/ANGALY_Palette_Stitch.md §2-7.
+ * Raw hex tokens (--angaly-*) are the source of truth for anything that must
+ * match a Stitch mockup exactly. The shadcn/ui semantic tokens below
+ * (--background, --primary, etc.) are mapped onto them so imported shadcn
+ * components stay on-brand without per-component overrides.
+ *
+ * No dark theme: ANGALY is a single, fixed premium palette (deep navy +
+ * ivory), not a light/dark toggle product — see palette doc §8/§20.
+ */
+:root {
+  /* Primary / navy family */
+  --angaly-navy: #061938;
+  --angaly-navy-dark: #041329;
+  --angaly-navy-blue: #0c2650;
+  --angaly-royal-navy: #18375d;
+  --angaly-soft-navy: #1e4574;
+
+  /* Light surfaces */
+  --angaly-ivory: #f6f2e9;
+  --angaly-warm-ivory: #d8d3c8;
+
+  /* Gold / champagne accents — use sparingly (palette doc §4) */
+  --angaly-champagne: #c5b190;
+  --angaly-gold: #936c3e;
+  --angaly-gold-light: #b59a70;
+
+  /* Neutrals */
+  --angaly-slate: #5c697a;
+  --angaly-warm-gray: #8a877f;
+  --angaly-border: #d9d4ca;
+  --angaly-white: #ffffff;
+
+  /* Functional */
+  --angaly-success: #46745a;
+  --angaly-warning: #a47735;
+  --angaly-error: #a64a43;
+  --angaly-info: #3e6d91;
+
+  --radius: 0.25rem; /* small radius everywhere — never bubbly SaaS cards */
+
+  /* shadcn/ui semantic mapping */
+  --background: var(--angaly-ivory);
+  --foreground: var(--angaly-navy);
+
+  --card: var(--angaly-white);
+  --card-foreground: var(--angaly-navy);
+
+  --popover: var(--angaly-white);
+  --popover-foreground: var(--angaly-navy);
+
+  --primary: var(--angaly-navy);
+  --primary-foreground: var(--angaly-white);
+
+  --secondary: var(--angaly-champagne);
+  --secondary-foreground: var(--angaly-navy);
+
+  --muted: var(--angaly-warm-ivory);
+  --muted-foreground: var(--angaly-slate);
+
+  --accent: var(--angaly-gold);
+  --accent-foreground: var(--angaly-white);
+
+  --destructive: var(--angaly-error);
+  --destructive-foreground: var(--angaly-white);
+
+  --border: var(--angaly-border);
+  --input: var(--angaly-border);
+  --ring: var(--angaly-soft-navy);
+}
+
+@theme {
+  --font-sans: var(--font-sans), ui-sans-serif, system-ui, sans-serif;
+  --font-heading: var(--font-heading), Georgia, serif;
+
+  --color-background: var(--background);
+  --color-foreground: var(--foreground);
+  --color-card: var(--card);
+  --color-card-foreground: var(--card-foreground);
+  --color-popover: var(--popover);
+  --color-popover-foreground: var(--popover-foreground);
+  --color-primary: var(--primary);
+  --color-primary-foreground: var(--primary-foreground);
+  --color-secondary: var(--secondary);
+  --color-secondary-foreground: var(--secondary-foreground);
+  --color-muted: var(--muted);
+  --color-muted-foreground: var(--muted-foreground);
+  --color-accent: var(--accent);
+  --color-accent-foreground: var(--accent-foreground);
+  --color-destructive: var(--destructive);
+  --color-destructive-foreground: var(--destructive-foreground);
+  --color-border: var(--border);
+  --color-input: var(--input);
+  --color-ring: var(--ring);
+
+  /* Direct brand tokens — e.g. bg-angaly-navy, text-angaly-champagne */
+  --color-angaly-navy: var(--angaly-navy);
+  --color-angaly-navy-dark: var(--angaly-navy-dark);
+  --color-angaly-navy-blue: var(--angaly-navy-blue);
+  --color-angaly-royal-navy: var(--angaly-royal-navy);
+  --color-angaly-soft-navy: var(--angaly-soft-navy);
+  --color-angaly-ivory: var(--angaly-ivory);
+  --color-angaly-warm-ivory: var(--angaly-warm-ivory);
+  --color-angaly-champagne: var(--angaly-champagne);
+  --color-angaly-gold: var(--angaly-gold);
+  --color-angaly-gold-light: var(--angaly-gold-light);
+  --color-angaly-slate: var(--angaly-slate);
+  --color-angaly-warm-gray: var(--angaly-warm-gray);
+  --color-angaly-border: var(--angaly-border);
+  --color-angaly-success: var(--angaly-success);
+  --color-angaly-warning: var(--angaly-warning);
+  --color-angaly-error: var(--angaly-error);
+  --color-angaly-info: var(--angaly-info);
+
+  --radius-lg: var(--radius);
+  --radius-md: calc(var(--radius) - 2px);
+  --radius-sm: calc(var(--radius) - 4px);
+
+  --animate-accordion-down: accordion-down 0.2s ease-out;
+  --animate-accordion-up: accordion-up 0.2s ease-out;
+
+  @keyframes accordion-down {
+    from {
+      height: 0;
+    }
+    to {
+      height: var(--radix-accordion-content-height);
+    }
+  }
+
+  @keyframes accordion-up {
+    from {
+      height: var(--radix-accordion-content-height);
+    }
+    to {
+      height: 0;
+    }
+  }
+}
+
+@layer base {
+  * {
+    @apply border-border;
+  }
+
+  body {
+    @apply bg-background text-foreground;
+  }
+
+  h1,
+  h2,
+  h3,
+  h4 {
+    font-family: var(--font-heading);
+  }
+}

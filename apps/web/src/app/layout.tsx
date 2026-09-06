@@ -1,0 +1,24 @@
+import type { Metadata } from 'next';
+
+import { cormorantGaramond, inter } from '@/lib/fonts';
+import { Providers } from '@/providers';
+
+import './globals.css';
+
+export const metadata: Metadata = {
+  title: {
+    default: 'ANGALY — Maison de couture',
+    template: '%s | ANGALY',
+  },
+  description: "L'élégance, créée pour vous. Maison de couture malgache — sur-mesure, prêt-à-porter et Angaly Pattern Studio.",
+};
+
+export default function RootLayout({ children }: { children: React.ReactNode }) {
+  return (
+    <html lang="fr" suppressHydrationWarning>
+      <body className={`${inter.variable} ${cormorantGaramond.variable} font-sans antialiased`}>
+        <Providers>{children}</Providers>
+      </body>
+    </html>
+  );
+}

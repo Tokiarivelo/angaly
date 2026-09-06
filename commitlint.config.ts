@@ -1,0 +1,50 @@
+import type { UserConfig } from '@commitlint/types';
+
+const config: UserConfig = {
+  extends: ['@commitlint/config-conventional'],
+  rules: {
+    'scope-enum': [
+      2,
+      'always',
+      [
+        'web',
+        'api',
+        'ai-service',
+        'database',
+        'types',
+        'config',
+        'storage',
+        'pattern-engine',
+        'auth',
+        'users',
+        'customers',
+        'ateliers',
+        'appointments',
+        'creations',
+        'collections',
+        'products',
+        'orders',
+        'payments',
+        'quotes',
+        'measurements',
+        'patterns',
+        'ai-inference',
+        'reviews',
+        'blog',
+        'notifications',
+        'media',
+        'search',
+        'i18n',
+        'docker',
+        'ci',
+        'deps',
+        'release',
+      ],
+    ],
+    'subject-case': [2, 'never', ['pascal-case', 'upper-case']],
+    'subject-max-length': [2, 'always', 100],
+    'body-max-line-length': [2, 'always', 200],
+  },
+};
+
+export default config;
