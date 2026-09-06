@@ -1,6 +1,7 @@
 import { Module } from '@nestjs/common';
 import { ConfigModule } from '@nestjs/config';
 
+import { I18nModule } from './i18n/i18n.module';
 import { MediaModule } from './media/media.module';
 import { PrismaModule } from './prisma/prisma.module';
 import { HealthController } from './shared/health/health.controller';
@@ -8,7 +9,7 @@ import { HealthController } from './shared/health/health.controller';
 // Remaining domain modules (auth, users, customers, ateliers, appointments,
 // creations, collections, products, orders, payments, quotes, measurements,
 // patterns, pattern-engine, ai-inference, reviews, blog, notifications,
-// search, i18n) are scaffolded as empty directories under src/ — see each
+// search) are scaffolded as empty directories under src/ — see each
 // module's docs/features/<slug>.md and .cursor/rules/006-phase-workflow.mdc.
 // They are wired into this module's `imports` array as each is implemented,
 // one phase at a time (docs/phases/).
@@ -21,6 +22,7 @@ import { HealthController } from './shared/health/health.controller';
     }),
     PrismaModule,
     MediaModule,
+    I18nModule,
   ],
   controllers: [HealthController],
 })

@@ -55,10 +55,13 @@ phase n'a pas été traitée en session dédiée (voir `.cursor/rules/006-phase-
 - [ ] ⬜ **navigation-mobile** — Drawer, bottom bar, recherche, WhatsApp FAB
 
 ### Modules backend
-- [ ] ⬜ **creations** · **collections** · **ateliers** · **blog** · **i18n** · **search**
+- [ ] ⬜ **creations** · **collections** · **ateliers** · **blog** · **search**
 - [x] ✅ **media** — upload présigné + confirm + upload buffer serveur + list + delete,
       Clean Architecture complète, testé de bout en bout contre MinIO/Postgres réels
       (`docs/features/media.md`)
+- [x] ✅ **i18n** — résolution de locale (query > cookie > Accept-Language > fallback FR),
+      middleware global + `@CurrentLocale()`, `GET /api/i18n/locales`
+      (`docs/features/i18n.md`)
 
 ---
 
