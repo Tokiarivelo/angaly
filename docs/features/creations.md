@@ -1,6 +1,6 @@
 # Feature — `creations`
 
-**Statut : ⬜ À faire.** Phase 1 — Présence digitale.
+**Statut : ✅ Fait.** Phase 1 — Présence digitale.
 
 ## Objet
 
@@ -67,7 +67,18 @@ __tests__/
 
 ## Vérification
 
-- [ ] `list-creations` et `get-creation-by-slug` testés unitairement (cas trouvé/non trouvé/filtres)
-- [ ] `creations.controller.spec.ts` couvre les codes 200/404
-- [ ] Toutes les requêtes Prisma utilisent `select` explicite (pas de `include` non scopé)
-- [ ] `docs/checklist-implementation.md` : `creations` passé à ✅
+- [x] `list-creations` et `get-creation-by-slug` testés unitairement (cas trouvé/non trouvé/filtres)
+- [x] `creations.controller.spec.ts` couvre les codes 200/400 (validation `sort`)/404
+- [x] Toutes les requêtes Prisma utilisent `select` explicite (`CREATION_DETAIL_SELECT`,
+      partagé entre `list` et `findBySlug` — pas de `include` non scopé)
+- [x] Testé manuellement de bout en bout contre Postgres réel (insertion SQL temporaire,
+      `GET /api/creations` + filtres + `GET /api/creations/:slug` + 404, nettoyage après)
+- [x] `docs/checklist-implementation.md` : `creations` passé à ✅
+
+## Note d'implémentation
+
+`sort` accepte `newest` (défaut, `createdAt desc`) et `featured` (`isFeatured desc` puis
+`createdAt desc`) — pas d'autre valeur documentée dans les specs/maquettes à ce jour ; à
+étendre si un besoin de tri supplémentaire apparaît dans une phase ultérieure. Le DTO de
+réponse n'a pas de champ `isFavorite` (voir "Points d'intégration" ci-dessus — dépend de
+`customers`/Phase 2).
