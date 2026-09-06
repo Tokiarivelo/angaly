@@ -55,7 +55,7 @@ phase n'a pas été traitée en session dédiée (voir `.cursor/rules/006-phase-
 - [ ] ⬜ **navigation-mobile** — Drawer, bottom bar, recherche, WhatsApp FAB
 
 ### Modules backend
-- [ ] ⬜ **collections** · **ateliers** · **blog** · **search**
+- [ ] ⬜ **ateliers** · **blog** · **search**
 - [x] ✅ **media** — upload présigné + confirm + upload buffer serveur + list + delete,
       Clean Architecture complète, testé de bout en bout contre MinIO/Postgres réels
       (`docs/features/media.md`)
@@ -65,6 +65,9 @@ phase n'a pas été traitée en session dédiée (voir `.cursor/rules/006-phase-
 - [x] ✅ **creations** — liste filtrée/paginée (catégorie/collection/vedette/tri) + détail
       par slug avec médias ordonnés, testé de bout en bout contre Postgres réel
       (`docs/features/creations.md`)
+- [x] ✅ **collections** — liste publiée uniquement (`creationsCount`) + détail par slug
+      (créations + médias), testé de bout en bout contre Postgres réel
+      (`docs/features/collections.md`)
 
 ---
 

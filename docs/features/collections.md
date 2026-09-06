@@ -1,6 +1,6 @@
 # Feature — `collections`
 
-**Statut : ⬜ À faire.** Phase 1 — Présence digitale.
+**Statut : ✅ Fait.** Phase 1 — Présence digitale.
 
 ## Objet
 
@@ -64,8 +64,26 @@ __tests__/
 
 ## Vérification
 
-- [ ] `list-collections` testé (filtre `seasonYear`, exclusion des collections non
-      publiées, pagination)
-- [ ] `get-collection-by-slug` testé (cas trouvé/non trouvé, créations et médias inclus)
-- [ ] `collections.controller.spec.ts` couvre les codes 200/404
-- [ ] `docs/checklist-implementation.md` : `collections` passé à ✅
+- [x] `list-collections` testé (filtre `seasonYear`, exclusion des collections non
+      publiées, pagination, tri)
+- [x] `get-collection-by-slug` testé (cas trouvé/non trouvé/non publiée, créations et
+      médias inclus)
+- [x] `collections.controller.spec.ts` couvre les codes 200/400 (validation `sort`)/404
+- [x] Testé manuellement de bout en bout contre Postgres réel : une collection publiée et
+      une non publiée insérées, seule la publiée apparaît sur `GET /api/collections` et
+      `GET /api/collections/:slug` (404 sur la non publiée), nettoyage après
+- [x] `docs/checklist-implementation.md` : `collections` passé à ✅
+
+## Note d'implémentation
+
+- `sort` accepte `seasonYear:asc|desc` et `publishedAt:asc|desc` (défaut
+  `publishedAt:desc`), au format `champ:direction` comme documenté dans
+  `docs/pages/collections-liste.md`.
+- Le DTO de liste (`CollectionResponseDto`) expose `creationsCount` (`_count.creations`
+  Prisma) et **jamais** le tableau `Creation[]` complet ; seul le DTO de détail
+  (`CollectionDetailResponseDto`, `GET /api/collections/:slug`) inclut `creations`, avec
+  pour chacune un `coverImageUrl` dérivé de son premier média (`sortOrder` asc) — conforme
+  à la remarque de `docs/pages/collections-liste.md` sur le compteur de la bannière.
+- "Publiée" est dérivé de `publishedAt` (non nul et passé), jamais un flag stocké — appliqué
+  au niveau du repository pour `list` et `findPublishedBySlug`, donc impossible d'oublier le
+  filtre dans un futur appelant.
