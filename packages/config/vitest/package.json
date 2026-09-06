@@ -2,11 +2,23 @@
   "name": "@angaly/vitest-config",
   "version": "0.0.1",
   "private": true,
-  "type": "module",
+  "main": "./dist/base.js",
+  "types": "./dist/base.d.ts",
   "exports": {
-    ".": "./base.ts"
+    ".": {
+      "types": "./dist/base.d.ts",
+      "default": "./dist/base.js"
+    }
+  },
+  "scripts": {
+    "build": "tsc -p tsconfig.build.json",
+    "typecheck": "tsc --noEmit"
   },
   "dependencies": {
     "vitest": "^2.1.0"
+  },
+  "devDependencies": {
+    "@angaly/typescript-config": "workspace:*",
+    "typescript": "^5.6.3"
   }
 }

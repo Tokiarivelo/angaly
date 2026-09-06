@@ -13,6 +13,13 @@ développeur, **avant toute implémentation**. Suivre ces étapes dans l'ordre :
    concernée (ou l'ajouter si absente).
 1. **Consulter la maquette Stitch** (lien du projet + titre de l'écran depuis
    `docs/mockup-reference.md`) — c'est la référence visuelle et de contenu à respecter.
+   **Pour toute intégration frontend** (scaffolding d'une page/feature `apps/web` depuis un
+   écran Stitch), utiliser en priorité la CLI **`agy` (Antigravity)** — elle dispose d'un
+   accès MCP direct au projet Stitch ANGALY et permet de relire l'écran généré (HTML/design)
+   pendant l'implémentation. Exemple : `agy --print "<consigne>"` (mode non-interactif) ou
+   une session `agy` interactive dans le dossier du repo. Si `agy` n'a pas la permission MCP
+   nécessaire en mode headless, l'exécuter en session interactive plutôt que de forcer
+   `--dangerously-skip-permissions` sans validation explicite de l'utilisateur.
 2. **Consulter `docs/checklist-implementation.md`** pour situer l'élément dans le périmètre
    global et connaître son statut actuel (✅ Fait · 🟡 Partiel · ⬜ À faire · 🔍 À vérifier).
 3. **Ouvrir la fiche dédiée** — `docs/pages/<slug>.md` pour une page frontend, ou

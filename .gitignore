@@ -25,6 +25,8 @@ packages/database/generated/
 coverage/
 playwright-report/
 test-results/
+.coverage
+htmlcov/
 
 # Python (ai-service)
 apps/ai-service/.venv/

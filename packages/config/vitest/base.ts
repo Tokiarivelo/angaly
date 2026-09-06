@@ -24,6 +24,6 @@ export const baseVitestConfig = defineConfig({
         statements: 80,
       },
     },
-    reporters: ['default', 'html'],
+    reporters: ['default'],
   },
 });

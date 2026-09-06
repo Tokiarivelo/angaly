@@ -21,7 +21,11 @@ export function formatDate(date: Date | string, options?: Intl.DateTimeFormatOpt
 
 /** Format a price in Ariary — spec pricing examples use "890 000 Ar". */
 export function formatPriceAriary(amount: number): string {
-  return `${new Intl.NumberFormat('fr-FR').format(amount)} Ar`;
+  // Intl's fr-FR group separator is U+202F (narrow no-break space) on modern
+  // ICU — normalize to a plain space so the output is deterministic and safe
+  // to compare/search/copy.
+  const grouped = new Intl.NumberFormat('fr-FR').format(amount).replace(/[\u00A0\u202F]/g, ' ');
+  return `${grouped} Ar`;
 }
 
 /** Truncate a string to a max length with an ellipsis (card excerpts, previews). */

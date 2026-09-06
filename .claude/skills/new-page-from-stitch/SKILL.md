@@ -19,7 +19,10 @@ in `docs/checklist-implementation.md` is ⬜ for the current phase and ask which
    layout must match it, not improvise new copy.
 3. If the Stitch screen itself needs re-checking, read it via the Artifact/Stitch tools using
    the project URL in `docs/mockup-reference.md` — do not guess at visual details already
-   decided in the mockup.
+   decided in the mockup. If those tools aren't available in the current environment, use the
+   **`agy` (Antigravity)** CLI instead — it has a direct MCP connection to the ANGALY Stitch
+   project and can fetch/describe the live screen (`agy --print "<consigne>"` non-interactive,
+   or an interactive `agy` session from the repo root; see `.cursor/rules/006-phase-workflow.mdc`).
 4. Confirm every backend endpoint the page doc lists under "API endpoints consumed" already
    exists (check `docs/features/*.md` status) — if not, stop and flag it: a page cannot be
    wired to an endpoint that doesn't exist yet; scaffold the UI against mocked/MSW data in
