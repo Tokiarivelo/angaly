@@ -11,15 +11,22 @@ développeur, **avant toute implémentation**. Suivre ces étapes dans l'ordre :
 0. **Ouvrir `docs/mockup-reference.md`** — référence croisée obligatoire Page ↔ Maquette
    Stitch ↔ Section de spécification ↔ Phase. Localiser la ligne de la page/fonctionnalité
    concernée (ou l'ajouter si absente).
-1. **Consulter la maquette Stitch** (lien du projet + titre de l'écran depuis
-   `docs/mockup-reference.md`) — c'est la référence visuelle et de contenu à respecter.
-   **Pour toute intégration frontend** (scaffolding d'une page/feature `apps/web` depuis un
-   écran Stitch), utiliser en priorité la CLI **`agy` (Antigravity)** — elle dispose d'un
-   accès MCP direct au projet Stitch ANGALY et permet de relire l'écran généré (HTML/design)
-   pendant l'implémentation. Exemple : `agy --print "<consigne>"` (mode non-interactif) ou
-   une session `agy` interactive dans le dossier du repo. Si `agy` n'a pas la permission MCP
-   nécessaire en mode headless, l'exécuter en session interactive plutôt que de forcer
-   `--dangerously-skip-permissions` sans validation explicite de l'utilisateur.
+1. **Consulter la maquette Stitch réelle** (lien du projet + titre de l'écran depuis
+   `docs/mockup-reference.md`) — c'est la référence visuelle et de contenu à respecter, **pas**
+   le prompt texte `stitch-prompts/*.md` seul (celui-ci sert de mémo, mais ne reproduit pas
+   toujours fidèlement l'écran rendu : nombre de liens de nav, libellés exacts, structure des
+   sections, etc.).
+   **Pour toute écriture de JSX/TSX, CSS, classes ou styles côté `apps/web`** — scaffolding
+   d'une page/feature depuis un écran Stitch **ou simple retouche visuelle sur une page déjà
+   livrée** — utiliser **obligatoirement** la CLI **`agy` (Antigravity)** pour relire l'écran
+   réel avant/pendant l'implémentation : elle dispose d'un accès MCP direct au projet Stitch
+   ANGALY. Exemple : `agy --print "<consigne>"` (mode non-interactif) ou une session `agy`
+   interactive dans le dossier du repo. Si `agy` n'a pas la permission MCP nécessaire en mode
+   headless, l'exécuter en session interactive plutôt que de forcer
+   `--dangerously-skip-permissions` sans validation explicite de l'utilisateur ; à défaut,
+   utiliser directement les outils MCP Stitch (`get_screen` + capture d'écran) comme
+   solution de repli, mais ne jamais se contenter du seul prompt texte pour un détail visuel
+   déjà tranché dans la maquette.
 2. **Consulter `docs/checklist-implementation.md`** pour situer l'élément dans le périmètre
    global et connaître son statut actuel (✅ Fait · 🟡 Partiel · ⬜ À faire · 🔍 À vérifier).
 3. **Ouvrir la fiche dédiée** — `docs/pages/<slug>.md` pour une page frontend, ou

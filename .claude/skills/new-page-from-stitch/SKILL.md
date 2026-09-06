@@ -14,15 +14,20 @@ in `docs/checklist-implementation.md` is ⬜ for the current phase and ask which
 1. Read `docs/pages/<page-slug>.md` in full — route(s), Stitch reference, spec section,
    planned component tree, API endpoints consumed, Prisma models touched, acceptance
    checklist.
-2. Read the matching prompt file under `stitch-prompts/` (named in the page doc) to recall
-   the exact sections/copy/labels the mockup specifies — the implementation's content and
-   layout must match it, not improvise new copy.
-3. If the Stitch screen itself needs re-checking, read it via the Artifact/Stitch tools using
-   the project URL in `docs/mockup-reference.md` — do not guess at visual details already
-   decided in the mockup. If those tools aren't available in the current environment, use the
-   **`agy` (Antigravity)** CLI instead — it has a direct MCP connection to the ANGALY Stitch
-   project and can fetch/describe the live screen (`agy --print "<consigne>"` non-interactive,
-   or an interactive `agy` session from the repo root; see `.cursor/rules/006-phase-workflow.mdc`).
+2. Read the matching prompt file under `stitch-prompts/` (named in the page doc) as a content
+   memo only — it names the sections/copy/labels the mockup is supposed to have, but it is
+   **not** a substitute for the rendered screen and can omit or misdescribe real structural
+   details (nav link count, footer columns, number of grid tiles, stepper labels, etc.).
+3. **Mandatory, every time — not just when something seems unclear:** check the real Stitch
+   screen before writing any JSX/TSX, CSS, classes, or styles for this page, using the
+   **`agy` (Antigravity)** CLI first — it has a direct MCP connection to the ANGALY Stitch
+   project (`agy --print "<consigne>"` non-interactive, or an interactive `agy` session from
+   the repo root; see `.cursor/rules/006-phase-workflow.mdc`). If `agy` can't run
+   non-interactively in the current environment (headless MCP permission error), fall back to
+   the direct Stitch MCP tools (`mcp__stitch__get_screen` for the screenshot/HTML download
+   URLs, then inspect the image) rather than skipping the check. Never guess at a visual
+   detail the mockup already decided — this applies to revisions of already-shipped pages
+   too, not only first-time scaffolds.
 4. Confirm every backend endpoint the page doc lists under "API endpoints consumed" already
    exists (check `docs/features/*.md` status) — if not, stop and flag it: a page cannot be
    wired to an endpoint that doesn't exist yet; scaffold the UI against mocked/MSW data in

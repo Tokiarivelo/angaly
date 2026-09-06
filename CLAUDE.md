@@ -21,9 +21,14 @@ développeur, avant toute implémentation.** Suivre ces étapes dans l'ordre :
 
 0. **Ouvrir `docs/mockup-reference.md`** — référence croisée obligatoire Page ↔ Maquette
    Stitch ↔ Section de spécification ↔ Phase. Localiser la ligne concernée (ou l'ajouter).
-1. **Consulter la maquette Stitch** référencée (projet
-   https://stitch.withgoogle.com/projects/3703874896720765754 + prompt source dans
-   `stitch-prompts/`) — c'est la référence visuelle et de contenu à respecter.
+1. **Consulter la maquette Stitch réelle via `agy`** (projet
+   https://stitch.withgoogle.com/projects/3703874896720765754) — **obligatoire**, y compris
+   pour une simple retouche de JSX/TSX, CSS, classes ou styles sur une page déjà livrée. Le
+   prompt texte dans `stitch-prompts/` sert de mémo de contenu mais **ne remplace jamais**
+   l'écran Stitch rendu : structure, copy exacte, nombre d'éléments (nav, colonnes de footer,
+   cartes de catégories, étapes d'un stepper, etc.) doivent être vérifiés sur l'écran réel
+   avant d'écrire le moindre élément visuel. Voir règle absolue dédiée ci-dessous et
+   `.cursor/rules/006-phase-workflow.mdc`.
 2. **Consulter `docs/checklist-implementation.md`** pour situer l'élément dans le périmètre
    global et connaître son statut actuel.
 3. **Ouvrir la fiche dédiée** — `docs/pages/<slug>.md` (frontend) ou
@@ -57,30 +62,39 @@ développeur, avant toute implémentation.** Suivre ces étapes dans l'ordre :
    racine d'une feature
 7. **Architecture feature-sliced** — chaque feature dans `src/features/<name>/`
 8. **Composants UI purement présentationnels** — toute la logique dans les hooks
-9. **react-query** pour tous les appels API — jamais de `fetch` direct dans les composants
-10. **Zustand** pour les états globaux (panier, favoris, sidebar admin)
-11. **Zod** pour la validation des formulaires
+9. **Toujours utiliser `agy` (ou, à défaut, les outils MCP Stitch directs) pour vérifier
+   l'écran réel avant d'écrire du JSX/TSX, du CSS, des classes ou des styles** — que ce soit
+   pour une nouvelle page ou une retouche sur une page existante. Ne jamais s'appuyer
+   uniquement sur `stitch-prompts/*.md` pour la structure, la copy exacte ou le nombre
+   d'éléments visuels : ces prompts textuels dérivent parfois de l'écran réel sans le
+   reproduire fidèlement. Si `agy --print` échoue en mode headless (erreur de permission
+   MCP), utiliser une session `agy` interactive, ou à défaut les outils MCP Stitch
+   (`get_screen` + capture d'écran) — jamais deviner un détail visuel déjà tranché dans la
+   maquette.
+10. **react-query** pour tous les appels API — jamais de `fetch` direct dans les composants
+11. **Zustand** pour les états globaux (panier, favoris, sidebar admin)
+12. **Zod** pour la validation des formulaires
 
 ### Backend (apps/api)
 
-12. **Clean Architecture stricte** : Domain → Application → Infrastructure → Presentation
-13. **Le Domain ne dépend de rien** (pas Prisma, pas NestJS, pas `@angaly/storage`)
-14. **Les Controllers délèguent** aux use-cases — zéro logique métier dans les controllers
-15. **DTOs validés** avec class-validator (+ Zod pour les schémas de formulaires côté web)
-16. **Guards au niveau Controller** — jamais dans les use-cases
+13. **Clean Architecture stricte** : Domain → Application → Infrastructure → Presentation
+14. **Le Domain ne dépend de rien** (pas Prisma, pas NestJS, pas `@angaly/storage`)
+15. **Les Controllers délèguent** aux use-cases — zéro logique métier dans les controllers
+16. **DTOs validés** avec class-validator (+ Zod pour les schémas de formulaires côté web)
+17. **Guards au niveau Controller** — jamais dans les use-cases
 
 ### Angaly Pattern Studio (IA + Pattern Engine)
 
-17. **L'IA (`apps/ai-service`) ne produit jamais de géométrie de patron** — uniquement des
+18. **L'IA (`apps/ai-service`) ne produit jamais de géométrie de patron** — uniquement des
     suggestions de paramètres, toujours soumises à validation humaine/couturière
-18. **`packages/pattern-engine` est déterministe et sans dépendance externe** — voir
+19. **`packages/pattern-engine` est déterministe et sans dépendance externe** — voir
     `.cursor/rules/007-pattern-engine.mdc`
-19. **`apps/ai-service` n'est appelé que par le module `ai-inference`** côté NestJS —
+20. **`apps/ai-service` n'est appelé que par le module `ai-inference`** côté NestJS —
     jamais directement depuis `apps/web`
 
 ### Médias
 
-20. **Tout média passe par MinIO via `@angaly/storage`**, jamais de stockage local ou en
+21. **Tout média passe par MinIO via `@angaly/storage`**, jamais de stockage local ou en
     base — voir `.cursor/rules/009-storage-minio.mdc`
 
 ## Règle tests — s'applique toujours
