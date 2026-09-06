@@ -52,6 +52,13 @@ describe('parseOpeningHours', () => {
     expect(() => parseOpeningHours(raw)).toThrow('Atelier.openingHoursJson.monday is missing or malformed');
   });
 
+  it('throws when a slot has a non-string open/close field', () => {
+    const raw = validRawHours();
+    raw.monday = { isOpen: true, slots: [{ open: 900, close: '18:00' }] as never };
+
+    expect(() => parseOpeningHours(raw)).toThrow('Atelier.openingHoursJson.monday is missing or malformed');
+  });
+
   it('throws when isOpen is not a boolean', () => {
     const raw = validRawHours();
     (raw as unknown as Record<string, unknown>)['monday'] = { isOpen: 'yes', slots: [] };

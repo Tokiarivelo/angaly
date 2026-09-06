@@ -1,6 +1,6 @@
 # Feature — `blog`
 
-**Statut : ⬜ À faire.** Phase 1 — Présence digitale.
+**Statut : ✅ Fait.** Phase 1 — Présence digitale.
 
 ## Objet
 
@@ -72,8 +72,25 @@ comme pour toute donnée saisie hors back-office avant Phase 6 (voir
 
 ## Vérification
 
-- [ ] `list-blog-posts` et `get-blog-post-by-slug` testés unitairement (filtres, non
+- [x] `list-blog-posts` et `get-blog-post-by-slug` testés unitairement (filtres, non
       publié exclu, cas non trouvé)
-- [ ] `list-related-posts` testé (exclusion de l'article courant, limite respectée)
-- [ ] `blog-posts.controller.spec.ts` couvre les codes 200/404
-- [ ] `docs/checklist-implementation.md` : `blog` passé à ✅
+- [x] `list-related-posts` testé (exclusion de l'article courant, limite respectée/défaut 3)
+- [x] `blog-posts.controller.spec.ts` couvre les codes 200/400/404
+- [x] Testé manuellement de bout en bout contre Postgres réel : 2 articles publiés + 1 non
+      publié insérés, seuls les publiés apparaissent sur la liste (sans `content`), le détail
+      expose le corps complet, le non publié renvoie 404, `related` exclut l'article courant
+- [x] `docs/checklist-implementation.md` : `blog` passé à ✅
+
+## Note d'implémentation
+
+- Comme `collections`, la liste (`GET /api/blog-posts`) et les articles similaires
+  (`GET /api/blog-posts/:slug/related`) n'exposent jamais `content` (corps complet) —
+  seul le détail (`GET /api/blog-posts/:slug`) le charge, via un second `select` Prisma
+  dédié (`BLOG_POST_DETAIL_SELECT`) plutôt qu'un `include` non scopé.
+- `BlogPostAuthorDto` n'expose que `{ id, email }` : `User` est un modèle
+  d'identité/auth, pas un profil éditorial (pas de nom affiché/bio/avatar) — voir
+  `docs/pages/journal-article.md`, qui documente déjà cette limite et reporte tout besoin de
+  bio d'auteur à un futur champ dédié plutôt que de détourner `User`.
+- `list-related-posts` résout d'abord l'article courant (`findPublishedBySlug`) pour obtenir
+  son `categoryId`, puis appelle `listRelated` — réutilise la même logique "publié
+  uniquement" que le reste du module au lieu de la dupliquer.
