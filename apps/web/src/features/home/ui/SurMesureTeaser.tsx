@@ -14,20 +14,29 @@ export function SurMesureTeaser({ content }: { content: HomeContent['surMesure']
         <p className="mt-3 text-sm tracking-[0.2em] text-white/70 uppercase">{content.subheading}</p>
 
         <ol className="mt-12 flex flex-wrap items-start justify-center gap-x-2 gap-y-8">
-          {content.steps.map((step, index) => (
-            <li key={step.label} className="flex items-start">
-              <div className="flex w-28 flex-col items-center gap-2 text-center">
-                <span className="border-angaly-champagne/60 font-heading text-angaly-champagne flex h-9 w-9 items-center justify-center rounded-full border text-sm">
-                  {index + 1}
-                </span>
-                <span className="font-heading text-base">{step.label}</span>
-                <span className="text-xs text-white/60">{step.description}</span>
-              </div>
-              {index < content.steps.length - 1 && (
-                <span aria-hidden="true" className="mt-4 h-px w-6 flex-shrink-0 bg-white/30 sm:w-10" />
-              )}
-            </li>
-          ))}
+          {content.steps.map((step, index) => {
+            const isEndpoint = index === 0 || index === content.steps.length - 1;
+            return (
+              <li key={step.label} className="flex items-start">
+                <div className="flex w-28 flex-col items-center gap-2 text-center">
+                  <span
+                    className={`font-heading flex h-9 w-9 items-center justify-center rounded-full border text-sm ${
+                      isEndpoint
+                        ? 'border-angaly-champagne text-angaly-champagne'
+                        : 'border-angaly-ivory/40 text-angaly-ivory'
+                    }`}
+                  >
+                    {index + 1}
+                  </span>
+                  <span className="font-heading text-base">{step.label}</span>
+                  <span className="text-xs text-white/60">{step.description}</span>
+                </div>
+                {index < content.steps.length - 1 && (
+                  <span aria-hidden="true" className="mt-4 h-px w-6 flex-shrink-0 bg-white/30 sm:w-10" />
+                )}
+              </li>
+            );
+          })}
         </ol>
 
         <div className="mt-14 flex justify-center">

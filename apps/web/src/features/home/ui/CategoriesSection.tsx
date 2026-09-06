@@ -2,27 +2,35 @@ import Link from 'next/link';
 
 import type { HomeContent } from '../hooks/useHomeContent';
 
-/** stitch-prompts/01-home.md "SECTION 4 — CATEGORY CARDS", "Univers" headline + 4-tile grid. */
+/**
+ * stitch-prompts/01-home.md "SECTION 4 — CATEGORY CARDS" / real mockup
+ * "Univers" — a horizontal snap-scroll carousel, not a static grid.
+ */
 export function CategoriesSection({ content }: { content: HomeContent['categories'] }) {
   return (
-    <section className="mx-auto max-w-7xl px-6 py-20">
-      <h2 className="font-heading text-4xl text-angaly-navy">{content.headline}</h2>
+    <section className="overflow-hidden py-24">
+      <div className="mx-auto mb-12 max-w-7xl px-6 md:px-16">
+        <h2 className="font-heading text-4xl tracking-wide text-angaly-navy">{content.headline}</h2>
+      </div>
 
-      <div className="mt-10 grid gap-4 sm:grid-cols-2 lg:grid-cols-4">
+      <div className="flex w-full snap-x snap-mandatory gap-4 overflow-x-auto px-6 pb-8 [scrollbar-width:none] md:px-16 [&::-webkit-scrollbar]:hidden">
         {content.items.map((category) => (
           <Link
             key={category.label}
             href={category.href}
-            className="group relative aspect-[3/4] overflow-hidden bg-angaly-warm-ivory"
+            className="group relative h-[500px] w-72 flex-none snap-start overflow-hidden md:w-96"
           >
             <div
               aria-hidden="true"
-              className="absolute inset-0 bg-gradient-to-b from-angaly-soft-navy to-angaly-navy transition-transform duration-500 group-hover:scale-105"
+              className="h-full w-full bg-gradient-to-br from-angaly-soft-navy to-angaly-navy transition-transform duration-700 group-hover:scale-105"
             />
-            <div aria-hidden="true" className="absolute inset-x-0 top-0 h-1/3 bg-gradient-to-b from-black/50" />
-            <p className="font-heading absolute inset-x-0 top-8 text-center text-lg tracking-[0.2em] text-white uppercase">
-              {category.label}
-            </p>
+            <div
+              aria-hidden="true"
+              className="absolute inset-0 bg-angaly-navy/20 transition-colors duration-300 group-hover:bg-angaly-navy/40"
+            />
+            <div className="absolute inset-0 flex items-center justify-center">
+              <h3 className="font-heading text-3xl tracking-widest text-white uppercase">{category.label}</h3>
+            </div>
           </Link>
         ))}
       </div>

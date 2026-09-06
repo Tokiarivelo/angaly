@@ -29,7 +29,7 @@ export function Header() {
               key={link.href}
               href={link.href}
               aria-current={link.href === ROUTES.home ? 'page' : undefined}
-              className="border-b border-transparent pb-1 text-xs tracking-wide text-white/85 transition-colors hover:text-angaly-champagne aria-[current=page]:border-angaly-champagne aria-[current=page]:text-angaly-champagne"
+              className="border-b border-transparent pb-1 text-xs tracking-widest text-angaly-ivory/80 uppercase transition-all hover:text-angaly-champagne hover:opacity-100 aria-[current=page]:border-angaly-champagne aria-[current=page]:text-angaly-champagne aria-[current=page]:opacity-100"
             >
               {link.label}
             </Link>
@@ -41,10 +41,10 @@ export function Header() {
         </Link>
 
         <div className="col-start-3 flex items-center justify-end gap-4">
-          <button type="button" aria-label="Panier" className="text-white/85 hover:text-white">
+          <button type="button" aria-label="Panier" className="text-angaly-ivory transition-colors hover:text-angaly-champagne">
             <ShoppingBag className="h-5 w-5" aria-hidden="true" />
           </button>
-          <button type="button" aria-label="Mon compte" className="text-white/85 hover:text-white">
+          <button type="button" aria-label="Mon compte" className="text-angaly-ivory transition-colors hover:text-angaly-champagne">
             <User className="h-5 w-5" aria-hidden="true" />
           </button>
         </div>

@@ -15,7 +15,7 @@ export function MaisonPresentationSection({ content }: { content: HomeContent['m
             aria-hidden="true"
             className="aspect-[3/4] bg-gradient-to-br from-angaly-champagne to-angaly-gold-light"
           />
-          <div aria-hidden="true" className="border-angaly-champagne/50 pointer-events-none absolute -inset-4 border" />
+          <div aria-hidden="true" className="border-angaly-ivory/30 pointer-events-none absolute inset-4 border" />
         </div>
         <div>
           <p className="text-xs tracking-[0.3em] text-angaly-navy uppercase">{content.eyebrow}</p>

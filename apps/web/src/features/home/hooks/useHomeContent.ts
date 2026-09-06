@@ -41,7 +41,7 @@ const HOME_CONTENT: HomeContent = {
       { label: 'Mariage', href: ROUTES.creations },
       { label: 'Costumes', href: ROUTES.creations },
       { label: 'Soirée', href: ROUTES.creations },
-      { label: 'Prêt-à-porter', href: ROUTES.pretAPorter },
+      { label: 'Sur Mesure', href: ROUTES.surMesure },
     ],
   },
   surMesure: {

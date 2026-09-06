@@ -134,3 +134,24 @@ relation), `Category`.
   pas encore (ex. `/sur-mesure`, `/pattern-studio`, `/prendre-rendez-vous`) — 404 attendu
   jusqu'à ce que ces pages soient traitées, conforme à la consigne de ne jamais laisser un
   lien mort/absent en prod.
+- **Passage de fidélité (2026-09-07)** : la première implémentation avait été construite à
+  partir de `stitch-prompts/01-home.md` seul, sans jamais relire l'écran Stitch réel — ce qui
+  a introduit des écarts structurels réels (nav à 10 liens au lieu de 5, logo non centré,
+  footer à 4 colonnes avec icônes sociales au lieu de 3, section "Univers" en grille statique
+  au lieu d'un carrousel horizontal avec un 4ᵉ item "Sur Mesure" et non "Prêt-à-porter",
+  bandeau "Pattern Studio" plein-écran au lieu d'une carte encadrée, etc.). Corrigé en
+  récupérant le HTML généré réel via `agy` (StitchMCP `get_screen` sur l'écran
+  `f4fa1f6a3d0241cd9d1c5e003cbc1c38`, `htmlCode.downloadUrl`) et en traduisant ses classes
+  Tailwind 1:1 vers les tokens `angaly-*` existants (mapping exact : `primary`→`angaly-navy`,
+  `primary.dark`→`angaly-navy-dark`, `primary.container`→`angaly-navy-blue`,
+  `surface`→`angaly-ivory`, `surface.warm`→`angaly-warm-ivory`, `accent.champagne`→
+  `angaly-champagne`, `accent.gold`→`angaly-gold`, `neutral.slate`→`angaly-slate`,
+  `neutral.muted`→`angaly-warm-gray`). Voir `.claude/skills/new-page-from-stitch/SKILL.md` et
+  `.cursor/rules/006-phase-workflow.mdc` — cette vérification via `agy` est désormais
+  obligatoire pour toute écriture de JSX/CSS, pas seulement au premier scaffold.
+- La section "La Une" (aperçu sur la home) n'a pas pu être vérifiée visuellement en local car
+  la base de dev ne contient aucune création (`GET /api/creations` renvoie `data: []`) —
+  écart d'environnement/seed déjà documenté (`packages/database/prisma/seed.ts` vs
+  `apps/api/.env`), hors périmètre de ce correctif. Le JSX a été écrit pour reproduire
+  exactement la grille asymétrique réelle (12 colonnes, 7/5, `h-[800px]`) ; à re-vérifier
+  visuellement une fois la base seedée.

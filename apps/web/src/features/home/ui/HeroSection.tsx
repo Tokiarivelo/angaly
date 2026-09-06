@@ -19,17 +19,22 @@ export function HeroSection({ content }: { content: HomeContent['hero'] }) {
       <div className="relative z-10 mx-auto w-full max-w-7xl px-6 pb-20">
         <p className="text-xs tracking-[0.3em] text-white/80 uppercase">{content.eyebrow}</p>
         <h1 className="font-heading mt-4 text-6xl text-white sm:text-8xl">{content.headline}</h1>
-        <p className="font-heading mt-2 text-2xl text-white/90 italic">{content.subheading}</p>
+        <p className="font-heading mt-2 text-2xl text-angaly-champagne italic">{content.subheading}</p>
 
         <div className="mt-8 flex flex-wrap gap-4">
-          <Button asChild variant="secondary" size="lg" className="border-white bg-white text-angaly-navy hover:bg-white/90">
+          <Button
+            asChild
+            variant="secondary"
+            size="lg"
+            className="border-white bg-white text-angaly-navy hover:bg-angaly-warm-ivory"
+          >
             <Link href={ROUTES.prendreRendezVous}>Prendre rendez-vous</Link>
           </Button>
           <Button
             asChild
             variant="secondary"
             size="lg"
-            className="border-white/70 text-white hover:bg-white hover:text-angaly-navy"
+            className="border-white text-white hover:bg-white hover:text-angaly-navy"
           >
             <Link href={ROUTES.creations}>Découvrir nos créations</Link>
           </Button>

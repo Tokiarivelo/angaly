@@ -28,51 +28,58 @@ export function LaUneSection({
   const rest = preview.slice(1);
 
   return (
-    <section className="mx-auto max-w-7xl px-6 py-20">
-      <div className="flex flex-wrap items-baseline justify-between gap-4">
-        <h2 className="font-heading text-4xl text-angaly-navy sm:text-5xl">{content.headline}</h2>
+    <section className="mx-auto max-w-7xl px-6 py-24 md:px-16">
+      <div className="border-angaly-border mb-16 flex items-center justify-between border-b pb-8">
+        <h2 className="font-heading text-4xl tracking-wide text-angaly-navy md:text-5xl">{content.headline}</h2>
         <Link
           href={ROUTES.laUne}
-          className="inline-flex items-center gap-2 text-xs tracking-wide text-angaly-navy uppercase hover:text-angaly-champagne"
+          className="text-angaly-soft-navy hover:text-angaly-navy hidden items-center text-xs tracking-widest uppercase transition-colors md:flex"
         >
           {content.cta}
-          <ArrowRight className="h-3.5 w-3.5" aria-hidden="true" />
+          <ArrowRight className="ml-2 h-3.5 w-3.5" aria-hidden="true" />
         </Link>
       </div>
-      <div className="bg-angaly-slate/20 mt-6 h-px w-full" aria-hidden="true" />
 
-      <div className="mt-12 grid gap-6 sm:grid-cols-3">
-        <CreationTile creation={hero} className="sm:col-span-2 sm:aspect-[16/10]" />
+      <div className="grid grid-cols-1 gap-8 md:h-[800px] md:grid-cols-12">
+        <article className="group relative h-[600px] overflow-hidden bg-angaly-warm-ivory md:col-span-7 md:h-full">
+          <div
+            aria-hidden="true"
+            className="h-full w-full bg-gradient-to-br from-angaly-royal-navy to-angaly-navy-blue transition-transform duration-700 group-hover:scale-105"
+          />
+          <div
+            aria-hidden="true"
+            className="from-angaly-navy/80 absolute inset-0 bg-gradient-to-t via-transparent to-transparent opacity-0 transition-opacity duration-500 group-hover:opacity-100"
+          />
+          <div className="absolute bottom-0 left-0 w-full translate-y-4 p-8 text-white transition-transform duration-500 group-hover:translate-y-0">
+            <p className="text-xs tracking-widest uppercase opacity-80">Nouveau</p>
+            <h3 className="font-heading mt-2 text-4xl">{hero.name}</h3>
+            <Link
+              href={`/creations/${hero.slug}`}
+              className="hover:text-angaly-champagne hover:border-angaly-champagne mt-4 inline-flex items-center border-b border-white pb-1 text-sm tracking-widest uppercase transition-colors"
+            >
+              Découvrir
+            </Link>
+          </div>
+        </article>
 
         {rest.length > 0 && (
-          <div className="flex flex-col gap-6">
+          <div className="flex h-[600px] flex-col gap-8 md:col-span-5 md:h-full">
             {rest.map((creation) => (
-              <CreationTile key={creation.id} creation={creation} className="aspect-[16/9]" />
+              <article key={creation.id} className="group relative flex-1 overflow-hidden bg-angaly-warm-ivory">
+                <div
+                  aria-hidden="true"
+                  className="h-full w-full bg-gradient-to-br from-angaly-royal-navy to-angaly-navy-blue transition-transform duration-700 group-hover:scale-105"
+                />
+                <div className="bg-angaly-navy/40 absolute bottom-0 left-0 w-full p-6 text-white backdrop-blur-sm">
+                  <Link href={`/creations/${creation.slug}`} className="font-heading text-2xl">
+                    {creation.name}
+                  </Link>
+                </div>
+              </article>
             ))}
           </div>
         )}
       </div>
     </section>
-  );
-}
-
-function CreationTile({ creation, className = '' }: { creation: CreationDto; className?: string }) {
-  return (
-    <article className={`group relative overflow-hidden bg-angaly-warm-ivory ${className}`}>
-      <div
-        aria-hidden="true"
-        className="absolute inset-0 bg-gradient-to-br from-angaly-royal-navy to-angaly-navy-blue transition-transform duration-500 group-hover:scale-105"
-      />
-      <div aria-hidden="true" className="absolute inset-x-0 bottom-0 h-2/3 bg-gradient-to-t from-black/70" />
-      <div className="absolute inset-x-0 bottom-0 p-6 text-white">
-        <p className="font-heading text-xl">{creation.name}</p>
-        <Link
-          href={`/creations/${creation.slug}`}
-          className="mt-2 inline-block text-xs tracking-wide uppercase hover:underline"
-        >
-          Découvrir →
-        </Link>
-      </div>
-    </article>
   );
 }
