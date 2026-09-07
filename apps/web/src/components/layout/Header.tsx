@@ -1,5 +1,8 @@
+'use client';
+
 import { ShoppingBag, User } from 'lucide-react';
 import Link from 'next/link';
+import { usePathname } from 'next/navigation';
 
 import { ROUTES } from '@/lib/routes';
 
@@ -20,6 +23,8 @@ const NAV_LINKS = [
 ];
 
 export function Header() {
+  const pathname = usePathname();
+
   return (
     <header className="sticky top-0 z-50 bg-angaly-navy text-white">
       <div className="mx-auto grid h-16 max-w-7xl grid-cols-[1fr_auto_1fr] items-center gap-6 px-6">
@@ -28,7 +33,7 @@ export function Header() {
             <Link
               key={link.href}
               href={link.href}
-              aria-current={link.href === ROUTES.home ? 'page' : undefined}
+              aria-current={pathname === link.href ? 'page' : undefined}
               className="border-b border-transparent pb-1 text-xs tracking-widest text-angaly-ivory/80 uppercase transition-all hover:text-angaly-champagne hover:opacity-100 aria-[current=page]:border-angaly-champagne aria-[current=page]:text-angaly-champagne aria-[current=page]:opacity-100"
             >
               {link.label}

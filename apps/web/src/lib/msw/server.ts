@@ -1,6 +1,7 @@
 import { setupServer } from 'msw/node';
 
 import { homeHandlers } from './handlers/home.handlers';
+import { laUneHandlers } from './handlers/la-une.handlers';
 
 /** Registered here per feature as each one starts calling a real/mocked API — see docs/testing.md. */
-export const server = setupServer(...homeHandlers);
+export const server = setupServer(...homeHandlers, ...laUneHandlers);

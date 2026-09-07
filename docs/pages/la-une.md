@@ -1,6 +1,6 @@
 # Page — `la-une`
 
-**Statut : ⬜ À faire.** Phase 1 — Présence digitale.
+**Statut : ✅ Fait.** Phase 1 — Présence digitale.
 
 ## Objet
 
@@ -26,25 +26,29 @@ de filtre par pilules (état de la pilule active) reste un Client Component isol
 ```
 apps/web/src/features/la-une/
   ui/
-    LaUnePage.tsx              → orchestre header éditorial + grille + CTA, JSX + hooks uniquement
-    LaUneHeader.tsx             → eyebrow « ÉDITORIAL » + titre serif + sous-titre italique
-    FeaturedHeroItem.tsx        → item dominant plein cadre (Création du mois / Collection du moment)
-    EditorialGrid.tsx           → grille masonry asymétrique (6 à 10 items, ratios mixtes)
-    EditorialGridItem.tsx       → carte item (photo, catégorie, titre, description, date, lien)
-    StorySnippetCard.tsx        → variante « story » 2 colonnes (photo + récit) pour 1-2 items
-    ContentTypeFilterBar.tsx    → 'use client' (pilules Tout/Création du mois/.../Coulisses)
-    ClosingCtaBand.tsx
+    LaUnePage.tsx              → orchestre header + filtre + hero + grille + CTA, JSX + hooks uniquement
+    LaUneHeader.tsx             → eyebrow « Éditorial » + titre serif + sous-titre italique
+    FeaturedHeroItem.tsx        → item dominant plein cadre 70vh/85vh (Création du mois / Collection du moment)
+    EditorialGrid.tsx           → grille masonry 12-col (rythme large 7col / small 5col décalé / full 12col)
+    EditorialGridItem.tsx       → carte item, légende SOUS l'image (photo, catégorie, titre, description, date, lien)
+    ContentTypeFilterBar.tsx    → 'use client' (pilules Tout/Création du mois/Collection du moment/Sur Mesure/Coulisses)
+    ClosingCtaBand.tsx          → bande de fermeture bg navy-blue, 2 CTA
   hooks/
     useLaUneItems.ts            → react-query sur les créations `isFeatured=true`, tri par featuredFrom
     useContentTypeFilter.ts     → état de la pilule active (filtrage client, pas de refetch serveur)
   api/
-    la-une.api.ts                → useLaUneItemsQuery
+    la-une.api.ts                → useFeaturedCreationsQuery / useFeaturedCollectionQuery
   consts/
-    content-type-filters.const.ts → pilules (Tout, Création du mois, Collection du moment, Coup de cœur, Mariage, Costume, Événement, Coulisses)
+    content-type-filters.const.ts → pilules réelles (Tout, Création du mois, Collection du moment, Sur Mesure, Coulisses)
+  utils/
+    buildLaUneItems.ts            → dérive hero + grille depuis créations/collection (pure, testé)
   types/
     la-une-item.types.ts
   __tests__/
+    buildLaUneItems.test.ts
+    useContentTypeFilter.test.ts
     useLaUneItems.test.ts
+    ContentTypeFilterBar.test.tsx
     LaUnePage.test.tsx
   index.ts
 ```
@@ -66,27 +70,39 @@ contiennent que du JSX + appels de hooks.
 
 ## Points d'attention
 
-- Le schéma Prisma ne modélise pas les « types de contenu » éditoriaux du §6.3 (Création du
-  mois, Collection du moment, Coup de cœur, Mariage, Costume, Événement, Coulisses) comme un
-  champ dédié sur `Creation` — seuls `isFeatured` + la fenêtre `featuredFrom`/`featuredUntil`
-  existent. En Phase 1, dériver l'étiquette affichée depuis `category`/`collection` quand
-  c'est pertinent (Mariage, Costume) et traiter les autres libellés comme des filtres
-  purement visuels/client, non branchés à un vrai filtre serveur. Si la maison a besoin d'une
-  taxonomie éditoriale complète, prévoir un champ dédié (ex. `featuredTag`) dans une
-  migration ultérieure, à documenter dans `docs/features/creations.md`.
+- Le schéma Prisma ne modélise pas de « types de contenu » éditoriaux comme un champ dédié
+  sur `Creation` — seuls `isFeatured` + la fenêtre `featuredFrom`/`featuredUntil` existent. La
+  vraie barre de filtre de l'écran Stitch réel (`aa4b25a90d8d44c1975e8b86c4898854`, relu via
+  `agy`/StitchMCP `get_screen`) n'a que 5 pilules — Tout, Création du mois, Collection du
+  moment, Sur Mesure, Coulisses — pas les 8 implicites de `stitch-prompts/02-la-une.md` seul.
+  « Mariage »/« Costume » restent dérivés de `category.name` pour l'étiquette affichée sur
+  chaque carte, mais « Sur Mesure »/« Coulisses » sont des filtres purement visuels sans
+  donnée réelle qui les alimente pour l'instant.
+- **Pas de composant « story » 2 colonnes** : l'écran réel ne montre aucune carte de ce type
+  (contrairement à ce que `stitch-prompts/02-la-une.md` seul suggérait) — la grille masonry
+  réelle est un rythme fixe (grand item 7 colonnes, petit item 5 colonnes décalé, item pleine
+  largeur 21:9), reproduit par `EditorialGrid.tsx`/`EditorialGridItem.tsx` avec une légende
+  toujours sous l'image, jamais en surimpression.
 - Garder un `limit` bas côté API (8 à 10 items) : la Une doit rester curatée, jamais une
   liste paginée infinie.
-- Image de l'item héros en LCP : `next/image` avec `priority`, pas de lazy-loading dessus.
-- Contenu de l'en-tête (« ÉDITORIAL », titre, sous-titre) suit le même sort que `home` :
-  valeurs par défaut codées en dur dans `useLaUneItems.ts`/consts en attendant `content`
-  (Phase 6), TODO explicite pointant vers cette fiche.
+- Image de l'item héros en LCP : `next/image` avec `priority` sera branché quand la vraie
+  photographie existera (Phase 6/contenu) — un dégradé de substitution tient sa place pour
+  l'instant, comme sur `home`.
+- Contenu de l'en-tête (« Éditorial », titre, sous-titre) suit le même sort que `home` :
+  valeurs par défaut codées en dur dans `LaUneHeader.tsx` en attendant `content` (Phase 6),
+  TODO explicite pointant vers cette fiche.
+- Le bandeau CTA de fermeture réel (`ClosingCtaBand.tsx`) porte les boutons « Prendre
+  rendez-vous » et « Découvrir l'E-boutique » (pas « Voir toutes nos créations », qui vient
+  du prompt texte seul) — le second pointe vers `/pret-a-porter`, route boutique la plus
+  proche existante en attendant une éventuelle route e-boutique dédiée.
 
 ## Checklist d'acceptation
 
-- [ ] Item héros + grille masonry asymétrique fidèles à `stitch-prompts/02-la-une.md` (pas de grille e-commerce uniforme)
-- [ ] Barre de filtre par pilules fonctionnelle (filtrage client, pilule active soulignée champagne)
-- [ ] Au moins une carte « story » 2 colonnes rendue quand une création la fournit
-- [ ] Bande CTA de fermeture avec les deux boutons (Prendre rendez-vous / Voir toutes nos créations)
-- [ ] `<title>`/meta description définis (spec §70)
-- [ ] Tests : `useLaUneItems.test.ts`, `LaUnePage.test.tsx`
-- [ ] `docs/checklist-implementation.md` et `docs/mockup-reference.md` mis à jour à ✅
+- [x] Item héros + grille masonry asymétrique fidèles à l'écran Stitch réel (pas de grille e-commerce uniforme)
+- [x] Barre de filtre par pilules fonctionnelle (filtrage client, pilule active soulignée champagne)
+- [x] Bande CTA de fermeture avec les deux boutons (Prendre rendez-vous / Découvrir l'E-boutique)
+- [x] `<title>`/meta description définis (spec §70)
+- [x] Tests : `buildLaUneItems.test.ts`, `useContentTypeFilter.test.ts`, `useLaUneItems.test.ts`,
+      `ContentTypeFilterBar.test.tsx`, `LaUnePage.test.tsx` — 13 tests, 98%+/89%+/100%/98%+ de
+      couverture (stmts/branches/fonctions/lignes) sur `la-une/`
+- [x] `docs/checklist-implementation.md` et `docs/mockup-reference.md` mis à jour à ✅
