@@ -275,7 +275,36 @@ async function main() {
         MediaEntityType.ATELIER,
         atelier.id,
       );
-      console.log("✅ Photo de l'atelier téléchargée et hébergée sur MinIO");
+      // atelier-detail's "L'atelier en images" gallery needs more than one photo to avoid
+      // cycling the same cover shot across every tile — see docs/pages/atelier-detail.md.
+      await attachPhoto(
+        storage,
+        'ateliers',
+        '1588618777461-81fe15d547be',
+        "Bobines de fil — l'atelier Antananarivo Centre",
+        MediaEntityType.ATELIER,
+        atelier.id,
+        1,
+      );
+      await attachPhoto(
+        storage,
+        'ateliers',
+        '1739127871640-044ef7c5f131',
+        "Détail de broderie — l'atelier Antananarivo Centre",
+        MediaEntityType.ATELIER,
+        atelier.id,
+        2,
+      );
+      await attachPhoto(
+        storage,
+        'ateliers',
+        '1457972657980-4c9fddebec8d',
+        "Mains d'une couturière au travail — l'atelier Antananarivo Centre",
+        MediaEntityType.ATELIER,
+        atelier.id,
+        3,
+      );
+      console.log("✅ Photos de l'atelier téléchargées et hébergées sur MinIO");
     } catch (error) {
       console.warn(
         '⚠️  Seed média ignoré (MinIO ou réseau indisponible) — les pages afficheront des dégradés de substitution.',
