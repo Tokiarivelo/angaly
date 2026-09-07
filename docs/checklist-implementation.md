@@ -49,7 +49,7 @@ phase n'a pas été traitée en session dédiée (voir `.cursor/rules/006-phase-
 - [x] ✅ **a-propos** — Histoire de la maison
 - [x] ✅ **nos-ateliers-liste** — Liste des ateliers + carte
 - [x] ✅ **atelier-detail** — Fiche détail d'un atelier
-- [ ] ⬜ **contact** — Page de contact
+- [x] ✅ **contact** — Page de contact
 - [ ] ⬜ **journal-liste** — Blog/Journal, liste
 - [ ] ⬜ **journal-article** — Article de blog
 - [ ] ⬜ **page-404** — Page 404

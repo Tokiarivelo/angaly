@@ -26,7 +26,7 @@
 | a-propos                        | `docs/pages/a-propos.md`               | `stitch-prompts/21-a-propos.md`                    | ANGALY — Notre Histoire (À propos)            | §39-40        | ✅     |
 | nos-ateliers-liste               | `docs/pages/nos-ateliers-liste.md`     | `stitch-prompts/19-nos-ateliers-liste.md`          | ANGALY — Nos Ateliers (Workshops & Locations) | §37-38        | ✅     |
 | atelier-detail                    | `docs/pages/atelier-detail.md`         | `stitch-prompts/20-atelier-detail.md`              | ANGALY — Atelier Antananarivo Centre (Detail) | §37           | ✅     |
-| contact                            | `docs/pages/contact.md`                | `stitch-prompts/24-contact.md`                     | ANGALY — Contactez-nous                       | §92           | ⬜     |
+| contact                            | `docs/pages/contact.md`                | `stitch-prompts/24-contact.md`                     | ANGALY — Contactez-nous                       | §92           | ✅     |
 | journal-liste                       | `docs/pages/journal-liste.md`          | `stitch-prompts/22-journal-liste.md`               | ANGALY — Le Journal (Editorial Listing)       | §43           | ⬜     |
 | journal-article                      | `docs/pages/journal-article.md`        | `stitch-prompts/23-journal-article.md`             | ANGALY — Article : Choisir sa robe de mariée  | §44           | ⬜     |
 | page-404                              | `docs/pages/page-404.md`               | `stitch-prompts/30-page-404-et-composants-mobiles.md` | ANGALY — Page non trouvée (404)            | §94           | ⬜     |

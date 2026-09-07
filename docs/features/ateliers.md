@@ -72,6 +72,13 @@ forme exacte (créneaux par jour, liste de services) doit être définie une foi
 et par le futur calcul de disponibilité de `appointments` — jamais un `Record<string, unknown>`
 laissé libre côté DTO (règle absolue #2).
 
+`POST /api/ateliers/contact-messages` (décision d'architecture de `docs/pages/contact.md`
+pour la soumission du formulaire de contact) **n'est pas implémenté** — aucun modèle
+`ContactMessage`, aucun use-case, aucun controller. Le frontend (`contact`) le mocke
+entièrement via MSW en attendant. À construire ici (use-case simple, envoi d'e-mail/alerte
+interne sans forcément écrire en base) ou dans un futur module dédié si un historique
+côté back-office est requis — documenter alors ce choix ici.
+
 ## Vérification
 
 - [x] `get-atelier-by-slug` testé (cas trouvé/non trouvé, horaires parsés correctement)
