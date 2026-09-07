@@ -20,7 +20,7 @@
 | home                          | `docs/pages/home.md`                   | `stitch-prompts/01-home.md`                        | ANGALY — Maison de Couture Homepage           | §5            | ✅     |
 | la-une                        | `docs/pages/la-une.md`                 | `stitch-prompts/02-la-une.md`                      | ANGALY — La Une (Editorial Showcase)          | §6            | ✅     |
 | nos-creations-galerie         | `docs/pages/nos-creations-galerie.md`  | `stitch-prompts/03-nos-creations-galerie.md`       | ANGALY — Nos Créations (Gallery Portfolio)    | §7            | 🟡     |
-| creation-detail                | `docs/pages/creation-detail.md`        | `stitch-prompts/04-creation-detail.md`             | ANGALY — Robe Éternelle (Detail Page)         | §8            | ⬜     |
+| creation-detail                | `docs/pages/creation-detail.md`        | `stitch-prompts/04-creation-detail.md`             | ANGALY — Robe Éternelle (Detail Page)         | §8            | 🟡     |
 | collections-liste              | `docs/pages/collections-liste.md`      | `stitch-prompts/06-collections-liste.md`           | ANGALY — Nos Collections (Index Editorial)    | §10           | ⬜     |
 | collection-detail               | `docs/pages/collection-detail.md`      | `stitch-prompts/07-collection-detail.md`           | ANGALY — Collection Éternelle (Detail Page)   | §10           | ⬜     |
 | a-propos                        | `docs/pages/a-propos.md`               | `stitch-prompts/21-a-propos.md`                    | ANGALY — Notre Histoire (À propos)            | §39-40        | ⬜     |

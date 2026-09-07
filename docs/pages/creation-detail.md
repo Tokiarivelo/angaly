@@ -1,6 +1,8 @@
 # Page — `creation-detail`
 
-**Statut : ⬜ À faire.** Phase 1 — Présence digitale.
+**Statut : 🟡 Partiel.** Phase 1 — Présence digitale. Galerie, panneau info, actions,
+savoir-faire, sections liées et bande de rendez-vous livrés et testés ; lightbox/zoom plein
+écran et barre d'actions sticky mobile restent à faire — voir "Points d'attention".
 
 ## Objet
 
@@ -12,9 +14,9 @@ personnalisation, favoris) — spec §8.
 
 `apps/web/src/app/(public)/creations/[slug]/page.tsx` → `/creations/:slug`
 
-Server Component par défaut (contenu majoritairement lecture) ; la galerie/lightbox, le
-carousel mobile, les actions (favoris, partage) et la barre d'actions sticky mobile sont
-des Client Components isolés.
+`generateMetadata` reste côté serveur (fetch direct via `apiClient`, titre/description
+dynamiques par création) ; `CreationDetailPage` est un Client Component (react-query direct),
+même arbitrage que `home`/`la-une`/`nos-creations-galerie`.
 
 ## Référence maquette
 
@@ -22,48 +24,50 @@ des Client Components isolés.
 - Écran Stitch : **ANGALY — Robe Éternelle (Detail Page)**
 - Section spécification : §8 (`docs/specifications/ANGALY_Specifications_Completes.md`)
 
-## Arborescence de composants attendue
+## Arborescence de composants (livrée)
 
 ```
 apps/web/src/features/creation-detail/
   ui/
-    CreationDetailPage.tsx        → orchestre galerie + panneau info + sections éditoriales
-    CreationGallery.tsx            → viewer principal + filmstrip vignettes ; 'use client' pour le lightbox/zoom (état vient de useGalleryLightbox())
-    CreationInfoPanel.tsx          → sticky desktop : tag catégorie/collection, titre, description, specs, actions
-    CreationSpecList.tsx           → Type, Matière, Techniques, Disponibilité, Reproduction/personnalisation
-    CreationActions.tsx             → 'use client' (Prendre RDV, Créer version personnalisée, favoris, partager) — état vient de useCreationActions()
-    CraftsmanshipStory.tsx          → bande ivoire « Le savoir-faire derrière cette création » + photos coulisses
-    RelatedCollectionRow.tsx        → scroll horizontal des créations de la même collection
+    CreationDetailPage.tsx        → orchestre breadcrumb + galerie + panneau info + sections éditoriales
+    CreationGallery.tsx            → 'use client' — image principale (next/image) + vignettes,
+                                      switch d'image actif (état vient de useGalleryLightbox()) — pas de vrai zoom/lightbox
+    CreationInfoPanel.tsx          → sticky desktop : pill catégorie/collection, titre, description, specs, actions
+    CreationActions.tsx             → 'use client' (Prendre RDV, Créer version personnalisée,
+                                      favoris local, partage Web Share API + fallback presse-papiers)
+    CraftsmanshipStory.tsx          → bande ivoire, texte générique maison (pas de récit par création, voir Points d'attention)
+    RelatedCollectionRow.tsx        → scroll horizontal des créations de la même collection (masqué si aucune collection)
     RelatedCreationsGrid.tsx        → « Vous aimerez aussi » (même catégorie)
     AppointmentCtaBand.tsx
-    MobileStickyActionBar.tsx        → 'use client' (RDV + favoris, sticky bas d'écran mobile)
   hooks/
     useCreationDetail.ts            → react-query sur GET /api/creations/:slug
     useRelatedCreations.ts           → react-query (même collection / même catégorie, exclut la création courante)
-    useGalleryLightbox.ts            → index actif, ouverture/fermeture zoom
-    useCreationActions.ts            → favoris (mutation), partage (Web Share API / fallback copie de lien)
+    useGalleryLightbox.ts            → index de vignette actif uniquement
   api/
-    creation-detail.api.ts           → useCreationDetailQuery, useRelatedCreationsQuery, useToggleFavoriteMutation
-  types/
-    creation-detail.types.ts
+    creation-detail.api.ts           → useCreationDetailQuery, useCollectionCreationsQuery, useCategoryCreationsQuery
+  consts/
+    availability-labels.const.ts     → libellés FR de `CreationAvailability`
   __tests__/
     useCreationDetail.test.ts
-    useCreationActions.test.ts
     CreationDetailPage.test.tsx
   index.ts
 ```
 
-Toute logique (fetch, lightbox, favoris, partage) vit dans `hooks/` — `CreationDetailPage.tsx`
+**Non livré dans cette passe** (voir "Points d'attention") : vrai zoom/lightbox plein écran,
+barre d'actions sticky mobile, persistance des favoris (`useCreationActions`/`POST
+/api/favorites`, dépend de `customers` Phase 2).
+
+Toute logique (fetch, galerie, actions) vit dans `hooks/` — `CreationDetailPage.tsx`
 et les sections ne contiennent que du JSX + appels de hooks.
 
 ## Endpoints API consommés
 
 | Endpoint | Module | Usage |
 | --- | --- | --- |
-| `GET /api/creations/:slug` | `creations` | Fiche complète (médias ordonnés, specs) |
-| `GET /api/creations?collectionId=&limit=4` | `creations` | Créations de la même collection (Section 4), création courante filtrée côté hook |
-| `GET /api/creations?categoryId=&limit=4` | `creations` | Créations similaires « Vous aimerez aussi » (Section 5), création courante filtrée côté hook |
-| `POST /api/favorites` (`entityType=CREATION`) | `customers` (Phase 2) | Ajout/retrait des favoris — non câblé en Phase 1, voir Points d'attention |
+| `GET /api/creations/:slug` | `creations` | Fiche complète (médias ordonnés, specs) — aussi appelé côté serveur dans `generateMetadata` |
+| `GET /api/creations?collectionId=&limit=5` | `creations` | Créations de la même collection, création courante filtrée côté hook |
+| `GET /api/creations?categoryId=&limit=5` | `creations` | Créations similaires « Vous aimerez aussi », création courante filtrée côté hook |
+| `POST /api/favorites` (`entityType=CREATION`) | `customers` (Phase 2) | Non câblé — favori local uniquement, voir Points d'attention |
 
 ## Modèles Prisma touchés
 
@@ -72,34 +76,40 @@ et les sections ne contiennent que du JSX + appels de hooks.
 
 ## Points d'attention
 
+- **Fidélité vérifiée via `agy`/StitchMCP `get_screen`** (écran réel
+  `54a67878b9fe467390cd93a1b825797c`, "Robe Éternelle (Detail Page)"), pas seulement
+  `stitch-prompts/04-creation-detail.md`. Écarts réels trouvés : la spec réelle n'a que 3
+  lignes (Matière / Techniques / Confection), pas 5 ; « Confection » y décrit un récit figé
+  ("120 heures de travail") sans champ Prisma porteur — remplacé par une ligne
+  « Disponibilité » réelle (`availability`) à la place, même arbitrage que les filtres
+  décoratifs de `docs/pages/nos-creations-galerie.md`.
 - Le modèle `Media` ne porte pas de champ dédié « type de vue » (vue de face, vue arrière,
-  détail, photo portée, coulisses — spec §8.1) : uniquement `sortOrder` et `altText` libres.
-  En Phase 1, convenir d'une convention d'ordre/`altText` pour reconstituer les onglets du
-  filmstrip côté front — à documenter dans `docs/features/creations.md` si une vraie
-  taxonomie de médias devient nécessaire (même limite que `docs/pages/la-une.md` pour les
-  types de contenu éditoriaux).
-- « Créer une version personnalisée » pointe vers `personnalisation-creation`
-  (`/creations/:slug/personnaliser`, Phase 2, groupe de route `(client)`) — lien câblé dès
-  Phase 1 même si la route/le compte client n'existe pas encore (lien désactivé avec
-  tooltip ou feature flag, ne pas laisser un lien mort en prod, même remarque que
-  `docs/pages/home.md`).
-- « Ajouter aux favoris » dépend de `customers`/Phase 2 (voir `docs/features/creations.md`)
-  — en Phase 1, afficher le bouton à l'état non connecté (redirection vers connexion)
-  plutôt que de le masquer.
+  détail, coulisses) : uniquement `sortOrder` et `altText` libres. La galerie affiche les
+  vignettes dans l'ordre reçu ; aucune convention de nommage n'est imposée pour l'instant.
+- « Créer une version personnalisée » pointe vers `/creations/:slug/personnaliser`
+  (`personnalisation-creation`, Phase 2) même si la route n'existe pas encore — jamais de
+  lien mort/masqué, même convention que `docs/pages/home.md`.
+- Le bouton favori (`CreationActions.tsx`) est local uniquement (`useState`, pas de
+  persistance) — dépend de `customers`/Phase 2 pour un vrai état.
+- La section « Le savoir-faire derrière cette création » utilise le texte général de la
+  maison (pas de récit spécifique à la création) : aucun champ Prisma ne porte une
+  narration par création, et le récit du texte réel Stitch ("nos brodeuses...") est
+  spécifique à Robe Éternelle, donc non généralisable sans invention de contenu.
 - Aucune donnée de prix n'est affichée (`Creation` ne porte pas de champ `price`,
-  contrairement à `Product`) : respecter la consigne du prompt Stitch de ne jamais
-  présenter la page comme une fiche produit e-commerce classique.
-- Galerie desktop en deux colonnes avec panneau info sticky / mobile en carousel plein
-  écran avec barre d'actions sticky en bas ; les cartes des Sections 4/5 réutilisent le
-  style `CreationCard` de `docs/pages/nos-creations-galerie.md` (pas de second style de
-  carte création).
+  contrairement à `Product`) — jamais présentée comme une fiche produit e-commerce.
+- **Reporté à une session ultérieure** (hors périmètre de cette passe, pas de vraie photo à
+  zoomer pour l'instant) : zoom/lightbox plein écran (`useGalleryLightbox` ne gère que
+  l'index de vignette actif), barre d'actions sticky mobile, persistance des favoris.
 
 ## Checklist d'acceptation
 
-- [ ] Galerie desktop (viewer + filmstrip + lightbox) et mobile (carousel swipeable + points) fidèles à `stitch-prompts/04-creation-detail.md`
-- [ ] Panneau d'informations sticky desktop avec la liste de specs complète (Type, Matière, Techniques, Disponibilité, Reproduction/personnalisation)
-- [ ] Bande « Le savoir-faire » + Section « Fait partie de la collection » + « Vous aimerez aussi » rendues, dégradation propre si la collection est absente
-- [ ] Barre d'actions sticky mobile (Prendre rendez-vous en priorité + favoris)
-- [ ] `<title>`/meta description dynamiques par création (spec §71 SEO des réalisations)
-- [ ] Tests : `useCreationDetail.test.ts`, `useCreationActions.test.ts`, `CreationDetailPage.test.tsx`
-- [ ] `docs/checklist-implementation.md` et `docs/mockup-reference.md` mis à jour à ✅
+- [x] Galerie (image principale `next/image` + vignettes cliquables) fidèle à l'écran Stitch réel
+- [x] Panneau d'informations sticky desktop avec specs réelles (Matière, Techniques, Disponibilité)
+- [x] Bande « Le savoir-faire » + « Fait partie de la collection » (masquée si pas de collection) + « Vous aimerez aussi » sur données réelles
+- [x] Bande de rendez-vous de fermeture
+- [x] `<title>`/meta description dynamiques par création (`generateMetadata` côté serveur)
+- [x] Tests : `useCreationDetail.test.ts`, `CreationDetailPage.test.tsx` — 10 tests, 98%+/92%+/98%+/98%+ de couverture (stmts/branches/fonctions/lignes) sur `creation-detail/`
+- [ ] Zoom/lightbox plein écran (reporté)
+- [ ] Barre d'actions sticky mobile (reportée)
+- [ ] Persistance des favoris (reportée, Phase 2/`customers`)
+- [x] `docs/checklist-implementation.md` et `docs/mockup-reference.md` mis à jour à 🟡
