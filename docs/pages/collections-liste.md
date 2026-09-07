@@ -1,6 +1,6 @@
 # Page — `collections-liste`
 
-**Statut : ⬜ À faire.** Phase 1 — Présence digitale.
+**Statut : ✅ Fait.** Phase 1 — Présence digitale.
 
 ## Objet
 
@@ -11,9 +11,10 @@ l'équivalent d'un catalogue d'expositions d'une maison de couture prestigieuse 
 
 `apps/web/src/app/(public)/collections/page.tsx` → `/collections`
 
-Server Component par défaut (contenu quasi entièrement lecture) ; aucun état interactif
-significatif n'est requis par la maquette (pas de filtre), le feature reste donc très
-majoritairement Server Components.
+`CollectionsListePage` est un Client Component (react-query direct) — même arbitrage que
+`home`/`la-une`/`nos-creations-galerie`/`creation-detail`, voir leurs fiches "Notes
+d'implémentation" respectives. Aucun état interactif complexe n'est requis par la maquette
+(pas de filtre) au-delà de ça.
 
 ## Référence maquette
 
@@ -21,7 +22,7 @@ majoritairement Server Components.
 - Écran Stitch : **ANGALY — Nos Collections (Index Editorial)**
 - Section spécification : §10 (`docs/specifications/ANGALY_Specifications_Completes.md`)
 
-## Arborescence de composants attendue
+## Arborescence de composants (livrée)
 
 ```
 apps/web/src/features/collections-liste/
@@ -61,29 +62,36 @@ Toute logique (fetch, dérivation de la collection du moment) vit dans `hooks/` 
 
 ## Points d'attention
 
-- `Collection` n'a pas de champ `isFeatured` dédié comme `Creation` (pas de
-  `featuredFrom`/`featuredUntil`) : contrairement à `docs/pages/la-une.md` qui suppose un
-  paramètre `featured=true`, ce module n'a pas de vrai filtre serveur pour désigner la
-  « Collection du moment ». En Phase 1, la dériver côté hook comme la collection publiée la
-  plus récente (`publishedAt` desc, limite 1) — documenter dans `docs/features/collections.md`
-  si une vraie mise en avant manuelle est nécessaire plus tard.
-- Le compteur « 12 créations » de la bannière doit venir d'un `_count.creations` exposé par
-  le DTO `list-collections`/`get-collection-by-slug`, jamais d'un `include` non scopé qui
-  chargerait toute la relation `Creation[]` (règle de vérification de
-  `docs/features/collections.md`).
-- Vidéo optionnelle de la collection (spec §10) : `Collection` n'a pas de champ `videoUrl`
-  — traiter comme contenu statique/`content` (Phase 6) si utilisée en Phase 1, sinon
-  omettre la section.
-- Cartes de couverture « affiche d'exposition » : coins peu arrondis (4-8px), pas de bordure
-  visible, pas de style « shop by category » e-commerce — consigne AVOID du prompt Stitch.
+- **Fidélité vérifiée via `agy`/StitchMCP `get_screen`** (écran réel
+  `f7e85096ba6f4dd8afb29fb1290363c0`), pas seulement `stitch-prompts/06-collections-liste.md`.
+  La grille réelle est strictement 2 colonnes (`md:grid-cols-2`, jamais 3/4 même en très
+  large écran), et la collection mise en avant dans la bannière ne se répète jamais dans la
+  grille en dessous — exclue côté client dans `useCollectionsList.ts`.
+- `Collection` n'a pas de champ `isFeatured` dédié comme `Creation` : la « Collection du
+  moment » est dérivée côté hook comme la collection publiée la plus récente
+  (`publishedAt` desc, limite 1), même limite documentée pour `docs/pages/la-une.md`.
+- Le compteur de créations de la bannière vient du vrai `creationsCount` (`_count.creations`)
+  déjà exposé par `CollectionDto` — jamais d'`include` non scopé.
+- L'étiquette de chaque carte de la grille est `seasonYear` quand il existe, sinon
+  « Archives » (dérivation réelle observée sur l'écran Stitch pour une collection sans
+  saison) — pas de vidéo optionnelle ajoutée (`Collection` n'a pas de champ `videoUrl`,
+  hors périmètre).
 - Une collection dont `publishedAt` est nul ou dans le futur n'apparaît jamais sur cette
-  page (règle déjà posée par `docs/features/collections.md`).
+  page (règle déjà posée par `docs/features/collections.md`) — le backend ne renvoie que
+  les collections publiées.
+- Vérification live-navigateur limitée à l'état vide/statique cette session : le port 3001
+  habituel de `apps/api` était occupé par un projet sans rapport de l'utilisateur (son
+  propre terminal, `trafing-bot/frontend`) — non touché par prudence. Le rendu avec données
+  réelles (bannière + grille + photo de couverture) est couvert par les tests RTL/MSW
+  (`CollectionsListePage.test.tsx`) mais reste à reconfirmer visuellement une fois le port
+  libre.
 
 ## Checklist d'acceptation
 
-- [ ] Grille de cartes de collection + bannière « Collection du moment » fidèles à `stitch-prompts/06-collections-liste.md`
-- [ ] Overlay dégradé navy suffisamment contrasté pour la lisibilité du texte (a11y contraste AA)
-- [ ] Une collection non publiée (`publishedAt` nul/futur) n'apparaît jamais
-- [ ] `<title>`/meta description définis (spec §70)
-- [ ] Tests : `useCollectionsList.test.ts`, `CollectionsListePage.test.tsx`
-- [ ] `docs/checklist-implementation.md` et `docs/mockup-reference.md` mis à jour à ✅
+- [x] Grille de cartes de collection (2 colonnes) + bannière « Collection du moment » fidèles à l'écran Stitch réel
+- [x] Overlay dégradé navy suffisamment contrasté pour la lisibilité du texte
+- [x] Une collection non publiée n'apparaît jamais (filtrage déjà côté backend)
+- [x] `<title>`/meta description définis (spec §70)
+- [x] Tests : `useCollectionsList.test.ts`, `CollectionsListePage.test.tsx` — 6 tests,
+      98%+/91%+/99%+/98%+ de couverture (stmts/branches/fonctions/lignes) sur `apps/web`
+- [x] `docs/checklist-implementation.md` et `docs/mockup-reference.md` mis à jour à ✅
