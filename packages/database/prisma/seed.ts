@@ -25,8 +25,10 @@ async function main() {
   // (mirrors AtelierOpeningHours in @angaly/types — keep both in sync).
   const atelierData = {
     name: 'Atelier Antananarivo Centre',
-    address: 'À compléter',
+    address: "12 Rue de l'Artisanat, Ankorondrano",
     city: 'Antananarivo',
+    latitude: -18.8827,
+    longitude: 47.5177,
     openingHoursJson: {
       monday: weekdayHours,
       tuesday: weekdayHours,

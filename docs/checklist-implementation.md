@@ -47,7 +47,7 @@ phase n'a pas été traitée en session dédiée (voir `.cursor/rules/006-phase-
 - [x] ✅ **collections-liste** — Index des collections
 - [x] ✅ **collection-detail** — Fiche détail d'une collection
 - [x] ✅ **a-propos** — Histoire de la maison
-- [ ] ⬜ **nos-ateliers-liste** — Liste des ateliers + carte
+- [x] ✅ **nos-ateliers-liste** — Liste des ateliers + carte
 - [ ] ⬜ **atelier-detail** — Fiche détail d'un atelier
 - [ ] ⬜ **contact** — Page de contact
 - [ ] ⬜ **journal-liste** — Blog/Journal, liste

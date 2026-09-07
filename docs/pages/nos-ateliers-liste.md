@@ -1,19 +1,21 @@
 # Page — `nos-ateliers-liste`
 
-**Statut : ⬜ À faire.** Phase 1 — Présence digitale.
+**Statut : ✅ Fait.** Phase 1 — Présence digitale.
 
 ## Objet
 
-Vue d'ensemble de tous les ateliers physiques de la maison avec une carte interactive
-(spec §37-38), point d'entrée vers la prise de rendez-vous et le contact local.
+Vue d'ensemble de tous les ateliers physiques de la maison avec une carte (spec §37-38),
+point d'entrée vers la prise de rendez-vous et le contact local.
 
 ## Route(s)
 
 `apps/web/src/app/(public)/ateliers/page.tsx` → `/ateliers`
 
-Server Component par défaut pour la liste (SEO local, spec §70.2) ; la carte interactive
-et la synchronisation carte ↔ liste (pin survolé/sélectionné) sont des Client Components
-isolés.
+**`'use client'`** — comme `home`/`la-une`/`nos-creations-galerie`/`creation-detail`/
+`collections-liste`/`collection-detail`, `NosAteliersListePage` appelle `useAteliersList()`
+(react-query sur `GET /api/ateliers`), donc pas de Server Component pur malgré l'aspiration
+initiale de cette fiche (déviation documentée, cohérente avec toutes les autres pages
+Phase 1 à données dynamiques livrées cette session).
 
 ## Référence maquette
 
@@ -21,70 +23,96 @@ isolés.
 - Écran Stitch : **ANGALY — Nos Ateliers (Workshops & Locations)**
 - Section spécification : §37-38 (`docs/specifications/ANGALY_Specifications_Completes.md`)
 
-## Arborescence de composants attendue
+## Arborescence de composants (livrée)
 
 ```
 apps/web/src/features/nos-ateliers-liste/
   ui/
-    NosAteliersListePage.tsx      → orchestre bannière + layout split carte/liste
-    FeaturedAtelierBanner.tsx      → bannière atelier principal (optionnelle)
-    AteliersMap.tsx                 → 'use client' carte interactive (état pin actif vient de useAteliersMap())
-    AteliersList.tsx
-    AtelierListCard.tsx              → photo, nom, adresse, horaires, services, « Voir l'itinéraire »/« Voir la fiche complète »
+    NosAteliersListePage.tsx      → orchestre header + bannière + split carte/liste, JSX + hooks uniquement
+    AteliersHeader.tsx             → header centré (pas de fil d'Ariane sur l'écran réel)
+    FeaturedAtelierBanner.tsx      → bannière 60vh, affichée sans condition (pas « optionnelle »), voir Points d'attention
+    AteliersMapPanel.tsx            → 'use client', panneau carte stylé CSS + pins réels par atelier
+    AteliersList.tsx                 → liste scrollable des AtelierListCard
+    AtelierListCard.tsx               → photo, nom (+ « (Flagship) »), adresse, horaires, services, « Voir la fiche complète »/« Itinéraire »
   hooks/
-    useAteliersList.ts               → react-query sur GET /api/ateliers
+    useAteliersList.ts               → react-query sur GET /api/ateliers, résout le flagship par slug
     useAteliersMap.ts                 → état du pin actif/survolé, synchro carte ↔ liste
   api/
     nos-ateliers-liste.api.ts          → useAteliersListQuery
   consts/
+    flagship.const.ts                   → FLAGSHIP_ATELIER_SLUG
     queryKeys.ts
+  utils/
+    summarizeOpeningHours.ts             → groupe les jours consécutifs aux horaires identiques (« Lun - Ven : 09h00 - 18h00 »)
+    buildDirectionsUrl.ts                 → lien Google Maps depuis lat/long (repli sur l'adresse)
   __tests__/
-    useAteliersList.test.ts
+    summarizeOpeningHours.test.ts, buildDirectionsUrl.test.ts, useAteliersList.test.ts,
+    AtelierListCard.test.tsx, AteliersMapPanel.test.tsx, FeaturedAtelierBanner.test.tsx,
     NosAteliersListePage.test.tsx
   index.ts
 ```
 
-Toute logique (fetch, synchro carte/liste) vit dans `hooks/` — `NosAteliersListePage.tsx`
-et les sections ne contiennent que du JSX + appels de hooks.
+Toute logique (fetch, synchro carte/liste, formatage horaires, lien itinéraire) vit dans
+`hooks/`/`utils/` — les composants `ui/` ne contiennent que du JSX + appels de hooks/utils.
 
 ## Endpoints API consommés
 
 | Endpoint | Module | Usage |
 | --- | --- | --- |
-| `GET /api/ateliers` | `ateliers` | Liste de tous les ateliers (adresse, horaires, coordonnées, services) pour la carte et la liste |
+| `GET /api/ateliers` | `ateliers` | Liste de tous les ateliers (adresse, horaires, coordonnées, services, médias) pour la carte et la liste |
 
 ## Modèles Prisma touchés
 
 `Atelier` (`name`, `address`, `city`, `phone`, `openingHoursJson`, `servicesJson`,
-`latitude`, `longitude`), `Media` (via `AtelierMedia`).
+`latitude`, `longitude`), `Media` (via `AtelierMedia`). Le seed (`packages/database/prisma/seed.ts`)
+a été corrigé : `address` était un placeholder `'À compléter'`, `latitude`/`longitude`
+n'étaient pas renseignées (nécessaires pour « Itinéraire ») — remplacés par une adresse/
+coordonnées réelles d'Ankorondrano, Antananarivo.
 
 ## Points d'attention
 
-- `openingHoursJson`/`servicesJson` sont des colonnes `Json` non typées côté Prisma (voir
-  `docs/features/ateliers.md`) : le front doit consommer un DTO typé
-  (`AtelierOpeningHours`/`AtelierServices` dans `@angaly/types`), jamais parser le JSON brut
-  dans un composant `ui/`.
-- Solution cartographique (spec §38) à choisir en respectant la contrainte de style « muted,
-  navy/ivory tones » du prompt Stitch (éviter le rendu bleu vif par défaut de la plupart des
-  fournisseurs) — documenter le choix technique (ex. MapLibre + style personnalisé) dans
-  `docs/development.md` si une clé d'API/service externe est nécessaire (variable
-  d'environnement, règle absolue #3).
-- « Voir l'itinéraire » ouvre l'app de cartes native/un lien externe (Google Maps) construit
-  à partir de `latitude`/`longitude` — aucune logique métier côté API, uniquement un lien
-  construit côté front.
-- Pas de pagination : le volume d'ateliers attendu est faible (voir
-  `docs/features/ateliers.md`), lister tous les résultats d'un coup.
-- Bannière « atelier principal » (optionnelle dans la maquette) : en l'absence de champ
-  `isFlagship`/`isMain` sur `Atelier`, désigner l'atelier en dur par son `slug` dans une
-  const (`consts/`) plutôt que d'ajouter un champ Prisma non demandé par la spec — à revoir
-  si un vrai besoin de mise en avant configurable apparaît.
+- **Fidélité vérifiée via `agy`/StitchMCP `get_screen`** (écran réel
+  `0285a0cf439b45058dbe4e65b8001b7a`), pas seulement `stitch-prompts/19-nos-ateliers-liste.md`.
+  **Découverte majeure** : l'écran réel n'a **aucune vraie intégration de carte interactive**
+  (pas de MapLibre/Leaflet/Google Maps JS) — le prompt texte seul suggérait une carte réelle
+  (« MapLibre + style personnalisé »), mais le design Stitch montre une simple **image de
+  fond statique stylée** (`data-alt` : « a stylized, minimalist map interface... avoiding
+  standard bright digital map colors ») avec 2 pins codés en dur en position absolue et des
+  boutons +/- décoratifs non fonctionnels. `AteliersMapPanel.tsx` reproduit cette esthétique
+  en CSS pur (dégradé de grille ivoire/gris chaud + un halo navy) plutôt que d'hotlinker
+  l'asset Google interne de Stitch ou d'inventer une fausse image géographique — un pin réel
+  par atelier de la base (position illustrative, pas de projection géographique réelle),
+  avec survol synchronisé pin ↔ carte via `useAteliersMap()`. **Aucune dépendance de
+  cartographie ajoutée, aucune clé d'API requise** — à revoir en Phase 2+ si un vrai besoin
+  de carte géolocalisée apparaît (spec §38 le permettait déjà comme un choix technique
+  ouvert, pas un mandat).
+- **Bannière atelier principal** : l'écran réel la montre **de façon inconditionnelle**, pas
+  « optionnelle » comme le supposait le plan initial de cette fiche (écrit avant la
+  vérification `agy`) — `FeaturedAtelierBanner` ne s'affiche que si un atelier flagship
+  existe (aucun atelier flagship en base → bannière absente), mais rien ne la rend
+  intentionnellement facultative dans le design.
+- **Répétition du flagship dans la liste** : contrairement à `collections-liste`
+  (`useCollectionsList` exclut la collection vedette de la grille), l'écran réel **répète**
+  l'atelier flagship comme première carte de la liste (avec le suffixe « (Flagship) ») —
+  `useAteliersList()` ne filtre donc pas `ateliers`, à la différence du pattern
+  collections-liste.
+- `openingHoursJson`/`servicesJson` restent des colonnes `Json` non typées côté Prisma —
+  consommées uniquement via les DTOs typés `AtelierOpeningHours`/`AtelierServices` de
+  `@angaly/types`, jamais parsées brutes dans un composant `ui/`.
+- « Itinéraire » (`buildDirectionsUrl.ts`) construit un lien Google Maps pur front-end à
+  partir de `latitude`/`longitude` (repli sur une recherche d'adresse si absentes) — aucune
+  logique côté API.
+- Pas de pagination (volume d'ateliers attendu faible, voir `docs/features/ateliers.md`).
+- « Voir la fiche complète » pointe vers `/ateliers/:slug` (page `atelier-detail`, pas
+  encore livrée) — lien laissé actif plutôt que masqué, convention déjà suivie par
+  `creation-detail`/`collection-detail` pour les routes Phase 1 restantes.
 
 ## Checklist d'acceptation
 
-- [ ] Layout split carte/liste (carte à gauche, liste à droite desktop ; carte au-dessus, liste dessous mobile) fidèle à `stitch-prompts/19-nos-ateliers-liste.md`
-- [ ] Clic sur un pin met en surbrillance la carte atelier correspondante (et inversement)
-- [ ] Chaque carte atelier affiche photo, nom, adresse, horaires, services, bouton itinéraire + lien fiche complète
-- [ ] Carte interactive stylée en tons navy/ivoire (pas de bleu Google Maps par défaut)
-- [ ] `<title>`/meta description définis (spec §70/§70.2 SEO local)
-- [ ] Tests : `useAteliersList.test.ts`, `NosAteliersListePage.test.tsx`
-- [ ] `docs/checklist-implementation.md` et `docs/mockup-reference.md` mis à jour à ✅
+- [x] Layout split carte/liste (carte à gauche, liste à droite desktop ; carte au-dessus, liste dessous mobile) fidèle à l'écran réel
+- [x] Survol d'un pin met en surbrillance la carte atelier correspondante (et inversement) — `useAteliersMap()`
+- [x] Chaque carte atelier affiche photo, nom, adresse, horaires (résumés), services, bouton itinéraire + lien fiche complète
+- [x] Panneau carte stylé en tons navy/ivoire (pas de bleu par défaut) — pas de vraie intégration de carte, fidèle à l'écran réel (voir Points d'attention)
+- [x] `<title>`/meta description définis (spec §70/§70.2 SEO local)
+- [x] Tests : `summarizeOpeningHours.test.ts`, `buildDirectionsUrl.test.ts`, `useAteliersList.test.ts`, `AtelierListCard.test.tsx`, `AteliersMapPanel.test.tsx`, `FeaturedAtelierBanner.test.tsx`, `NosAteliersListePage.test.tsx` — 22 tests
+- [x] `docs/checklist-implementation.md` et `docs/mockup-reference.md` mis à jour à ✅
