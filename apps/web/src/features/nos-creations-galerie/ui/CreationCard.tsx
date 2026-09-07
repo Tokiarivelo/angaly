@@ -1,6 +1,7 @@
 'use client';
 
 import { Heart } from 'lucide-react';
+import Image from 'next/image';
 import Link from 'next/link';
 import { useState } from 'react';
 import type { CreationDto } from '@angaly/types';
@@ -21,6 +22,7 @@ const ASPECT_RATIOS = [0.67, 0.75, 0.75, 1.79, 0.75, 0.67];
 export function CreationCard({ creation, index }: { creation: CreationDto; index: number }) {
   const [isFavorite, setIsFavorite] = useState(false);
   const aspectRatio = ASPECT_RATIOS[index % ASPECT_RATIOS.length];
+  const media = creation.media[0];
 
   return (
     <article className="group relative mb-12 break-inside-avoid">
@@ -29,10 +31,20 @@ export function CreationCard({ creation, index }: { creation: CreationDto; index
         className="relative block w-full overflow-hidden rounded-sm bg-angaly-warm-ivory"
         style={{ aspectRatio }}
       >
-        <div
-          aria-hidden="true"
-          className="h-full w-full bg-gradient-to-br from-angaly-royal-navy to-angaly-navy-blue transition-transform duration-700 group-hover:scale-105"
-        />
+        {media ? (
+          <Image
+            src={media.url}
+            alt={media.altText || creation.name}
+            fill
+            sizes="(min-width: 1024px) 33vw, (min-width: 768px) 50vw, 100vw"
+            className="object-cover transition-transform duration-700 group-hover:scale-105"
+          />
+        ) : (
+          <div
+            aria-hidden="true"
+            className="h-full w-full bg-gradient-to-br from-angaly-royal-navy to-angaly-navy-blue transition-transform duration-700 group-hover:scale-105"
+          />
+        )}
         <span className="absolute bottom-4 left-4 rounded-sm bg-angaly-ivory/90 px-3 py-1 text-[10px] tracking-widest text-angaly-navy uppercase backdrop-blur-md">
           {creation.category.name}
         </span>

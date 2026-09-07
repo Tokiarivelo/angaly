@@ -1,3 +1,4 @@
+import Image from 'next/image';
 import Link from 'next/link';
 
 import { Button } from '@/components/ui/button';
@@ -21,7 +22,19 @@ export function AteliersTeaser({ content }: { content: HomeContent['ateliersTeas
       <div className="mt-10 grid gap-6 sm:grid-cols-2 lg:grid-cols-3">
         {data.map((atelier) => (
           <article key={atelier.id} className="bg-angaly-warm-ivory">
-            <div aria-hidden="true" className="aspect-[4/3] bg-gradient-to-br from-angaly-soft-navy to-angaly-navy" />
+            <div className="relative aspect-[4/3] overflow-hidden">
+              {atelier.media[0] ? (
+                <Image
+                  src={atelier.media[0].url}
+                  alt={atelier.media[0].altText || atelier.name}
+                  fill
+                  sizes="(min-width: 1024px) 33vw, (min-width: 640px) 50vw, 100vw"
+                  className="object-cover"
+                />
+              ) : (
+                <div aria-hidden="true" className="h-full w-full bg-gradient-to-br from-angaly-soft-navy to-angaly-navy" />
+              )}
+            </div>
             <div className="p-4">
               <p className="font-heading text-lg text-angaly-navy">{atelier.name}</p>
               <p className="mt-1 text-sm text-angaly-slate">

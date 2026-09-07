@@ -15,6 +15,7 @@
   "main": "./generated/client/index.js",
   "types": "./generated/client/index.d.ts",
   "dependencies": {
+    "@angaly/storage": "workspace:*",
     "@prisma/client": "^6.5.0",
     "bcrypt": "^5.1.1",
     "prisma": "^6.5.0"

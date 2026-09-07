@@ -1,3 +1,4 @@
+import Image from 'next/image';
 import Link from 'next/link';
 
 import { formatDate } from '@/lib/utils';
@@ -32,10 +33,20 @@ export function EditorialGridItem({ item, size }: { item: LaUneItem; size: Edito
       className={`group flex flex-col ${isFull ? 'md:col-span-12 mt-8 md:mt-16' : size === 'small' ? 'md:col-span-5 md:mt-24' : 'md:col-span-7'}`}
     >
       <Link href={item.href} className={`relative mb-6 block w-full overflow-hidden bg-angaly-warm-ivory md:mb-8 ${ASPECT_BY_SIZE[size]}`}>
-        <div
-          aria-hidden="true"
-          className="absolute inset-0 bg-gradient-to-br from-angaly-royal-navy to-angaly-navy-blue transition-transform duration-700 group-hover:scale-105"
-        />
+        {item.imageUrl ? (
+          <Image
+            src={item.imageUrl}
+            alt={item.title}
+            fill
+            sizes={isFull ? '100vw' : '(min-width: 768px) 50vw, 100vw'}
+            className="object-cover transition-transform duration-700 group-hover:scale-105"
+          />
+        ) : (
+          <div
+            aria-hidden="true"
+            className="absolute inset-0 bg-gradient-to-br from-angaly-royal-navy to-angaly-navy-blue transition-transform duration-700 group-hover:scale-105"
+          />
+        )}
       </Link>
       <div className={isFull ? 'mx-auto flex max-w-3xl flex-col items-center px-4 text-center' : 'flex flex-col items-start px-2'}>
         {label && <span className="text-angaly-slate mb-3 text-xs tracking-widest uppercase">{label}</span>}

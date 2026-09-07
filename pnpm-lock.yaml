@@ -334,6 +334,9 @@ importers:
 
   packages/database:
     dependencies:
+      '@angaly/storage':
+        specifier: workspace:*
+        version: link:../storage
       '@prisma/client':
         specifier: ^6.5.0
         version: 6.19.3(prisma@6.19.3(magicast@0.3.5)(typescript@5.9.3))(typescript@5.9.3)

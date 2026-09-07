@@ -126,6 +126,17 @@ Relations inverses polymorphiques : `CreationMedia`, `ProductMedia`, `Collection
   branches synthétiques toujours à moitié non couvertes, quel que soit le test écrit — vérifié
   sur ce module où statements/functions/lines sont à 100 % et seules ces branches restent
   en dessous. À remonter au fur et à mesure que d'autres modules diluent leur part.
+- **Bug potentiel découvert (2026-09-07, non corrigé — hors périmètre de la session qui l'a
+  trouvé) :** `confirm-upload`/`upload-media-buffer` ne renseignent que les champs
+  dénormalisés `entityType`/`entityId` sur `Media` — ils ne connectent jamais la relation
+  Prisma many-to-many (`creationRefs`/`collectionRefs`/`atelierRefs`/...). Or
+  `GET /api/creations/:slug` (et les autres endpoints détail) sélectionnent `media` via
+  cette relation, pas via `entityId`. Conséquence probable : un média uploadé en production
+  via le flux normal n'apparaîtrait jamais dans `creation.media`/`collection.media` tant que
+  la relation n'est pas connectée explicitement. Vérifié en écrivant
+  `packages/database/prisma/seed.ts` (qui, lui, connecte bien la relation via un `create`
+  imbriqué) — à corriger dans `confirm-upload.use-case.ts` avant la Phase 6
+  (admin-médiathèque) si ce module doit réellement attacher des médias à des entités.
 
 ## Vérification
 

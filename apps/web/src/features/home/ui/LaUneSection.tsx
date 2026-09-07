@@ -1,4 +1,5 @@
 import { ArrowRight } from 'lucide-react';
+import Image from 'next/image';
 import Link from 'next/link';
 import type { CreationDto } from '@angaly/types';
 
@@ -42,10 +43,20 @@ export function LaUneSection({
 
       <div className="grid grid-cols-1 gap-8 md:h-[800px] md:grid-cols-12">
         <article className="group relative h-[600px] overflow-hidden bg-angaly-warm-ivory md:col-span-7 md:h-full">
-          <div
-            aria-hidden="true"
-            className="h-full w-full bg-gradient-to-br from-angaly-royal-navy to-angaly-navy-blue transition-transform duration-700 group-hover:scale-105"
-          />
+          {hero.media[0] ? (
+            <Image
+              src={hero.media[0].url}
+              alt={hero.media[0].altText || hero.name}
+              fill
+              sizes="(min-width: 768px) 58vw, 100vw"
+              className="object-cover transition-transform duration-700 group-hover:scale-105"
+            />
+          ) : (
+            <div
+              aria-hidden="true"
+              className="h-full w-full bg-gradient-to-br from-angaly-royal-navy to-angaly-navy-blue transition-transform duration-700 group-hover:scale-105"
+            />
+          )}
           <div
             aria-hidden="true"
             className="from-angaly-navy/80 absolute inset-0 bg-gradient-to-t via-transparent to-transparent opacity-0 transition-opacity duration-500 group-hover:opacity-100"
@@ -66,10 +77,20 @@ export function LaUneSection({
           <div className="flex h-[600px] flex-col gap-8 md:col-span-5 md:h-full">
             {rest.map((creation) => (
               <article key={creation.id} className="group relative flex-1 overflow-hidden bg-angaly-warm-ivory">
-                <div
-                  aria-hidden="true"
-                  className="h-full w-full bg-gradient-to-br from-angaly-royal-navy to-angaly-navy-blue transition-transform duration-700 group-hover:scale-105"
-                />
+                {creation.media[0] ? (
+                  <Image
+                    src={creation.media[0].url}
+                    alt={creation.media[0].altText || creation.name}
+                    fill
+                    sizes="(min-width: 768px) 42vw, 100vw"
+                    className="object-cover transition-transform duration-700 group-hover:scale-105"
+                  />
+                ) : (
+                  <div
+                    aria-hidden="true"
+                    className="h-full w-full bg-gradient-to-br from-angaly-royal-navy to-angaly-navy-blue transition-transform duration-700 group-hover:scale-105"
+                  />
+                )}
                 <div className="bg-angaly-navy/40 absolute bottom-0 left-0 w-full p-6 text-white backdrop-blur-sm">
                   <Link href={`/creations/${creation.slug}`} className="font-heading text-2xl">
                     {creation.name}

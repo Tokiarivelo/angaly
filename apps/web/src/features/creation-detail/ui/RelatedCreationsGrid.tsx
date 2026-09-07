@@ -1,3 +1,4 @@
+import Image from 'next/image';
 import Link from 'next/link';
 import type { CreationDto } from '@angaly/types';
 
@@ -14,11 +15,21 @@ export function RelatedCreationsGrid({ creations }: { creations: CreationDto[] }
         <div className="grid grid-cols-1 gap-8 sm:grid-cols-2 lg:grid-cols-4">
           {creations.map((creation) => (
             <Link key={creation.id} href={`/creations/${creation.slug}`} className="group">
-              <div className="mb-4 aspect-[3/4] overflow-hidden rounded-sm bg-angaly-ivory">
-                <div
-                  aria-hidden="true"
-                  className="h-full w-full bg-gradient-to-br from-angaly-royal-navy to-angaly-navy-blue transition-opacity group-hover:opacity-90"
-                />
+              <div className="relative mb-4 aspect-[3/4] overflow-hidden rounded-sm bg-angaly-ivory">
+                {creation.media[0] ? (
+                  <Image
+                    src={creation.media[0].url}
+                    alt={creation.media[0].altText || creation.name}
+                    fill
+                    sizes="(min-width: 1024px) 25vw, (min-width: 640px) 50vw, 100vw"
+                    className="object-cover transition-opacity group-hover:opacity-90"
+                  />
+                ) : (
+                  <div
+                    aria-hidden="true"
+                    className="h-full w-full bg-gradient-to-br from-angaly-royal-navy to-angaly-navy-blue transition-opacity group-hover:opacity-90"
+                  />
+                )}
               </div>
               <h4 className="font-heading text-center text-lg text-angaly-navy">{creation.name}</h4>
             </Link>

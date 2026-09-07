@@ -22,7 +22,7 @@
 | nos-creations-galerie         | `docs/pages/nos-creations-galerie.md`  | `stitch-prompts/03-nos-creations-galerie.md`       | ANGALY — Nos Créations (Gallery Portfolio)    | §7            | 🟡     |
 | creation-detail                | `docs/pages/creation-detail.md`        | `stitch-prompts/04-creation-detail.md`             | ANGALY — Robe Éternelle (Detail Page)         | §8            | 🟡     |
 | collections-liste              | `docs/pages/collections-liste.md`      | `stitch-prompts/06-collections-liste.md`           | ANGALY — Nos Collections (Index Editorial)    | §10           | ✅     |
-| collection-detail               | `docs/pages/collection-detail.md`      | `stitch-prompts/07-collection-detail.md`           | ANGALY — Collection Éternelle (Detail Page)   | §10           | ⬜     |
+| collection-detail               | `docs/pages/collection-detail.md`      | `stitch-prompts/07-collection-detail.md`           | ANGALY — Collection Éternelle (Detail Page)   | §10           | ✅     |
 | a-propos                        | `docs/pages/a-propos.md`               | `stitch-prompts/21-a-propos.md`                    | ANGALY — Notre Histoire (À propos)            | §39-40        | ⬜     |
 | nos-ateliers-liste               | `docs/pages/nos-ateliers-liste.md`     | `stitch-prompts/19-nos-ateliers-liste.md`          | ANGALY — Nos Ateliers (Workshops & Locations) | §37-38        | ⬜     |
 | atelier-detail                    | `docs/pages/atelier-detail.md`         | `stitch-prompts/20-atelier-detail.md`              | ANGALY — Atelier Antananarivo Centre (Detail) | §37           | ⬜     |

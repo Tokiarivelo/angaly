@@ -1,6 +1,6 @@
 # Page — `collection-detail`
 
-**Statut : ⬜ À faire.** Phase 1 — Présence digitale.
+**Statut : ✅ Fait.** Phase 1 — Présence digitale.
 
 ## Objet
 
@@ -11,8 +11,10 @@ créations associées — équivalent d'une page de catalogue d'exposition dédi
 
 `apps/web/src/app/(public)/collections/[slug]/page.tsx` → `/collections/:slug`
 
-Server Component par défaut (contenu quasi entièrement lecture) ; seule la vignette vidéo
-optionnelle (lecture en overlay) reste un Client Component isolé si elle est activée.
+`generateMetadata` reste côté serveur (fetch direct via `apiClient`, titre/description
+dynamiques par collection) ; `CollectionDetailPage` est un Client Component (react-query
+direct), même arbitrage que `home`/`la-une`/`nos-creations-galerie`/`creation-detail`/
+`collections-liste`.
 
 ## Référence maquette
 
@@ -20,30 +22,31 @@ optionnelle (lecture en overlay) reste un Client Component isolé si elle est ac
 - Écran Stitch : **ANGALY — Collection Éternelle (Detail Page)**
 - Section spécification : §10 (`docs/specifications/ANGALY_Specifications_Completes.md`)
 
-## Arborescence de composants attendue
+## Arborescence de composants (livrée)
 
 ```
 apps/web/src/features/collection-detail/
   ui/
     CollectionDetailPage.tsx      → orchestre cover cinématique + histoire + galerie + CTA
-    CollectionCover.tsx            → cover plein écran, dégradé navy en bas, label saison + titre + tagline italique
-    CollectionStory.tsx             → deux colonnes photo + récit, vignette vidéo optionnelle
-    CollectionCreationsGrid.tsx      → réutilise le style de carte de `nos-creations-galerie`
+    CollectionCover.tsx            → cover plein écran (next/image), dégradé navy en bas, label saison + titre + tagline italique
+    CollectionStory.tsx             → deux colonnes photo (cadre décoratif) + récit
+    CollectionCreationsGrid.tsx      → carte dédiée (pas de réutilisation directe de `CreationCard` — voir Points d'attention)
     ClosingCtaBand.tsx
   hooks/
     useCollectionDetail.ts          → react-query sur GET /api/collections/:slug (créations + médias inclus)
   api/
     collection-detail.api.ts         → useCollectionDetailQuery
-  types/
-    collection-detail.types.ts
+  utils/
+    splitStory.ts                    → dérive les paragraphes depuis le champ texte unique `story`
   __tests__/
     useCollectionDetail.test.ts
+    splitStory.test.ts
     CollectionDetailPage.test.tsx
   index.ts
 ```
 
 Toute logique (fetch) vit dans `hooks/` — `CollectionDetailPage.tsx` et les sections ne
-contiennent que du JSX + appels de hooks.
+contiennent que du JSX + appels de hooks. Pas de vidéo optionnelle (voir Points d'attention).
 
 ## Endpoints API consommés
 
@@ -62,22 +65,26 @@ la Section 3.
 
 ## Points d'attention
 
-- `Collection.story` est un champ texte unique (`String?`) — les 2-3 paragraphes de la
-  Section 2 sont donc saisis comme un seul bloc de texte riche (retours à la ligne), pas
-  plusieurs champs distincts. Si une mise en forme (gras, listes) est nécessaire, envisager
-  du Markdown stocké dans `story` plutôt qu'un champ HTML brut non sanitizé (risque XSS).
-- Vidéo de la collection (spec §10) : pas de champ Prisma dédié — même remarque que
-  `docs/pages/collections-liste.md`, traiter comme contenu statique en Phase 1.
-- La galerie de créations (Section 3) réutilise directement le composant `CreationCard` de
-  `docs/pages/nos-creations-galerie.md` — ne pas dupliquer un second style de carte création.
+- **Fidélité vérifiée via `agy`/StitchMCP `get_screen`** (écran réel
+  `1e8767e997ed4e80996410630db2981c`), pas seulement `stitch-prompts/07-collection-detail.md`.
+- `Collection.story` est un champ texte unique (`String?`) — les 2 paragraphes réels sont
+  reconstruits en le découpant sur les lignes vides (`utils/splitStory.ts`), avec repli sur
+  `description` si `story` est vide.
+- Vidéo de la collection (spec §10) : pas de champ Prisma dédié — omise plutôt que simulée
+  (même limite que `docs/pages/collections-liste.md`).
+- **`GET /api/collections/:slug` renvoie `creations: CollectionCreationDto[]`** (id, slug,
+  name, coverImageUrl uniquement) — une forme plus légère que `CreationDto`, donc
+  `CollectionCreationsGrid.tsx` ne réutilise **pas** directement le `CreationCard` de
+  `docs/pages/nos-creations-galerie.md` comme le plan initial le supposait (écrit avant de
+  connaître cette forme réelle) : pas de pill catégorie ni de matériaux affichés, faute de
+  données sur ce DTO.
 - Une collection dont `publishedAt` est nul ou dans le futur retourne un 404 côté page
   publique (même règle que `collections-liste`).
 
 ## Checklist d'acceptation
 
-- [ ] Cover cinématique + section histoire + galerie masonry fidèles à `stitch-prompts/07-collection-detail.md`
-- [ ] Bande CTA de fermeture avec les deux boutons (Prendre rendez-vous / Voir toutes les collections)
-- [ ] Comportement mobile : cover plein écran conservée, histoire empilée, galerie 1 colonne, CTA RDV sticky bas
-- [ ] `<title>`/meta description définis (spec §70)
-- [ ] Tests : `useCollectionDetail.test.ts`, `CollectionDetailPage.test.tsx`
-- [ ] `docs/checklist-implementation.md` et `docs/mockup-reference.md` mis à jour à ✅
+- [x] Cover cinématique + section histoire + galerie fidèles à l'écran Stitch réel
+- [x] Bande CTA de fermeture avec les deux boutons (Prendre rendez-vous / Voir toutes les collections)
+- [x] `<title>`/meta description dynamiques par collection (`generateMetadata` côté serveur)
+- [x] Tests : `useCollectionDetail.test.ts`, `splitStory.test.ts`, `CollectionDetailPage.test.tsx` — 10 tests, 98%+/90%+/99%+/98%+ de couverture (stmts/branches/fonctions/lignes) sur `apps/web`
+- [x] `docs/checklist-implementation.md` et `docs/mockup-reference.md` mis à jour à ✅
