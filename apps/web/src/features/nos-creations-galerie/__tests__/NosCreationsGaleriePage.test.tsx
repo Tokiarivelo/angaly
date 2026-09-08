@@ -1,4 +1,4 @@
-import { render, screen, waitFor } from '@testing-library/react';
+import { render, screen, waitFor, within } from '@testing-library/react';
 import userEvent from '@testing-library/user-event';
 import { http, HttpResponse } from 'msw';
 import { describe, expect, it } from 'vitest';
@@ -97,6 +97,40 @@ describe('NosCreationsGaleriePage', () => {
     await user.click(listButton);
 
     expect(listButton).toHaveAttribute('aria-pressed', 'true');
+  });
+
+  it('opens the quick view modal from a card and closes it', async () => {
+    mockCreations([makeCreation('c1')]);
+    const Wrapper = withQueryClient();
+    render(<NosCreationsGaleriePage />, { wrapper: Wrapper });
+
+    await waitFor(() => expect(screen.getByText('Création c1')).toBeInTheDocument());
+
+    const user = userEvent.setup();
+    await user.click(screen.getByRole('button', { name: 'Aperçu rapide' }));
+
+    expect(screen.getByRole('dialog')).toBeInTheDocument();
+    expect(screen.getByRole('heading', { level: 2, name: 'Création c1' })).toBeInTheDocument();
+
+    await user.click(screen.getByRole('button', { name: "Fermer l'aperçu rapide" }));
+    expect(screen.queryByRole('dialog')).not.toBeInTheDocument();
+  });
+
+  it('opens the mobile filter sheet from the "Filtrer" button', async () => {
+    mockCreations([makeCreation('c1')]);
+    const Wrapper = withQueryClient();
+    render(<NosCreationsGaleriePage />, { wrapper: Wrapper });
+
+    await waitFor(() => expect(screen.getByText('Création c1')).toBeInTheDocument());
+
+    const user = userEvent.setup();
+    await user.click(screen.getByRole('button', { name: 'Filtrer' }));
+
+    const dialog = screen.getByRole('dialog');
+    expect(within(dialog).getByText('Genre')).toBeInTheDocument();
+
+    await user.click(within(dialog).getByRole('button', { name: 'Voir les résultats' }));
+    expect(screen.queryByRole('dialog')).not.toBeInTheDocument();
   });
 
   it('loads more creations on click without a page reload', async () => {

@@ -1,6 +1,6 @@
 'use client';
 
-import { Heart } from 'lucide-react';
+import { Eye, Heart } from 'lucide-react';
 import Image from 'next/image';
 import Link from 'next/link';
 import { useState } from 'react';
@@ -16,10 +16,25 @@ import type { CreationDto } from '@angaly/types';
  * favorites depend on `customers`/Phase 2 auth, not built yet. Exposed at
  * the logged-out state rather than hidden, per docs/pages/nos-creations-
  * galerie.md "Points d'attention".
+ *
+ * The "Aperçu rapide" trigger (stitch-prompts/03-nos-creations-galerie.md)
+ * isn't in the real static HTML capture (only the favorite overlay is —
+ * confirmed by downloading and grepping the real HTML) — positioned centered
+ * on hover as a standalone sibling of the `Link`, not nested inside it,
+ * matching the favorite button's own sibling-overlay pattern (avoids an
+ * invalid `<a><button>` nesting).
  */
 const ASPECT_RATIOS = [0.67, 0.75, 0.75, 1.79, 0.75, 0.67];
 
-export function CreationCard({ creation, index }: { creation: CreationDto; index: number }) {
+export function CreationCard({
+  creation,
+  index,
+  onQuickView,
+}: {
+  creation: CreationDto;
+  index: number;
+  onQuickView: (creation: CreationDto) => void;
+}) {
   const [isFavorite, setIsFavorite] = useState(false);
   const aspectRatio = ASPECT_RATIOS[index % ASPECT_RATIOS.length];
   const media = creation.media[0];
@@ -57,6 +72,16 @@ export function CreationCard({ creation, index }: { creation: CreationDto; index
         className="hover:text-angaly-champagne absolute top-4 right-4 rounded-full bg-angaly-navy/20 p-2 text-white opacity-0 backdrop-blur-sm transition-opacity duration-300 group-hover:opacity-100"
       >
         <Heart className="h-5 w-5" aria-hidden="true" fill={isFavorite ? 'currentColor' : 'none'} />
+      </button>
+
+      <button
+        type="button"
+        aria-label="Aperçu rapide"
+        onClick={() => onQuickView(creation)}
+        className="absolute top-1/2 left-1/2 flex -translate-x-1/2 -translate-y-1/2 items-center gap-2 rounded-full bg-angaly-ivory/95 px-4 py-2 text-xs tracking-widest text-angaly-navy uppercase opacity-0 backdrop-blur-md transition-opacity duration-300 group-hover:opacity-100 hover:bg-white"
+      >
+        <Eye className="h-4 w-4" aria-hidden="true" />
+        Aperçu rapide
       </button>
 
       <div className="mt-4 flex flex-col items-center text-center">

@@ -1,11 +1,19 @@
 'use client';
 
-import { ChevronDown, LayoutGrid, List } from 'lucide-react';
+import { ChevronDown, LayoutGrid, List, SlidersHorizontal } from 'lucide-react';
 
 import { DECORATIVE_FILTER_LABELS, SORT_OPTIONS } from '../consts/gallery-filters.const';
+import { useMobileFilterSheet } from '../hooks/useMobileFilterSheet';
 import type { GallerySort, GalleryView } from '../types/gallery.types';
+import { MobileFilterSheet } from './MobileFilterSheet';
 
-/** Real Stitch screen's sticky filter bar. Only sort + view are wired — see gallery-filters.const.ts. */
+/**
+ * Real Stitch screen's sticky filter bar. Only sort + view are wired — see
+ * gallery-filters.const.ts. Below `md:` the 5 decorative dropdowns collapse
+ * into a single "Filtrer" button opening `MobileFilterSheet` (real Stitch
+ * "MOBILE BEHAVIOR" text) — "Trier par" stays visible at every breakpoint,
+ * matching the real HTML (only the grid/list toggle is `hidden md:flex` there).
+ */
 export function FilterBar({
   sort,
   onSortChange,
@@ -17,9 +25,11 @@ export function FilterBar({
   view: GalleryView;
   onViewChange: (view: GalleryView) => void;
 }) {
+  const { isOpen: isSheetOpen, open: openSheet, close: closeSheet } = useMobileFilterSheet();
+
   return (
     <div className="border-angaly-border sticky top-16 z-40 flex w-full flex-wrap items-center justify-between gap-4 border-y bg-angaly-ivory/95 px-8 py-4 backdrop-blur-md md:px-16">
-      <div className="flex flex-wrap items-center gap-6">
+      <div className="hidden flex-wrap items-center gap-6 md:flex">
         {DECORATIVE_FILTER_LABELS.map((label) => (
           <div
             key={label}
@@ -31,6 +41,15 @@ export function FilterBar({
           </div>
         ))}
       </div>
+
+      <button
+        type="button"
+        onClick={openSheet}
+        className="hover:text-angaly-champagne flex items-center gap-2 text-sm tracking-wider text-angaly-navy uppercase transition-colors md:hidden"
+      >
+        <SlidersHorizontal className="h-[18px] w-[18px]" aria-hidden="true" />
+        Filtrer
+      </button>
 
       <div className="flex items-center gap-6 text-sm text-angaly-slate">
         <label className="flex items-center gap-1">
@@ -69,6 +88,8 @@ export function FilterBar({
           </button>
         </div>
       </div>
+
+      <MobileFilterSheet isOpen={isSheetOpen} onClose={closeSheet} />
     </div>
   );
 }
