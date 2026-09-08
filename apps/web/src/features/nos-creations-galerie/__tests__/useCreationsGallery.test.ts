@@ -59,7 +59,7 @@ function mockPaginatedCreations() {
 describe('useCreationsGallery', () => {
   it('loads the first page and reports the real total', async () => {
     mockPaginatedCreations();
-    const { result } = renderHook(() => useCreationsGallery('newest'), { wrapper: withQueryClient() });
+    const { result } = renderHook(() => useCreationsGallery('newest', null), { wrapper: withQueryClient() });
 
     await waitFor(() => expect(result.current.isLoading).toBe(false));
 
@@ -70,7 +70,7 @@ describe('useCreationsGallery', () => {
 
   it('appends the next page on loadMore instead of replacing the list', async () => {
     mockPaginatedCreations();
-    const { result } = renderHook(() => useCreationsGallery('newest'), { wrapper: withQueryClient() });
+    const { result } = renderHook(() => useCreationsGallery('newest', null), { wrapper: withQueryClient() });
 
     await waitFor(() => expect(result.current.isLoading).toBe(false));
 
@@ -82,10 +82,13 @@ describe('useCreationsGallery', () => {
 
   it('resets to page 1 when the sort changes', async () => {
     mockPaginatedCreations();
-    const { result, rerender } = renderHook(({ sort }: { sort: GallerySort }) => useCreationsGallery(sort), {
-      wrapper: withQueryClient(),
-      initialProps: { sort: 'newest' },
-    });
+    const { result, rerender } = renderHook(
+      ({ sort }: { sort: GallerySort }) => useCreationsGallery(sort, null),
+      {
+        wrapper: withQueryClient(),
+        initialProps: { sort: 'newest' },
+      },
+    );
 
     await waitFor(() => expect(result.current.isLoading).toBe(false));
     act(() => result.current.loadMore());
@@ -94,5 +97,45 @@ describe('useCreationsGallery', () => {
     rerender({ sort: 'featured' });
 
     await waitFor(() => expect(result.current.items.map((item) => item.id)).toEqual(['c1', 'c2']));
+  });
+
+  it('resets to page 1 when categoryId changes', async () => {
+    mockPaginatedCreations();
+    const { result, rerender } = renderHook(
+      ({ categoryId }: { categoryId: string | null }) => useCreationsGallery('newest', categoryId),
+      {
+        wrapper: withQueryClient(),
+        initialProps: { categoryId: null as string | null },
+      },
+    );
+
+    await waitFor(() => expect(result.current.isLoading).toBe(false));
+    act(() => result.current.loadMore());
+    await waitFor(() => expect(result.current.items).toHaveLength(3));
+
+    rerender({ categoryId: 'cat-1' });
+
+    await waitFor(() => expect(result.current.items.map((item) => item.id)).toEqual(['c1', 'c2']));
+  });
+
+  it('forwards categoryId as a query param', async () => {
+    server.use(
+      http.get(`${API_BASE_URL}/creations`, ({ request }) => {
+        const url = new URL(request.url);
+        expect(url.searchParams.get('categoryId')).toBe('cat-1');
+        return HttpResponse.json({
+          success: true,
+          data: {
+            data: [],
+            meta: { total: 0, page: 1, limit: 12, totalPages: 1, hasNextPage: false, hasPreviousPage: false },
+          },
+        });
+      }),
+    );
+    const { result } = renderHook(() => useCreationsGallery('newest', 'cat-1'), {
+      wrapper: withQueryClient(),
+    });
+
+    await waitFor(() => expect(result.current.isLoading).toBe(false));
   });
 });

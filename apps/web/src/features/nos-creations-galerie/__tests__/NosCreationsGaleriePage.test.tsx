@@ -133,6 +133,99 @@ describe('NosCreationsGaleriePage', () => {
     expect(screen.queryByRole('dialog')).not.toBeInTheDocument();
   });
 
+  it('filters by category, forwards categoryId to the API, and shows an active filter chip', async () => {
+    server.use(
+      http.get(`${API_BASE_URL}/creations`, ({ request }) => {
+        const categoryId = new URL(request.url).searchParams.get('categoryId');
+        const items = categoryId === 'cat-default-1' ? [makeCreation('c1')] : [makeCreation('c1'), makeCreation('c2')];
+        return HttpResponse.json({
+          success: true,
+          data: {
+            data: items,
+            meta: { total: items.length, page: 1, limit: 12, totalPages: 1, hasNextPage: false, hasPreviousPage: false },
+          },
+        });
+      }),
+    );
+    const Wrapper = withQueryClient();
+    render(<NosCreationsGaleriePage />, { wrapper: Wrapper });
+
+    await waitFor(() => expect(screen.getByText('2 créations')).toBeInTheDocument());
+    expect(screen.queryByRole('button', { name: 'Réinitialiser les filtres' })).not.toBeInTheDocument();
+
+    const user = userEvent.setup();
+    await user.selectOptions(screen.getByRole('combobox', { name: 'Catégorie' }), 'cat-default-1');
+
+    await waitFor(() => expect(screen.getByText('1 création')).toBeInTheDocument());
+    expect(screen.getByRole('button', { name: /Robes de mariée/ })).toBeInTheDocument();
+  });
+
+  it('resets the category filter from the active filter chip', async () => {
+    server.use(
+      http.get(`${API_BASE_URL}/creations`, ({ request }) => {
+        const categoryId = new URL(request.url).searchParams.get('categoryId');
+        const items = categoryId === 'cat-default-1' ? [makeCreation('c1')] : [makeCreation('c1'), makeCreation('c2')];
+        return HttpResponse.json({
+          success: true,
+          data: {
+            data: items,
+            meta: { total: items.length, page: 1, limit: 12, totalPages: 1, hasNextPage: false, hasPreviousPage: false },
+          },
+        });
+      }),
+    );
+    const Wrapper = withQueryClient();
+    render(<NosCreationsGaleriePage />, { wrapper: Wrapper });
+
+    await waitFor(() => expect(screen.getByText('2 créations')).toBeInTheDocument());
+
+    const user = userEvent.setup();
+    await user.selectOptions(screen.getByRole('combobox', { name: 'Catégorie' }), 'cat-default-1');
+    await waitFor(() => expect(screen.getByText('1 création')).toBeInTheDocument());
+
+    await user.click(screen.getByRole('button', { name: 'Réinitialiser les filtres' }));
+
+    await waitFor(() => expect(screen.getByText('2 créations')).toBeInTheDocument());
+    expect(screen.queryByRole('button', { name: /Robes de mariée/ })).not.toBeInTheDocument();
+  });
+
+  it('resets filters from the empty state button', async () => {
+    server.use(
+      http.get(`${API_BASE_URL}/creations`, ({ request }) => {
+        const categoryId = new URL(request.url).searchParams.get('categoryId');
+        const items = categoryId === 'cat-default-1' ? [] : [makeCreation('c1')];
+        return HttpResponse.json({
+          success: true,
+          data: {
+            data: items,
+            meta: { total: items.length, page: 1, limit: 12, totalPages: 1, hasNextPage: false, hasPreviousPage: false },
+          },
+        });
+      }),
+    );
+    const Wrapper = withQueryClient();
+    render(<NosCreationsGaleriePage />, { wrapper: Wrapper });
+
+    await waitFor(() => expect(screen.getByText('Création c1')).toBeInTheDocument());
+
+    const user = userEvent.setup();
+    await user.selectOptions(screen.getByRole('combobox', { name: 'Catégorie' }), 'cat-default-1');
+
+    await waitFor(() =>
+      expect(
+        screen.getByText('Aucune création ne correspond à ces filtres pour le moment.'),
+      ).toBeInTheDocument(),
+    );
+
+    // Both the active filter chip row and the empty state render their own
+    // "Réinitialiser les filtres" button while a category is selected —
+    // either one calls the same resetFilters(), click the empty state's.
+    const resetButtons = screen.getAllByRole('button', { name: 'Réinitialiser les filtres' });
+    await user.click(resetButtons[resetButtons.length - 1]!);
+
+    await waitFor(() => expect(screen.getByText('Création c1')).toBeInTheDocument());
+  });
+
   it('loads more creations on click without a page reload', async () => {
     server.use(
       http.get(`${API_BASE_URL}/creations`, ({ request }) => {

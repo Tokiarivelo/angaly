@@ -1,5 +1,6 @@
 import { setupServer } from 'msw/node';
 
+import { categoriesHandlers } from './handlers/categories.handlers';
 import { collectionDetailHandlers } from './handlers/collection-detail.handlers';
 import { contactHandlers } from './handlers/contact.handlers';
 import { creationDetailHandlers } from './handlers/creation-detail.handlers';
@@ -13,4 +14,5 @@ export const server = setupServer(
   ...creationDetailHandlers,
   ...collectionDetailHandlers,
   ...contactHandlers,
+  ...categoriesHandlers,
 );

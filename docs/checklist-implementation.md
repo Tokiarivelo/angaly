@@ -36,13 +36,13 @@ phase n'a pas été traitée en session dédiée (voir `.cursor/rules/006-phase-
 
 ---
 
-## 🏛️ PHASE 1 — Présence digitale (14 pages, 7 modules)
+## 🏛️ PHASE 1 — Présence digitale (14 pages, 8 modules) — ✅ complète
 
 ### Pages
 - [x] ✅ **home** — Page d'accueil (`docs/pages/home.md`) — sections statiques + créations
       vedettes/ateliers/journal en direct, témoignages/newsletter mockés MSW (Phase 2)
 - [x] ✅ **la-une** — Vitrine éditoriale
-- [ ] 🟡 **nos-creations-galerie** — Galerie complète des créations
+- [x] ✅ **nos-creations-galerie** — Galerie complète des créations
 - [x] ✅ **creation-detail** — Fiche détail d'une création
 - [x] ✅ **collections-liste** — Index des collections
 - [x] ✅ **collection-detail** — Fiche détail d'une collection
@@ -56,6 +56,9 @@ phase n'a pas été traitée en session dédiée (voir `.cursor/rules/006-phase-
 - [x] ✅ **navigation-mobile** — Drawer, bottom bar, recherche, WhatsApp FAB
 
 ### Modules backend
+- [x] ✅ **categories** — taxonomie partagée `Creation`/`Product`/`BlogPost` (`GET /api/categories?kind=`),
+      sert le filtre Catégorie de `nos-creations-galerie`, testé de bout en bout contre
+      Postgres réel (`docs/features/categories.md`)
 - [x] ✅ **search** — recherche full-text PostgreSQL cross-entités (`$queryRaw` paramétré),
       résultats groupés par type, testé de bout en bout contre Postgres réel
       (`docs/features/search.md`)

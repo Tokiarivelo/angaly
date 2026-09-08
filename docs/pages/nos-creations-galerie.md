@@ -1,10 +1,10 @@
 # Page — `nos-creations-galerie`
 
-**Statut : 🟡 Partiel.** Phase 1 — Présence digitale. Cœur de la page (header, tri, vue
-grille/liste, grille masonry sur données réelles, chargement progressif), aperçu rapide
-(Quick View) et panneau de filtre mobile livrés et testés ; chips de filtres actifs et
-filtres Genre/Type/Catégorie/Couleur/Style réellement fonctionnels restent à faire — les deux
-sont couplés au même prérequis (une taxonomie backend), voir "Points d'attention".
+**Statut : ✅ Fait.** Phase 1 — Présence digitale. Header, tri, vue grille/liste, grille
+masonry sur données réelles, chargement progressif, aperçu rapide (Quick View), panneau de
+filtre mobile, filtre Catégorie réellement fonctionnel (nouveau module `categories`) et chips
+de filtres actifs livrés et testés. Genre/Type/Couleur/Style restent décoratifs en
+permanence — voir "Points d'attention" pour pourquoi ce n'est pas un report temporaire.
 
 ## Objet
 
@@ -31,10 +31,13 @@ arbitrage assumé que `home`/`la-une`, voir leurs fiches respectives "Notes d'im
 ```
 apps/web/src/features/nos-creations-galerie/
   ui/
-    NosCreationsGaleriePage.tsx   → orchestre header + barre de filtres + grille + load-more
+    NosCreationsGaleriePage.tsx   → orchestre header + barre de filtres + chips + grille + load-more
     GalleryHeader.tsx              → titre serif + intro + breadcrumb (Accueil / Nos Créations)
-    FilterBar.tsx                  → 'use client' — Genre/Type/Catégorie/Couleur/Style (décoratifs,
-                                      voir Points d'attention) + tri réel + toggle vue grille/liste
+    FilterBar.tsx                  → 'use client' — Genre/Type/Couleur/Style décoratifs + Catégorie
+                                      réelle (`<select>` peuplé par `GET /api/categories`) + tri réel
+                                      + toggle vue grille/liste
+    ActiveFilterChips.tsx           → 'use client' — chip retirable pour Catégorie (seul filtre réel)
+                                      + lien « Réinitialiser les filtres »
     ResultsCount.tsx                → « N créations » (total réel, pas statique)
     CreationCard.tsx                → carte (image, pill catégorie, titre serif, matériau,
                                       favori local — pas de persistance, Phase 2/customers ;
@@ -45,51 +48,50 @@ apps/web/src/features/nos-creations-galerie/
                                        image + titre + badge collection/catégorie + description +
                                        « Voir la création » (lien) + « Ajouter aux favoris »
     MobileFilterSheet.tsx             → 'use client', Radix Dialog plein écran (panneau ivoire,
-                                       les 5 libellés décoratifs empilés + CTA sticky
-                                       « Voir les résultats »)
-    EmptyState.tsx
+                                       Genre/Type/Couleur/Style décoratifs + Catégorie réelle
+                                       (même liste que le desktop) + CTA sticky « Voir les résultats »)
+    EmptyState.tsx                     → message + bouton « Réinitialiser les filtres » réel
     LoadMoreButton.tsx              → 'use client' (chargement progressif, jamais de pagination lourde)
   hooks/
-    useCreationsGallery.ts         → react-query, pagination page/limit accumulée, reset au tri
-    useGalleryFilters.ts           → état tri + vue (grille/liste)
+    useCreationsGallery.ts         → react-query, pagination page/limit accumulée, reset au tri ET au categoryId
+    useGalleryFilters.ts           → état tri + vue (grille/liste) + categoryId + resetFilters()
     useQuickView.ts                 → creation active du modal Aperçu rapide (ou null)
     useMobileFilterSheet.ts          → ouverture/fermeture du panneau mobile (state local, pas
                                        de store — contrairement à navigation-mobile, rien d'autre
                                        n'a besoin de lire cet état)
+    useCategoryFilter.ts             → liste des vraies catégories CREATION (GET /api/categories?kind=CREATION)
   api/
-    nos-creations-galerie.api.ts   → useCreationsPageQuery
+    nos-creations-galerie.api.ts   → useCreationsPageQuery(page, sort, categoryId), useCategoriesQuery
   consts/
-    gallery-filters.const.ts       → libellés décoratifs + options de tri réelles
+    gallery-filters.const.ts       → libellés décoratifs (Genre/Type/Couleur/Style) + options de tri réelles
   types/
     gallery.types.ts
   __tests__/
-    useCreationsGallery.test.ts
-    useGalleryFilters.test.ts
+    useCreationsGallery.test.ts, useGalleryFilters.test.ts, useCategoryFilter.test.ts
     useQuickView.test.ts, useMobileFilterSheet.test.ts
-    QuickViewModal.test.tsx, MobileFilterSheet.test.tsx
+    QuickViewModal.test.tsx, MobileFilterSheet.test.tsx, ActiveFilterChips.test.tsx, EmptyState.test.tsx
     NosCreationsGaleriePage.test.tsx
   index.ts
+apps/web/src/lib/msw/handlers/categories.handlers.ts  → défaut GET /categories (2 catégories CREATION)
+                                                          pour tous les tests, voir docs/testing.md
 ```
 
-**Reporté** (voir "Points d'attention") : `ActiveFilterChips` et le filtrage réel par
-Catégorie/Genre/Type/Couleur/Style (dropdowns toujours rendus mais inertes) — les deux sont
-couplés au même prérequis backend (taxonomie/endpoint de catégories), volontairement traités
-ensemble dans une session ultérieure plutôt que la moitié maintenant.
-
-Toute logique (fetch, tri, pagination) vit dans `hooks/` — `NosCreationsGaleriePage.tsx`
+Toute logique (fetch, tri, pagination, filtre) vit dans `hooks/` — `NosCreationsGaleriePage.tsx`
 et les sections ne contiennent que du JSX + appels de hooks.
 
 ## Endpoints API consommés
 
 | Endpoint | Module | Usage |
 | --- | --- | --- |
-| `GET /api/creations?page=&limit=&sort=` | `creations` | Liste paginée des créations (tri newest/featured), accumulée progressivement |
+| `GET /api/creations?page=&limit=&sort=&categoryId=` | `creations` | Liste paginée des créations (tri newest/featured, filtre Catégorie), accumulée progressivement |
+| `GET /api/categories?kind=CREATION` | `categories` (nouveau — `docs/features/categories.md`) | Peuple le `<select>` « Catégorie » avec de vraies catégories |
 
 ## Modèles Prisma touchés
 
 `Creation` (`categoryId`, `collectionId`, `availability`, `materials`, `techniques`,
-`isFeatured`), `Category` (`kind = CREATION`), `Media` (via `CreationMedia`), `Favorite`
-(bouton favori de l'aperçu rapide, dépend de Phase 2/`customers`).
+`isFeatured`), `Category` (`kind = CREATION`, désormais listée via le nouveau module
+`categories`), `Media` (via `CreationMedia`), `Favorite` (bouton favori de l'aperçu rapide,
+dépend de Phase 2/`customers`).
 
 ## Points d'attention
 
@@ -100,12 +102,26 @@ et les sections ne contiennent que du JSX + appels de hooks.
   (`column-count` responsive 1/2/3), pas une CSS grid à spans explicites ; les cartes ont
   des ratios d'image variés (portrait majoritaire + un item large occasionnel), reproduits
   ici par un cycle fixe de ratios (`CreationCard.tsx`) faute de vraies photos.
-- Le schéma Prisma ne modélise pas les filtres Genre/Couleur/Style comme des colonnes
-  dédiées sur `Creation` — seuls `categoryId`, `collectionId` et le texte libre
-  `materials`/`techniques` existent. Les 5 dropdowns du filtre sont donc **tous rendus de
-  façon décorative** pour cette passe (y compris Catégorie, faute d'un endpoint listant les
-  catégories) — voir `gallery-filters.const.ts`. Même limite documentée que
-  `docs/pages/la-une.md` pour les filtres sans taxonomie réelle.
+- **Filtre Catégorie rendu réellement fonctionnel** (nouveau module backend `categories`,
+  `docs/features/categories.md`) : `Creation.categoryId` existait déjà côté Prisma et
+  `GET /api/creations?categoryId=` était déjà supporté — il manquait uniquement un endpoint
+  pour LISTER les catégories réelles et peupler le `<select>`. Résolu en Clean Architecture
+  complète (`apps/api/src/categories/`), pas un raccourci ad hoc dans le module `creations`.
+  Le schéma Prisma ne modélise en revanche **aucune colonne dédiée** pour Genre/Type/Couleur/
+  Style sur `Creation` — seuls `categoryId`, `collectionId` et le texte libre
+  `materials`/`techniques` existent. Ces 4 dropdowns restent donc **décoratifs de façon
+  permanente**, pas en attente d'un futur endpoint (il n'y a rien à lister, aucune colonne
+  n'existe) — voir `gallery-filters.const.ts`. Même limite documentée que `docs/pages/la-
+  une.md` pour les filtres sans taxonomie réelle.
+- **Chips de filtres actifs livrées** (`ActiveFilterChips.tsx`) : un seul chip possible pour
+  l'instant (Catégorie, le seul filtre réel) — cliquer le chip ou « Réinitialiser les
+  filtres » réinitialise `categoryId`. Volontairement pas de chip pour Genre/Type/Couleur/
+  Style : afficher un chip « actif » pour une sélection qui n'affecte jamais les résultats
+  aurait été trompeur (décision déjà actée à la passe précédente, confirmée ici).
+- Le bouton « Réinitialiser les filtres » de `EmptyState.tsx` (real Stitch EMPTY STATE
+  section) partage la même fonction `resetFilters()` que `ActiveFilterChips` — testé
+  séparément (`EmptyState.test.tsx`) et en intégration (une création filtrée à zéro résultat,
+  clic sur le bouton, la liste réapparaît).
 - **Aperçu rapide (Quick View) ajouté dans une passe ultérieure**, fidélité revérifiée sur le
   HTML réel de l'écran Stitch (téléchargé directement, pas de capture d'écran) : le bouton
   « Aperçu rapide » n'existe dans **aucun** état capturé de l'écran réel (seul le cœur favori
@@ -124,16 +140,9 @@ et les sections ne contiennent que du JSX + appels de hooks.
   — aucun état mobile capturé sur l'écran Stitch réel (desktop uniquement, 2560×4560) pour
   vérifier la fidélité au-delà du texte. Fidélité confirmée en revanche pour `Trier par` :
   visible à **tous** les breakpoints dans le HTML réel (pas de `hidden md:`), contrairement au
-  toggle grille/liste qui l'est (`hidden md:flex`) — reproduit à l'identique : seules les 5
-  dropdowns décoratives basculent derrière le bouton « Filtrer », `Trier par` reste visible sur
-  mobile en dehors du panneau.
-- **Reporté à une session ultérieure** (pas invalidé par la maquette, simplement hors
-  périmètre de cette passe) : `ActiveFilterChips` et le filtrage serveur réel par
-  Catégorie/Genre/Type/Couleur/Style (nécessiterait soit un endpoint de liste de catégories,
-  soit une dérivation client depuis un premier fetch large) — les deux restent groupés
-  ensemble car des chips actives n'auraient de sens que pour un filtre qui affecte
-  réellement les résultats ; en ajouter pour des filtres purement décoratifs (sélection locale
-  sans effet sur la requête) aurait été trompeur pour l'utilisateur plutôt qu'un vrai gain.
+  toggle grille/liste qui l'est (`hidden md:flex`) — reproduit à l'identique : le cluster de
+  filtres (4 décoratifs + 1 réel) bascule derrière le bouton « Filtrer », `Trier par` reste
+  visible sur mobile en dehors du panneau.
 - Le bouton favori (carte ET modale Aperçu rapide) est local uniquement (`useState`, pas de
   persistance) — dépend de `customers`/Phase 2 pour un vrai état ; exposé à l'état non
   connecté plutôt que masqué, conformément à la consigne. La modale a son propre état favori
@@ -150,8 +159,9 @@ et les sections ne contiennent que du JSX + appels de hooks.
 - [x] Chargement progressif (« Voir plus de créations ») sans rechargement de page
 - [x] `<title>`/meta description définis (spec §70/§71)
 - [x] Modale « Aperçu rapide » accessible (image, titre, badge, description, « Voir la création », « Ajouter aux favoris », focus-trap + Échap via Radix Dialog)
-- [x] Panneau de filtre mobile plein écran (« Filtrer » → panneau ivoire, 5 filtres empilés, CTA sticky « Voir les résultats »)
-- [x] Tests : `useCreationsGallery.test.ts`, `useGalleryFilters.test.ts`, `useQuickView.test.ts`, `useMobileFilterSheet.test.ts`, `QuickViewModal.test.tsx`, `MobileFilterSheet.test.tsx`, `NosCreationsGaleriePage.test.tsx` — 25 tests, 98.12%/96.2%/96.66%/98.12% de couverture (stmts/branches/fonctions/lignes) sur `nos-creations-galerie/`
-- [ ] Barre de filtres Genre/Type/Catégorie/Couleur/Style réellement fonctionnelle (reporté — pas de taxonomie backend)
-- [ ] Chips de filtres actifs + « Réinitialiser les filtres » (reporté avec le filtrage réel, même prérequis)
-- [x] `docs/checklist-implementation.md` et `docs/mockup-reference.md` mis à jour (reste 🟡 — 2 items sur 4 livrés cette passe)
+- [x] Panneau de filtre mobile plein écran (« Filtrer » → panneau ivoire, filtres empilés, CTA sticky « Voir les résultats »)
+- [x] Filtre Catégorie réellement fonctionnel (nouveau module `categories`, `GET /api/categories?kind=CREATION` + `GET /api/creations?categoryId=`), sur desktop ET mobile
+- [x] Chips de filtres actifs (Catégorie) + « Réinitialiser les filtres » (chip, lien, et bouton de l'état vide — les 3 partagent `resetFilters()`)
+- [x] Vérifié en direct via Playwright contre l'API/Postgres réels : 7 → 2 créations en filtrant « Robes de mariée » (desktop et mobile), reset revient à 7, aucune erreur console
+- [x] Tests : `useCreationsGallery.test.ts`, `useGalleryFilters.test.ts`, `useCategoryFilter.test.ts`, `useQuickView.test.ts`, `useMobileFilterSheet.test.ts`, `QuickViewModal.test.tsx`, `MobileFilterSheet.test.tsx`, `ActiveFilterChips.test.tsx`, `EmptyState.test.tsx`, `NosCreationsGaleriePage.test.tsx` — 40 tests, 98.57%/95.19%/97.5%/98.57% de couverture (stmts/branches/fonctions/lignes) sur `nos-creations-galerie/`
+- [x] `docs/checklist-implementation.md` et `docs/mockup-reference.md` mis à jour à ✅

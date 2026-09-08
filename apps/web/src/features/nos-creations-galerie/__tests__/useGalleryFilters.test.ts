@@ -22,4 +22,19 @@ describe('useGalleryFilters', () => {
     expect(result.current.view).toBe('list');
     expect(result.current.sort).toBe('featured');
   });
+
+  it('starts with no category selected', () => {
+    const { result } = renderHook(() => useGalleryFilters());
+    expect(result.current.categoryId).toBeNull();
+  });
+
+  it('sets and resets the category filter', () => {
+    const { result } = renderHook(() => useGalleryFilters());
+
+    act(() => result.current.setCategoryId('cat-1'));
+    expect(result.current.categoryId).toBe('cat-1');
+
+    act(() => result.current.resetFilters());
+    expect(result.current.categoryId).toBeNull();
+  });
 });

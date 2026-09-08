@@ -3,6 +3,7 @@ import { ConfigModule } from '@nestjs/config';
 
 import { AteliersModule } from './ateliers/ateliers.module';
 import { BlogModule } from './blog/blog.module';
+import { CategoriesModule } from './categories/categories.module';
 import { CollectionsModule } from './collections/collections.module';
 import { CreationsModule } from './creations/creations.module';
 import { I18nModule } from './i18n/i18n.module';
@@ -28,6 +29,7 @@ import { HealthController } from './shared/health/health.controller';
     PrismaModule,
     MediaModule,
     I18nModule,
+    CategoriesModule,
     CreationsModule,
     CollectionsModule,
     AteliersModule,

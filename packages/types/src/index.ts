@@ -189,6 +189,18 @@ export interface MediaDto {
 }
 
 // ============================================================
+// Categories — GET /api/categories
+// ============================================================
+
+/** Shared taxonomy row (`Category` model) — one `kind` per row, filter with `?kind=`. */
+export interface CategoryDto {
+  id: string;
+  slug: string;
+  name: string;
+  kind: CategoryKind;
+}
+
+// ============================================================
 // Creations — GET /api/creations, GET /api/creations/:slug
 // ============================================================
 

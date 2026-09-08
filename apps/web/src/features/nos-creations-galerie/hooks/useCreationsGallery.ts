@@ -6,10 +6,13 @@ import type { GallerySort } from '../types/gallery.types';
 
 /**
  * Real offset pagination accumulated into a "load more" list — page resets
- * to 1 whenever `sort` changes (see docs/pages/nos-creations-galerie.md
- * "AVOID a heavy paginated list, prefer progressive loading").
+ * to 1 whenever `sort` or `categoryId` changes (see docs/pages/nos-creations-
+ * galerie.md "AVOID a heavy paginated list, prefer progressive loading").
  */
-export function useCreationsGallery(sort: GallerySort): {
+export function useCreationsGallery(
+  sort: GallerySort,
+  categoryId: string | null,
+): {
   items: CreationDto[];
   total: number;
   isLoading: boolean;
@@ -19,12 +22,12 @@ export function useCreationsGallery(sort: GallerySort): {
 } {
   const [page, setPage] = useState(1);
   const [items, setItems] = useState<CreationDto[]>([]);
-  const query = useCreationsPageQuery(page, sort);
+  const query = useCreationsPageQuery(page, sort, categoryId);
 
   useEffect(() => {
     setPage(1);
     setItems([]);
-  }, [sort]);
+  }, [sort, categoryId]);
 
   useEffect(() => {
     if (!query.data) return;

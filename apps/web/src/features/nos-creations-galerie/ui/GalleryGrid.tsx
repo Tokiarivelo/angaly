@@ -9,13 +9,15 @@ export function GalleryGrid({
   items,
   view,
   onQuickView,
+  onResetFilters,
 }: {
   items: CreationDto[];
   view: GalleryView;
   onQuickView: (creation: CreationDto) => void;
+  onResetFilters: () => void;
 }) {
   if (items.length === 0) {
-    return <EmptyState />;
+    return <EmptyState onResetFilters={onResetFilters} />;
   }
 
   if (view === 'list') {
