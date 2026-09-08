@@ -81,6 +81,12 @@ comme pour toute donnée saisie hors back-office avant Phase 6 (voir
       expose le corps complet, le non publié renvoie 404, `related` exclut l'article courant
 - [x] `docs/checklist-implementation.md` : `blog` passé à ✅
 
+`packages/database/prisma/seed.ts` seed désormais 6 catégories `BLOG` (dont `haute-couture`,
+absente des pilules de filtre de `journal-liste` — voir docs/pages/journal-liste.md "Points
+d'attention") et 5 `BlogPost` réels avec photo, pour que `journal-liste`/`journal-article`
+aient du contenu réel — la base de test manuelle mentionnée ci-dessus (2+1 articles) avait
+été insérée puis retirée, la DB de dev était à 0 article avant ce seed.
+
 ## Note d'implémentation
 
 - Comme `collections`, la liste (`GET /api/blog-posts`) et les articles similaires

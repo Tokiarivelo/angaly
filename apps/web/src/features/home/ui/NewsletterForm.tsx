@@ -1,8 +1,7 @@
 'use client';
 
+import { useNewsletterForm } from '@/components/newsletter/useNewsletterForm';
 import { Button } from '@/components/ui/button';
-
-import { useNewsletterForm } from '../hooks/useNewsletterForm';
 
 export function NewsletterForm() {
   const { register, handleSubmit, errors, onSubmit, isSubmitting, isSuccess, isError } = useNewsletterForm();

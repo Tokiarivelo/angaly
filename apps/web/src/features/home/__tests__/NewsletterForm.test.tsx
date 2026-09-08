@@ -1,6 +1,6 @@
 import { render, screen, waitFor } from '@testing-library/react';
 import userEvent from '@testing-library/user-event';
-import { http, HttpResponse } from 'msw';
+import { HttpResponse, http } from 'msw';
 import { describe, expect, it } from 'vitest';
 
 import { server } from '@/lib/msw/server';
@@ -30,14 +30,19 @@ describe('NewsletterForm', () => {
     await user.click(screen.getByRole('button', { name: "S'inscrire" }));
 
     await waitFor(() =>
-      expect(screen.getByRole('status')).toHaveTextContent('Merci ! Votre inscription à la newsletter est confirmée.'),
+      expect(screen.getByRole('status')).toHaveTextContent(
+        'Merci ! Votre inscription à la newsletter est confirmée.',
+      ),
     );
   });
 
   it('shows an error message and lets the visitor retry when the API call fails (e.g. 404 before notifications ships)', async () => {
     server.use(
-      http.post('http://localhost:3001/api/newsletter/subscribe', () =>
-        HttpResponse.json({ success: false, error: { code: 'NOT_FOUND', message: 'Not found' } }, { status: 404 }),
+      http.post('http://localhost:3003/api/newsletter/subscribe', () =>
+        HttpResponse.json(
+          { success: false, error: { code: 'NOT_FOUND', message: 'Not found' } },
+          { status: 404 },
+        ),
       ),
     );
     const user = userEvent.setup();

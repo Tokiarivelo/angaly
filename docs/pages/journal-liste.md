@@ -1,6 +1,6 @@
 # Page — `journal-liste`
 
-**Statut : ⬜ À faire.** Phase 1 — Présence digitale.
+**Statut : ✅ Fait.** Phase 1 — Présence digitale.
 
 ## Objet
 
@@ -11,9 +11,9 @@ tendances, coulisses d'atelier, entretien des vêtements (spec §43).
 
 `apps/web/src/app/(public)/journal/page.tsx` → `/journal`
 
-Server Component par défaut pour la grille d'articles (SEO éditorial) ; le filtre par
-pilules de catégorie, le chargement progressif et la carte newsletter sont des Client
-Components isolés.
+**`'use client'`** — comme toutes les pages Phase 1 à données dynamiques livrées cette
+session, `JournalListePage` appelle `useJournalArticles()` (react-query sur
+`GET /api/blog-posts`), donc pas de Server Component pur.
 
 ## Référence maquette
 
@@ -21,73 +21,100 @@ Components isolés.
 - Écran Stitch : **ANGALY — Le Journal (Editorial Listing)**
 - Section spécification : §43 (`docs/specifications/ANGALY_Specifications_Completes.md`)
 
-## Arborescence de composants attendue
+## Arborescence de composants (livrée)
 
 ```
 apps/web/src/features/journal-liste/
   ui/
-    JournalListePage.tsx          → orchestre header + filtre catégories + article vedette + grille + widgets
+    JournalListePage.tsx          → orchestre header + pilules + vedette + grille + widgets, JSX + hooks uniquement
     JournalHeader.tsx
-    CategoryFilterPills.tsx        → 'use client' (Tout, Mariage à Madagascar, Conseils mode, ...)
-    FeaturedArticleCard.tsx         → grand article vedette
-    ArticleCard.tsx                  → carte standard (cover, catégorie, titre, extrait, auteur, date)
+    CategoryFilterPills.tsx        → 'use client', 7 pilules réelles
+    FeaturedArticleCard.tsx         → article le plus récent (16:9, tag, titre, extrait, byline générique • date)
+    ArticleCard.tsx                  → carte standard 3:4, tous les 3 éléments devient une carte « wide » horizontale avec « Lire l'article »
     ArticlesGrid.tsx
-    PopularArticlesWidget.tsx         → mini-liste « Populaires »
-    NewsletterSignupCard.tsx           → 'use client' (état vient de useNewsletterForm(), réutilisé de `home`)
+    PopularArticlesWidget.tsx         → 3 plus récents après la vedette (pas une vraie métrique de popularité)
+    NewsletterSignupCard.tsx           → 'use client', réutilise `useNewsletterForm()` partagé (voir Points d'attention)
     LoadMoreButton.tsx                  → 'use client'
   hooks/
-    useJournalArticles.ts                → react-query sur GET /api/blog-posts, filtre categoryId, pagination
-    useCategoryFilter.ts                  → état de la pilule catégorie active
+    useJournalArticles.ts                → dérive vedette/populaires/grille filtrée+paginée depuis un seul fetch
+    useCategoryFilter.ts                  → état de la pilule active (slug | null)
   api/
-    journal-liste.api.ts                   → useJournalArticlesQuery
+    journal-liste.api.ts                   → useJournalArticlesQuery (GET /api/blog-posts?limit=50)
   consts/
-    journal-categories.const.ts             → pilules (Mariage à Madagascar, Conseils mode, Conseils costume, Tendances, Coulisses de l'atelier, Entretien des vêtements)
+    journal-categories.const.ts             → 7 pilules + AUTHOR_DISPLAY_NAME + ARTICLES_PAGE_SIZE
     queryKeys.ts
+  utils/
+    formatArticleDate.ts                     → date française longue (fonction pure)
   __tests__/
-    useJournalArticles.test.ts
-    JournalListePage.test.tsx
+    formatArticleDate.test.ts, useCategoryFilter.test.ts, useJournalArticles.test.ts,
+    CategoryFilterPills.test.tsx, FeaturedArticleCard.test.tsx, ArticleCard.test.tsx,
+    ArticlesGrid.test.tsx, PopularArticlesWidget.test.tsx, NewsletterSignupCard.test.tsx,
+    LoadMoreButton.test.tsx, JournalListePage.test.tsx
   index.ts
 ```
 
-Toute logique (fetch, filtre catégorie, pagination) vit dans `hooks/` —
-`JournalListePage.tsx` et les sections ne contiennent que du JSX + appels de hooks.
+Toute logique (fetch, filtre catégorie, dérivation vedette/populaires, pagination) vit dans
+`hooks/`/`utils/` — les composants `ui/` ne contiennent que du JSX + appels de hooks.
+
+**Newsletter partagée** : `useNewsletterForm()`/`newsletterSchema`/`useNewsletterSubscribeMutation`
+ont été déplacés de `features/home/` vers `apps/web/src/components/newsletter/` (logique
+partagée, tests colocalisés dans `components/newsletter/__tests__/`) — home garde son propre
+`NewsletterForm.tsx` (styling bande navy pleine largeur, bouton blanc en pilule) tandis que
+`journal-liste` a son propre `NewsletterSignupCard.tsx` (carte navy latérale, champ souligné
+empilé) : même hook, présentation propre à chaque page, exactement la consigne du plan
+initial de cette fiche (« ne pas dupliquer la logique de validation/mutation »).
 
 ## Endpoints API consommés
 
 | Endpoint | Module | Usage |
 | --- | --- | --- |
-| `GET /api/blog-posts?categoryId=&page=&limit=` | `blog` | Liste des articles publiés, filtrable par catégorie |
-| `GET /api/blog-posts?sort=publishedAt:desc&limit=1` | `blog` | Article vedette (le plus récent, faute de champ dédié — voir Points d'attention) |
+| `GET /api/blog-posts?limit=50` | `blog` | Tous les articles publiés (triés `publishedAt desc` côté serveur), un seul fetch |
 
 ## Modèles Prisma touchés
 
-`BlogPost` (`title`, `excerpt`, `categoryId`, `authorId`, `publishedAt`), `Category`
-(`kind = BLOG`), `Media` (via `BlogPostMedia`), `User` (auteur — avatar/nom).
+`BlogPost`, `Category` (`kind = BLOG`), `Media` (via `BlogPostMedia`), `User` (auteur —
+email seulement, voir Points d'attention). Le seed a été enrichi de 6 nouvelles catégories
+BLOG (`mariage-a-madagascar`, `conseils-costume`, `tendances`, `coulisses-atelier`,
+`entretien-vetements`, `haute-couture`) et de 5 vrais articles avec photo, pour que la page
+ait du contenu réel à afficher (`GET /api/blog-posts` renvoyait 0 résultat avant ce seed).
 
 ## Points d'attention
 
-- `BlogPost` n'a pas de champ `isFeatured` (contrairement à `Creation`) : en Phase 1,
-  désigner l'article vedette comme le plus récent publié (`publishedAt` desc, limite 1),
-  exclu ensuite de la grille standard — documenter ce choix dans `docs/features/blog.md`
-  si une vraie mise en avant manuelle devient nécessaire.
-- Les catégories du filtre (spec §43) sont portées par `Category` (`kind = BLOG`) —
-  vérifier que le seed Phase 1 crée bien les 6-7 catégories listées dans la maquette ; seule
-  la pilule « Tout » est un état front, pas une catégorie Prisma.
-- Widget « Populaires » (optionnel dans la maquette) : aucun compteur de vues/popularité
-  n'existe sur `BlogPost` — en Phase 1, trier par `publishedAt` desc en l'absence de
-  métrique réelle ; prévoir un futur champ `viewCount` si l'analytics (spec §86) doit
-  alimenter ce widget.
-- La carte newsletter réutilise le composant/hook `useNewsletterForm` déjà spécifié dans
-  `docs/pages/home.md` — ne pas dupliquer la logique de validation/mutation.
-- `BlogPost.authorId` est une FK obligatoire vers `User` alors que `auth`/`users`
-  n'existent qu'à partir de Phase 2/6 : les auteurs sont seedés directement en base (même
-  remarque que `docs/features/blog.md`).
+- **Fidélité vérifiée via `agy`/StitchMCP `get_screen`** (écran réel
+  `203057aedfaf46e8a086ba9b0c954c79`), pas seulement `stitch-prompts/22-journal-liste.md`.
+- **Filtrage catégorie 100 % client-side** : `GET /api/blog-posts` filtre par `categoryId`
+  (pas par `slug`), et aucun endpoint public `GET /api/categories` n'existe pour résoudre un
+  slug de pilule vers son id. Plutôt que d'ajouter un endpoint backend hors périmètre
+  frontend de cette session, tous les articles publiés sont récupérés en un seul fetch
+  (`limit=50`, volume réel encore faible) puis filtrés/paginés côté client — même
+  raisonnement déjà documenté pour `useContentTypeFilter` de `la-une`. À revoir si le volume
+  d'articles croît significativement ou si `GET /api/categories` est un jour exposé.
+- **Écran réel a un 7ᵉ tag « Haute Couture »** absent des 6 pilules de filtre listées par le
+  plan initial (issu du seul prompt texte) — ajouté comme une vraie catégorie `Category`
+  (donc un vrai tag d'article), mais **sans pilule de filtre dédiée** puisque le spec §43 et
+  la maquette ne le listent pas parmi les pilules ; reste visible via « Tout » et sur l'article
+  qui le porte.
+- **Byline auteur générique** : `BlogPostAuthorDto` ne porte que `{id, email}` (`User` est un
+  modèle d'identité/auth, pas un profil éditorial — même constat que
+  `docs/pages/journal-article.md`). Afficher l'e-mail brut en byline public n'est pas
+  approprié ; `AUTHOR_DISPLAY_NAME = 'La Rédaction ANGALY'` est utilisé à la place plutôt que
+  de fabriquer un nom de personne à partir de l'e-mail.
+- **Widget « Populaires »** : dérivé (3 articles les plus récents après la vedette), aucune
+  métrique de popularité réelle n'existe sur `BlogPost` — peut chevaucher la grille standard
+  (comportement normal d'un vrai widget « tendances », pas un bug).
+- **Article vedette masqué quand une pilule spécifique est active** (choix UX ajouté par
+  cette implémentation, au-delà du rendu statique de la maquette) : la vedette n'appartient
+  pas forcément à la catégorie filtrée, l'afficher quand même serait incohérent avec le
+  filtre actif.
+- Date formatée en minuscules (« 1 mars 2026 ») — orthographe française correcte, pas la
+  capitalisation décorative du mockup Stitch (« 12 Octobre 2024 »), même logique que
+  l'élision « d'Antananarivo » d'`atelier-detail`.
 
 ## Checklist d'acceptation
 
-- [ ] Filtre par pilules de catégorie, article vedette, grille 3 colonnes desktop / 1 mobile fidèles à `stitch-prompts/22-journal-liste.md`
-- [ ] Widget « Populaires » + carte newsletter rendus (données dérivées acceptables en Phase 1, voir Points d'attention)
-- [ ] Chargement progressif (« Voir plus d'articles ») sans rechargement de page
-- [ ] `<title>`/meta description définis (spec §70)
-- [ ] Tests : `useJournalArticles.test.ts`, `JournalListePage.test.tsx`
-- [ ] `docs/checklist-implementation.md` et `docs/mockup-reference.md` mis à jour à ✅
+- [x] Filtre par pilules de catégorie, article vedette, grille 3 colonnes desktop / 1 mobile fidèles à l'écran réel
+- [x] Widget « Populaires » + carte newsletter rendus (données dérivées acceptables en Phase 1, voir Points d'attention)
+- [x] Chargement progressif (« Voir plus d'articles ») sans rechargement de page
+- [x] `<title>`/meta description définis (spec §70)
+- [x] Tests : 11 fichiers, 34 tests (100 % de couverture sur la feature)
+- [x] `docs/checklist-implementation.md` et `docs/mockup-reference.md` mis à jour à ✅

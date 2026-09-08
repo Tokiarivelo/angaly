@@ -9,7 +9,7 @@ async function main() {
   console.log('🌱 Seeding ANGALY database (foundation)...');
 
   const adminPasswordHash = await bcrypt.hash('Admin@Angaly2026!', 12);
-  await prisma.user.upsert({
+  const adminUser = await prisma.user.upsert({
     where: { email: 'admin@angaly.mg' },
     update: {},
     create: {
@@ -53,6 +53,12 @@ async function main() {
     { slug: 'robes-de-soiree', name: 'Robes de soirée', kind: CategoryKind.CREATION },
     { slug: 'pret-a-porter', name: 'Prêt-à-porter', kind: CategoryKind.PRODUCT },
     { slug: 'conseils-mode', name: 'Conseils mode', kind: CategoryKind.BLOG },
+    { slug: 'mariage-a-madagascar', name: 'Mariage', kind: CategoryKind.BLOG },
+    { slug: 'conseils-costume', name: 'Conseils Costume', kind: CategoryKind.BLOG },
+    { slug: 'tendances', name: 'Tendances', kind: CategoryKind.BLOG },
+    { slug: 'coulisses-atelier', name: 'Coulisses', kind: CategoryKind.BLOG },
+    { slug: 'entretien-vetements', name: 'Entretien', kind: CategoryKind.BLOG },
+    { slug: 'haute-couture', name: 'Haute Couture', kind: CategoryKind.BLOG },
   ];
   for (const category of categories) {
     await prisma.category.upsert({
@@ -219,6 +225,88 @@ async function main() {
   }
   console.log(`✅ ${creations.length} créations créées`);
 
+  // journal-liste (docs/pages/journal-liste.md) needs real content to render against —
+  // authorId is a required FK to User, seeded directly per docs/features/blog.md.
+  const hauteCouture = categoryBySlug.get('haute-couture')!;
+  const mariageMadagascar = categoryBySlug.get('mariage-a-madagascar')!;
+  const coulissesAtelier = categoryBySlug.get('coulisses-atelier')!;
+  const conseilsMode = categoryBySlug.get('conseils-mode')!;
+  const conseilsCostume = categoryBySlug.get('conseils-costume')!;
+
+  const blogPosts = [
+    {
+      slug: 'eternite-nouvelle-collection',
+      title: "L'Éternité : Au cœur de notre nouvelle collection",
+      categoryId: hauteCouture.id,
+      excerpt:
+        "Découvrez l'inspiration et le savoir-faire méticuleux qui ont donné vie à notre dernière collection de robes de mariée. Un voyage à travers des centaines d'heures de broderie à la main et de drapés soyeux.",
+      content:
+        "Chaque saison, la Collection Éternelle naît d'un dialogue silencieux entre nos artisans et la matière. Cette année, ce dialogue a pris la forme d'une broderie baroque, fil de soie après fil de soie, posée à la main sur un satin duchesse d'une blancheur presque irréelle.\n\nDes centaines d'heures ont été nécessaires pour donner vie à chaque robe : le drapé étudié pièce par pièce, les cristaux sertis un à un, la coupe ajustée au corps de chaque femme qui la portera. C'est cette patience, plus que toute autre chose, qui définit la haute couture selon ANGALY.",
+      publishedAt: new Date('2026-03-01T00:00:00.000Z'),
+      photo: '1682226335318-f1911fdef7c1',
+      photoAlt: 'Détail brodé de la Robe Éternelle',
+    },
+    {
+      slug: 'porter-bleu-nuit-elegance',
+      title: 'Comment porter le bleu nuit avec élégance',
+      categoryId: conseilsMode.id,
+      excerpt:
+        "Couleur signature de la Maison Angaly, le bleu nuit est une alternative sophistiquée au noir. Découvrez nos conseils pour l'adopter au quotidien comme pour les grandes occasions.",
+      content:
+        "Le bleu nuit n'est pas simplement une couleur pour ANGALY : c'est une signature. Plus profond que le noir, plus habité, il absorbe la lumière sans jamais l'éteindre complètement.\n\nPorté en total look pour une soirée, ou glissé en un seul accessoire dans une tenue de jour, le bleu nuit s'accorde naturellement à l'ivoire, au champagne et aux dorés discrets — la palette même de la Maison.",
+      publishedAt: new Date('2026-02-20T00:00:00.000Z'),
+      photo: '1762605135318-f34a993cbcf0',
+      photoAlt: 'Ensemble bleu nuit, styling éditorial minimaliste',
+    },
+    {
+      slug: 'secret-atelier-travail-soie',
+      title: "Dans le secret de l'atelier : Le travail de la soie",
+      categoryId: coulissesAtelier.id,
+      excerpt:
+        "Plongez dans l'intimité de nos artisans et découvrez les techniques traditionnelles malgaches appliquées à la soie sauvage.",
+      content:
+        "La soie sauvage malgache exige une patience que peu de matières demandent. Avant même la première coupe, chaque pièce est étudiée à la lumière naturelle de l'atelier pour en comprendre le grain, le tombé, les irrégularités qui font justement sa noblesse.\n\nNos artisans perpétuent des gestes transmis de génération en génération : le fil est guidé à la main, jamais forcé, pour que la soie garde toute sa vie propre une fois portée.",
+      publishedAt: new Date('2026-02-10T00:00:00.000Z'),
+      photo: '1457972657980-4c9fddebec8d',
+      photoAlt: "Mains d'une couturière travaillant la soie",
+    },
+    {
+      slug: 'se-marier-antananarivo-guide-lieux',
+      title: "Se marier à Antananarivo : Guide des lieux d'exception",
+      categoryId: mariageMadagascar.id,
+      excerpt:
+        'Notre sélection exclusive des domaines et salles de réception les plus prestigieux de la capitale pour un mariage inoubliable.',
+      content:
+        "Antananarivo regorge de lieux capables d'accueillir un mariage à la hauteur d'une robe ANGALY : demeures coloniales, jardins suspendus, salles baignées de lumière naturelle.\n\nAu-delà du décor, c'est l'attention portée aux détails qui transforme un lieu en souvenir : la table dressée, la lumière du soir, le silence juste avant l'entrée de la mariée. Notre équipe accompagne volontiers nos clientes dans ce choix, en lien avec nos partenaires de confiance.",
+      publishedAt: new Date('2026-01-25T00:00:00.000Z'),
+      photo: '1723832348140-a2d9eb1753b1',
+      photoAlt: 'Table de réception de mariage élégante',
+    },
+    {
+      slug: 'art-costume-sur-mesure-marie',
+      title: "L'art du costume sur-mesure pour le marié",
+      categoryId: conseilsCostume.id,
+      excerpt:
+        "Un costume qui incarne l'élégance intemporelle de l'homme moderne, cousu pour le jour le plus important de sa vie.",
+      content:
+        "Le costume du marié mérite la même attention que la robe qu'il accompagnera. Une coupe ajustée à l'épaule, un tombé de tissu qui ne cède jamais, une doublure choisie avec autant de soin que l'étoffe visible.\n\nNos maîtres tailleurs travaillent chaque costume sur plusieurs essayages, ajustant patiemment jusqu'à ce que la silhouette soit exactement celle voulue — ni plus, ni moins.",
+      publishedAt: new Date('2026-01-10T00:00:00.000Z'),
+      photo: '1507679799987-c73779587ccf',
+      photoAlt: 'Détail de couture sur costume sur-mesure',
+    },
+  ];
+
+  const createdBlogPosts = new Map<string, { id: string }>();
+  for (const { photo: _photo, photoAlt: _photoAlt, ...postData } of blogPosts) {
+    const post = await prisma.blogPost.upsert({
+      where: { slug: postData.slug },
+      update: postData,
+      create: { ...postData, authorId: adminUser.id },
+    });
+    createdBlogPosts.set(post.slug, post);
+  }
+  console.log(`✅ ${blogPosts.length} articles de journal créés`);
+
   // --- Media (real free stock photos uploaded to MinIO) ---------------------
   // See docs/pages/*.md "Points d'attention" for the "no real photography yet"
   // caveat this resolves — free, verified Unsplash photos (plain
@@ -305,6 +393,13 @@ async function main() {
         3,
       );
       console.log("✅ Photos de l'atelier téléchargées et hébergées sur MinIO");
+
+      for (const { slug, photo, photoAlt } of blogPosts) {
+        const post = createdBlogPosts.get(slug);
+        if (!post) continue;
+        await attachPhoto(storage, 'blog', photo, photoAlt, MediaEntityType.BLOG_POST, post.id);
+      }
+      console.log('✅ Photos des articles de journal téléchargées et hébergées sur MinIO');
     } catch (error) {
       console.warn(
         '⚠️  Seed média ignoré (MinIO ou réseau indisponible) — les pages afficheront des dégradés de substitution.',
@@ -345,7 +440,9 @@ async function attachPhoto(
       ? 'creationRefs'
       : entityType === MediaEntityType.COLLECTION
         ? 'collectionRefs'
-        : 'atelierRefs';
+        : entityType === MediaEntityType.BLOG_POST
+          ? 'blogPostRefs'
+          : 'atelierRefs';
 
   await prisma.media.create({
     data: {

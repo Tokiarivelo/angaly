@@ -1,8 +1,8 @@
 import { zodResolver } from '@hookform/resolvers/zod';
 import { useForm } from 'react-hook-form';
 
-import { useNewsletterSubscribeMutation } from '../api/home.api';
-import { newsletterSchema, type NewsletterFormValues } from '../schemas/newsletter.schema';
+import { useNewsletterSubscribeMutation } from './newsletter.api';
+import { newsletterSchema, type NewsletterFormValues } from './newsletter.schema';
 
 export function useNewsletterForm(): {
   register: ReturnType<typeof useForm<NewsletterFormValues>>['register'];

@@ -3,7 +3,7 @@ import { describe, expect, it } from 'vitest';
 
 import { withQueryClient } from '@/lib/test-utils';
 
-import { useNewsletterForm } from '../hooks/useNewsletterForm';
+import { useNewsletterForm } from '../useNewsletterForm';
 
 const FAKE_SUBMIT_EVENT = { preventDefault: () => {} } as unknown as React.FormEvent<HTMLFormElement>;
 

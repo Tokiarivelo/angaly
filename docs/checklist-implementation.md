@@ -50,7 +50,7 @@ phase n'a pas été traitée en session dédiée (voir `.cursor/rules/006-phase-
 - [x] ✅ **nos-ateliers-liste** — Liste des ateliers + carte
 - [x] ✅ **atelier-detail** — Fiche détail d'un atelier
 - [x] ✅ **contact** — Page de contact
-- [ ] ⬜ **journal-liste** — Blog/Journal, liste
+- [x] ✅ **journal-liste** — Blog/Journal, liste
 - [ ] ⬜ **journal-article** — Article de blog
 - [ ] ⬜ **page-404** — Page 404
 - [ ] ⬜ **navigation-mobile** — Drawer, bottom bar, recherche, WhatsApp FAB

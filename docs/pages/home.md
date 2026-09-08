@@ -35,15 +35,12 @@ apps/web/src/features/home/
     TestimonialsCarousel.tsx  → 'use client' (état du slide vient de useTestimonials())
     AteliersTeaser.tsx
     JournalTeaser.tsx
-    NewsletterForm.tsx        → 'use client' (soumission vient de useNewsletterForm())
+    NewsletterForm.tsx        → 'use client' (soumission vient de useNewsletterForm() partagé, voir ci-dessous)
   hooks/
     useHomeContent.ts         → lit les PageSection (page="accueil") via react-query
     useTestimonials.ts        → état du carrousel (index courant, autoplay) + données
-    useNewsletterForm.ts      → react-hook-form + Zod + mutation
   api/
     home.api.ts                → useHomeContentQuery, useTestimonialsQuery
-  schemas/
-    newsletter.schema.ts
   consts/
     queryKeys.ts
   __tests__/
@@ -55,6 +52,13 @@ apps/web/src/features/home/
 Toute logique (fetch, état du carrousel, validation du formulaire) vit dans `hooks/` —
 `HomePage.tsx` et les sections ne contiennent que du JSX + appels de hooks, conformément à
 `.cursor/rules/002-nextjs-features.mdc`.
+
+**Newsletter partagée** : `useNewsletterForm.ts`/`newsletter.schema.ts`/
+`useNewsletterSubscribeMutation` ont été déplacés vers `apps/web/src/components/newsletter/`
+(logique/tests colocalisés là, `__tests__/useNewsletterForm.test.ts`) quand
+`docs/pages/journal-liste.md` a eu besoin de la même logique de validation/mutation pour son
+propre `NewsletterSignupCard.tsx` — `home` garde son `NewsletterForm.tsx` local (styling
+propre à sa bande navy pleine largeur), seule la logique est partagée.
 
 ## Endpoints API consommés
 
@@ -99,7 +103,8 @@ relation), `Category`.
 - [x] `<title>`/meta description définis (spec §70)
 - [x] Sélecteur de langue FR/MG fonctionnel dans le footer (Zustand persisté — ne traduit pas
       encore le contenu, voir `docs/pages/navigation-mobile.md`)
-- [x] Tests : `useHomeContent.test.ts`, `useNewsletterForm.test.ts`, `NewsletterForm.test.tsx`,
+- [x] Tests : `useHomeContent.test.ts`, `NewsletterForm.test.tsx` (home), `useNewsletterForm.test.ts`
+      (now in `apps/web/src/components/newsletter/__tests__/`, shared with `journal-liste`),
       `TestimonialsCarousel.test.tsx`, `useFeaturedCreations.test.ts`, `useAteliersTeaser.test.ts`,
       `useJournalTeaser.test.ts`, `useTestimonials.test.ts`, `HomePage.test.tsx` — 24 tests,
       99.8%/90%/100%/99.8% de couverture (stmts/branches/fonctions/lignes)
