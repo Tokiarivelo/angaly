@@ -43,7 +43,7 @@ phase n'a pas été traitée en session dédiée (voir `.cursor/rules/006-phase-
       vedettes/ateliers/journal en direct, témoignages/newsletter mockés MSW (Phase 2)
 - [x] ✅ **la-une** — Vitrine éditoriale
 - [ ] 🟡 **nos-creations-galerie** — Galerie complète des créations
-- [ ] 🟡 **creation-detail** — Fiche détail d'une création
+- [x] ✅ **creation-detail** — Fiche détail d'une création
 - [x] ✅ **collections-liste** — Index des collections
 - [x] ✅ **collection-detail** — Fiche détail d'une collection
 - [x] ✅ **a-propos** — Histoire de la maison

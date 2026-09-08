@@ -1,8 +1,8 @@
 # Page — `creation-detail`
 
-**Statut : 🟡 Partiel.** Phase 1 — Présence digitale. Galerie, panneau info, actions,
-savoir-faire, sections liées et bande de rendez-vous livrés et testés ; lightbox/zoom plein
-écran et barre d'actions sticky mobile restent à faire — voir "Points d'attention".
+**Statut : ✅ Fait.** Phase 1 — Présence digitale. Galerie (avec lightbox/zoom plein écran),
+panneau info, actions, savoir-faire, sections liées et bande de rendez-vous livrés et testés
+— voir "Points d'attention" pour la décision documentée sur la barre d'actions sticky mobile.
 
 ## Objet
 
@@ -31,7 +31,11 @@ apps/web/src/features/creation-detail/
   ui/
     CreationDetailPage.tsx        → orchestre breadcrumb + galerie + panneau info + sections éditoriales
     CreationGallery.tsx            → 'use client' — image principale (next/image) + vignettes,
-                                      switch d'image actif (état vient de useGalleryLightbox()) — pas de vrai zoom/lightbox
+                                      switch d'image actif + ouverture du lightbox (useGalleryLightbox())
+    GalleryLightbox.tsx             → 'use client', Radix Dialog plein écran (focus-trap + Échap gratuits,
+                                      même pattern que components/navigation/MobileDrawer.tsx) : image agrandie
+                                      (next/image object-contain), flèches précédent/suivant (masquées si 1 seul
+                                      média), compteur « N / M », navigation clavier ←/→
     CreationInfoPanel.tsx          → sticky desktop : pill catégorie/collection, titre, description, specs, actions
     CreationActions.tsx             → 'use client' (Prendre RDV, Créer version personnalisée,
                                       favoris local, partage Web Share API + fallback presse-papiers)
@@ -53,9 +57,9 @@ apps/web/src/features/creation-detail/
   index.ts
 ```
 
-**Non livré dans cette passe** (voir "Points d'attention") : vrai zoom/lightbox plein écran,
-barre d'actions sticky mobile, persistance des favoris (`useCreationActions`/`POST
-/api/favorites`, dépend de `customers` Phase 2).
+**Non livré** (voir "Points d'attention") : persistance des favoris (`useCreationActions`/`POST
+/api/favorites`, dépend de `customers` Phase 2). La barre d'actions sticky mobile a été
+évaluée et volontairement non dupliquée — voir "Points d'attention".
 
 Toute logique (fetch, galerie, actions) vit dans `hooks/` — `CreationDetailPage.tsx`
 et les sections ne contiennent que du JSX + appels de hooks.
@@ -97,9 +101,29 @@ et les sections ne contiennent que du JSX + appels de hooks.
   spécifique à Robe Éternelle, donc non généralisable sans invention de contenu.
 - Aucune donnée de prix n'est affichée (`Creation` ne porte pas de champ `price`,
   contrairement à `Product`) — jamais présentée comme une fiche produit e-commerce.
-- **Reporté à une session ultérieure** (hors périmètre de cette passe, pas de vraie photo à
-  zoomer pour l'instant) : zoom/lightbox plein écran (`useGalleryLightbox` ne gère que
-  l'index de vignette actif), barre d'actions sticky mobile, persistance des favoris.
+- **Lightbox/zoom plein écran ajouté dans une passe ultérieure**, fidélité revérifiée sur le
+  HTML réel de l'écran Stitch (téléchargé directement, pas de capture d'écran) : seul le
+  bouton « Zoom » (icône `zoom_in`, `bottom-4 right-4`, `bg-white/80 backdrop-blur`,
+  `opacity-0 group-hover:opacity-100`) existe sur la capture statique desktop — aucun état de
+  lightbox ouvert n'est capturé (la maquette Stitch n'a qu'un écran DESKTOP, 2560px, pas
+  d'écran mobile dédié). Le comportement d'ouverture/navigation du lightbox lui-même suit donc
+  le texte du prompt (`stitch-prompts/04-creation-detail.md`, "Support a lightbox/zoom state
+  on click… swipeable image carousel with dot indicators" côté mobile) plutôt qu'un écran
+  Stitch state-par-state, avec un compteur « N / M » textuel à la place des dots. L'icône zoom
+  est reproduite `opacity-0`/`group-hover` seulement à partir de `md:` (le hover n'existe pas
+  au tactile) — toujours visible en dessous de `md:`, vérifié par un test Playwright dédié en
+  viewport mobile (opacity `1` sans interaction).
+- **Barre d'actions sticky mobile — décision : non dupliquée.** Le prompt Stitch d'origine
+  (rédigé avant `navigation-mobile`) demandait une barre basse sticky propre à cette page
+  (« Prendre rendez-vous » + cœur favoris). Depuis, `docs/pages/navigation-mobile.md` a livré
+  une barre basse globale (`MobileBottomBar.tsx`, montée sur toutes les pages publiques via
+  `(public)/layout.tsx`) qui affiche déjà un CTA « Prendre rendez-vous » proéminent (bouton
+  surélevé central) ainsi que Favoris/Compte. Empiler une seconde barre sticky spécifique à
+  cette page juste au-dessus de la barre globale aurait dupliqué la même action et encombré
+  l'écran sans plus-value réelle (aucun écran Stitch ne montre les deux ensemble). Décision :
+  la barre globale couvre ce besoin, aucune barre supplémentaire n'est ajoutée sur
+  `creation-detail` — item du prompt initial volontairement superseded, pas oublié.
+- Persistance des favoris reste hors périmètre (dépend de `customers`/Phase 2).
 
 ## Checklist d'acceptation
 
@@ -108,8 +132,9 @@ et les sections ne contiennent que du JSX + appels de hooks.
 - [x] Bande « Le savoir-faire » + « Fait partie de la collection » (masquée si pas de collection) + « Vous aimerez aussi » sur données réelles
 - [x] Bande de rendez-vous de fermeture
 - [x] `<title>`/meta description dynamiques par création (`generateMetadata` côté serveur)
-- [x] Tests : `useCreationDetail.test.ts`, `CreationDetailPage.test.tsx` — 10 tests, 98%+/92%+/98%+/98%+ de couverture (stmts/branches/fonctions/lignes) sur `creation-detail/`
-- [ ] Zoom/lightbox plein écran (reporté)
-- [ ] Barre d'actions sticky mobile (reportée)
+- [x] Zoom/lightbox plein écran (image agrandie, flèches précédent/suivant, compteur, Échap, clic sur l'image) fidèle au bouton « Zoom » réel de l'écran Stitch
+- [x] Zoom accessible au tactile (icône toujours visible en dessous de `md:`, pas seulement au survol) — vérifié en direct en viewport mobile
+- [x] Barre d'actions sticky mobile : décision documentée (superseded par la barre basse globale de `navigation-mobile`, pas dupliquée)
+- [x] Tests : `useCreationDetail.test.ts`, `useGalleryLightbox.test.ts`, `GalleryLightbox.test.tsx`, `CreationDetailPage.test.tsx` — 24 tests, 95.79%/92.85%/100%/95.79% de couverture (stmts/branches/fonctions/lignes) sur `creation-detail/`
 - [ ] Persistance des favoris (reportée, Phase 2/`customers`)
-- [x] `docs/checklist-implementation.md` et `docs/mockup-reference.md` mis à jour à 🟡
+- [x] `docs/checklist-implementation.md` et `docs/mockup-reference.md` mis à jour à ✅

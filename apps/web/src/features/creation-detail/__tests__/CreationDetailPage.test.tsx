@@ -145,6 +145,32 @@ describe('CreationDetailPage', () => {
     expect(screen.getAllByAltText('Vue arrière')).toHaveLength(2);
   });
 
+  it('opens the lightbox on the main image and cycles to the next image', async () => {
+    mockDetail({
+      media: [
+        { id: 'm1', url: 'https://cdn.example/1.jpg', altText: 'Vue de face', sortOrder: 0 },
+        { id: 'm2', url: 'https://cdn.example/2.jpg', altText: 'Vue arrière', sortOrder: 1 },
+      ],
+    });
+    mockRelated();
+    const Wrapper = withQueryClient();
+    render(<CreationDetailPage slug="robe-eternelle" />, { wrapper: Wrapper });
+
+    await waitFor(() => expect(screen.getByRole('heading', { level: 1 })).toBeInTheDocument());
+
+    const user = userEvent.setup();
+    await user.click(screen.getByRole('button', { name: "Agrandir l'image" }));
+
+    expect(screen.getByRole('dialog')).toBeInTheDocument();
+    expect(screen.getByText('1 / 2')).toBeInTheDocument();
+
+    await user.click(screen.getByRole('button', { name: 'Image suivante' }));
+    expect(screen.getByText('2 / 2')).toBeInTheDocument();
+
+    await user.click(screen.getByRole('button', { name: "Fermer l'aperçu" }));
+    expect(screen.queryByRole('dialog')).not.toBeInTheDocument();
+  });
+
   it('copies the share link to the clipboard when the Web Share API is unavailable', async () => {
     mockDetail();
     mockRelated();
