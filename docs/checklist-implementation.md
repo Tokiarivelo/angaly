@@ -53,7 +53,7 @@ phase n'a pas été traitée en session dédiée (voir `.cursor/rules/006-phase-
 - [x] ✅ **journal-liste** — Blog/Journal, liste
 - [x] ✅ **journal-article** — Article de blog
 - [x] ✅ **page-404** — Page 404
-- [ ] ⬜ **navigation-mobile** — Drawer, bottom bar, recherche, WhatsApp FAB
+- [x] ✅ **navigation-mobile** — Drawer, bottom bar, recherche, WhatsApp FAB
 
 ### Modules backend
 - [x] ✅ **search** — recherche full-text PostgreSQL cross-entités (`$queryRaw` paramétré),

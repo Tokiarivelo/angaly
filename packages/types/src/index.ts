@@ -382,6 +382,28 @@ export type AtelierOpeningHours = Record<AtelierWeekday, AtelierDayHours>;
 export type AtelierServices = string[];
 
 // ============================================================
+// Search — GET /api/search
+// ============================================================
+
+/** Normalized shape shared by all 5 source entities (see docs/features/search.md). */
+export interface SearchResultDto {
+  id: string;
+  slug: string;
+  title: string;
+  excerpt: string;
+  imageUrl: string | null;
+}
+
+/** Results grouped by source entity type — an empty array means no matches for that type. */
+export interface SearchResultsResponseDto {
+  creations: SearchResultDto[];
+  products: SearchResultDto[];
+  collections: SearchResultDto[];
+  blogPosts: SearchResultDto[];
+  ateliers: SearchResultDto[];
+}
+
+// ============================================================
 // Angaly Pattern Studio — shared contracts with apps/ai-service
 // ============================================================
 

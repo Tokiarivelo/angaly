@@ -18,4 +18,6 @@ export const ROUTES = {
   surMesure: '/sur-mesure',
   patternStudio: '/pattern-studio',
   prendreRendezVous: '/prendre-rendez-vous',
+  favoris: '/mes-favoris',
+  compte: '/authentification',
 } as const;

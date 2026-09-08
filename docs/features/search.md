@@ -79,6 +79,11 @@ entrées). Si le volume de contenu croît significativement (au-delà de quelque
 lignes par table), réévaluer le choix full-text Postgres au profit d'un moteur dédié
 (Meilisearch) : ce module est conçu pour être remplacé sans impact sur son contrat HTTP.
 
+`SearchResultDto`/`SearchResultsResponseDto` n'existaient jusqu'ici que côté NestJS
+(`apps/api/src/search/application/dtos/`) — jamais partagés via `@angaly/types` (règle
+absolue #2). Ajoutés à `packages/types/src/index.ts` par `docs/pages/navigation-mobile.md`,
+le premier consommateur frontend réel de ce module.
+
 ## Vérification
 
 - [x] `global-search` testé (résultats groupés par type, exclusion du contenu non publié,

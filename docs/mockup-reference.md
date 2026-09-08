@@ -30,7 +30,7 @@
 | journal-liste                       | `docs/pages/journal-liste.md`          | `stitch-prompts/22-journal-liste.md`               | ANGALY — Le Journal (Editorial Listing)       | §43           | ✅     |
 | journal-article                      | `docs/pages/journal-article.md`        | `stitch-prompts/23-journal-article.md`             | ANGALY — Article : Choisir sa robe de mariée  | §44           | ✅     |
 | page-404                              | `docs/pages/page-404.md`               | `stitch-prompts/30-page-404-et-composants-mobiles.md` | ANGALY — Page non trouvée (404)            | §94           | ✅     |
-| navigation-mobile                      | `docs/pages/navigation-mobile.md`      | `stitch-prompts/30-page-404-et-composants-mobiles.md` | ANGALY — Menu Mobile / Navigation Mobile & FAB / Recherche (Overlay) | §4, §73 | ⬜ |
+| navigation-mobile                      | `docs/pages/navigation-mobile.md`      | `stitch-prompts/30-page-404-et-composants-mobiles.md` | ANGALY — Menu Mobile / Navigation Mobile & FAB / Recherche (Overlay) | §4, §73 | ✅ |
 
 ## PHASE 2 — Conversion
 
