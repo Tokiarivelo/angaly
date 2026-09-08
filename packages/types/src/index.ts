@@ -189,6 +189,28 @@ export interface MediaDto {
 }
 
 // ============================================================
+// Auth — POST /api/auth/register, /login, /refresh, /logout,
+//        /forgot-password, /reset-password
+// ============================================================
+
+/** Never includes passwordHash — safe to send to the client as-is. */
+export interface AuthUserDto {
+  id: string;
+  email: string;
+  role: Role;
+}
+
+/**
+ * The refresh token is never in this body — it's set as an httpOnly cookie
+ * by the server directly (see docs/features/auth.md), so it's never
+ * readable or storable from JavaScript.
+ */
+export interface AuthTokensDto {
+  accessToken: string;
+  user: AuthUserDto;
+}
+
+// ============================================================
 // Categories — GET /api/categories
 // ============================================================
 

@@ -193,10 +193,45 @@ model User {
   pageSectionEdits  PageSectionVersion[]
   blogPosts         BlogPost[]
   notifications     Notification[]
+  refreshTokens       RefreshToken[]
+  passwordResetTokens PasswordResetToken[]
 
   @@index([email])
   @@index([role])
   @@map("users")
+}
+
+/// One row per issued refresh token (rotation-friendly: the old row is
+/// revoked, not deleted, when a new token is issued — see docs/features/auth.md).
+/// Only the SHA-256 hash is stored, never the raw token.
+model RefreshToken {
+  id        String    @id @default(cuid())
+  userId    String
+  tokenHash String    @unique
+  expiresAt DateTime
+  revokedAt DateTime?
+  createdAt DateTime  @default(now())
+
+  user User @relation(fields: [userId], references: [id], onDelete: Cascade)
+
+  @@index([userId])
+  @@map("refresh_tokens")
+}
+
+/// Single-use, time-limited password reset token. Only the SHA-256 hash is
+/// stored — the raw token is emailed to the user and never persisted.
+model PasswordResetToken {
+  id        String    @id @default(cuid())
+  userId    String
+  tokenHash String    @unique
+  expiresAt DateTime
+  usedAt    DateTime?
+  createdAt DateTime  @default(now())
+
+  user User @relation(fields: [userId], references: [id], onDelete: Cascade)
+
+  @@index([userId])
+  @@map("password_reset_tokens")
 }
 
 model Customer {

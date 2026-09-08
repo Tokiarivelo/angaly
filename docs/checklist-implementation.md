@@ -99,7 +99,13 @@ phase n'a pas été traitée en session dédiée (voir `.cursor/rules/006-phase-
 - [ ] ⬜ **mes-favoris** — Favoris client
 
 ### Modules backend
-- [ ] ⬜ **auth** · **customers** · **appointments** · **products** · **quotes** · **reviews**
+- [x] ✅ **auth** — register/login/refresh (rotation)/logout/forgot-password/reset-password,
+      RS256 JWT + httpOnly refresh cookie, testé de bout en bout contre Postgres réel
+      (`docs/features/auth.md`) — `authentification` (page) reste ⬜, frontend non câblé
+- [ ] ⬜ **customers** — seule la création transactionnelle `User`+`Customer` existe
+      (exception documentée dans `auth`, voir `docs/features/auth.md` "Points d'attention") ;
+      le vrai module (profil, favoris) reste à construire (`docs/features/customers.md`)
+- [ ] ⬜ **appointments** · **products** · **quotes** · **reviews**
 
 ---
 
