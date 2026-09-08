@@ -19,11 +19,3 @@ export const JOURNAL_CATEGORY_FILTERS = [
 export type JournalCategorySlug = (typeof JOURNAL_CATEGORY_FILTERS)[number]['slug'];
 
 export const ARTICLES_PAGE_SIZE = 3;
-
-/**
- * `BlogPostAuthorDto` only carries `{id, email}` (`User` is an auth identity, not an
- * editorial profile — see docs/pages/journal-article.md "Points d'attention"). Showing a
- * raw email as a public byline isn't appropriate, and fabricating a specific person's name
- * from it would misrepresent real data — a generic editorial byline is used instead.
- */
-export const AUTHOR_DISPLAY_NAME = 'La Rédaction ANGALY';

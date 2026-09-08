@@ -96,7 +96,11 @@ aient du contenu réel — la base de test manuelle mentionnée ci-dessus (2+1 a
 - `BlogPostAuthorDto` n'expose que `{ id, email }` : `User` est un modèle
   d'identité/auth, pas un profil éditorial (pas de nom affiché/bio/avatar) — voir
   `docs/pages/journal-article.md`, qui documente déjà cette limite et reporte tout besoin de
-  bio d'auteur à un futur champ dédié plutôt que de détourner `User`.
+  bio d'auteur à un futur champ dédié plutôt que de détourner `User`. En attendant, le
+  frontend résout `{id, email}` vers un profil éditorial via
+  `apps/web/src/lib/author-profiles.ts` (texte en dur par e-mail, partagé par
+  `journal-liste`/`journal-article`) — si ce besoin est confirmé durable, prévoir un vrai
+  champ/table dédié plutôt que ce lookup front.
 - `list-related-posts` résout d'abord l'article courant (`findPublishedBySlug`) pour obtenir
   son `categoryId`, puis appelle `listRelated` — réutilise la même logique "publié
   uniquement" que le reste du module au lieu de la dupliquer.

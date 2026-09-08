@@ -41,7 +41,7 @@ apps/web/src/features/journal-liste/
   api/
     journal-liste.api.ts                   → useJournalArticlesQuery (GET /api/blog-posts?limit=50)
   consts/
-    journal-categories.const.ts             → 7 pilules + AUTHOR_DISPLAY_NAME + ARTICLES_PAGE_SIZE
+    journal-categories.const.ts             → 7 pilules + ARTICLES_PAGE_SIZE
     queryKeys.ts
   utils/
     formatArticleDate.ts                     → date française longue (fonction pure)
@@ -94,11 +94,14 @@ ait du contenu réel à afficher (`GET /api/blog-posts` renvoyait 0 résultat av
   (donc un vrai tag d'article), mais **sans pilule de filtre dédiée** puisque le spec §43 et
   la maquette ne le listent pas parmi les pilules ; reste visible via « Tout » et sur l'article
   qui le porte.
-- **Byline auteur générique** : `BlogPostAuthorDto` ne porte que `{id, email}` (`User` est un
-  modèle d'identité/auth, pas un profil éditorial — même constat que
-  `docs/pages/journal-article.md`). Afficher l'e-mail brut en byline public n'est pas
-  approprié ; `AUTHOR_DISPLAY_NAME = 'La Rédaction ANGALY'` est utilisé à la place plutôt que
-  de fabriquer un nom de personne à partir de l'e-mail.
+- **Byline auteur** : `BlogPostAuthorDto` ne porte que `{id, email}` (`User` est un modèle
+  d'identité/auth, pas un profil éditorial). Cette fiche affichait initialement un byline
+  générique (« La Rédaction ANGALY ») en attendant de voir l'écran réel d'un article
+  individuel — `docs/pages/journal-article.md` a ensuite révélé que l'écran réel montre un
+  auteur nommé avec bio complète (« Mme. Fanja »). `FeaturedArticleCard` utilise donc
+  désormais le lookup partagé `apps/web/src/lib/author-profiles.ts`
+  (`getAuthorProfile(email)`), avec repli générique conservé pour tout e-mail non
+  répertorié — voir `docs/pages/journal-article.md` "Points d'attention" pour le détail.
 - **Widget « Populaires »** : dérivé (3 articles les plus récents après la vedette), aucune
   métrique de popularité réelle n'existe sur `BlogPost` — peut chevaucher la grille standard
   (comportement normal d'un vrai widget « tendances », pas un bug).
@@ -116,5 +119,5 @@ ait du contenu réel à afficher (`GET /api/blog-posts` renvoyait 0 résultat av
 - [x] Widget « Populaires » + carte newsletter rendus (données dérivées acceptables en Phase 1, voir Points d'attention)
 - [x] Chargement progressif (« Voir plus d'articles ») sans rechargement de page
 - [x] `<title>`/meta description définis (spec §70)
-- [x] Tests : 11 fichiers, 34 tests (100 % de couverture sur la feature)
+- [x] Tests : 11 fichiers, 35 tests (100 % de couverture sur la feature)
 - [x] `docs/checklist-implementation.md` et `docs/mockup-reference.md` mis à jour à ✅

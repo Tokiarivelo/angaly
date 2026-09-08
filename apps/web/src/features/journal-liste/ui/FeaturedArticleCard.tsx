@@ -2,12 +2,14 @@ import Image from 'next/image';
 import Link from 'next/link';
 import type { BlogPostDto } from '@angaly/types';
 
-import { AUTHOR_DISPLAY_NAME } from '../consts/journal-categories.const';
+import { getAuthorProfile } from '@/lib/author-profiles';
+
 import { formatArticleDate } from '../utils/formatArticleDate';
 
 /** Real screen's featured article: 16:9 cover, category tag, title, excerpt, author • date. */
 export function FeaturedArticleCard({ article }: { article: BlogPostDto }) {
   const photo = article.media[0];
+  const author = getAuthorProfile(article.author);
 
   return (
     <Link href={`/journal/${article.slug}`} className="group block cursor-pointer">
@@ -33,7 +35,7 @@ export function FeaturedArticleCard({ article }: { article: BlogPostDto }) {
         </h2>
         <p className="mb-6 leading-relaxed text-angaly-slate">{article.excerpt}</p>
         <div className="text-sm font-medium text-angaly-warm-gray">
-          <span>{AUTHOR_DISPLAY_NAME}</span>
+          <span>{author.displayName}</span>
           {article.publishedAt && (
             <>
               <span className="mx-2">•</span>

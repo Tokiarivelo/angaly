@@ -3,7 +3,6 @@ import { describe, expect, it } from 'vitest';
 
 import type { BlogPostDto } from '@angaly/types';
 
-import { AUTHOR_DISPLAY_NAME } from '../consts/journal-categories.const';
 import { FeaturedArticleCard } from '../ui/FeaturedArticleCard';
 
 function makeArticle(overrides: Partial<BlogPostDto> = {}): BlogPostDto {
@@ -23,15 +22,20 @@ function makeArticle(overrides: Partial<BlogPostDto> = {}): BlogPostDto {
 }
 
 describe('FeaturedArticleCard', () => {
-  it('renders the category tag, title, excerpt, a generic byline, and the real date', () => {
+  it('renders the category tag, title, excerpt, the resolved author byline, and the real date', () => {
     render(<FeaturedArticleCard article={makeArticle()} />);
 
     expect(screen.getByText('Haute Couture')).toBeInTheDocument();
     expect(
       screen.getByRole('heading', { name: "L'Éternité : Au cœur de notre nouvelle collection" }),
     ).toBeInTheDocument();
-    expect(screen.getByText(AUTHOR_DISPLAY_NAME)).toBeInTheDocument();
+    expect(screen.getByText('Mme. Fanja')).toBeInTheDocument();
     expect(screen.getByText('1 mars 2026')).toBeInTheDocument();
+  });
+
+  it('falls back to a generic byline for an author with no editorial profile', () => {
+    render(<FeaturedArticleCard article={makeArticle({ author: { id: 'user-2', email: 'someone@angaly.mg' } })} />);
+    expect(screen.getByText('La Rédaction ANGALY')).toBeInTheDocument();
   });
 
   it('links to the article detail route', () => {

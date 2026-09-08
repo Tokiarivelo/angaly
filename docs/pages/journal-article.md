@@ -1,6 +1,6 @@
 # Page — `journal-article`
 
-**Statut : ⬜ À faire.** Phase 1 — Présence digitale.
+**Statut : ✅ Fait.** Phase 1 — Présence digitale.
 
 ## Objet
 
@@ -11,8 +11,11 @@ suggéré et CTA de conversion (spec §44).
 
 `apps/web/src/app/(public)/journal/[slug]/page.tsx` → `/journal/:slug`
 
-Server Component par défaut (corps d'article, SEO éditorial) ; la barre de partage social
-et l'interaction de partage sont des Client Components isolés.
+**`'use client'`** — comme toutes les pages Phase 1 à données dynamiques livrées cette
+session, `JournalArticlePage` appelle `useJournalArticle(slug)`/`useRelatedArticles(slug)`
+(react-query), donc pas de Server Component pur pour le corps de la page.
+`generateMetadata` reste côté Server Component de la route (même pattern que
+`creations/[slug]`/`ateliers/[slug]`) : un fetch direct via `apiClient` avant le rendu.
 
 ## Référence maquette
 
@@ -20,75 +23,102 @@ et l'interaction de partage sont des Client Components isolés.
 - Écran Stitch : **ANGALY — Article : Choisir sa robe de mariée**
 - Section spécification : §44 (`docs/specifications/ANGALY_Specifications_Completes.md`)
 
-## Arborescence de composants attendue
+## Arborescence de composants (livrée)
 
 ```
 apps/web/src/features/journal-article/
   ui/
-    JournalArticlePage.tsx        → orchestre header + corps + partage + auteur + articles liés + CTA
-    ArticleHeader.tsx               → cover, tag catégorie, titre serif, ligne auteur/date/temps de lecture
-    ArticleBody.tsx                   → colonne centrale ~680px, sous-titres serif, citations, images inline
-    SocialShareBar.tsx                  → 'use client' (Facebook, copier le lien, WhatsApp) — sticky desktop
-    AuthorBox.tsx                         → photo, nom, bio courte, lien « Voir tous ses articles »
-    RelatedArticlesRow.tsx                 → réutilise `ArticleCard` de `journal-liste`
-    AppointmentCtaBand.tsx
+    JournalArticlePage.tsx        → orchestre fil d'Ariane + header + corps/partage + articles liés + CTA
+    ArticleHeader.tsx               → cover 70vh, tag catégorie, titre, ligne auteur/date/temps de lecture
+    ArticleBody.tsx                   → colonne ~680px, paragraphes simples (voir Points d'attention)
+    SocialShareBar.tsx                  → 'use client', sticky desktop (Facebook/WhatsApp/copier le lien)
+    AuthorBox.tsx                         → photo, nom, rôle, bio, lien « Voir tous ses articles »
+    RelatedArticlesRow.tsx                 → réutilise `ArticleCard` de `journal-liste` (import cross-feature délibéré, voir Points d'attention)
+    AppointmentCtaBand.tsx                  → copie propre à cet écran (même motif que les autres pages)
   hooks/
     useJournalArticle.ts                    → react-query sur GET /api/blog-posts/:slug
     useRelatedArticles.ts                     → react-query sur GET /api/blog-posts/:slug/related
-    useReadingTime.ts                          → calcul du temps de lecture estimé (fonction pure sur le contenu)
-    useShareArticle.ts                          → 'use client' logique de partage (Web Share API / fallback copie de lien)
+    useShareArticle.ts                         → 'use client', Facebook/WhatsApp/copier le lien (≠ Web Share API générique de creation-detail)
   api/
     journal-article.api.ts                       → useJournalArticleQuery, useRelatedArticlesQuery
   utils/
     reading-time.util.ts                          → fonction pure (mots/minute), testée isolément
-  types/
-    journal-article.types.ts
+    formatArticleDate.ts                           → copie feature-locale (même implémentation que journal-liste, voir Points d'attention)
   __tests__/
-    useJournalArticle.test.ts
-    reading-time.test.ts
-    JournalArticlePage.test.tsx
+    reading-time.test.ts, formatArticleDate.test.ts, useJournalArticle.test.ts,
+    useRelatedArticles.test.ts, useShareArticle.test.ts, ArticleHeader.test.tsx,
+    ArticleBody.test.tsx, AuthorBox.test.tsx, SocialShareBar.test.tsx,
+    RelatedArticlesRow.test.tsx, AppointmentCtaBand.test.tsx, JournalArticlePage.test.tsx
   index.ts
 ```
 
-Toute logique (fetch, temps de lecture, partage) vit dans `hooks/`/`utils/` —
-`JournalArticlePage.tsx` et les sections ne contiennent que du JSX + appels de hooks.
+Pas de `useReadingTime.ts` hook séparé : `estimateReadingTime()` est une fonction pure sans
+état, appelée directement dans `ArticleHeader.tsx` plutôt que d'ajouter une couche hook
+inutile. Pas de `types/journal-article.types.ts` : `BlogPostDetailDto`/`BlogPostDto`
+suffisent, même choix que `creation-detail`/`collection-detail`/`atelier-detail`.
 
 ## Endpoints API consommés
 
 | Endpoint | Module | Usage |
 | --- | --- | --- |
 | `GET /api/blog-posts/:slug` | `blog` | Article complet (auteur, catégorie, médias, contenu) |
-| `GET /api/blog-posts/:slug/related` | `blog` | Articles similaires (« À lire aussi ») |
+| `GET /api/blog-posts/:slug/related` | `blog` | Articles similaires, même catégorie, article courant exclu côté serveur |
 
 ## Modèles Prisma touchés
 
 `BlogPost` (`title`, `content`, `excerpt`, `publishedAt`), `Category`, `User` (auteur),
-`Media` (via `BlogPostMedia` — cover + images inline).
+`Media` (via `BlogPostMedia`).
 
 ## Points d'attention
 
-- `User` ne porte pas de champ `bio`/photo publique dédiés pour l'auteur (c'est un modèle
-  d'identité/auth, pas un profil éditorial) — en Phase 1, si l'`AuthorBox` doit afficher
-  une bio courte, l'ajouter comme donnée de seed hors modèle (texte en dur par auteur)
-  plutôt que de détourner `User` ; documenter le besoin d'un futur champ (`authorBio`/table
-  dédiée) dans `docs/features/blog.md` si le besoin est confirmé.
-- `BlogPost.content` est un `String` unique : les citations (pull-quotes), sous-titres et
-  images inline du prompt Stitch sont donc à interpréter comme du contenu riche
-  (Markdown/HTML éditorial saisi en un bloc), pas des champs structurés séparés — prévoir
-  un rendu Markdown sécurisé (jamais `dangerouslySetInnerHTML` sur du HTML non sanitizé).
-- Temps de lecture estimé : calcul pur côté front (`reading-time.util.ts`) à partir de
-  `content`, pas un champ Prisma à ajouter pour un besoin aussi simple.
-- Colonne de lecture centrée ~680px, ligne d'appui confortable — respecter la contrainte
-  « AVOID: cramped line-length » du prompt Stitch.
-- Barre de partage sociale : purement côté client (`'use client'`), aucun appel API
-  nécessaire (compteurs de partage hors périmètre Phase 1).
+- **Fidélité vérifiée via `agy`/StitchMCP `get_screen`** (écran réel
+  `f09fd43e402e4112a0e8dd7092298faa`), pas seulement `stitch-prompts/23-journal-article.md`.
+- **Byline auteur réel, pas générique** : contrairement à la première implémentation de
+  `journal-liste` (byline générique « La Rédaction ANGALY »), l'écran réel de CETTE page
+  montre un profil éditorial complet et nommé (« Mme. Fanja, Maître Tailleur » — photo, rôle,
+  bio de 3 phrases). `BlogPostAuthorDto` ne porte toujours que `{id, email}` (`User` = modèle
+  d'identité, pas un profil éditorial), donc un lookup partagé
+  `apps/web/src/lib/author-profiles.ts` (`getAuthorProfile(email)`) a été créé — texte de
+  bio/rôle en dur par e-mail, exactement la donnée "hors modèle" que cette fiche anticipait
+  déjà. `journal-liste`'s `FeaturedArticleCard` a été rétro-adapté pour utiliser le même
+  lookup (cohérence du site : le même auteur réel doit s'appeler pareil partout), avec un
+  repli générique conservé pour tout e-mail auteur non présent dans le lookup.
+  **Aucune photo réelle sourcée pour Mme. Fanja** (recherche Unsplash interrompue par une
+  limite de session) — `photoUrl: null` dans le lookup ; `ArticleHeader`/`AuthorBox` gèrent
+  déjà proprement l'absence de photo (pas d'avatar affiché plutôt qu'une image cassée). À
+  compléter dans une session future.
+- **`RelatedArticlesRow` réutilise `ArticleCard` de `journal-liste` par un import
+  cross-feature direct** (`@/features/journal-liste`) — la seule fois cette session qu'un
+  composant est réellement partagé entre deux features (pas dupliqué) : la fiche de cette
+  page demande explicitement cette réutilisation, `ArticleCard` n'a aucun couplage à l'état
+  interne de `journal-liste` (juste `article`/`isWide` en props), et les deux features
+  consomment exactement le même DTO (`BlogPostDto`). Exporté depuis
+  `journal-liste/index.ts`. Toute autre petite fonction pure partagée entre pages cette
+  session (`buildDirectionsUrl`, `formatArticleDate`) reste dupliquée par feature — ce cas
+  est l'exception délibérée, pas un changement de convention.
+- **Corps d'article en paragraphes simples, pas de rendu riche** : `BlogPost.content` est un
+  `String` unique. L'écran réel montre des sous-titres H2, une pull-quote et une image
+  breakout intercalés dans le texte — les reproduire fidèlement demanderait soit un pipeline
+  markdown sécurisé, soit des champs Prisma structurés, ni l'un ni l'autre n'existant
+  aujourd'hui. Le contenu (`content.split(/\n{2,}/)`) est donc rendu en paragraphes React
+  simples (jamais `dangerouslySetInnerHTML`), sûr mais visuellement plus sobre que la
+  maquette pour cette section précise — à revoir si un vrai besoin de contenu riche par
+  article est confirmé (voir aussi `docs/features/blog.md`).
+- Partage social : 3 canaux explicites (Facebook/WhatsApp/copier le lien), pas le bouton
+  Web-Share-API générique de `creation-detail` — l'écran réel liste ces 3 boutons
+  spécifiquement. lucide-react n'a pas d'icône WhatsApp ; le tracé SVG exact de la maquette
+  est inliné dans `SocialShareBar.tsx`.
+- « Voir tous ses articles » (AuthorBox) pointe vers `href="#"` — aucune page de filtre par
+  auteur n'existe (hors périmètre Phase 1), décoratif plutôt qu'un lien construit vers une
+  route qui n'existe pas, même traitement que les dropdowns décoratifs de
+  `nos-creations-galerie`.
 
 ## Checklist d'acceptation
 
-- [ ] En-tête article (cover, tag catégorie, titre, ligne auteur/date/temps de lecture) fidèle à `stitch-prompts/23-journal-article.md`
-- [ ] Corps d'article lisible (mesure ~680px, citations avec bordure champagne, images inline légendées)
-- [ ] Bloc auteur + articles liés (« À lire aussi ») + bande CTA rendez-vous rendus
-- [ ] Partage social fonctionnel (Facebook, copier le lien, WhatsApp), barre sticky en bas sur mobile
-- [ ] `<title>`/meta description + données structurées Article (spec §70/§71) définis
-- [ ] Tests : `useJournalArticle.test.ts`, `reading-time.test.ts`, `JournalArticlePage.test.tsx`
-- [ ] `docs/checklist-implementation.md` et `docs/mockup-reference.md` mis à jour à ✅
+- [x] En-tête article (cover, tag catégorie, titre, ligne auteur/date/temps de lecture) fidèle à l'écran réel
+- [x] Corps d'article lisible (mesure ~680px) — paragraphes simples, pas de pull-quote/sous-titres/image breakout (voir Points d'attention)
+- [x] Bloc auteur (nommé, avec bio réelle) + articles liés (« À lire aussi ») + bande CTA rendez-vous rendus
+- [x] Partage social fonctionnel (Facebook, copier le lien, WhatsApp), barre sticky desktop
+- [x] `<title>`/meta description définis via `generateMetadata` (spec §70/§71)
+- [x] Tests : 12 fichiers, 68 tests au total avec `journal-liste` (100 % de couverture sur les deux features)
+- [x] `docs/checklist-implementation.md` et `docs/mockup-reference.md` mis à jour à ✅
