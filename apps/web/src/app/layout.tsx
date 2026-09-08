@@ -5,6 +5,11 @@ import { Providers } from '@/providers';
 
 import './globals.css';
 
+/**
+ * `template` applies "%s | ANGALY" to every child route's `metadata.title` automatically —
+ * a page-level `title` must be the bare page name only (e.g. "Contactez-nous"), never
+ * "Contactez-nous | ANGALY", or the suffix doubles up in the rendered <title>.
+ */
 export const metadata: Metadata = {
   title: {
     default: 'ANGALY — Maison de couture',

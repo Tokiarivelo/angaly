@@ -1,6 +1,6 @@
 # Page — `page-404`
 
-**Statut : ⬜ À faire.** Phase 1 — Présence digitale.
+**Statut : ✅ Fait.** Phase 1 — Présence digitale.
 
 ## Objet
 
@@ -11,10 +11,8 @@ rebond soigné qui garde l'identité éditoriale ANGALY même dans un moment uti
 ## Route(s)
 
 `apps/web/src/app/not-found.tsx` — convention Next.js App Router (déclenchée pour toute
-route non résolue). Placé à la racine de `app/`, il capte donc aussi les segments sous
-`(public)`/`(auth)`/`(client)`/`(admin)` qui n'ont pas de route dédiée ; aucune route
-propre à créer sous `(public)`. Server Component pur — aucune donnée dynamique, aucun état
-interactif hormis la navigation des boutons/liens.
+route non résolue). Server Component pur — aucune donnée dynamique, aucun état interactif
+hormis la navigation des boutons/liens.
 
 ## Référence maquette
 
@@ -22,23 +20,22 @@ interactif hormis la navigation des boutons/liens.
 - Écran Stitch : **ANGALY — Page non trouvée (404)**
 - Section spécification : §94 (`docs/specifications/ANGALY_Specifications_Completes.md`)
 
-## Arborescence de composants attendue
+## Arborescence de composants (livrée)
 
 ```
 apps/web/src/app/not-found.tsx     → page racine Next.js, importe uniquement <Page404 />
 apps/web/src/features/page-404/
   ui/
-    Page404.tsx                    → orchestre illustration + titre + sous-texte + boutons + liens rapides
-    NotFoundIllustration.tsx        → illustration/photo floutée dans la palette (pas de graphisme d'erreur cartoonesque)
-    QuickLinksRow.tsx                 → « Vous cherchiez peut-être : » (Nos Créations, Sur Mesure, Contact)
+    Page404.tsx                    → orchestre header minimal + illustration + titre + sous-texte + boutons + liens rapides
+    NotFoundIllustration.tsx        → icône décorative (voir Points d'attention), pas un graphisme d'erreur cartoonesque
+    QuickLinksRow.tsx                 → « Vous cherchiez peut-être : » (Nos Créations, Le Journal, Prendre rendez-vous)
   __tests__/
-    Page404.test.tsx
+    Page404.test.tsx, NotFoundIllustration.test.tsx, QuickLinksRow.test.tsx
   index.ts
 ```
 
-Page entièrement statique : pas de `hooks/`/`api/`/`schemas/` (dossiers vides à ne pas
-committer « pour la forme », voir Points d'attention) — seuls `ui/`, `__tests__/` et
-`index.ts` sont nécessaires ici.
+Pas de `hooks/`/`api/`/`schemas/` : page entièrement statique, aucun dossier vide committé
+« pour la forme ».
 
 ## Endpoints API consommés
 
@@ -50,27 +47,40 @@ Aucun.
 
 ## Points d'attention
 
-- Contenu entièrement statique : ne pas créer de dossiers `hooks/`/`api/`/`schemas/` vides
-  « pour la forme » — `apps/web/src/features/README.md` décrit la structure complète mais
-  un dossier sans contenu ne doit pas être committé.
-- Le lien « Sur Mesure » de la ligne « Vous cherchiez peut-être » cible une page de Phase 2
-  (`sur-mesure-process`, voir `docs/phases/phase-2-conversion.md`) — câbler le lien dès
-  Phase 1 (même logique que le CTA « Prendre rendez-vous » de `docs/pages/home.md`) sans
-  laisser de route morte, quitte à rediriger temporairement vers `/creations` si la route
-  Phase 2 n'est pas encore livrée.
-- Respecter le message exact de la spec §94 : *« Cette création semble avoir disparu de
-  l'atelier... »* — ne pas le remplacer par un message 404 générique.
-- Illustration : image statique optimisée (`next/image`), pas de dépendance à une
-  librairie d'illustration lourde pour un composant aussi simple.
-- Vérifier que Next.js renvoie bien un statut HTTP 404 réel (pas seulement un rendu visuel
-  de type « not found ») pour préserver le SEO (spec §70).
+- **Fidélité vérifiée via `agy`/StitchMCP `get_screen`** (écran réel
+  `ac341165bad04bb69186cad7bdc0b814`), pas seulement `stitch-prompts/30-*.md`.
+- **Les 3 liens rapides réels diffèrent du plan initial** : l'écran réel montre « Nos
+  Créations », « Le Journal », « Prendre rendez-vous » — pas « Nos Créations, Sur Mesure,
+  Contact » comme le plan de cette fiche le supposait avant vérification de l'écran réel.
+  `Le Journal`/`Nos Créations` pointent vers des routes Phase 1 déjà livrées ; `Prendre
+  rendez-vous` cible une route Phase 2 non encore livrée — câblée dès Phase 1 quand même,
+  même convention que les autres pages (jamais de lien mort caché).
+- **Illustration** : l'écran réel décrit une « silhouette de robe en fil d'or champagne,
+  délicate » — un asset décoratif sur-mesure, pas une photo. Plutôt que de fabriquer ou
+  détourner une illustration externe pour cette seule page utilitaire, une icône `Shirt`
+  (lucide-react) large et translucide en champagne reproduit la même intention visuelle sans
+  nouvelle dépendance d'assets — conforme à la note de la fiche initiale (« pas de
+  dépendance à une librairie d'illustration lourde »).
+- **Statut HTTP 404 réel confirmé** : `curl`/Playwright contre une route inexistante en dev
+  renvoient bien `404` (comportement Next.js natif pour `not-found.tsx`, aucun code
+  supplémentaire requis).
+- **Bug sitewide découvert et corrigé pendant la vérification de cette page** : le layout
+  racine (`apps/web/src/app/layout.tsx`) définit `title.template = '%s | ANGALY'`, mais
+  **chaque page livrée cette session** (home comprise) définissait son propre `metadata.title`
+  en incluant déjà `| ANGALY` (ou une variante) — provoquant un titre d'onglet dupliqué
+  partout (« Contactez-nous | ANGALY | ANGALY », « Page introuvable | ANGALY | ANGALY », etc.,
+  confirmé via `curl`/Playwright). Corrigé sur les 12 fichiers concernés (chaque
+  `metadata.title`/`generateMetadata` ne porte plus que le nom de page brut ; la page
+  d'accueil n'exporte plus de `title` du tout et hérite du `default` du layout racine) —
+  revérifié en direct sur plusieurs pages après correction.
 
 ## Checklist d'acceptation
 
-- [ ] Message et CTA conformes à `stitch-prompts/30-page-404-et-composants-mobiles.md` (Écran A) et à la spec §94
-- [ ] Boutons « Retour aux créations » (primaire) et « Retour à l'accueil » (secondaire) fonctionnels
-- [ ] Rangée « Vous cherchiez peut-être : » avec 3 liens rapides fonctionnels
-- [ ] `apps/web/src/app/not-found.tsx` déclenché correctement pour toute route inconnue (vérification manuelle ou e2e)
-- [ ] Statut HTTP 404 réel renvoyé, `<title>`/meta cohérents (spec §70)
-- [ ] Tests : `Page404.test.tsx` (rendu + a11y de base)
-- [ ] `docs/checklist-implementation.md` et `docs/mockup-reference.md` mis à jour à ✅
+- [x] Message et CTA conformes à l'écran réel et à la spec §94 (texte exact « Cette création
+      semble avoir disparu de l'atelier... »)
+- [x] Boutons « Retour aux créations » (primaire) et « Retour à l'accueil » (secondaire) fonctionnels
+- [x] Rangée « Vous cherchiez peut-être : » avec les 3 vrais liens rapides (voir Points d'attention)
+- [x] `apps/web/src/app/not-found.tsx` déclenché correctement pour toute route inconnue (vérifié en direct)
+- [x] Statut HTTP 404 réel renvoyé, `<title>`/meta cohérents — a révélé et corrigé un bug de titre dupliqué sur tout le site (voir Points d'attention)
+- [x] Tests : `Page404.test.tsx`, `NotFoundIllustration.test.tsx`, `QuickLinksRow.test.tsx` — 6 tests, 100 % de couverture
+- [x] `docs/checklist-implementation.md` et `docs/mockup-reference.md` mis à jour à ✅

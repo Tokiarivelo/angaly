@@ -9,11 +9,11 @@ export async function generateMetadata({ params }: { params: Promise<{ slug: str
   try {
     const creation = await apiClient.get<CreationDto>(`/creations/${slug}`);
     return {
-      title: `${creation.name} | ANGALY`,
+      title: creation.name,
       description: creation.description,
     };
   } catch {
-    return { title: 'Création | ANGALY' };
+    return { title: 'Création' };
   }
 }
 

@@ -3,7 +3,7 @@ import type { Metadata } from 'next';
 import { CollectionsListePage } from '@/features/collections-liste';
 
 export const metadata: Metadata = {
-  title: 'Nos Collections | ANGALY',
+  title: 'Nos Collections',
   description: 'Chaque collection raconte une histoire, une saison, une inspiration.',
 };
 
