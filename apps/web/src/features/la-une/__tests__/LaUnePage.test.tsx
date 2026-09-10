@@ -1,7 +1,7 @@
 import { render, screen, waitFor } from '@testing-library/react';
 import userEvent from '@testing-library/user-event';
 import { HttpResponse, http } from 'msw';
-import { describe, expect, it } from 'vitest';
+import { beforeEach, describe, expect, it, vi } from 'vitest';
 
 import { server } from '@/lib/msw/server';
 import { withQueryClient } from '@/lib/test-utils';
@@ -9,6 +9,15 @@ import { withQueryClient } from '@/lib/test-utils';
 import { LaUnePage } from '../ui/LaUnePage';
 
 const API_BASE_URL = 'http://localhost:3003/api';
+
+const push = vi.fn();
+let currentSearchParams = new URLSearchParams();
+
+vi.mock('next/navigation', () => ({
+  useRouter: () => ({ push }),
+  usePathname: () => '/la-une',
+  useSearchParams: () => currentSearchParams,
+}));
 
 function mockThreeCreations() {
   server.use(
@@ -87,6 +96,11 @@ function mockThreeCreations() {
 }
 
 describe('LaUnePage', () => {
+  beforeEach(() => {
+    push.mockReset();
+    currentSearchParams = new URLSearchParams();
+  });
+
   it('renders the editorial header, filter bar, hero, and closing CTA', async () => {
     const Wrapper = withQueryClient();
     render(<LaUnePage />, { wrapper: Wrapper });
@@ -102,13 +116,11 @@ describe('LaUnePage', () => {
     expect(screen.getByRole('link', { name: 'Prendre rendez-vous' })).toBeInTheDocument();
   });
 
-  it('filters the grid client-side while always keeping the hero visible', async () => {
+  it('changes route when clicking a filter pill', async () => {
     mockThreeCreations();
     const Wrapper = withQueryClient();
     render(<LaUnePage />, { wrapper: Wrapper });
 
-    // Hero = the most recently featured creation; grid = the other two
-    // (large + full-width rhythm slots, exercising both grid item sizes).
     await waitFor(() => expect(screen.getByText('Robe Éternelle')).toBeInTheDocument());
     expect(screen.getByText('Tailleur Sur Mesure')).toBeInTheDocument();
     expect(screen.getByText("Dans l'Atelier")).toBeInTheDocument();
@@ -116,11 +128,20 @@ describe('LaUnePage', () => {
     const user = userEvent.setup();
     await user.click(screen.getByRole('button', { name: 'Coulisses' }));
 
-    expect(screen.queryByText('Tailleur Sur Mesure')).not.toBeInTheDocument();
-    expect(
-      screen.getByText('Aucune création ne correspond à ce filtre pour le moment.'),
-    ).toBeInTheDocument();
+    expect(push).toHaveBeenCalledWith('/la-une?type=coulisses', { scroll: false });
+  });
+
+  it('filters the grid according to URL search params while always keeping the hero visible', async () => {
+    currentSearchParams = new URLSearchParams('type=coulisses');
+    mockThreeCreations();
+    const Wrapper = withQueryClient();
+    render(<LaUnePage />, { wrapper: Wrapper });
+
+    await waitFor(() => expect(screen.getByText('Robe Éternelle')).toBeInTheDocument());
     // The hero stays visible regardless of the grid filter.
     expect(screen.getByText('Robe Éternelle')).toBeInTheDocument();
+    // Only the coulisses item is shown in the grid
+    expect(screen.getByText("Dans l'Atelier")).toBeInTheDocument();
+    expect(screen.queryByText('Tailleur Sur Mesure')).not.toBeInTheDocument();
   });
 });

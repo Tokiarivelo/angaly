@@ -1,16 +1,13 @@
 import type { ContentType, FilterPillValue } from '../types/la-une-item.types';
 
 export interface ContentTypeFilterOption {
-  value: FilterPillValue | 'all';
+  value: FilterPillValue;
   label: string;
 }
 
 /**
- * Matches the real Stitch "La Une" screen's filter bar exactly (5 pills) —
- * not the 8-pill set implied by stitch-prompts/02-la-une.md alone. "Sur
- * Mesure" and "Coulisses" have no backing taxonomy field yet (no `Creation`
- * ever resolves to them) — visual-only filters until a dedicated field
- * exists, per docs/pages/la-une.md "Points d'attention".
+ * Matches the real Stitch "La Une" screen's filter bar (5 pills):
+ * Tout, Création du mois, Collection du moment, Sur Mesure, Coulisses.
  */
 export const CONTENT_TYPE_FILTERS: ContentTypeFilterOption[] = [
   { value: 'all', label: 'Tout' },
@@ -23,6 +20,8 @@ export const CONTENT_TYPE_FILTERS: ContentTypeFilterOption[] = [
 const CONTENT_TYPE_LABELS: Record<ContentType, string> = {
   'creation-du-mois': 'Création du mois',
   'collection-du-moment': 'Collection du moment',
+  'sur-mesure': 'Sur Mesure',
+  coulisses: 'Coulisses',
   mariage: 'Mariage',
   costume: 'Costume',
   collection: 'Collection',

@@ -99,7 +99,7 @@ const DEFAULT_HOME_CONTENT: HomeContent = {
     paragraph:
       "Découvrez notre atelier virtuel propulsé par l'IA. Visualisez vos idées, testez des coupes audacieuses et collaborez en temps réel avec nos maîtres tailleurs avant même le premier coup de ciseaux.",
     cta: 'Explorer le Studio',
-    imageUrl: 'https://images.unsplash.com/photo-1558769132-cb1aea458c5e?w=1200&q=80&fm=jpg',
+    imageUrl: 'https://images.unsplash.com/photo-1509631179647-0177331693ae?w=1200&q=80&fm=jpg',
     imageAlt: 'Atelier de création virtuelle et patronage Angaly Pattern Studio',
   },
   ateliersTeaser: { headline: 'Nos Ateliers' },
@@ -118,18 +118,30 @@ export function useHomeContent(): { data: HomeContent; isLoading: boolean; error
     const mediaList = mediaResponse.data;
     const heroMedia = mediaList.find((m) => {
       const alt = m.altText?.toLowerCase() ?? '';
-      return alt.includes('haute couture') || alt.includes('mariée') || alt.includes('hero');
+      return (alt.includes('haute couture') || alt.includes('hero')) && !alt.includes('univers');
     });
     const maisonMedia = mediaList.find((m) => {
       const alt = m.altText?.toLowerCase() ?? '';
-      return alt.includes('couturières') || alt.includes('atelier') || alt.includes('maison');
+      return alt.includes('couturières') || (alt.includes('atelier') && !alt.includes('pattern studio'));
     });
-    const mariageMedia = mediaList.find((m) => (m.altText?.toLowerCase() ?? '').includes('univers robes de mariée'));
-    const costumesMedia = mediaList.find((m) => (m.altText?.toLowerCase() ?? '').includes('costumes'));
-    const soireeMedia = mediaList.find((m) => (m.altText?.toLowerCase() ?? '').includes('soirée'));
+    const mariageMedia = mediaList.find((m) => {
+      const alt = m.altText?.toLowerCase() ?? '';
+      return alt.includes('univers robes de mariée') || (alt.includes('mariage') && alt.includes('univers'));
+    });
+    const costumesMedia = mediaList.find((m) => {
+      const alt = m.altText?.toLowerCase() ?? '';
+      return alt.includes('univers costumes') || (alt.includes('costumes') && alt.includes('univers'));
+    });
+    const soireeMedia = mediaList.find((m) => {
+      const alt = m.altText?.toLowerCase() ?? '';
+      return alt.includes('soirée') && alt.includes('univers');
+    });
     const surMesureMedia = mediaList.find((m) => {
       const alt = m.altText?.toLowerCase() ?? '';
-      return alt.includes('sur mesure') || alt.includes('mesures');
+      return (
+        alt.includes('confection sur mesure') ||
+        (alt.includes('sur mesure') && alt.includes('univers') && !alt.includes('costumes'))
+      );
     });
     const patternStudioMedia = mediaList.find((m) => (m.altText?.toLowerCase() ?? '').includes('pattern studio'));
 

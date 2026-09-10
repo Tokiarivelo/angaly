@@ -71,13 +71,16 @@ contiennent que du JSX + appels de hooks.
 ## Points d'attention
 
 - Le schéma Prisma ne modélise pas de « types de contenu » éditoriaux comme un champ dédié
-  sur `Creation` — seuls `isFeatured` + la fenêtre `featuredFrom`/`featuredUntil` existent. La
-  vraie barre de filtre de l'écran Stitch réel (`aa4b25a90d8d44c1975e8b86c4898854`, relu via
-  `agy`/StitchMCP `get_screen`) n'a que 5 pilules — Tout, Création du mois, Collection du
-  moment, Sur Mesure, Coulisses — pas les 8 implicites de `stitch-prompts/02-la-une.md` seul.
-  « Mariage »/« Costume » restent dérivés de `category.name` pour l'étiquette affichée sur
-  chaque carte, mais « Sur Mesure »/« Coulisses » sont des filtres purement visuels sans
-  donnée réelle qui les alimente pour l'instant.
+  sur `Creation` — les 5 pilules de l'écran Stitch réel (Tout, Création du mois, Collection du
+  moment, Sur Mesure, Coulisses) sont alimentées par les catégories/disponibilités dédiées
+  dans `seed.ts` et dérivées par `buildLaUneItems.ts` :
+  - **Tout** (`all`) : l'ensemble des créations vedettes.
+  - **Création du mois** (`creation-du-mois`) : créations de la catégorie dédiée (`Symphonie Champagne`, etc.).
+  - **Collection du moment** (`collection-du-moment`) : créations rattachées à une collection (`Diadème Impérial`, `Nuit d'Opéra`, etc.).
+  - **Sur Mesure** (`sur-mesure`) : créations sur mesure / `SUR_DEMANDE` (`Signature Artisan`, `Tailleur Sur Mesure`, `Smoking Grand Soir`, etc.).
+  - **Coulisses** (`coulisses`) : pièces documentant le travail d'atelier (`L'Art du Perlage à la Main`, `L'Entoilage Traditionnel`).
+  Toutes disposent d'images réelles hébergées sur MinIO. La sélection d'une pilule met à jour
+  l'URL (`/la-une?type=...`) avec historique de navigation et prise en charge du deep linking.
 - **Pas de composant « story » 2 colonnes** : l'écran réel ne montre aucune carte de ce type
   (contrairement à ce que `stitch-prompts/02-la-une.md` seul suggérait) — la grille masonry
   réelle est un rythme fixe (grand item 7 colonnes, petit item 5 colonnes décalé, item pleine

@@ -1,12 +1,44 @@
-import type { CollectionDto, CreationDto } from '@angaly/types';
+import { CreationAvailability, type CollectionDto, type CreationDto } from '@angaly/types';
 
 import type { ContentType, LaUneItem } from '../types/la-une-item.types';
 
-function deriveContentType(creation: CreationDto): ContentType | null {
-  const categoryName = creation.category.name.toLowerCase();
+export function deriveContentType(creation: CreationDto): ContentType | null {
+  const categorySlug = creation.category?.slug?.toLowerCase() ?? '';
+  const categoryName = creation.category?.name?.toLowerCase() ?? '';
+  const creationSlug = creation.slug?.toLowerCase() ?? '';
+  const creationName = creation.name?.toLowerCase() ?? '';
+
+  if (
+    categorySlug.includes('coulisses') ||
+    categoryName.includes('coulisses') ||
+    creationSlug.includes('coulisses')
+  ) {
+    return 'coulisses';
+  }
+
+  if (
+    categorySlug.includes('creation-du-mois') ||
+    categoryName.includes('création du mois') ||
+    categoryName.includes('creation du mois') ||
+    creationSlug.includes('creation-du-mois')
+  ) {
+    return 'creation-du-mois';
+  }
+
+  if (
+    categorySlug.includes('sur-mesure') ||
+    categoryName.includes('sur-mesure') ||
+    categoryName.includes('sur mesure') ||
+    creationSlug.includes('sur-mesure') ||
+    creationName.includes('sur mesure') ||
+    creation.availability === CreationAvailability.SUR_DEMANDE
+  ) {
+    return 'sur-mesure';
+  }
+
+  if (creation.collection) return 'collection-du-moment';
   if (categoryName.includes('mariée') || categoryName.includes('mariage')) return 'mariage';
   if (categoryName.includes('costume')) return 'costume';
-  if (creation.collection) return 'collection';
   return null;
 }
 

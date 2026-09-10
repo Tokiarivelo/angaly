@@ -76,6 +76,75 @@ describe('buildLaUneItems', () => {
     expect(items[2]?.contentType).toBe('costume');
   });
 
+  it('derives "coulisses" content type from category or slug', () => {
+    const items = buildLaUneItems(
+      [
+        makeCreation({
+          id: 'c-coulisses',
+          slug: 'coulisses-art-du-perlage',
+          category: { id: 'cat-coulisses', slug: 'coulisses', name: 'Coulisses' },
+        }),
+      ],
+      makeCollection(),
+    );
+
+    expect(items[1]?.contentType).toBe('coulisses');
+  });
+
+  it('derives "sur-mesure" content type from SUR_DEMANDE availability or category', () => {
+    const items = buildLaUneItems(
+      [
+        makeCreation({
+          id: 'c-sur-mesure-1',
+          slug: 'tailleur-sur-mesure',
+          availability: CreationAvailability.SUR_DEMANDE,
+          category: { id: 'cat-sm', slug: 'sur-mesure', name: 'Sur Mesure' },
+        }),
+        makeCreation({
+          id: 'c-sur-mesure-2',
+          slug: 'costume-demande',
+          availability: CreationAvailability.SUR_DEMANDE,
+          category: { id: 'cat-c', slug: 'costumes', name: 'Costumes' },
+        }),
+      ],
+      makeCollection(),
+    );
+
+    expect(items[1]?.contentType).toBe('sur-mesure');
+    expect(items[2]?.contentType).toBe('sur-mesure');
+  });
+
+  it('derives "creation-du-mois" content type from category or slug', () => {
+    const items = buildLaUneItems(
+      [
+        makeCreation({
+          id: 'c-cdm',
+          slug: 'creation-du-mois-symphonie',
+          category: { id: 'cat-cdm', slug: 'creation-du-mois', name: 'Création du mois' },
+        }),
+      ],
+      makeCollection(),
+    );
+
+    expect(items[1]?.contentType).toBe('creation-du-mois');
+  });
+
+  it('derives "collection-du-moment" when creation belongs to a collection', () => {
+    const items = buildLaUneItems(
+      [
+        makeCreation({
+          id: 'c-col',
+          slug: 'robe-majeste',
+          collection: makeCollection({ id: 'collection-2', slug: 'collection-dentelle' }),
+          category: { id: 'cat-s', slug: 'soiree', name: 'Robes de soirée' },
+        }),
+      ],
+      makeCollection(),
+    );
+
+    expect(items[1]?.contentType).toBe('collection-du-moment');
+  });
+
   it('returns an empty list when there is no data at all', () => {
     expect(buildLaUneItems([], null)).toEqual([]);
   });

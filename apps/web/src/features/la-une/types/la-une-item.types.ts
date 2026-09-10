@@ -4,15 +4,24 @@
  * (shows under "Tout" only) rather than guessing, see docs/pages/la-une.md
  * "Points d'attention".
  */
-export type ContentType = 'creation-du-mois' | 'collection-du-moment' | 'mariage' | 'costume' | 'collection';
+export type ContentType =
+  | 'creation-du-mois'
+  | 'collection-du-moment'
+  | 'sur-mesure'
+  | 'coulisses'
+  | 'mariage'
+  | 'costume'
+  | 'collection';
 
 /**
- * Real Stitch screen filter bar (screen `aa4b25a90d8d44c1975e8b86c4898854`) has
- * exactly 5 pills — "Sur Mesure" and "Coulisses" have no backing taxonomy
- * field yet (see content-type-filters.const.ts), so they never match a real
- * item until a dedicated field exists.
+ * Filter pills matching the Stitch "La Une" screen.
  */
-export type FilterPillValue = ContentType | 'sur-mesure' | 'coulisses';
+export type FilterPillValue =
+  | 'all'
+  | 'creation-du-mois'
+  | 'collection-du-moment'
+  | 'sur-mesure'
+  | 'coulisses';
 
 export interface LaUneItem {
   id: string;

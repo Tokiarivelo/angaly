@@ -59,6 +59,9 @@ async function main() {
     { slug: 'robes-de-mariee', name: 'Robes de mariée', kind: CategoryKind.CREATION },
     { slug: 'costumes-homme', name: 'Costumes homme', kind: CategoryKind.CREATION },
     { slug: 'robes-de-soiree', name: 'Robes de soirée', kind: CategoryKind.CREATION },
+    { slug: 'sur-mesure', name: 'Sur Mesure', kind: CategoryKind.CREATION },
+    { slug: 'coulisses', name: 'Coulisses', kind: CategoryKind.CREATION },
+    { slug: 'creation-du-mois', name: 'Création du mois', kind: CategoryKind.CREATION },
     { slug: 'pret-a-porter', name: 'Prêt-à-porter', kind: CategoryKind.PRODUCT },
     { slug: 'conseils-mode', name: 'Conseils mode', kind: CategoryKind.BLOG },
     { slug: 'mariage-a-madagascar', name: 'Mariage', kind: CategoryKind.BLOG },
@@ -83,6 +86,9 @@ async function main() {
   const mariage = categoryBySlug.get('robes-de-mariee')!;
   const costumes = categoryBySlug.get('costumes-homme')!;
   const soiree = categoryBySlug.get('robes-de-soiree')!;
+  const surMesureCategory = categoryBySlug.get('sur-mesure')!;
+  const coulissesCategory = categoryBySlug.get('coulisses')!;
+  const creationDuMoisCategory = categoryBySlug.get('creation-du-mois')!;
 
   // Collections first (creations reference them by id).
   const collectionEternelle = await prisma.collection.upsert({
@@ -117,7 +123,7 @@ async function main() {
     {
       slug: 'robe-eternelle',
       name: 'Robe Éternelle',
-      categoryId: mariage.id,
+      categoryId: creationDuMoisCategory.id,
       collectionId: collectionEternelle.id,
       description:
         "L'incarnation du raffinement intemporel. La Robe Éternelle marie la structure architecturale d'un bustier corseté à la légèreté d'une jupe en cascade. Chaque détail est pensé pour sublimer la silhouette avec une élégance souveraine, digne des plus grands ateliers de couture.",
@@ -140,19 +146,36 @@ async function main() {
       techniques: null,
       availability: CreationAvailability.PIECE_UNIQUE,
       reproducible: false,
-      isFeatured: false,
-      featuredFrom: null,
+      isFeatured: true,
+      featuredFrom: new Date('2026-02-05T00:00:00.000Z'),
       photo: '1583939003579-730e3918a45a',
       photoAlt: 'Romance Royale — robe de mariée',
     },
     {
+      slug: 'creation-du-mois-symphonie',
+      name: 'Symphonie Champagne',
+      categoryId: creationDuMoisCategory.id,
+      collectionId: null,
+      description:
+        "Notre création vedette du mois : une silhouette sirène sculptée en satin de soie champagne, ornée d'incrustations de cristaux et perles baroques.",
+      materials: 'Satin de soie champagne, cristaux Swarovski',
+      techniques: 'Broderie florale en relief, incrustation de perles',
+      availability: CreationAvailability.PIECE_UNIQUE,
+      reproducible: false,
+      isFeatured: true,
+      featuredFrom: new Date('2026-03-01T00:00:00.000Z'),
+      photo: '1566174053879-31528523f8ae',
+      photoAlt: 'Symphonie Champagne — Création du mois',
+    },
+    {
       slug: 'signature-artisan',
       name: 'Signature Artisan',
-      categoryId: costumes.id,
-      collectionId: collectionEternelle.id,
-      description: 'Le raffinement du costume masculin, cousu main dans nos ateliers pour une coupe irréprochable.',
-      materials: 'Détails à la main',
-      techniques: null,
+      categoryId: surMesureCategory.id,
+      collectionId: null,
+      description:
+        'Le raffinement du costume masculin sur mesure, cousu main dans nos ateliers pour une coupe irréprochable.',
+      materials: 'Détails à la main, laine d’exception',
+      techniques: 'Entoilage complet, boutonnières main',
       availability: CreationAvailability.SUR_DEMANDE,
       reproducible: true,
       isFeatured: true,
@@ -163,32 +186,49 @@ async function main() {
     {
       slug: 'le-dandy',
       name: 'Le Dandy',
-      categoryId: costumes.id,
-      collectionId: collectionDentelle.id,
-      description: 'Un costume trois-pièces à carreaux, taillé dans une laine froide sur mesure.',
+      categoryId: surMesureCategory.id,
+      collectionId: null,
+      description: 'Un costume trois-pièces à carreaux sur mesure, taillé dans une laine froide d’exception.',
       materials: 'Laine froide sur mesure',
-      techniques: null,
+      techniques: 'Gilet croisé, coutures ouvertes repassées au fer lourd',
       availability: CreationAvailability.SUR_DEMANDE,
       reproducible: true,
-      isFeatured: false,
-      featuredFrom: null,
+      isFeatured: true,
+      featuredFrom: new Date('2026-01-15T00:00:00.000Z'),
       photo: '1594938298603-c8148c4dae35',
-      photoAlt: 'Le Dandy — costume trois-pièces',
+      photoAlt: 'Le Dandy — costume trois-pièces sur mesure',
     },
     {
       slug: 'tailleur-sur-mesure',
       name: 'Tailleur Sur Mesure',
-      categoryId: costumes.id,
+      categoryId: surMesureCategory.id,
       collectionId: null,
-      description: 'Le raffinement du costume masculin, cousu main dans nos ateliers pour une coupe irréprochable.',
-      materials: null,
-      techniques: null,
+      description:
+        "L'art du costume tailleur confectionné sur mesure pour sublimer chaque morphologie avec une précision millimétrée.",
+      materials: 'Laine extra-fine et doublure soie',
+      techniques: 'Coupe au millimètre, finitions tailleur main',
       availability: CreationAvailability.SUR_DEMANDE,
       reproducible: true,
-      isFeatured: false,
-      featuredFrom: null,
+      isFeatured: true,
+      featuredFrom: new Date('2026-01-25T00:00:00.000Z'),
       photo: '1769868800959-533a3f907d60',
-      photoAlt: 'Tailleur Sur Mesure — détail boutonnière',
+      photoAlt: 'Tailleur Sur Mesure — détail de coupe',
+    },
+    {
+      slug: 'smoking-grand-soir-sur-mesure',
+      name: 'Smoking Grand Soir Sur Mesure',
+      categoryId: surMesureCategory.id,
+      collectionId: null,
+      description:
+        'Smoking deux-pièces sur mesure en laine extra-fine et revers châle en faille de soie, taillé pour les soirées de gala.',
+      materials: "Laine Super 150's, faille de soie",
+      techniques: 'Montage traditionnel entoilé, boutonnières milanaises cousues main',
+      availability: CreationAvailability.SUR_DEMANDE,
+      reproducible: true,
+      isFeatured: true,
+      featuredFrom: new Date('2026-02-22T00:00:00.000Z'),
+      photo: '1593030761757-71fae45fa0e7',
+      photoAlt: 'Smoking Grand Soir — Confection sur mesure',
     },
     {
       slug: 'nuit-opera',
@@ -215,10 +255,58 @@ async function main() {
       techniques: null,
       availability: CreationAvailability.PIECE_UNIQUE,
       reproducible: false,
-      isFeatured: false,
-      featuredFrom: null,
+      isFeatured: true,
+      featuredFrom: new Date('2026-02-12T00:00:00.000Z'),
       photo: '1571908599407-cdb918ed83bf',
       photoAlt: 'Robe Majesté — robe de soirée ornée',
+    },
+    {
+      slug: 'diademe-imperial',
+      name: 'Diadème Impérial',
+      categoryId: soiree.id,
+      collectionId: collectionEternelle.id,
+      description:
+        'Une robe de bal majestueuse issue de la Collection Éternelle, rehaussée de cristaux et drapé sculptural.',
+      materials: 'Taffetas de soie, perles de cristal',
+      techniques: 'Drapé haute couture, corset baleiné main',
+      availability: CreationAvailability.PIECE_UNIQUE,
+      reproducible: false,
+      isFeatured: true,
+      featuredFrom: new Date('2026-02-14T00:00:00.000Z'),
+      photo: '1515886657613-9f3515b0c78f',
+      photoAlt: 'Diadème Impérial — Collection Éternelle',
+    },
+    {
+      slug: 'coulisses-art-du-perlage',
+      name: "L'Art du Perlage à la Main",
+      categoryId: coulissesCategory.id,
+      collectionId: null,
+      description:
+        'Dans le secret de nos ateliers : plus de 120 heures de broderie et de perlage minutieux sur dentelle de Calais.',
+      materials: "Dentelle de Calais, perles de verre de Bohême, fil d'argent",
+      techniques: 'Point de Lunéville, perlage guidé à la loupe',
+      availability: CreationAvailability.SUR_DEMANDE,
+      reproducible: true,
+      isFeatured: true,
+      featuredFrom: new Date('2026-02-18T00:00:00.000Z'),
+      photo: '1457972657980-4c9fddebec8d',
+      photoAlt: 'Coulisses : mains de nos brodeuses au travail',
+    },
+    {
+      slug: 'coulisses-entoilage-traditionnel',
+      name: "L'Entoilage Traditionnel",
+      categoryId: coulissesCategory.id,
+      collectionId: null,
+      description:
+        'Découvrez les étapes de confection artisanale de nos vestes à plastron flottant en crin de cheval naturel.',
+      materials: "Toile de lin d'Irlande, crin de cheval naturel, laine d'agneau",
+      techniques: 'Piquage du col à la main, montage traditionnel flottant',
+      availability: CreationAvailability.SUR_DEMANDE,
+      reproducible: true,
+      isFeatured: true,
+      featuredFrom: new Date('2026-02-08T00:00:00.000Z'),
+      photo: '1588618777461-81fe15d547be',
+      photoAlt: 'Coulisses : entoilage traditionnel d’une veste tailleur',
     },
   ];
 
@@ -387,7 +475,7 @@ async function main() {
         "Découvrez notre atelier virtuel propulsé par l'IA. Visualisez vos idées, testez des coupes audacieuses et collaborez en temps réel avec nos maîtres tailleurs avant même le premier coup de ciseaux.",
       ctaPrimaryLabel: 'Explorer le Studio',
       status: ContentStatus.PUBLISHED,
-      photo: '1558769132-cb1aea458c5e',
+      photo: '1509631179647-0177331693ae',
       photoAlt: 'Atelier de création virtuelle et patronage Angaly Pattern Studio',
     },
   ];
@@ -470,15 +558,17 @@ async function main() {
     const storage = createStorageClientFromEnv();
     await storage.ensureBuckets();
 
-    const hasCreationMedia = await prisma.media.findFirst({ where: { entityType: MediaEntityType.CREATION } });
-    if (!hasCreationMedia) {
-      for (const { slug, photo, photoAlt } of creations) {
-        const creation = createdCreations.get(slug);
-        if (!creation) continue;
+    for (const { slug, photo, photoAlt } of creations) {
+      const creation = createdCreations.get(slug);
+      if (!creation) continue;
+      const exists = await prisma.media.findFirst({
+        where: { entityType: MediaEntityType.CREATION, entityId: creation.id },
+      });
+      if (!exists) {
         await attachPhoto(storage, 'creations', photo, photoAlt, MediaEntityType.CREATION, creation.id);
       }
-      console.log('✅ Photos des créations téléchargées et hébergées sur MinIO');
     }
+    console.log('✅ Photos des créations vérifiées/hébergées sur MinIO');
 
     const hasCollectionMedia = await prisma.media.findFirst({ where: { entityType: MediaEntityType.COLLECTION } });
     if (!hasCollectionMedia) {
@@ -550,33 +640,43 @@ async function main() {
       console.log("✅ Photos de l'atelier téléchargées et hébergées sur MinIO");
     }
 
-    const hasBlogMedia = await prisma.media.findFirst({ where: { entityType: MediaEntityType.BLOG_POST } });
-    if (!hasBlogMedia) {
-      for (const { slug, photo, photoAlt } of blogPosts) {
-        const post = createdBlogPosts.get(slug);
-        if (!post) continue;
+    for (const { slug, photo, photoAlt } of blogPosts) {
+      const post = createdBlogPosts.get(slug);
+      if (!post) continue;
+      const exists = await prisma.media.findFirst({
+        where: { entityType: MediaEntityType.BLOG_POST, entityId: post.id },
+      });
+      if (!exists) {
         await attachPhoto(storage, 'blog', photo, photoAlt, MediaEntityType.BLOG_POST, post.id);
       }
-      console.log('✅ Photos des articles de journal téléchargées et hébergées sur MinIO');
     }
+    console.log('✅ Photos des articles de journal vérifiées/hébergées sur MinIO');
 
-    const hasPageSectionMedia = await prisma.media.findFirst({ where: { entityType: MediaEntityType.PAGE_SECTION } });
-    if (!hasPageSectionMedia) {
-      for (const { sectionKey, photo, photoAlt } of pageSections) {
-        const section = createdPageSections.get(sectionKey);
-        if (!section) continue;
+    for (const { sectionKey, photo, photoAlt } of pageSections) {
+      const section = createdPageSections.get(sectionKey);
+      if (!section) continue;
+      const existing = await prisma.media.findFirst({
+        where: { entityType: MediaEntityType.PAGE_SECTION, entityId: section.id },
+      });
+      // If no media or photo changed (e.g. pattern-studio updated photo), re-upload
+      if (!existing) {
+        await attachPhoto(storage, 'customers', photo, photoAlt, MediaEntityType.PAGE_SECTION, section.id);
+      } else if (sectionKey === 'pattern-studio' && !existing.objectKey.includes(photo)) {
+        await prisma.media.delete({ where: { id: existing.id } });
         await attachPhoto(storage, 'customers', photo, photoAlt, MediaEntityType.PAGE_SECTION, section.id);
       }
-      console.log("✅ Photos des sections d'accueil téléchargées et hébergées sur MinIO");
     }
+    console.log("✅ Photos des sections d'accueil vérifiées/hébergées sur MinIO");
 
-    const hasTestimonialMedia = await prisma.media.findFirst({ where: { entityType: MediaEntityType.CUSTOMER_AVATAR } });
-    if (!hasTestimonialMedia) {
-      for (const t of createdTestimonials) {
+    for (const t of createdTestimonials) {
+      const exists = await prisma.media.findFirst({
+        where: { entityType: MediaEntityType.CUSTOMER_AVATAR, entityId: t.id },
+      });
+      if (!exists) {
         await attachPhoto(storage, 'avatars', t.photo, t.photoAlt, MediaEntityType.CUSTOMER_AVATAR, t.id);
       }
-      console.log('✅ Avatars des témoignages téléchargés et hébergés sur MinIO');
     }
+    console.log('✅ Avatars des témoignages vérifiés/hébergés sur MinIO');
   } catch (error) {
     console.warn(
       '⚠️  Seed média ignoré (MinIO ou réseau indisponible) — les pages afficheront des dégradés de substitution.',

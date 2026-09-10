@@ -3,7 +3,7 @@ import type { CollectionDto, CreationDto, PaginatedResponse } from '@angaly/type
 
 import { apiClient } from '@/lib/api-client';
 
-const FEATURED_CREATIONS_LIMIT = 10;
+const FEATURED_CREATIONS_LIMIT = 20;
 
 /** Real endpoint — see docs/features/creations.md. Sorted by feature date, not just the isFeatured flag. */
 export function useFeaturedCreationsQuery() {
