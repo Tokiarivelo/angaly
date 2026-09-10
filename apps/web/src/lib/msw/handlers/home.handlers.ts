@@ -94,6 +94,16 @@ export const homeHandlers = [
     });
   }),
 
+  http.get(`${API_BASE_URL}/media`, () => {
+    return HttpResponse.json({
+      success: true,
+      data: {
+        data: [],
+        meta: PAGINATED_META,
+      },
+    });
+  }),
+
   http.get(`${API_BASE_URL}/testimonials`, () => {
     return HttpResponse.json({
       success: true,
@@ -104,6 +114,7 @@ export const homeHandlers = [
           creationLabel: 'Robe de mariée — Collection Éternelle',
           quote: 'Angaly a su donner vie à la robe dont je rêvais depuis toujours.',
           verified: true,
+          avatarUrl: 'https://images.unsplash.com/photo-1534528741775-53994a69daeb?w=200&q=80&fm=jpg',
         },
         {
           id: 'testimonial-2',
@@ -111,6 +122,7 @@ export const homeHandlers = [
           creationLabel: 'Costume sur mesure',
           quote: 'Un savoir-faire rare et une écoute attentive à chaque étape.',
           verified: true,
+          avatarUrl: 'https://images.unsplash.com/photo-1507003211169-0a1dd7228f2d?w=200&q=80&fm=jpg',
         },
         {
           id: 'testimonial-3',
@@ -118,6 +130,7 @@ export const homeHandlers = [
           creationLabel: 'Robe de soirée',
           quote: "Une élégance intemporelle, exactement ce que j'imaginais.",
           verified: false,
+          avatarUrl: 'https://images.unsplash.com/photo-1517841905240-472988babdf9?w=200&q=80&fm=jpg',
         },
       ],
     });

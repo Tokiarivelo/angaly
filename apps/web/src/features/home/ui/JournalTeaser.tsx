@@ -1,3 +1,4 @@
+import Image from 'next/image';
 import Link from 'next/link';
 
 import { formatDate } from '@/lib/utils';
@@ -21,7 +22,22 @@ export function JournalTeaser({ content }: { content: HomeContent['journalTeaser
         <div className="mt-10 grid gap-6 sm:grid-cols-2 lg:grid-cols-4">
           {data.map((post) => (
             <Link key={post.id} href={`/journal/${post.slug}`} className="group block">
-              <div aria-hidden="true" className="aspect-[4/3] bg-gradient-to-br from-angaly-champagne to-angaly-warm-ivory" />
+              <div className="relative aspect-[4/3] overflow-hidden bg-angaly-warm-ivory">
+                {post.media[0] ? (
+                  <Image
+                    src={post.media[0].url}
+                    alt={post.media[0].altText || post.title}
+                    fill
+                    sizes="(min-width: 1024px) 25vw, (min-width: 640px) 50vw, 100vw"
+                    className="object-cover transition-transform duration-500 group-hover:scale-105"
+                  />
+                ) : (
+                  <div
+                    aria-hidden="true"
+                    className="h-full w-full bg-gradient-to-br from-angaly-champagne to-angaly-warm-ivory"
+                  />
+                )}
+              </div>
               <span className="mt-3 inline-block bg-angaly-champagne/30 px-2 py-0.5 text-xs text-angaly-navy">
                 {post.category.name}
               </span>

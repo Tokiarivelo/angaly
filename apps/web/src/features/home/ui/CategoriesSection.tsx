@@ -1,3 +1,4 @@
+import Image from 'next/image';
 import Link from 'next/link';
 
 import type { HomeContent } from '../hooks/useHomeContent';
@@ -20,10 +21,20 @@ export function CategoriesSection({ content }: { content: HomeContent['categorie
             href={category.href}
             className="group relative h-[500px] w-72 flex-none snap-start overflow-hidden md:w-96"
           >
-            <div
-              aria-hidden="true"
-              className="h-full w-full bg-gradient-to-br from-angaly-soft-navy to-angaly-navy transition-transform duration-700 group-hover:scale-105"
-            />
+            {category.imageUrl ? (
+              <Image
+                src={category.imageUrl}
+                alt={category.imageAlt ?? category.label}
+                fill
+                sizes="(min-width: 768px) 384px, 288px"
+                className="object-cover transition-transform duration-700 group-hover:scale-105"
+              />
+            ) : (
+              <div
+                aria-hidden="true"
+                className="h-full w-full bg-gradient-to-br from-angaly-soft-navy to-angaly-navy transition-transform duration-700 group-hover:scale-105"
+              />
+            )}
             <div
               aria-hidden="true"
               className="absolute inset-0 bg-angaly-navy/20 transition-colors duration-300 group-hover:bg-angaly-navy/40"

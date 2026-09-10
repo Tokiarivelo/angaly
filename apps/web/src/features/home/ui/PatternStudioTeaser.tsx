@@ -1,3 +1,4 @@
+import Image from 'next/image';
 import { Star } from 'lucide-react';
 import Link from 'next/link';
 
@@ -27,10 +28,22 @@ export function PatternStudioTeaser({ content }: { content: HomeContent['pattern
           </Button>
         </div>
         <div className="relative z-10 w-full flex-1">
-          <div
-            aria-hidden="true"
-            className="aspect-[4/3] rounded-sm bg-gradient-to-br from-angaly-soft-navy to-angaly-navy-blue"
-          />
+          <div className="relative aspect-[4/3] overflow-hidden rounded-sm border border-white/10 bg-angaly-navy-blue shadow-2xl">
+            {content.imageUrl ? (
+              <Image
+                src={content.imageUrl}
+                alt={content.imageAlt ?? content.headline}
+                fill
+                sizes="(min-width: 768px) 50vw, 100vw"
+                className="object-cover opacity-75 mix-blend-luminosity transition-transform duration-700 hover:scale-105"
+              />
+            ) : (
+              <div
+                aria-hidden="true"
+                className="h-full w-full bg-gradient-to-br from-angaly-soft-navy to-angaly-navy-blue"
+              />
+            )}
+          </div>
         </div>
       </div>
     </section>

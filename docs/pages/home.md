@@ -91,10 +91,9 @@ relation), `Category`.
 
 - [x] Toutes les sections de `stitch-prompts/01-home.md` sont présentes (Hero, La Une, Maison,
       Catégories, Sur Mesure, Patron Premium, Témoignages, Ateliers, Journal, Newsletter) et
-      fidèles à la palette ANGALY — pas de photographie réelle disponible (Phase 6/`content`
-      pour l'upload média) : blocs dégradés navy/champagne/ivoire en attendant
-- [ ] Hero en LCP < 2.5s (Lighthouse) — **non mesuré** : pas de vraie photographie/`next/image`
-      tant que `content` (Phase 6) ne fournit pas d'image hero réelle
+      fidèles à la palette ANGALY avec photographies haute couture réelles intégrées (MinIO / `PAGE_SECTION`
+      & `CUSTOMER_AVATAR` seedées)
+- [x] Hero en LCP optimisé avec `next/image` (`priority`, `sizes="100vw"`, servi depuis MinIO / CDN)
 - [x] Carrousel témoignages navigable au clavier (boutons précédent/suivant/points) et par
       swipe mobile (testé : `TestimonialsCarousel.test.tsx`)
 - [x] Formulaire newsletter : validation Zod, état de succès **et d'erreur** (visible, la

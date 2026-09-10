@@ -1,6 +1,7 @@
 'use client';
 
 import { useRef } from 'react';
+import Image from 'next/image';
 import { ChevronLeft, ChevronRight } from 'lucide-react';
 
 import { cn } from '@/lib/utils';
@@ -38,7 +39,19 @@ export function TestimonialsCarousel() {
     >
       {activeTestimonial && (
         <figure className="text-center" aria-live="polite">
-          <div aria-hidden="true" className="mx-auto h-16 w-16 rounded-full bg-angaly-champagne" />
+          {activeTestimonial.avatarUrl ? (
+            <div className="relative mx-auto h-16 w-16 overflow-hidden rounded-full border-2 border-angaly-champagne/40 shadow-sm">
+              <Image
+                src={activeTestimonial.avatarUrl}
+                alt={activeTestimonial.clientName}
+                fill
+                sizes="64px"
+                className="object-cover"
+              />
+            </div>
+          ) : (
+            <div aria-hidden="true" className="mx-auto h-16 w-16 rounded-full bg-angaly-champagne" />
+          )}
           <blockquote className="font-heading mt-6 text-xl text-angaly-navy italic">
             « {activeTestimonial.quote} »
           </blockquote>

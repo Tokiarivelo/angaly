@@ -1,3 +1,4 @@
+import Image from 'next/image';
 import Link from 'next/link';
 
 import { Button } from '@/components/ui/button';
@@ -10,12 +11,22 @@ export function MaisonPresentationSection({ content }: { content: HomeContent['m
   return (
     <section className="bg-angaly-warm-ivory">
       <div className="mx-auto grid max-w-7xl gap-10 px-6 py-20 lg:grid-cols-2 lg:items-center">
-        <div className="relative">
-          <div
-            aria-hidden="true"
-            className="aspect-[3/4] bg-gradient-to-br from-angaly-champagne to-angaly-gold-light"
-          />
-          <div aria-hidden="true" className="border-angaly-ivory/30 pointer-events-none absolute inset-4 border" />
+        <div className="relative aspect-[3/4] overflow-hidden rounded-xs bg-angaly-ivory">
+          {content.imageUrl ? (
+            <Image
+              src={content.imageUrl}
+              alt={content.imageAlt ?? content.headline}
+              fill
+              sizes="(min-width: 1024px) 50vw, 100vw"
+              className="object-cover"
+            />
+          ) : (
+            <div
+              aria-hidden="true"
+              className="h-full w-full bg-gradient-to-br from-angaly-champagne to-angaly-gold-light"
+            />
+          )}
+          <div aria-hidden="true" className="border-angaly-ivory/40 pointer-events-none absolute inset-4 border" />
         </div>
         <div>
           <p className="text-xs tracking-[0.3em] text-angaly-navy uppercase">{content.eyebrow}</p>

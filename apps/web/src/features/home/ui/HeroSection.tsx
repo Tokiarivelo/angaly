@@ -1,3 +1,4 @@
+import Image from 'next/image';
 import { ChevronDown } from 'lucide-react';
 import Link from 'next/link';
 
@@ -6,15 +7,32 @@ import { ROUTES } from '@/lib/routes';
 
 import type { HomeContent } from '../hooks/useHomeContent';
 
-/** stitch-prompts/01-home.md "SECTION 1 — HERO". No real photography yet (Phase 6/content). */
+/** stitch-prompts/01-home.md "SECTION 1 — HERO". Cinematic editorial photography. */
 export function HeroSection({ content }: { content: HomeContent['hero'] }) {
   return (
-    <section className="relative flex min-h-[90vh] items-end overflow-hidden bg-angaly-royal-navy">
-      <div
-        aria-hidden="true"
-        className="absolute inset-0 bg-gradient-to-b from-angaly-royal-navy via-angaly-soft-navy to-angaly-navy"
-      />
-      <div aria-hidden="true" className="absolute inset-x-0 bottom-0 h-1/3 bg-gradient-to-t from-angaly-navy" />
+    <section className="relative flex min-h-[90vh] items-end overflow-hidden bg-angaly-navy-dark">
+      {content.imageUrl ? (
+        <div className="absolute inset-0 z-0">
+          <Image
+            src={content.imageUrl}
+            alt={content.imageAlt ?? content.headline}
+            fill
+            priority
+            sizes="100vw"
+            className="object-cover opacity-60"
+          />
+          <div
+            aria-hidden="true"
+            className="absolute inset-0 bg-gradient-to-t from-angaly-navy via-angaly-navy/40 to-transparent"
+          />
+        </div>
+      ) : (
+        <div
+          aria-hidden="true"
+          className="absolute inset-0 bg-gradient-to-b from-angaly-royal-navy via-angaly-soft-navy to-angaly-navy"
+        />
+      )}
+      <div aria-hidden="true" className="absolute inset-x-0 bottom-0 z-0 h-1/3 bg-gradient-to-t from-angaly-navy" />
 
       <div className="relative z-10 mx-auto w-full max-w-7xl px-6 pb-20">
         <p className="text-xs tracking-[0.3em] text-white/80 uppercase">{content.eyebrow}</p>
