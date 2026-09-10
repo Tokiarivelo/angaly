@@ -50,10 +50,10 @@ Toute logique (fetch, dérivation de la collection du moment) vit dans `hooks/` 
 
 ## Endpoints API consommés
 
-| Endpoint | Module | Usage |
-| --- | --- | --- |
-| `GET /api/collections?sort=seasonYear:desc&page=&limit=` | `collections` | Grille de toutes les collections publiées |
-| `GET /api/collections?sort=publishedAt:desc&limit=1` | `collections` | « Collection du moment » pour la bannière (voir Points d'attention) |
+| Endpoint                                                 | Module        | Usage                                                               |
+| -------------------------------------------------------- | ------------- | ------------------------------------------------------------------- |
+| `GET /api/collections?sort=seasonYear:desc&page=&limit=` | `collections` | Grille de toutes les collections publiées                           |
+| `GET /api/collections?sort=publishedAt:desc&limit=1`     | `collections` | « Collection du moment » pour la bannière (voir Points d'attention) |
 
 ## Modèles Prisma touchés
 
@@ -79,7 +79,7 @@ Toute logique (fetch, dérivation de la collection du moment) vit dans `hooks/` 
 - Une collection dont `publishedAt` est nul ou dans le futur n'apparaît jamais sur cette
   page (règle déjà posée par `docs/features/collections.md`) — le backend ne renvoie que
   les collections publiées.
-- Vérification live-navigateur limitée à l'état vide/statique cette session : le port 3001
+- Vérification live-navigateur limitée à l'état vide/statique cette session : le port 3003
   habituel de `apps/api` était occupé par un projet sans rapport de l'utilisateur (son
   propre terminal, `trafing-bot/frontend`) — non touché par prudence. Le rendu avec données
   réelles (bannière + grille + photo de couverture) est couvert par les tests RTL/MSW

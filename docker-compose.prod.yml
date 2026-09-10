@@ -84,7 +84,7 @@ services:
       dockerfile: apps/api/Dockerfile
     init: true
     ports:
-      - '3001:3001'
+      - '3003:3003'
     environment:
       NODE_ENV: production
       DATABASE_URL: 'postgresql://${POSTGRES_USER}:${POSTGRES_PASSWORD}@postgres:5432/${POSTGRES_DB}'
@@ -108,7 +108,7 @@ services:
       ai-service:
         condition: service_healthy
     healthcheck:
-      test: ['CMD', 'wget', '-qO-', 'http://localhost:3001/api/health']
+      test: ['CMD', 'wget', '-qO-', 'http://localhost:3003/api/health']
       interval: 30s
       timeout: 10s
       start_period: 30s
@@ -140,7 +140,7 @@ services:
       NEXTAUTH_SECRET: ${NEXTAUTH_SECRET}
       NEXT_PUBLIC_API_URL: ${NEXT_PUBLIC_API_URL}
       NEXT_PUBLIC_WS_URL: ${NEXT_PUBLIC_WS_URL}
-      API_INTERNAL_URL: http://api:3001/api
+      API_INTERNAL_URL: http://api:3003/api
     depends_on:
       api:
         condition: service_healthy

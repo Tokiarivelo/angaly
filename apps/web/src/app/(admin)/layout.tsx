@@ -1,6 +1,18 @@
-// Back-office (Gestion de contenu, Médiathèque, and future admin modules) —
-// Phase 6 adds the admin auth guard + sidebar here
-// (docs/pages/admin-gestion-contenu.md).
-export default function AdminLayout({ children }: { children: React.ReactNode }) {
+import { redirect } from 'next/navigation';
+import type { ReactNode } from 'react';
+
+import { Role } from '@angaly/types';
+
+import { auth } from '@/lib/auth/auth';
+
+const STAFF_ROLES: Role[] = [Role.COUTURIERE, Role.MANAGER, Role.ADMIN];
+
+export default async function AdminLayout({ children }: { children: ReactNode }) {
+  const session = await auth();
+
+  if (!session?.user || !STAFF_ROLES.includes(session.user.role)) {
+    redirect('/');
+  }
+
   return <>{children}</>;
 }

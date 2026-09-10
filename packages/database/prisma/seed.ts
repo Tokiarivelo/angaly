@@ -1,7 +1,15 @@
 import { createStorageClientFromEnv, type StorageClient, type StorageBucketName } from '@angaly/storage';
 import * as bcrypt from 'bcrypt';
 
-import { CategoryKind, CreationAvailability, MediaEntityType, PrismaClient, Role } from '../generated/client';
+import {
+  CategoryKind,
+  ContentStatus,
+  CreationAvailability,
+  Locale,
+  MediaEntityType,
+  PrismaClient,
+  Role,
+} from '../generated/client';
 
 const prisma = new PrismaClient();
 
@@ -305,7 +313,152 @@ async function main() {
     });
     createdBlogPosts.set(post.slug, post);
   }
-  console.log(`✅ ${blogPosts.length} articles de journal créés`);
+  // --- Page Sections (Accueil / CMS) ----------------------------------------
+  const pageSections = [
+    {
+      page: 'accueil',
+      sectionKey: 'hero',
+      locale: Locale.FR,
+      titleText: 'ANGALY',
+      subtitleText: "L'élégance, créée pour vous.",
+      ctaPrimaryLabel: 'Prendre rendez-vous',
+      ctaSecondaryLabel: 'Découvrir nos créations',
+      dataJson: { eyebrow: 'MAISON DE COUTURE — MADAGASCAR' },
+      status: ContentStatus.PUBLISHED,
+      photo: '1594552072238-b8a33785b261',
+      photoAlt: 'Robe de mariée haute couture Angaly',
+    },
+    {
+      page: 'accueil',
+      sectionKey: 'maison',
+      locale: Locale.FR,
+      titleText: 'Une maison de couture pensée pour vous.',
+      subtitleText: 'NOTRE SAVOIR-FAIRE',
+      bodyText:
+        "Fondée au cœur de Madagascar, la Maison Angaly perpétue l'artisanat d'exception. Chaque création est le fruit d'une rencontre entre une vision, des matières nobles et le talent de nos artisans. Du croquis initial à la dernière retouche, nous donnons vie à vos rêves d'élégance avec une précision millimétrée et un dévouement absolu.",
+      ctaPrimaryLabel: 'Découvrir Angaly',
+      status: ContentStatus.PUBLISHED,
+      photo: '1558769132-cb1aea458c5e',
+      photoAlt: 'Artisans et couturières dans notre atelier',
+    },
+    {
+      page: 'accueil',
+      sectionKey: 'univers-mariage',
+      locale: Locale.FR,
+      titleText: 'Mariage',
+      status: ContentStatus.PUBLISHED,
+      photo: '1583939003579-730e3918a45a',
+      photoAlt: 'Univers Robes de mariée',
+    },
+    {
+      page: 'accueil',
+      sectionKey: 'univers-costumes',
+      locale: Locale.FR,
+      titleText: 'Costumes',
+      status: ContentStatus.PUBLISHED,
+      photo: '1594938298603-c8148c4dae35',
+      photoAlt: 'Univers Costumes homme sur mesure',
+    },
+    {
+      page: 'accueil',
+      sectionKey: 'univers-soiree',
+      locale: Locale.FR,
+      titleText: 'Soirée',
+      status: ContentStatus.PUBLISHED,
+      photo: '1566174053879-31528523f8ae',
+      photoAlt: 'Univers Robes de soirée',
+    },
+    {
+      page: 'accueil',
+      sectionKey: 'univers-sur-mesure',
+      locale: Locale.FR,
+      titleText: 'Sur Mesure',
+      status: ContentStatus.PUBLISHED,
+      photo: '1520006403909-838d6b92c22e',
+      photoAlt: 'Univers Confection sur mesure',
+    },
+    {
+      page: 'accueil',
+      sectionKey: 'pattern-studio',
+      locale: Locale.FR,
+      titleText: 'Angaly Pattern Studio',
+      subtitleText: 'SERVICE EXCLUSIF',
+      bodyText:
+        "Découvrez notre atelier virtuel propulsé par l'IA. Visualisez vos idées, testez des coupes audacieuses et collaborez en temps réel avec nos maîtres tailleurs avant même le premier coup de ciseaux.",
+      ctaPrimaryLabel: 'Explorer le Studio',
+      status: ContentStatus.PUBLISHED,
+      photo: '1558769132-cb1aea458c5e',
+      photoAlt: 'Atelier de création virtuelle et patronage Angaly Pattern Studio',
+    },
+  ];
+
+  const createdPageSections = new Map<string, { id: string }>();
+  for (const { photo: _photo, photoAlt: _photoAlt, ...sectionData } of pageSections) {
+    const section = await prisma.pageSection.upsert({
+      where: {
+        page_sectionKey_locale: {
+          page: sectionData.page,
+          sectionKey: sectionData.sectionKey,
+          locale: sectionData.locale,
+        },
+      },
+      update: sectionData,
+      create: { ...sectionData, updatedById: adminUser.id },
+    });
+    createdPageSections.set(section.sectionKey, section);
+  }
+  console.log(`✅ ${pageSections.length} sections de page d'accueil créées`);
+
+  // --- Testimonials ---------------------------------------------------------
+  const testimonials = [
+    {
+      customerName: 'Nirina',
+      creationLabel: 'Robe de mariée — Collection Éternelle',
+      quote: 'Angaly a su donner vie à la robe dont je rêvais depuis toujours.',
+      isVerified: true,
+      isPublished: true,
+      photo: '1534528741775-53994a69daeb',
+      photoAlt: 'Nirina — Témoignage cliente',
+    },
+    {
+      customerName: 'Hery',
+      creationLabel: 'Costume sur mesure',
+      quote: 'Un savoir-faire rare et une écoute attentive à chaque étape.',
+      isVerified: true,
+      isPublished: true,
+      photo: '1507003211169-0a1dd7228f2d',
+      photoAlt: 'Hery — Témoignage client',
+    },
+    {
+      customerName: 'Fara',
+      creationLabel: 'Robe de soirée',
+      quote: "Une élégance intemporelle, exactement ce que j'imaginais.",
+      isVerified: false,
+      isPublished: true,
+      photo: '1517841905240-472988babdf9',
+      photoAlt: 'Fara — Témoignage cliente',
+    },
+  ];
+
+  const createdTestimonials: Array<{ id: string; photo: string; photoAlt: string }> = [];
+  for (const item of testimonials) {
+    const existing = await prisma.testimonial.findFirst({
+      where: { customerName: item.customerName, quote: item.quote },
+    });
+    const record =
+      existing ??
+      (await prisma.testimonial.create({
+        data: {
+          customerName: item.customerName,
+          creationLabel: item.creationLabel,
+          quote: item.quote,
+          isVerified: item.isVerified,
+          isPublished: item.isPublished,
+        },
+      }));
+    createdTestimonials.push({ id: record.id, photo: item.photo, photoAlt: item.photoAlt });
+  }
+  console.log(`✅ ${testimonials.length} témoignages créés`);
 
   // --- Media (real free stock photos uploaded to MinIO) ---------------------
   // See docs/pages/*.md "Points d'attention" for the "no real photography yet"
@@ -313,21 +466,22 @@ async function main() {
   // images.unsplash.com/photo-*, never the paid plus.unsplash.com tier),
   // downloaded once and re-hosted via @angaly/storage per .cursor/rules/009-storage-minio.mdc
   // (rule 21: all media through MinIO, never a bare external URL in the DB).
-  const alreadySeeded = await prisma.media.findFirst({ where: { entityType: MediaEntityType.CREATION } });
-  if (alreadySeeded) {
-    console.log('↷ Médias déjà seedés — étape ignorée (idempotence). Voir prisma/seed.ts pour reseeder.');
-  } else {
-    try {
-      const storage = createStorageClientFromEnv();
-      await storage.ensureBuckets();
+  try {
+    const storage = createStorageClientFromEnv();
+    await storage.ensureBuckets();
 
+    const hasCreationMedia = await prisma.media.findFirst({ where: { entityType: MediaEntityType.CREATION } });
+    if (!hasCreationMedia) {
       for (const { slug, photo, photoAlt } of creations) {
         const creation = createdCreations.get(slug);
         if (!creation) continue;
         await attachPhoto(storage, 'creations', photo, photoAlt, MediaEntityType.CREATION, creation.id);
       }
       console.log('✅ Photos des créations téléchargées et hébergées sur MinIO');
+    }
 
+    const hasCollectionMedia = await prisma.media.findFirst({ where: { entityType: MediaEntityType.COLLECTION } });
+    if (!hasCollectionMedia) {
       await attachPhoto(
         storage,
         'collections',
@@ -354,7 +508,10 @@ async function main() {
         collectionDentelle.id,
       );
       console.log('✅ Photos des collections téléchargées et hébergées sur MinIO');
+    }
 
+    const hasAtelierMedia = await prisma.media.findFirst({ where: { entityType: MediaEntityType.ATELIER } });
+    if (!hasAtelierMedia) {
       await attachPhoto(
         storage,
         'ateliers',
@@ -363,8 +520,6 @@ async function main() {
         MediaEntityType.ATELIER,
         atelier.id,
       );
-      // atelier-detail's "L'atelier en images" gallery needs more than one photo to avoid
-      // cycling the same cover shot across every tile — see docs/pages/atelier-detail.md.
       await attachPhoto(
         storage,
         'ateliers',
@@ -393,19 +548,40 @@ async function main() {
         3,
       );
       console.log("✅ Photos de l'atelier téléchargées et hébergées sur MinIO");
+    }
 
+    const hasBlogMedia = await prisma.media.findFirst({ where: { entityType: MediaEntityType.BLOG_POST } });
+    if (!hasBlogMedia) {
       for (const { slug, photo, photoAlt } of blogPosts) {
         const post = createdBlogPosts.get(slug);
         if (!post) continue;
         await attachPhoto(storage, 'blog', photo, photoAlt, MediaEntityType.BLOG_POST, post.id);
       }
       console.log('✅ Photos des articles de journal téléchargées et hébergées sur MinIO');
-    } catch (error) {
-      console.warn(
-        '⚠️  Seed média ignoré (MinIO ou réseau indisponible) — les pages afficheront des dégradés de substitution.',
-        error instanceof Error ? error.message : error,
-      );
     }
+
+    const hasPageSectionMedia = await prisma.media.findFirst({ where: { entityType: MediaEntityType.PAGE_SECTION } });
+    if (!hasPageSectionMedia) {
+      for (const { sectionKey, photo, photoAlt } of pageSections) {
+        const section = createdPageSections.get(sectionKey);
+        if (!section) continue;
+        await attachPhoto(storage, 'customers', photo, photoAlt, MediaEntityType.PAGE_SECTION, section.id);
+      }
+      console.log("✅ Photos des sections d'accueil téléchargées et hébergées sur MinIO");
+    }
+
+    const hasTestimonialMedia = await prisma.media.findFirst({ where: { entityType: MediaEntityType.CUSTOMER_AVATAR } });
+    if (!hasTestimonialMedia) {
+      for (const t of createdTestimonials) {
+        await attachPhoto(storage, 'avatars', t.photo, t.photoAlt, MediaEntityType.CUSTOMER_AVATAR, t.id);
+      }
+      console.log('✅ Avatars des témoignages téléchargés et hébergés sur MinIO');
+    }
+  } catch (error) {
+    console.warn(
+      '⚠️  Seed média ignoré (MinIO ou réseau indisponible) — les pages afficheront des dégradés de substitution.',
+      error instanceof Error ? error.message : error,
+    );
   }
 
   console.log('🌱 Seed terminé.');
@@ -442,7 +618,13 @@ async function attachPhoto(
         ? 'collectionRefs'
         : entityType === MediaEntityType.BLOG_POST
           ? 'blogPostRefs'
-          : 'atelierRefs';
+          : entityType === MediaEntityType.ATELIER
+            ? 'atelierRefs'
+            : entityType === MediaEntityType.PAGE_SECTION
+              ? 'pageSectionRefs'
+              : entityType === MediaEntityType.CUSTOMER_AVATAR
+                ? 'testimonialRefs'
+                : null;
 
   await prisma.media.create({
     data: {
@@ -455,7 +637,7 @@ async function attachPhoto(
       entityType,
       entityId,
       sortOrder,
-      [relationField]: { connect: { id: entityId } },
+      ...(relationField ? { [relationField]: { connect: { id: entityId } } } : {}),
     },
   });
 }

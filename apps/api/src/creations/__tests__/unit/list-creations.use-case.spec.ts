@@ -2,7 +2,7 @@ import { ListCreationsUseCase } from '../../application/use-cases/list-creations
 import type { ICreationRepository } from '../../domain/repositories/creation.repository';
 
 function buildRepository(): jest.Mocked<ICreationRepository> {
-  return { findBySlug: jest.fn(), list: jest.fn() };
+  return { findBySlug: jest.fn(), findById: jest.fn(), list: jest.fn() };
 }
 
 describe('ListCreationsUseCase', () => {

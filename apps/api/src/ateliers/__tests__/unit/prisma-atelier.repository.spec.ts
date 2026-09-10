@@ -60,6 +60,17 @@ describe('PrismaAtelierRepository', () => {
     expect(result?.slug).toBe('antananarivo-centre');
   });
 
+  it('findById() maps the row to a domain entity when found', async () => {
+    const { prisma, atelier } = buildPrismaServiceMock();
+    atelier.findUnique.mockResolvedValue(sampleRecord());
+    const repository = new PrismaAtelierRepository(prisma);
+
+    const result = await repository.findById('atelier-1');
+
+    expect(result?.id).toBe('atelier-1');
+    expect(atelier.findUnique).toHaveBeenCalledWith(expect.objectContaining({ where: { id: 'atelier-1' } }));
+  });
+
   it('list() sorts by city then name and returns every atelier', async () => {
     const { prisma, atelier } = buildPrismaServiceMock();
     atelier.findMany.mockResolvedValue([sampleRecord()]);

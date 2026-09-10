@@ -2,7 +2,7 @@ import { ListCollectionsUseCase } from '../../application/use-cases/list-collect
 import type { ICollectionRepository } from '../../domain/repositories/collection.repository';
 
 function buildRepository(): jest.Mocked<ICollectionRepository> {
-  return { findPublishedBySlug: jest.fn(), list: jest.fn() };
+  return { findPublishedBySlug: jest.fn(), findById: jest.fn(), list: jest.fn() };
 }
 
 describe('ListCollectionsUseCase', () => {

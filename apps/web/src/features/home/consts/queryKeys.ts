@@ -4,4 +4,5 @@ export const QUERY_KEYS = {
   testimonials: ['home', 'testimonials'] as const,
   ateliersTeaser: ['home', 'ateliers-teaser'] as const,
   journalTeaser: ['home', 'journal-teaser'] as const,
+  homeMedia: ['home', 'media'] as const,
 };

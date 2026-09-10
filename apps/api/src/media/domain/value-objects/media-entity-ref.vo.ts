@@ -12,6 +12,7 @@ export const MEDIA_ENTITY_TYPES = [
   'PATTERN_EXPORT',
   'BLOG_POST',
   'PAGE_SECTION',
+  'QUOTE_DOCUMENT',
 ] as const;
 
 export type MediaEntityType = (typeof MEDIA_ENTITY_TYPES)[number];
@@ -35,6 +36,7 @@ const ENTITY_TYPE_TO_BUCKET: Record<MediaEntityType, string> = {
   PATTERN_EXPORT: 'patterns',
   BLOG_POST: 'blog',
   PAGE_SECTION: 'customers',
+  QUOTE_DOCUMENT: 'quotes',
 };
 
 export function isMediaEntityType(value: string): value is MediaEntityType {

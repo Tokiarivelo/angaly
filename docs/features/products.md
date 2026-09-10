@@ -1,6 +1,6 @@
 # Feature — `products`
 
-**Statut : ⬜ À faire.** Phase 2 — Conversion.
+**Statut : ✅ Fait.** Phase 2 — Conversion.
 
 ## Objet
 
@@ -93,11 +93,28 @@ __tests__/
   schéma actuel : `get-product-by-slug` doit renvoyer les deux sans supposer qu'un stock à
   zéro implique `status = OUT_OF_STOCK` — la cohérence entre les deux reste une décision
   éditoriale/admin tant qu'un job de recalcul automatique n'est pas spécifié.
+- **`GET /api/products` sert aussi les produits similaires** (`exclude` + `categoryId`
+  présents ensemble → `list-similar-products` au lieu de `list-products`, même route) — pas
+  de route dédiée, conformément au tableau "Endpoints exposés" de cette fiche.
+- **`check-variant-availability` n'a pas de route publique** : c'est un use-case injectable
+  (`PRODUCT_REPOSITORY` et `CheckVariantAvailabilityUseCase` sont exportés par
+  `ProductsModule`) que `orders` (Phase 3) appellera directement, comme prévu par "Points
+  d'intégration" — pas un GET exposé.
+- **`Price` (value object)** représente `amount` comme une chaîne décimale (jamais un
+  float) : `ProductMapper` convertit le `Prisma.Decimal` en `.toString()` à la frontière
+  infrastructure → domaine, une seule fois.
 
 ## Vérification
 
-- [ ] `list-products` testé (chaque filtre, tri, pagination)
-- [ ] `get-product-by-slug` testé (cas trouvé/non trouvé, variantes + inventaire inclus)
-- [ ] `check-variant-availability` testé (stock suffisant/insuffisant)
-- [ ] `products.controller.spec.ts` couvre les codes 200/404
+- [x] `list-products` testé (chaque filtre — catégorie/taille/couleur/matière/statut/prix —,
+      tri, pagination) — `list-products.use-case.spec.ts`, `prisma-product.repository.spec.ts`
+- [x] `get-product-by-slug` testé (cas trouvé/non trouvé, variantes + inventaire inclus,
+      variante sans ligne `Inventory`) — `get-product-by-slug.use-case.spec.ts`,
+      `product.mapper.spec.ts`
+- [x] `check-variant-availability` testé (stock suffisant/insuffisant, quantité par défaut,
+      variante inconnue) — `check-variant-availability.use-case.spec.ts`
+- [x] `products.controller.spec.ts` couvre 200/400/404, y compris le basculement vers le
+      mode "produits similaires"
+- [x] `docs/checklist-implementation.md` : `products` passé à ✅
+- [x] `pnpm --filter @angaly/api typecheck`, `lint`, `test` (412 tests) tous verts
 - [ ] `docs/checklist-implementation.md` : `products` passé à ✅

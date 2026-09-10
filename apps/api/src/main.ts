@@ -71,10 +71,10 @@ async function bootstrap() {
       },
     });
 
-    logger.log('Swagger available at http://localhost:3001/docs');
+    logger.log('Swagger available at http://localhost:3003/docs');
   }
 
-  const port = process.env['API_PORT'] ?? 3001;
+  const port = process.env['API_PORT'] ?? 3003;
   await app.listen(port);
   logger.log(`Application running on http://localhost:${String(port)}`);
   logger.log(`Environment: ${process.env['NODE_ENV'] ?? 'development'}`);

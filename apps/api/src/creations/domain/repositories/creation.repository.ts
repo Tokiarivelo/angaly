@@ -18,5 +18,7 @@ export interface CreationListResult {
 
 export interface ICreationRepository {
   findBySlug: (slug: string) => Promise<CreationEntity | null>;
+  /** Used by `customers`.`list-favorites` to hydrate a CREATION favorite (`Favorite.entityId` is this id, never the slug). */
+  findById: (id: string) => Promise<CreationEntity | null>;
   list: (filter: CreationListFilter) => Promise<CreationListResult>;
 }

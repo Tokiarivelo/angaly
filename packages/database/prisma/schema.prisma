@@ -150,6 +150,7 @@ enum MediaEntityType {
   PATTERN_EXPORT
   BLOG_POST
   PAGE_SECTION
+  QUOTE_DOCUMENT
 }
 
 enum NotificationType {

@@ -8,7 +8,7 @@ set -e
 
 mc alias set local http://minio:9000 "$MINIO_ROOT_USER" "$MINIO_ROOT_PASSWORD"
 
-for bucket in creations products collections ateliers customers patterns blog avatars; do
+for bucket in creations products collections ateliers customers patterns blog avatars quotes; do
   mc mb --ignore-existing "local/$bucket"
   mc anonymous set download "local/$bucket"
 done

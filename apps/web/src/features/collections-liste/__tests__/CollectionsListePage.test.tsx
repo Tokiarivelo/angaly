@@ -1,6 +1,7 @@
 import { render, screen, waitFor } from '@testing-library/react';
-import { http, HttpResponse } from 'msw';
+import { HttpResponse, http } from 'msw';
 import { describe, expect, it } from 'vitest';
+
 import type { CollectionDto } from '@angaly/types';
 
 import { server } from '@/lib/msw/server';
@@ -8,7 +9,7 @@ import { withQueryClient } from '@/lib/test-utils';
 
 import { CollectionsListePage } from '../ui/CollectionsListePage';
 
-const API_BASE_URL = 'http://localhost:3001/api';
+const API_BASE_URL = 'http://localhost:3003/api';
 
 function makeCollection(overrides: Partial<CollectionDto> = {}): CollectionDto {
   return {
@@ -37,7 +38,14 @@ function mockCollections(collections: CollectionDto[]) {
         success: true,
         data: {
           data,
-          meta: { total: data.length, page: 1, limit: 40, totalPages: 1, hasNextPage: false, hasPreviousPage: false },
+          meta: {
+            total: data.length,
+            page: 1,
+            limit: 40,
+            totalPages: 1,
+            hasNextPage: false,
+            hasPreviousPage: false,
+          },
         },
       });
     }),
@@ -48,7 +56,12 @@ describe('CollectionsListePage', () => {
   it('renders the header, featured banner, and grid with real data', async () => {
     mockCollections([
       makeCollection(),
-      makeCollection({ id: 'col-2', slug: 'lart-de-la-dentelle', name: 'L’Art de la Dentelle', seasonYear: 2026 }),
+      makeCollection({
+        id: 'col-2',
+        slug: 'lart-de-la-dentelle',
+        name: 'L’Art de la Dentelle',
+        seasonYear: 2026,
+      }),
       makeCollection({ id: 'col-3', slug: 'renaissance', name: 'Renaissance', seasonYear: null }),
     ]);
 
@@ -75,7 +88,9 @@ describe('CollectionsListePage', () => {
         id: 'col-2',
         slug: 'lart-de-la-dentelle',
         name: 'L’Art de la Dentelle',
-        media: [{ id: 'm1', url: 'https://cdn.example/cover.jpg', altText: 'Couverture', sortOrder: 0 }],
+        media: [
+          { id: 'm1', url: 'https://cdn.example/cover.jpg', altText: 'Couverture', sortOrder: 0 },
+        ],
       }),
     ]);
 
@@ -102,7 +117,9 @@ describe('CollectionsListePage', () => {
     const Wrapper = withQueryClient();
     render(<CollectionsListePage />, { wrapper: Wrapper });
 
-    await waitFor(() => expect(screen.getByText('Aucune collection publiée pour le moment.')).toBeInTheDocument());
+    await waitFor(() =>
+      expect(screen.getByText('Aucune collection publiée pour le moment.')).toBeInTheDocument(),
+    );
     expect(screen.queryByText('Collection du moment')).not.toBeInTheDocument();
   });
 });

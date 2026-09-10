@@ -13,7 +13,7 @@
 │                    Nginx (prod) / Caddy (dev)                    │
 │               Reverse Proxy + TLS Termination                    │
 │     /              → apps/web   (port 3000)                     │
-│     /api/*         → apps/api   (port 3001)                     │
+│     /api/*         → apps/api   (port 3003)                     │
 │     /docs          → Swagger UI (dev only)                       │
 └───────────┬─────────────────────────┬───────────────────────────┘
             │                         │

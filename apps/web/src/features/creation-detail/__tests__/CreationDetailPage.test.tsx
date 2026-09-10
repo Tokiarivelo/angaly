@@ -1,7 +1,8 @@
 import { render, screen, waitFor } from '@testing-library/react';
 import userEvent from '@testing-library/user-event';
-import { http, HttpResponse } from 'msw';
+import { HttpResponse, http } from 'msw';
 import { describe, expect, it, vi } from 'vitest';
+
 import { CreationAvailability, type CreationDto } from '@angaly/types';
 
 import { server } from '@/lib/msw/server';
@@ -9,7 +10,7 @@ import { withQueryClient } from '@/lib/test-utils';
 
 import { CreationDetailPage } from '../ui/CreationDetailPage';
 
-const API_BASE_URL = 'http://localhost:3001/api';
+const API_BASE_URL = 'http://localhost:3003/api';
 
 const CREATION: CreationDto = {
   id: 'creation-1',
@@ -55,7 +56,17 @@ function mockRelated() {
           : [];
       return HttpResponse.json({
         success: true,
-        data: { data, meta: { total: data.length, page: 1, limit: 5, totalPages: 1, hasNextPage: false, hasPreviousPage: false } },
+        data: {
+          data,
+          meta: {
+            total: data.length,
+            page: 1,
+            limit: 5,
+            totalPages: 1,
+            hasNextPage: false,
+            hasPreviousPage: false,
+          },
+        },
       });
     }),
   );
@@ -68,7 +79,9 @@ describe('CreationDetailPage', () => {
     const Wrapper = withQueryClient();
     render(<CreationDetailPage slug="robe-eternelle" />, { wrapper: Wrapper });
 
-    await waitFor(() => expect(screen.getByRole('heading', { level: 1, name: 'Robe Éternelle' })).toBeInTheDocument());
+    await waitFor(() =>
+      expect(screen.getByRole('heading', { level: 1, name: 'Robe Éternelle' })).toBeInTheDocument(),
+    );
 
     expect(screen.getByText('Robes de mariée')).toBeInTheDocument();
     expect(screen.getByText('Satin duchesse de soie')).toBeInTheDocument();
@@ -89,7 +102,9 @@ describe('CreationDetailPage', () => {
     const Wrapper = withQueryClient();
     render(<CreationDetailPage slug="robe-eternelle" />, { wrapper: Wrapper });
 
-    await waitFor(() => expect(screen.getByText('Fait partie de la collection')).toBeInTheDocument());
+    await waitFor(() =>
+      expect(screen.getByText('Fait partie de la collection')).toBeInTheDocument(),
+    );
     expect(screen.getByText('Veste Architecturale')).toBeInTheDocument();
 
     await waitFor(() => expect(screen.getByText('Vous aimerez aussi')).toBeInTheDocument());
@@ -204,7 +219,9 @@ describe('CreationDetailPage', () => {
     const Wrapper = withQueryClient();
     render(<CreationDetailPage slug="inconnue" />, { wrapper: Wrapper });
 
-    await waitFor(() => expect(screen.getByText('Cette création est introuvable.')).toBeInTheDocument());
+    await waitFor(() =>
+      expect(screen.getByText('Cette création est introuvable.')).toBeInTheDocument(),
+    );
     expect(screen.getByRole('link', { name: 'Retour à nos créations' })).toBeInTheDocument();
   });
 });

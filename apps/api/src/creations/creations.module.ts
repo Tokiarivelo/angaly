@@ -13,5 +13,6 @@ import { CreationsController } from './presentation/controllers/creations.contro
     GetCreationBySlugUseCase,
     { provide: CREATION_REPOSITORY, useClass: PrismaCreationRepository },
   ],
+  exports: [CREATION_REPOSITORY],
 })
 export class CreationsModule {}

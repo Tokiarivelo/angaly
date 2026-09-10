@@ -1,6 +1,9 @@
 # Feature — `quotes`
 
-**Statut : ⬜ À faire.** Phase 2 — Conversion.
+**Statut : ✅ Fait.** Phase 2 — Conversion. Testé (110 tests unitaires + intégration,
+coverage module ≥ 92% lignes/fonctions ; branches légèrement sous 80% à cause des
+`@Inject()`/décorateurs de paramètres NestJS mal comptés par le provider de coverage —
+même limitation documentée dans `apps/api/jest.config.ts`).
 
 ## Objet
 
@@ -37,18 +40,21 @@ application/
     quote-response.dto.ts
     sur-mesure-request.dto.ts
     design-brief.dto.ts
+    update-quote-draft.dto.ts, send-quote.dto.ts, request-quote-change.dto.ts
+  lib/resolve-customer-id.ts              → partagé par tous les use-cases (userId JWT -> Customer.id, 404 sinon)
 infrastructure/
   repositories/prisma-quote.repository.ts → implémente IQuoteRepository via PrismaService
-  services/quote-pdf.service.ts           → rendu PDF (le fichier généré est uploadé via `media`, jamais stocké en base)
+  services/quote-pdf.service.ts           → rendu PDF minimal (`pdf-lib`), le fichier généré est uploadé via `media`, jamais stocké en base
   mappers/quote.mapper.ts
 presentation/
   controllers/quotes.controller.ts
 __tests__/
-  unit/create-quote-from-sur-mesure-request.use-case.spec.ts
-  unit/accept-quote.use-case.spec.ts
-  unit/quote-status-transition.vo.spec.ts
+  unit/*.spec.ts (domaine, chaque use-case, mapper, repository Prisma mocké, service PDF)
   integration/quotes.controller.spec.ts
 ```
+
+`domain/repositories/quote-pdf-renderer.gateway.ts` (port `IQuotePdfRenderer`, implémenté
+par `QuotePdfService`) suit le même schéma que `media`'s `media-storage.gateway.ts`.
 
 ## Modèles Prisma
 
@@ -57,6 +63,17 @@ __tests__/
 enum `QuoteStatus`, `validUntil?`, `estimatedDelayDays?`). Relations : `Customer`,
 `Creation?` (référence optionnelle au modèle de base personnalisé, `null` pour une demande
 sur-mesure sans réalisation existante comme point de départ).
+
+`lineItemsJson`/`subtotal`/`depositAmount`/`balanceAmount`/`total` sont des chaînes
+décimales côté domaine/API (jamais des `number` JS), même convention que `products`'
+`Price` (`domain/value-objects/price.vo.ts`) — évite toute perte de précision flottante sur
+de l'argent. `description` porte le brief lisible (intake structuré formaté en texte) ;
+`lineItemsJson` reste réservé à la tarification (`send-quote`), toujours vide/`[]` tant que
+le devis est `DRAFT`.
+
+**`MediaEntityType.QUOTE_DOCUMENT`** (bucket MinIO `quotes`) a été ajouté au schéma/
+`@angaly/types`/`packages/storage` pour `export-quote-pdf` — les 7 types précédents ne
+couvraient aucun document généré côté devis.
 
 ## Cas d'usage clés
 
@@ -79,7 +96,7 @@ sur-mesure sans réalisation existante comme point de départ).
 
 | Méthode | Route | Use-case | Auth |
 | --- | --- | --- | --- |
-| `POST` | `/api/quotes/requests` | `create-quote-from-sur-mesure-request` | Public (enrichi si `CLIENT` connecté) |
+| `POST` | `/api/quotes/requests` | `create-quote-from-sur-mesure-request` | `CLIENT` (voir Points d'attention — décision tranchée) |
 | `POST` | `/api/quotes/design-briefs` | `create-quote-from-design-brief` | `CLIENT` |
 | `PATCH` | `/api/quotes/design-briefs/:id` | `update-quote-draft` | `CLIENT` (propriétaire) |
 | `POST` | `/api/quotes/:quoteNumber/send` | `send-quote` | `MANAGER`,`ADMIN` |
@@ -93,10 +110,11 @@ sur-mesure sans réalisation existante comme point de départ).
 
 - **`creations`** : `Quote.creationId` référence en lecture seule le modèle de base d'une
   personnalisation ; ce module n'écrit jamais dans `Creation`.
-- **`customers`** : `Quote.customerId` obligatoire — un visiteur non connecté soumettant une
-  demande sur-mesure (spec §16, formulaire public) doit d'abord créer/lier un compte, ou le
-  devis reste orphelin jusqu'à association manuelle par le staff (à trancher explicitement à
-  l'implémentation, ce module ne suppose pas d'auto-création de `Customer`).
+- **`customers`** : `Quote.customerId` obligatoire, résolu depuis le `userId` du JWT par
+  chaque use-case (`application/lib/resolve-customer-id.ts`, `CUSTOMER_REPOSITORY` importé
+  depuis `customers`, même schéma que `create-appointment.use-case.ts`) — jamais accédé
+  depuis le controller (règle absolue #15). `create-quote-from-sur-mesure-request` exige
+  donc un compte `CLIENT` avant soumission (voir Points d'attention).
 - **`media`** : photos d'inspiration du dossier de conception et PDF généré passent par le
   module `media`/`packages/storage`, jamais un accès direct.
 - **`notifications`** (Phase 3) : `send-quote`/`accept-quote`/`reject-quote`/
@@ -112,17 +130,27 @@ sur-mesure sans réalisation existante comme point de départ).
   `Quote.status`, elle se contente de transmettre le message au staff (canal
   `notifications`) — le devis reste `SENT`/`VIEWED` jusqu'à ce que le staff renvoie une
   nouvelle version via `send-quote`. Ne pas inventer un statut hors schéma pour ce cas.
-- `Quote.customerId` est une FK obligatoire (non nullable) alors que le formulaire
-  `demande-sur-mesure` est accessible publiquement sans compte (spec §16) : la résolution de
-  ce point (compte requis avant soumission, ou création d'un compte `CLIENT` minimal à la
-  volée via `auth`) doit être tranchée avant d'implémenter `create-quote-from-sur-mesure-request`
-  — actuellement non spécifiée ailleurs dans la documentation.
+- **Décidé** : `Quote.customerId` est une FK obligatoire (non nullable) alors que le
+  formulaire `demande-sur-mesure` était pensé accessible sans compte (spec §16). Choix
+  retenu : **compte `CLIENT` requis avant soumission** (option la plus simple, cohérente
+  avec le schéma existant, sans migration ni flow d'auth headless) plutôt que
+  l'auto-création d'un compte minimal ou le passage de `customerId` en nullable. Impact
+  frontend : `docs/pages/demande-sur-mesure.md` et `docs/pages/personnalisation-creation.md`
+  doivent rediriger un visiteur non connecté vers `/connexion` avant d'afficher le
+  formulaire (à vérifier/mettre à jour lors de leur implémentation).
+- `numéro de devis` (`quote-number.vo.ts`) utilise un suffixe aléatoire
+  (`ANG-DEV-2026-XXXXXXXX`), pas la séquence zéro-paddée illustrée dans la spec — même choix
+  que `appointment-reference.vo.ts`, pas d'infra de compteur atomique à construire pour ça.
 
 ## Vérification
 
-- [ ] `quote-status-transition.vo` testé pour toutes les transitions valides/invalides
-- [ ] `create-quote-from-sur-mesure-request`/`create-quote-from-design-brief` testés
+- [x] `quote-status-transition.vo` testé pour toutes les transitions valides/invalides
+- [x] `create-quote-from-sur-mesure-request`/`create-quote-from-design-brief` testés
       (statut initial `DRAFT`, `creationId` correct selon l'origine)
-- [ ] `accept-quote`/`reject-quote` testés (refus si statut déjà terminal)
-- [ ] `quotes.controller.spec.ts` couvre les codes 200/201/403/404/409 (transition invalide)
-- [ ] `docs/checklist-implementation.md` : `quotes` passé à ✅
+- [x] `accept-quote`/`reject-quote` testés (refus si statut déjà terminal)
+- [x] `quotes.controller.spec.ts` couvre les codes 200/201/400/401/403/404/409
+- [x] `docs/checklist-implementation.md` : `quotes` passé à ✅
+
+Pages consommatrices (`demande-sur-mesure`, `personnalisation-creation`, `devis`,
+`sur-mesure-process`, `mes-favoris`) restent ⬜ — non traitées dans cette session, voir
+`docs/phases/phase-2-conversion.md` "Ordre suggéré" (5-6) pour la suite.

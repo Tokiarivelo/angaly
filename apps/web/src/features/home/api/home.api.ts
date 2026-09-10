@@ -1,5 +1,5 @@
 import { useQuery } from '@tanstack/react-query';
-import type { CreationDto, PaginatedResponse } from '@angaly/types';
+import type { CreationDto, MediaDto, PaginatedResponse } from '@angaly/types';
 
 import { apiClient } from '@/lib/api-client';
 
@@ -43,3 +43,13 @@ export function useTestimonialsQuery() {
     queryFn: () => apiClient.get<Testimonial[]>('/testimonials?featured=true'),
   });
 }
+
+/** Real endpoint — see docs/features/media.md. Loads PAGE_SECTION media for the home page. */
+export function useHomeSectionsMediaQuery() {
+  return useQuery({
+    queryKey: QUERY_KEYS.homeMedia,
+    queryFn: () =>
+      apiClient.get<PaginatedResponse<MediaDto>>('/media?entityType=PAGE_SECTION&limit=20'),
+  });
+}
+

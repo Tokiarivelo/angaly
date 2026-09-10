@@ -1,6 +1,7 @@
 import { act, renderHook, waitFor } from '@testing-library/react';
-import { http, HttpResponse } from 'msw';
+import { HttpResponse, http } from 'msw';
 import { describe, expect, it } from 'vitest';
+
 import { CreationAvailability, type CreationDto } from '@angaly/types';
 
 import { server } from '@/lib/msw/server';
@@ -9,7 +10,7 @@ import { withQueryClient } from '@/lib/test-utils';
 import { useCreationsGallery } from '../hooks/useCreationsGallery';
 import type { GallerySort } from '../types/gallery.types';
 
-const API_BASE_URL = 'http://localhost:3001/api';
+const API_BASE_URL = 'http://localhost:3003/api';
 
 function makeCreation(id: string): CreationDto {
   return {
@@ -59,7 +60,9 @@ function mockPaginatedCreations() {
 describe('useCreationsGallery', () => {
   it('loads the first page and reports the real total', async () => {
     mockPaginatedCreations();
-    const { result } = renderHook(() => useCreationsGallery('newest', null), { wrapper: withQueryClient() });
+    const { result } = renderHook(() => useCreationsGallery('newest', null), {
+      wrapper: withQueryClient(),
+    });
 
     await waitFor(() => expect(result.current.isLoading).toBe(false));
 
@@ -70,13 +73,17 @@ describe('useCreationsGallery', () => {
 
   it('appends the next page on loadMore instead of replacing the list', async () => {
     mockPaginatedCreations();
-    const { result } = renderHook(() => useCreationsGallery('newest', null), { wrapper: withQueryClient() });
+    const { result } = renderHook(() => useCreationsGallery('newest', null), {
+      wrapper: withQueryClient(),
+    });
 
     await waitFor(() => expect(result.current.isLoading).toBe(false));
 
     act(() => result.current.loadMore());
 
-    await waitFor(() => expect(result.current.items.map((item) => item.id)).toEqual(['c1', 'c2', 'c3']));
+    await waitFor(() =>
+      expect(result.current.items.map((item) => item.id)).toEqual(['c1', 'c2', 'c3']),
+    );
     expect(result.current.hasNextPage).toBe(false);
   });
 

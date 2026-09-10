@@ -1,6 +1,6 @@
 # Page — `fiche-produit`
 
-**Statut : ⬜ À faire.** Phase 2 — Conversion.
+**Statut : ✅ Fait.** Phase 2 — Conversion.
 
 ## Objet
 
@@ -76,27 +76,61 @@ de disponibilité), `Media` (galerie), `Favorite`.
 
 ## Points d'attention
 
-- Le badge de disponibilité (`ProductStatusBadge`, partagé avec `pret-a-porter-catalogue`)
-  doit refléter le statut de la **variante sélectionnée**, pas uniquement `Product.status` —
-  une robe peut être "Dernière pièce" en taille M mais "Épuisé" en taille S.
-- "Réserver pour essayage" doit chaîner vers `reservation-essayage` avec le produit et la
-  taille déjà sélectionnés pré-remplis (ne pas faire ressaisir le contexte).
-- "Ajouter au panier" désactivé si la variante sélectionnée est `OUT_OF_STOCK`/`RESERVED` —
-  proposer alors "Réserver pour essayage" ou "Prendre rendez-vous" comme alternative visible.
-- Page **publique** : l'ajout au panier doit fonctionner pour un visiteur non connecté
-  (panier en session/localStorage via Zustand), la synchronisation serveur n'intervenant qu'à
-  la connexion/au checkout.
-- Mobile : galerie en carrousel plein écran en haut, panneau d'achat non sticky en dessous,
-  barre d'action sticky en bas avec "Ajouter au panier" (primaire) + icône "Réserver pour
-  essayage" (secondaire).
+- **Écran réel vérifié en direct** cette session via `agy`/StitchMCP (`get_screen` + HTML/CSS
+  littéral) — écarts constatés avec le prompt memo/cette fiche, tranchés en faveur de l'écran
+  réel :
+  - **Pas de `ProductStatusBadge` (pill coin, catalogue) sur cette page** : l'écran réel
+    affiche un indicateur point + libellé ("En stock" en vert), toujours visible y compris
+    pour AVAILABLE — traitement différent, dédié, dans `ProductStatusIndicator.tsx`.
+  - **`ProductVariant` n'a pas de champ de statut propre** dans le schéma (seulement
+    `quantityAvailable`/`quantityReserved`) : le "Dernière pièce en M mais Épuisé en S"
+    décrit plus haut n'est pas littéralement supporté par un enum par variante.
+    `PurchasePanel.tsx` calcule un statut effectif honnête à la place
+    (`resolveVariantStatus()`, testé) : la variante sélectionnée sans stock réel affiche
+    toujours OUT_OF_STOCK, quel que soit `Product.status` ; sinon le statut produit
+    s'applique (seule granularité que le schéma offre réellement).
+  - **4 actions réelles, pas 5** : "Contacter Angaly" n'apparaît pas sur l'écran capturé —
+    seuls Ajouter au panier / Réserver pour essayage / Prendre rendez-vous / Favoris sont
+    implémentés.
+  - **Icône panier (badge count) dans la nav du header partagé non implémentée** — même
+    raisonnement que `pret-a-porter-catalogue` : pas de concept panier partagé site-wide
+    tant qu'`orders` (Phase 3) n'existe pas ; seul le bouton "Ajouter au panier" de cette
+    page fonctionne (store Zustand local).
+- "Réserver pour essayage" chaîne vers `reservation-essayage` avec `productId` et la taille
+  sélectionnée en query params (page cible pas encore construite, ⬜ — lien ajouté quand même,
+  voir `routes.ts`).
+- "Ajouter au panier" désactivé si le statut effectif de la variante sélectionnée est
+  `OUT_OF_STOCK`/`RESERVED` — "Réserver pour essayage"/"Prendre rendez-vous" restent les
+  alternatives visibles.
+- **Panier local uniquement** (`stores/cart.store.ts`, Zustand + `persist` localStorage,
+  `{name: 'angaly-cart'}`) : fonctionne pour un visiteur connecté ou non, **aucun appel
+  serveur** — `POST /api/cart/items` n'existe pas (`docs/features/products.md` "Points
+  d'attention", renvoyé à `orders` Phase 3). Pas de fichier `api/cart.api.ts` en
+  conséquence : `useAddToCart.ts` appelle directement le store.
+- **Onglets** : `@radix-ui/react-tabs` (nouvelle dépendance, installée cette session) —
+  navigation clavier native (flèches + Entrée/Espace), répond à l'exigence d'accessibilité.
+  Seul l'onglet Description a un contenu réel capturé sur l'écran ; Matière & entretien /
+  Livraison & retours affichent le meilleur contenu disponible (matière de la variante
+  sélectionnée + texte de politique générique) faute de champ Prisma dédié.
+- **`SimilarProductsRow.tsx` réutilise `ProductCard` de `pret-a-porter-catalogue`** — seul
+  import cross-feature sanctionné par cette fiche elle-même ; l'écran réel montre une carte
+  plus simple (image + nom + prix, sans badge ni favori), mais `ProductCard` est un
+  sur-ensemble qui ne contredit rien de décidé par la maquette.
+- **Couleurs de variante** (`ColorSelector.tsx`) : la fiche produit utilise des noms français
+  descriptifs ("Bleu Nuit") alors que le catalogue utilise des noms anglais de filtre
+  ("Navy") — aucun champ hex n'existe côté Prisma. `@/lib/color-swatches.ts` (partagé avec
+  `pret-a-porter-catalogue/ProductCard.tsx`) couvre les deux vocabulaires avec un repli
+  neutre pour tout nom non reconnu.
 
 ## Checklist d'acceptation
 
-- [ ] Reproduit fidèlement `stitch-prompts/09-fiche-produit.md` (galerie avec lightbox, panneau d'achat, onglets, produits similaires)
-- [ ] Sélection taille/couleur résout correctement la variante et son statut de disponibilité
-- [ ] "Ajouter au panier" fonctionnel pour visiteur connecté et non connecté
-- [ ] "Réserver pour essayage" renvoie vers `reservation-essayage` avec produit/taille pré-remplis
-- [ ] "Ajouter aux favoris" fonctionnel pour un visiteur connecté, invite à se connecter sinon
-- [ ] Onglets Description / Matière & entretien / Livraison & retours accessibles au clavier
-- [ ] Tests : `useProduct.test.ts`, `useProductVariantSelection.test.ts`, `useAddToCart.test.ts`
+- [x] Reproduit fidèlement l'écran Stitch réel (galerie avec lightbox, panneau d'achat, onglets, produits similaires) — vérifié en direct
+- [x] Sélection taille/couleur résout correctement la variante et son statut de disponibilité effectif (`resolveVariantStatus.test.ts`)
+- [x] "Ajouter au panier" fonctionnel pour visiteur connecté et non connecté (panier local Zustand, pas de backend requis)
+- [x] "Réserver pour essayage" renvoie vers `reservation-essayage` avec produit/taille pré-remplis (query params)
+- [x] "Ajouter aux favoris" fonctionnel pour un visiteur connecté (vrai appel API), invite à se connecter sinon
+- [x] Onglets Description / Matière & entretien / Livraison & retours accessibles au clavier (Radix Tabs)
+- [x] Tests : `useProduct.test.ts`, `useProductVariantSelection.test.ts`, `useAddToCart.test.ts`
+      (+ `resolveVariantStatus.test.ts`, `FicheProduitPage.test.tsx`)
+- [x] `docs/checklist-implementation.md` et `docs/mockup-reference.md` mis à jour à ✅
 - [ ] `docs/checklist-implementation.md` et `docs/mockup-reference.md` mis à jour à ✅

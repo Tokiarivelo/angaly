@@ -62,10 +62,10 @@ COPY --from=builder --chown=nestjs:nodejs /bundle/dist         ./dist
 COPY --from=builder --chown=nestjs:nodejs /bundle/package.json ./package.json
 
 USER nestjs
-EXPOSE 3001
+EXPOSE 3003
 
 HEALTHCHECK --interval=30s --timeout=10s --start-period=30s --retries=3 \
-    CMD wget -qO- http://localhost:3001/api/health > /dev/null || exit 1
+    CMD wget -qO- http://localhost:3003/api/health > /dev/null || exit 1
 
 # Migrations run at container start (only the running container has DATABASE_URL
 # and network access to postgres). `prisma` is a direct @angaly/api dependency

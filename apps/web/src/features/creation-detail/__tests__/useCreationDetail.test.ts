@@ -1,5 +1,5 @@
 import { renderHook, waitFor } from '@testing-library/react';
-import { http, HttpResponse } from 'msw';
+import { HttpResponse, http } from 'msw';
 import { describe, expect, it } from 'vitest';
 
 import { server } from '@/lib/msw/server';
@@ -7,11 +7,13 @@ import { withQueryClient } from '@/lib/test-utils';
 
 import { useCreationDetail } from '../hooks/useCreationDetail';
 
-const API_BASE_URL = 'http://localhost:3001/api';
+const API_BASE_URL = 'http://localhost:3003/api';
 
 describe('useCreationDetail', () => {
   it('starts loading with no data', () => {
-    const { result } = renderHook(() => useCreationDetail('robe-eternelle'), { wrapper: withQueryClient() });
+    const { result } = renderHook(() => useCreationDetail('robe-eternelle'), {
+      wrapper: withQueryClient(),
+    });
 
     expect(result.current.isLoading).toBe(true);
     expect(result.current.data).toBeUndefined();
@@ -44,7 +46,9 @@ describe('useCreationDetail', () => {
       ),
     );
 
-    const { result } = renderHook(() => useCreationDetail('robe-eternelle'), { wrapper: withQueryClient() });
+    const { result } = renderHook(() => useCreationDetail('robe-eternelle'), {
+      wrapper: withQueryClient(),
+    });
 
     await waitFor(() => expect(result.current.isLoading).toBe(false));
 
@@ -56,13 +60,19 @@ describe('useCreationDetail', () => {
     server.use(
       http.get(`${API_BASE_URL}/creations/inconnue`, () =>
         HttpResponse.json(
-          { success: false, error: { code: 'NOT_FOUND', message: 'Creation not found' }, statusCode: 404 },
+          {
+            success: false,
+            error: { code: 'NOT_FOUND', message: 'Creation not found' },
+            statusCode: 404,
+          },
           { status: 404 },
         ),
       ),
     );
 
-    const { result } = renderHook(() => useCreationDetail('inconnue'), { wrapper: withQueryClient() });
+    const { result } = renderHook(() => useCreationDetail('inconnue'), {
+      wrapper: withQueryClient(),
+    });
 
     await waitFor(() => expect(result.current.isLoading).toBe(false));
 

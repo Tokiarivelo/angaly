@@ -21,6 +21,7 @@ import { PrismaPasswordResetTokenRepository } from './infrastructure/repositorie
 import { PrismaRefreshTokenRepository } from './infrastructure/repositories/prisma-refresh-token.repository';
 import { PrismaUserRepository } from './infrastructure/repositories/prisma-user.repository';
 import { JwtAuthGuard } from './presentation/guards/jwt-auth.guard';
+import { RolesGuard } from './presentation/guards/roles.guard';
 import { AuthController } from './presentation/controllers/auth.controller';
 
 /** ADR-001: RS256 — keys decoded from base64 (JWT_PRIVATE_KEY_BASE64/JWT_PUBLIC_KEY_BASE64), never committed raw. */
@@ -53,6 +54,7 @@ function decodeBase64Key(base64Value: string): string {
     RequestPasswordResetUseCase,
     ResetPasswordUseCase,
     JwtAuthGuard,
+    RolesGuard,
     { provide: USER_REPOSITORY, useClass: PrismaUserRepository },
     { provide: REFRESH_TOKEN_REPOSITORY, useClass: PrismaRefreshTokenRepository },
     { provide: PASSWORD_RESET_TOKEN_REPOSITORY, useClass: PrismaPasswordResetTokenRepository },
@@ -60,6 +62,6 @@ function decodeBase64Key(base64Value: string): string {
     { provide: ACCESS_TOKEN_SERVICE, useClass: JwtAccessTokenService },
     { provide: TOKEN_EXPIRY_POLICY, useClass: EnvTokenExpiryPolicy },
   ],
-  exports: [JwtAuthGuard, ACCESS_TOKEN_SERVICE],
+  exports: [JwtAuthGuard, RolesGuard, ACCESS_TOKEN_SERVICE],
 })
 export class AuthModule {}

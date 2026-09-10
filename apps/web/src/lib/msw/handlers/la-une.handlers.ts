@@ -1,4 +1,4 @@
-import { http, HttpResponse } from 'msw';
+import { HttpResponse, http } from 'msw';
 
 /**
  * `/creations` is already mocked by home.handlers.ts (single featured item) —
@@ -6,9 +6,16 @@ import { http, HttpResponse } from 'msw';
  * feature calls it yet, so its default here is the global "no featured
  * collection" case; tests needing one use `server.use()` to override.
  */
-const API_BASE_URL = 'http://localhost:3001/api';
+const API_BASE_URL = 'http://localhost:3003/api';
 
-const EMPTY_PAGE_META = { total: 0, page: 1, limit: 1, totalPages: 0, hasNextPage: false, hasPreviousPage: false };
+const EMPTY_PAGE_META = {
+  total: 0,
+  page: 1,
+  limit: 1,
+  totalPages: 0,
+  hasNextPage: false,
+  hasPreviousPage: false,
+};
 
 export const laUneHandlers = [
   http.get(`${API_BASE_URL}/collections`, () => {

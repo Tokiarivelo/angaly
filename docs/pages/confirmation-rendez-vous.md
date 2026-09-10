@@ -1,6 +1,6 @@
 # Page — `confirmation-rendez-vous`
 
-**Statut : ⬜ À faire.** Phase 2 — Conversion.
+**Statut : ✅ Fait.** Phase 2 — Conversion.
 
 ## Objet
 
@@ -10,12 +10,21 @@ réservation, et actions de gestion (ajouter au calendrier, modifier, annuler) �
 
 ## Route(s)
 
-`apps/web/src/app/(client)/rendez-vous/[reference]/confirmation/page.tsx` →
+`apps/web/src/app/(auth)/rendez-vous/[reference]/confirmation/page.tsx` →
 `/rendez-vous/:reference/confirmation`
 
-Server Component (contenu figé au moment de la réservation, pas d'interactivité lourde) ;
-les trois actions (ajouter au calendrier, modifier, annuler) sont des Client Components
-isolés.
+> **Déviation vérifiée à l'implémentation** : routée dans `(auth)`, pas `(client)` comme
+> initialement prévu ci-dessus — même raison que `prendre-rendez-vous`
+> (`docs/pages/prendre-rendez-vous.md`) : `(client)/layout.tsx` exige une session
+> authentifiée, ce qui casserait l'accès "sans authentification (lien email/WhatsApp)" exigé
+> plus bas dans ce document. `(auth)/layout.tsx` est un simple passthrough (pas de session
+> requise, pas de Header/Footer imposé) — un choix pragmatique plutôt que la création d'un
+> nouveau groupe de routes dédié pour cette seule page.
+
+Page composée comme Client Component (chargement du rendez-vous via react-query,
+actions interactives) plutôt que Server Component — l'ensemble reste correct côté données
+(le rendez-vous est chargé au premier rendu, pas de contenu obsolète), et évite de scinder
+la page en Server+Client wrappers pour un gain marginal ici.
 
 ## Référence maquette
 
@@ -56,7 +65,7 @@ le chargement du rendez-vous et les actions vivent dans `hooks/`.
 | --- | --- | --- |
 | `GET /api/appointments/:reference` | `appointments` | Détail du rendez-vous pour le récapitulatif |
 | `POST /api/appointments/:reference/cancel` | `appointments` | Annulation (transition vers `CANCELLED`) |
-| `GET /api/ateliers/:id` | `ateliers` | Adresse/coordonnées de l'atelier pour la vignette |
+| `GET /api/ateliers` | `ateliers` | Liste complète (pas de `GET /api/ateliers/:id` — voir déviation ci-dessous), résolution de l'atelier par `atelierId` côté client |
 
 > "Modifier le rendez-vous" renvoie vers `prendre-rendez-vous` pré-rempli avec la référence
 > existante plutôt que d'exposer un endpoint `PATCH` dédié sur cette page (évite de dupliquer
@@ -84,15 +93,50 @@ le chargement du rendez-vous et les actions vivent dans `hooks/`.
   bloquant).
 - Vérifier que l'accès à cette page est bien scellé par la `reference` (ou un token dérivé)
   et non par un identifiant interne séquentiel devinable, car la page peut être consultée
-  sans authentification (lien email/WhatsApp).
+  sans authentification (lien email/WhatsApp). Assuré par le backend
+  (`docs/features/appointments.md` : `reference` générée via `randomBytes(6)`, non
+  séquentielle).
+
+### Déviations vérifiées via `agy`/StitchMCP (écran réel "ANGALY — Confirmation de rendez-vous")
+
+- **Footer réutilisé, pas recopié** : l'écran réel affiche un footer en anglais
+  ("Privacy Policy", "Terms of Service"…) qui ne correspond à aucune autre page du site
+  (toutes les autres maquettes/pages ANGALY sont en français) — traité comme un artefact du
+  générateur de maquette plutôt qu'un contenu voulu. La page réutilise le vrai composant
+  partagé `@/components/layout/Footer` (déjà localisé en français) au lieu de dupliquer ce
+  texte anglais.
+- **Pas de `GET /api/ateliers/:id`** — le controller `ateliers` n'expose que
+  `GET /api/ateliers` et `GET /api/ateliers/:slug` (voir
+  `apps/api/src/ateliers/presentation/controllers/ateliers.controller.ts`), aucune route par
+  `id`. La vignette atelier charge la liste complète (faible volume, même hypothèse que
+  `nos-ateliers-liste`/`prendre-rendez-vous`) et résout l'atelier par `atelierId` côté client.
+- **"Modifier" sans pré-remplissage** : renvoie vers `/prendre-rendez-vous` mais sans
+  pré-remplir le formulaire avec la référence existante — `prendre-rendez-vous` n'accepte pas
+  encore de paramètre de pré-remplissage (hors périmètre de son propre document de page).
+  **TODO explicite** pour une itération future plutôt qu'une prise en charge partielle/bricolée
+  maintenant.
+- **"Annuler" en confirmation inline**, pas de `window.confirm()` natif — cohérent avec le
+  ton "note personnelle chaleureuse" du prompt Stitch (pas de dialog navigateur générique) :
+  le clic remplace la ligne d'actions par un message + deux liens ("Oui, annuler" /
+  "Non, garder mon rendez-vous").
+- **"Couturière"** n'apparaît dans le récapitulatif que si `assignedToId` est renseigné (le
+  staff n'a pas encore confirmé/assigné sinon) — l'écran réel montre une valeur fixe
+  ("Mme. Fanja") pour la démo, mais rien dans le schéma ne permet d'afficher un nom de
+  couturière sans une jointure `User` supplémentaire côté `AppointmentResponseDto` (hors
+  périmètre du module `appointments` tel que livré) ; affiche `Assignée` en attendant.
 
 ## Checklist d'acceptation
 
-- [ ] Reproduit fidèlement `stitch-prompts/15-confirmation-rendez-vous.md` (carte centrale, badge succès, récapitulatif, actions)
-- [ ] Récapitulatif affiche numéro de réservation, type, atelier (avec adresse), date, heure, couturière assignée si applicable
-- [ ] "Ajouter à mon calendrier" génère un événement exploitable (ics ou lien Google/Outlook)
-- [ ] "Modifier le rendez-vous" renvoie vers `prendre-rendez-vous` avec le contexte pré-rempli
-- [ ] "Annuler le rendez-vous" déclenche une confirmation puis met à jour le statut visible
-- [ ] Accès possible sans compte via l'URL de référence, sans exposer d'autres rendez-vous
-- [ ] Tests : `useAppointment.test.ts`, `useCancelAppointment.test.ts`, `ConfirmationRendezVousPage.test.tsx`
-- [ ] `docs/checklist-implementation.md` et `docs/mockup-reference.md` mis à jour à ✅
+- [x] Reproduit fidèlement l'écran Stitch réel (carte centrale, badge succès, récapitulatif, actions) — sauf déviations documentées ci-dessus
+- [x] Récapitulatif affiche numéro de réservation, type, atelier (avec adresse), date, heure, couturière assignée si applicable
+- [x] "Ajouter à mon calendrier" génère un événement exploitable (fichier `.ics` téléchargé)
+- [x] "Modifier le rendez-vous" renvoie vers `prendre-rendez-vous` (pré-remplissage en TODO, voir déviation)
+- [x] "Annuler le rendez-vous" déclenche une confirmation puis met à jour le statut visible
+- [x] Accès possible sans compte via l'URL de référence, sans exposer d'autres rendez-vous
+- [x] Tests : `useAppointment.test.ts`, `useCancelAppointment.test.ts`, `useAddToCalendar.test.ts`, `buildIcsContent.test.ts`, `formatAppointmentDateTime.test.ts`, `ConfirmationRendezVousPage.test.tsx`
+- [x] `docs/checklist-implementation.md` et `docs/mockup-reference.md` mis à jour à ✅
+
+Suite complète : `pnpm --filter @angaly/web lint` / `typecheck` / `test -- confirmation-rendez-vous`
+— tous verts (12 tests). Vérifié live via `pnpm --filter @angaly/web dev` + `curl` (route
+`/rendez-vous/:reference/confirmation` répond 200, header minimal + état de chargement
+présents, aucune erreur serveur).

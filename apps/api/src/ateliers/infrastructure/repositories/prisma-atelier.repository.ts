@@ -36,6 +36,11 @@ export class PrismaAtelierRepository implements IAtelierRepository {
     return record ? AtelierMapper.toDomain(record) : null;
   }
 
+  async findById(id: string): Promise<AtelierEntity | null> {
+    const record = await this.prisma.atelier.findUnique({ where: { id }, select: ATELIER_SELECT });
+    return record ? AtelierMapper.toDomain(record) : null;
+  }
+
   async list(): Promise<AtelierEntity[]> {
     const records = await this.prisma.atelier.findMany({
       select: ATELIER_SELECT,

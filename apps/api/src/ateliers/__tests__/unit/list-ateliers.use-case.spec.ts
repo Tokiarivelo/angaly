@@ -2,7 +2,7 @@ import { ListAteliersUseCase } from '../../application/use-cases/list-ateliers.u
 import type { IAtelierRepository } from '../../domain/repositories/atelier.repository';
 
 function buildRepository(): jest.Mocked<IAtelierRepository> {
-  return { findBySlug: jest.fn(), list: jest.fn() };
+  return { findBySlug: jest.fn(), findById: jest.fn(), list: jest.fn() };
 }
 
 describe('ListAteliersUseCase', () => {

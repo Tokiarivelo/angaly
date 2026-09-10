@@ -30,13 +30,13 @@ pnpm --filter @angaly/web test:coverage
 pnpm --filter @angaly/web test:ui
 ```
 
-| Cible                                    | Outil              | Obligatoire ?            |
-| ------------------------------------------ | ------------------ | -------------------------- |
-| Hooks (`useLogin`, `usePatternWizard`, ...) | `renderHook` + `act` | ✅ Oui                     |
+| Cible                                        | Outil                  | Obligatoire ?           |
+| -------------------------------------------- | ---------------------- | ----------------------- |
+| Hooks (`useLogin`, `usePatternWizard`, ...)  | `renderHook` + `act`   | ✅ Oui                  |
 | Composants interactifs (formulaires, modals) | `render` + `userEvent` | ✅ Oui                  |
-| Utils (`formatPriceAriary`, `truncate`, ...) | assertions simples | ✅ Oui                     |
-| Composants visuels purs (sans logique)        | —                   | ⚪ Optionnel                |
-| Pages Next.js (`app/**/page.tsx`)             | —                   | ❌ Non (pas de logique)     |
+| Utils (`formatPriceAriary`, `truncate`, ...) | assertions simples     | ✅ Oui                  |
+| Composants visuels purs (sans logique)       | —                      | ⚪ Optionnel            |
+| Pages Next.js (`app/**/page.tsx`)            | —                      | ❌ Non (pas de logique) |
 
 ### MSW (Mock Service Worker)
 
@@ -46,7 +46,7 @@ importé par `vitest.setup.ts`.
 
 ```typescript
 export const appointmentsHandlers = [
-  http.post('http://localhost:3001/api/appointments', async ({ request }) => {
+  http.post('http://localhost:3003/api/appointments', async ({ request }) => {
     const body = await request.json();
     return HttpResponse.json({ success: true, data: { reference: 'RDV-2026-00001' } });
   }),

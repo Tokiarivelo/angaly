@@ -56,6 +56,14 @@ export class PrismaCreationRepository implements ICreationRepository {
     return record ? CreationMapper.toDomain(record) : null;
   }
 
+  async findById(id: string): Promise<CreationEntity | null> {
+    const record = await this.prisma.creation.findUnique({
+      where: { id },
+      select: CREATION_DETAIL_SELECT,
+    });
+    return record ? CreationMapper.toDomain(record) : null;
+  }
+
   async list(filter: CreationListFilter): Promise<CreationListResult> {
     const where: Prisma.CreationWhereInput = {
       ...(filter.categoryId ? { categoryId: filter.categoryId } : {}),

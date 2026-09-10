@@ -1,6 +1,6 @@
 # Page — `pret-a-porter-catalogue`
 
-**Statut : ⬜ À faire.** Phase 2 — Conversion.
+**Statut : ✅ Fait.** Phase 2 — Conversion.
 
 ## Objet
 
@@ -85,14 +85,46 @@ produit), `Favorite` (état favori si l'utilisateur est connecté).
   icône panier flottante sticky en bas à droite.
 - Rester dans le registre boutique haut de gamme : pas de bannière de réduction ni de badge
   néon, même si le catalogue affiche prix et disponibilité (voir AVOID du prompt Stitch).
+- **Écran réel vérifié en direct** cette session via `agy`/StitchMCP (`get_screen` + HTML/CSS
+  littéral) — écarts constatés avec le prompt memo, tranchés en faveur de l'écran réel :
+  - **Filtres en sidebar gauche (`w-64`, sticky), pas en barre horizontale** comme le
+    prompt memo le décrivait — layout `CatalogueFilterBar.tsx` corrigé en conséquence.
+  - **Seuls Catégorie/Taille/Couleur sont visuellement conçus** dans l'écran capturé
+    (checkboxes avec compteurs décoratifs, grille de boutons tailles FR 34–44, swatches
+    ronds). Matière/Disponibilité/Prix (requis par cette fiche et supportés par
+    `products`) ont été ajoutés dans le même langage visuel, sous les 3 groupes réels —
+    aucun élément de l'écran ne s'y oppose.
+  - **Catégorie implémentée en sélection unique** (une checkbox cochée à la fois) : le
+    filtre backend `categoryId` est une valeur unique, pas un tableau — l'UI en
+    checkboxes visuelle de l'écran réel est conservée, mais son comportement est
+    radio-like plutôt que multi-sélection.
+  - **Tri réel : seulement 3 options** (Nouveautés, Prix croissant, Prix décroissant) —
+    pas de "Populaires" comme le memo le suggérait ; correspond exactement aux 3 valeurs
+    supportées par `GET /api/products?sort=`.
+  - **Pagination numérotée (chevrons + "n / total")**, pas "Voir plus" — reproduit
+    exactement l'écran réel.
+  - **Prix affichés en €** dans l'export Stitch (données de démo générées par l'IA) —
+    non repris : `ProductCard.tsx` utilise `formatPriceAriary()` (déjà utilisé ailleurs
+    dans le projet) sur `Product.price.currency` réel (`MGA`).
+  - **Icône panier (badge "2" dans la nav) et FAB panier flottant mobile non
+    implémentés** : le panier est explicitement hors périmètre de `products`
+    (`docs/features/products.md` "Points d'attention", renvoyé à `orders` Phase 3) — rien
+    n'affiche de panier tant que ce module n'existe pas, plutôt que d'afficher un badge
+    non fonctionnel.
+- **Favoris : première intégration frontend réelle de `customers`** (jusqu'ici
+  `nos-creations-galerie`'s bouton favori était local-only, faute de backend) — bascule
+  auth-gated via `useSession()` (NextAuth) : un visiteur non connecté est redirigé vers
+  `/connexion?redirectTo=...` plutôt que d'appeler l'API, un visiteur connecté appelle
+  vraiment `POST`/`DELETE /api/favorites`.
 
 ## Checklist d'acceptation
 
-- [ ] Reproduit fidèlement `stitch-prompts/08-pret-a-porter-catalogue.md` (filtres, grille, badges de statut)
-- [ ] Les 5 statuts `ProductAvailability` s'affichent avec le bon style dédié
-- [ ] Filtres (catégorie, taille, couleur, matière, disponibilité, prix) et tri fonctionnels et combinables
-- [ ] Filtres synchronisés avec l'URL (query params partageables)
-- [ ] Icône favori fonctionnelle pour un visiteur connecté, invite à se connecter sinon
-- [ ] Pagination ou "Voir plus" fonctionnel
-- [ ] Tests : `useCatalogueFilters.test.ts`, `useProducts.test.ts`, `PretAPorterCataloguePage.test.tsx`
-- [ ] `docs/checklist-implementation.md` et `docs/mockup-reference.md` mis à jour à ✅
+- [x] Reproduit fidèlement l'écran Stitch réel (sidebar de filtres, grille, badges de statut) — vérifié en direct
+- [x] Les 5 statuts `ProductAvailability` s'affichent avec le bon style dédié (`ProductStatusBadge.tsx`)
+- [x] Filtres (catégorie, taille, couleur, matière, disponibilité, prix) et tri fonctionnels et combinables
+- [x] Filtres synchronisés avec l'URL (query params partageables, back/forward navigables)
+- [x] Icône favori fonctionnelle pour un visiteur connecté (vrai appel API), invite à se connecter sinon
+- [x] Pagination fonctionnelle (chevrons + "n / total", reproduit l'écran réel)
+- [x] Tests : `useCatalogueFilters.test.ts`, `useProducts.test.ts`, `PretAPorterCataloguePage.test.tsx`
+      (+ `catalogue-filters.schema.test.ts`, `ProductStatusBadge.test.tsx`)
+- [x] `docs/checklist-implementation.md` et `docs/mockup-reference.md` mis à jour à ✅

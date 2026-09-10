@@ -7,6 +7,7 @@ export interface Testimonial {
   creationLabel: string;
   quote: string;
   verified: boolean;
+  avatarUrl?: string;
 }
 
 export type AtelierSummary = AtelierDto;

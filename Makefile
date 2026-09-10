@@ -64,7 +64,7 @@ setup: ## 🚀 Complete first-time setup (install + env + infra + db)
 	@echo "  Configure secrets first: make env.generate-keys && make env.generate-secret"
 	@echo "  Then start the app with: $(BOLD)make dev$(RESET)"
 	@echo "  Web:         http://localhost:3000"
-	@echo "  API:         http://localhost:3001/docs"
+	@echo "  API:         http://localhost:3003/docs"
 	@echo "  AI Service:  http://localhost:8000/health"
 	@echo "  MinIO:       http://localhost:9001"
 
@@ -120,7 +120,7 @@ env.generate-secret: ## 🔑 Generate NEXTAUTH_SECRET for apps/web/.env.local
 dev: ## 🔥 Start web + api in development mode
 	@echo "$(CYAN)🔥 Starting development servers...$(RESET)"
 	@echo "  Web:  http://localhost:3000"
-	@echo "  API:  http://localhost:3001/docs"
+	@echo "  API:  http://localhost:3003/docs"
 	$(PNPM) dev
 
 .PHONY: dev.web
@@ -128,7 +128,7 @@ dev.web: ## 🌐 Start only the Next.js frontend (port 3000)
 	$(PNPM) --filter @angaly/web dev
 
 .PHONY: dev.api
-dev.api: ## ⚙️  Start only the NestJS backend (port 3001)
+dev.api: ## ⚙️  Start only the NestJS backend (port 3003)
 	$(PNPM) --filter @angaly/api dev
 
 .PHONY: dev.ai
@@ -337,7 +337,7 @@ prod.ps: ## 📊 Show production service status
 .PHONY: prod.health
 prod.health: ## 🏥 Check health status of all production services
 	$(DOCKER_COMPOSE_PROD) ps
-	@docker exec angaly_api wget -qO- http://localhost:3001/api/health 2>/dev/null || echo "$(RED)API not responding$(RESET)"
+	@docker exec angaly_api wget -qO- http://localhost:3003/api/health 2>/dev/null || echo "$(RED)API not responding$(RESET)"
 
 .PHONY: prod.backup
 prod.backup: ## 💾 Backup PostgreSQL to backups/angaly_<timestamp>.sql.gz
@@ -382,8 +382,8 @@ ssl.self-signed: ## 🔒 Generate a self-signed certificate for staging/testing
 
 .PHONY: docs
 docs: ## 📖 Open Swagger API documentation (requires dev server running)
-	@xdg-open http://localhost:3001/docs 2>/dev/null || open http://localhost:3001/docs 2>/dev/null || \
-	  echo "$(YELLOW)Please open manually: http://localhost:3001/docs$(RESET)"
+	@xdg-open http://localhost:3003/docs 2>/dev/null || open http://localhost:3003/docs 2>/dev/null || \
+	  echo "$(YELLOW)Please open manually: http://localhost:3003/docs$(RESET)"
 
 .PHONY: studio
 studio: db.studio ## 🎨 Alias for db.studio

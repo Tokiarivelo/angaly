@@ -1,6 +1,7 @@
 import { renderHook, waitFor } from '@testing-library/react';
-import { http, HttpResponse } from 'msw';
+import { HttpResponse, http } from 'msw';
 import { describe, expect, it } from 'vitest';
+
 import type { CollectionDto } from '@angaly/types';
 
 import { server } from '@/lib/msw/server';
@@ -8,7 +9,7 @@ import { withQueryClient } from '@/lib/test-utils';
 
 import { useCollectionsList } from '../hooks/useCollectionsList';
 
-const API_BASE_URL = 'http://localhost:3001/api';
+const API_BASE_URL = 'http://localhost:3003/api';
 
 function makeCollection(overrides: Partial<CollectionDto> = {}): CollectionDto {
   return {
@@ -37,7 +38,14 @@ function mockCollections(collections: CollectionDto[]) {
         success: true,
         data: {
           data,
-          meta: { total: data.length, page: 1, limit: 40, totalPages: 1, hasNextPage: false, hasPreviousPage: false },
+          meta: {
+            total: data.length,
+            page: 1,
+            limit: 40,
+            totalPages: 1,
+            hasNextPage: false,
+            hasPreviousPage: false,
+          },
         },
       });
     }),

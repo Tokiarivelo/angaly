@@ -58,6 +58,25 @@ describe('PrismaCreationRepository', () => {
     expect(result?.slug).toBe('robe-eternelle');
   });
 
+  it('findById() returns null when no row matches', async () => {
+    const { prisma, creation } = buildPrismaServiceMock();
+    creation.findUnique.mockResolvedValue(null);
+    const repository = new PrismaCreationRepository(prisma);
+
+    expect(await repository.findById('missing')).toBeNull();
+  });
+
+  it('findById() maps the row to a domain entity when found', async () => {
+    const { prisma, creation } = buildPrismaServiceMock();
+    creation.findUnique.mockResolvedValue(sampleRecord());
+    const repository = new PrismaCreationRepository(prisma);
+
+    const result = await repository.findById('creation-1');
+
+    expect(result?.id).toBe('creation-1');
+    expect(creation.findUnique).toHaveBeenCalledWith(expect.objectContaining({ where: { id: 'creation-1' } }));
+  });
+
   it('list() applies category/collection/featured filters and default sort (newest)', async () => {
     const { prisma, creation } = buildPrismaServiceMock();
     creation.findMany.mockResolvedValue([sampleRecord()]);

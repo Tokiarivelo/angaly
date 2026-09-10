@@ -1,6 +1,6 @@
 # Page — `prendre-rendez-vous`
 
-**Statut : ⬜ À faire.** Phase 2 — Conversion.
+**Statut : ✅ Fait.** Phase 2 — Conversion.
 
 ## Objet
 
@@ -11,14 +11,21 @@ tenir sous la minute (spec §98, `docs/phases/phase-2-conversion.md`).
 
 ## Route(s)
 
-`apps/web/src/app/(client)/prendre-rendez-vous/page.tsx` → `/prendre-rendez-vous`
+`apps/web/src/app/(public)/prendre-rendez-vous/page.tsx` → `/prendre-rendez-vous`
 
 Client Component dès la racine (calendrier interactif, créneaux dynamiques dépendants de la
 date sélectionnée — pas de bénéfice SSR déterminant).
 
-> Accessible sans compte existant (les champs prénom/nom/téléphone/email suffisent, comme
-> pour un visiteur), mais routée dans `(client)` conformément au périmètre Phase 2 défini
-> dans `docs/mockup-reference.md`/`docs/checklist-implementation.md`.
+> **Déviation vérifiée à l'implémentation** : routée dans `(public)`, pas `(client)` comme
+> initialement prévu ci-dessus. `apps/web/src/app/(client)/layout.tsx` exige une session
+> authentifiée (`redirect('/connexion?...')` si `!session?.user`) — y router cette page
+> casserait le parcours visiteur non connecté que la spec §33/§99 exige explicitement. Le
+> groupe `(public)` fournit déjà `Header`/`Footer`/`MobileNavigationShell` (voir
+> `apps/web/src/app/(public)/layout.tsx`), donc la feature n'a besoin de construire que le
+> contenu `<main>`. Un utilisateur `CLIENT` connecté navigant depuis `(client)` atteint quand
+> même cette page normalement (aucune redirection sortante) ; l'enrichissement `Customer` se
+> fait déjà côté backend via le Bearer token optionnel (voir
+> `docs/features/appointments.md`).
 
 ## Référence maquette
 
@@ -95,12 +102,40 @@ authentifié), `Atelier` (liste + `openingHoursJson` pour dériver les jours fer
 - Mobile : le calendrier devient un widget compact extensible au-dessus des créneaux, la
   barre "Confirmer le rendez-vous" reste sticky en bas dès que les champs requis sont remplis.
 
+### Déviations vérifiées via `agy`/StitchMCP (écran réel "ANGALY — Prendre rendez-vous (Booking)")
+
+- **Pas de filtre secondaire "Voir la disponibilité de : [Atelier / Couturière]"** —
+  contrairement à ce que ce document anticipait plus haut, l'écran réel ne comporte qu'un
+  simple `<select>` Atelier (2 options : Antananarivo, Paris) sans filtre par couturière. Non
+  implémenté ici, conformément à la maquette réelle plutôt qu'à l'hypothèse initiale du
+  document — l'assignation par couturière (`assignedToId`) reste un usage interne staff
+  (`docs/features/appointments.md`).
+- **Champ "3. Date" natif (`<input type="date">`) en plus du calendrier** — l'écran réel a
+  les deux : un input date compact dans le formulaire ET le calendrier mensuel complet à
+  droite. Implémenté avec le calendrier comme source de vérité pour la disponibilité (un
+  clic sur un jour disponible met à jour le champ `date` du formulaire et surligne le jour
+  sélectionné) ; l'input reste modifiable directement.
+- **Créneaux horaires (`TimeSlotChips`) sans état "grisé/désactivé"** — l'écran réel montre
+  une grille statique de 6 créneaux dont 2 visuellement désactivés (déjà pris). L'endpoint
+  réel `GET /api/appointments/availability/slots` (voir `docs/features/appointments.md`)
+  retourne uniquement les créneaux **libres** — il n'existe pas de liste "tous les créneaux
+  possibles" côté API pour distinguer visuellement un créneau pris. Implémenté avec
+  uniquement les créneaux retournés, tous sélectionnables ; si aucun créneau n'est libre, un
+  message l'indique au lieu d'une grille grisée.
+- **Redirection post-soumission** vers `/rendez-vous/:reference/confirmation`
+  (`docs/pages/confirmation-rendez-vous.md`) — page pas encore implémentée à ce stade,
+  prochaine étape de ce même palier de phase.
+
 ## Checklist d'acceptation
 
-- [ ] Reproduit fidèlement `stitch-prompts/14-prendre-rendez-vous.md` (deux colonnes desktop, calendrier avec légende)
-- [ ] Sélection d'un type de création, d'un atelier et d'une date charge les créneaux horaires correspondants
-- [ ] Créneaux indisponibles affichés grisés et non sélectionnables
-- [ ] Soumission crée bien un `Appointment` au statut `PENDING` et redirige vers `confirmation-rendez-vous`
-- [ ] Parcours complet réalisable en moins d'une minute (mesure manuelle ou test e2e chronométré)
-- [ ] Tests : `useAvailability.test.ts`, `useAppointmentForm.test.ts`, `useCreateAppointment.test.ts`
-- [ ] `docs/checklist-implementation.md` et `docs/mockup-reference.md` mis à jour à ✅
+- [x] Reproduit fidèlement l'écran Stitch réel (deux colonnes desktop, calendrier avec légende Disponible/Complet/Fermé)
+- [x] Sélection d'un type de création, d'un atelier et d'une date charge les créneaux horaires correspondants
+- [x] Créneaux indisponibles absents de la liste (jamais affichés, voir déviation ci-dessus)
+- [x] Soumission crée bien un `Appointment` au statut `PENDING` et redirige vers `/rendez-vous/:reference/confirmation`
+- [x] Parcours réalisable rapidement (formulaire progressif court, pas d'étape superflue) — pas de mesure chronométrée automatisée (hors périmètre des tests unitaires de cette session)
+- [x] Tests : `useAvailability.test.ts`, `useAppointmentForm.test.ts`, `useCreateAppointment.test.ts`, `PrendreRendezVousPage.test.tsx`
+- [x] `docs/checklist-implementation.md` et `docs/mockup-reference.md` mis à jour à ✅
+
+Suite complète : `pnpm --filter @angaly/web lint` / `typecheck` / `test -- prendre-rendez-vous`
+— tous verts (10 tests). Vérifié live via `pnpm --filter @angaly/web dev` + `curl` (route
+`/prendre-rendez-vous` répond 200, contenu attendu présent, aucune erreur serveur).

@@ -63,6 +63,14 @@ export class PrismaCollectionRepository implements ICollectionRepository {
     return record ? CollectionMapper.toDomainDetail(record) : null;
   }
 
+  async findById(id: string): Promise<CollectionEntity | null> {
+    const record = await this.prisma.collection.findUnique({
+      where: { id },
+      select: COLLECTION_DETAIL_SELECT,
+    });
+    return record ? CollectionMapper.toDomainDetail(record) : null;
+  }
+
   async list(filter: CollectionListFilter): Promise<CollectionListResult> {
     const where: Prisma.CollectionWhereInput = {
       ...publishedWhere(),

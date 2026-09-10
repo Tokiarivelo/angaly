@@ -32,7 +32,7 @@ pnpm dev
 ```
 
 - Web : http://localhost:3000
-- API : http://localhost:3001/api (Swagger : `/api/docs` en dev)
+- API : http://localhost:3003/api (Swagger : `/api/docs` en dev)
 - AI Service : http://localhost:8000/health
 - MinIO Console : http://localhost:9001
 
@@ -40,18 +40,18 @@ Voir `docs/development.md` pour le détail complet (prérequis, variables d'envi
 
 ## Documentation
 
-| Document | Contenu |
-| --- | --- |
-| `docs/architecture.md` | Diagrammes, ADR |
-| `docs/conventions.md` | Naming, commits, structure d'imports |
-| `docs/development.md` | Installation, variables d'env, commandes |
-| `docs/deployment.md` | Déploiement production, infra |
-| `docs/testing.md` | Stratégie de tests (Vitest/Jest/Playwright/pytest) |
-| `docs/mockup-reference.md` | Page ↔ Maquette Stitch ↔ Spécification ↔ Statut |
-| `docs/checklist-implementation.md` | Checklist globale par phase |
-| `docs/phases/` | Détail de chaque phase de développement |
-| `docs/pages/` | Une fiche par page/route |
-| `docs/features/` | Une fiche par module backend |
+| Document                           | Contenu                                            |
+| ---------------------------------- | -------------------------------------------------- |
+| `docs/architecture.md`             | Diagrammes, ADR                                    |
+| `docs/conventions.md`              | Naming, commits, structure d'imports               |
+| `docs/development.md`              | Installation, variables d'env, commandes           |
+| `docs/deployment.md`               | Déploiement production, infra                      |
+| `docs/testing.md`                  | Stratégie de tests (Vitest/Jest/Playwright/pytest) |
+| `docs/mockup-reference.md`         | Page ↔ Maquette Stitch ↔ Spécification ↔ Statut    |
+| `docs/checklist-implementation.md` | Checklist globale par phase                        |
+| `docs/phases/`                     | Détail de chaque phase de développement            |
+| `docs/pages/`                      | Une fiche par page/route                           |
+| `docs/features/`                   | Une fiche par module backend                       |
 
 ## Commandes
 

@@ -1,6 +1,6 @@
 # Feature — `customers`
 
-**Statut : ⬜ À faire.** Phase 2 — Conversion.
+**Statut : ✅ Fait.** Phase 2 — Conversion.
 
 ## Objet
 
@@ -53,7 +53,13 @@ __tests__/
 
 - Créer le profil `Customer` à l'inscription (`create-customer-profile`) — orchestré par
   `auth`.`register-user`, jamais appelé directement par un endpoint public d'écriture (pas
-  de "créer un profil client sans compte")
+  de "créer un profil client sans compte") — **`create-customer-profile.use-case.ts` n'a
+  finalement pas été implémenté dans ce module** : `auth`.`register-user` continue de créer
+  la ligne `Customer` directement via `IUserRepository.createWithCustomer()` (option
+  explicitement laissée ouverte par `docs/features/auth.md` "Points d'attention" — la vraie
+  atomicité User+Customer exigerait de faire circuler un client de transaction Prisma à
+  travers une frontière de module, infrastructure que ce projet n'a pas). Un use-case ici
+  n'aurait aucun appelant : `ICustomerRepository` n'expose donc pas de méthode `create`.
 - Consulter/mettre à jour le profil du client connecté (`firstName`, `lastName`, `phone`)
 - Ajouter un favori (création, produit ou collection) : opération idempotente, ne doit
   jamais échouer si le favori existe déjà (contrainte unique gérée en `upsert`, pas en
@@ -77,9 +83,16 @@ __tests__/
 - **`auth`** : `Customer` n'existe jamais sans `User` — `create-customer-profile` est
   appelé exclusivement depuis la transaction d'inscription de `auth`.`register-user` (voir
   `docs/features/auth.md`).
-- **`creations`/`products`** : `list-favorites` lit directement `Creation`/`Product` (via
-  `entityId`) pour hydrater chaque favori ; ce module ne duplique pas leurs DTO de
-  liste/détail, il en réutilise un sous-ensemble minimal (nom, slug, image de couverture).
+- **`creations`/`collections`/`products`** : `list-favorites` lit directement `Creation`/
+  `Collection`/`Product` (via `entityId`) pour hydrater chaque favori ; ce module ne duplique
+  pas leurs DTO de liste/détail, il en réutilise un sous-ensemble minimal (nom, slug, image
+  de couverture). Ni `ICreationRepository`, `ICollectionRepository`, ni `IProductRepository`
+  n'exposaient de `findById` (seulement `findBySlug`/`findPublishedBySlug`, car
+  `Favorite.entityId` est toujours l'id réel, jamais le slug) — méthode ajoutée à chacun
+  spécifiquement pour ce besoin (`CreationsModule`/`CollectionsModule`/`ProductsModule`
+  exportent tous leur token de repository). `products` a depuis été livré (✅,
+  `docs/features/products.md`) : un favori `PRODUCT` est maintenant hydraté comme les deux
+  autres types — plus de `display: null` systématique pour ce type.
 - **`appointments`** (Phase 2) : les favoris peuvent pré-remplir le formulaire de prise de
   rendez-vous (spec §47) — lecture seule côté `appointments`, ce module n'écrit jamais dans
   `Appointment`.
@@ -96,12 +109,31 @@ Le modèle Prisma `Favorite` déclare `entityType: COLLECTION` dans l'enum
 `COLLECTION` doit être hydraté par une requête `findUnique` manuelle sur `entityId` dans
 `list-favorites`, sans `include` Prisma direct, et sans contrainte de clé étrangère
 appliquée par la base pour ce cas précis (à garder à l'esprit pour la validation applicative
-— vérifier que la `Collection` référencée existe encore avant de l'afficher).
+— vérifier que la `Collection` référencée existe encore avant de l'afficher). Implémenté tel
+quel : `ICollectionRepository.findById()` (comme `ICreationRepository.findById()`) retourne
+`null` si la ligne a disparu, et `list-favorites.use-case.ts` traduit ce `null` en
+`display: null` plutôt que de faire échouer tout l'appel — un favori dont l'entité a été
+supprimée reste donc listé (avec `display: null`), jamais masqué silencieusement ni en erreur.
+- **`remove-favorite`** vérifie que le favori appartient bien au client courant
+  (`favorite.customerId === customer.id`) avant suppression — sans ce contrôle, un client
+  pourrait supprimer le favori d'un autre en devinant un id (`ForbiddenException`, 403).
+- **`ICustomerRepository` n'a pas de méthode `create`** — voir "Cas d'usage clés" pour le
+  raisonnement complet (auth continue de créer la ligne `Customer`).
+- **`list-favorites` "groupé par `entityType`"** est implémenté comme un tri stable
+  (`CREATION` → `PRODUCT` → `COLLECTION`, puis `createdAt` décroissant au sein d'un même
+  type) sur une liste plate (`FavoriteDto[]`), pas comme une réponse imbriquée par type — le
+  frontend peut regrouper côté client si l'affichage l'exige (pages `mes-favoris`, encore ⬜).
 
 ## Vérification
 
-- [ ] `add-favorite`/`remove-favorite` testés (idempotence, contrainte unique)
-- [ ] `list-favorites` testé pour les trois `entityType`, y compris le cas `COLLECTION` sans
-      relation Prisma typée
-- [ ] `favorites.controller.spec.ts` couvre les codes 200/401/404
-- [ ] `docs/checklist-implementation.md` : `customers` passé à ✅
+- [x] `add-favorite`/`remove-favorite` testés (idempotence, contrainte unique, propriété du
+      favori) — `add-favorite.use-case.spec.ts`, `remove-favorite.use-case.spec.ts`
+- [x] `list-favorites` testé pour les trois `entityType` (tous hydratés, `products` livré),
+      y compris le cas `COLLECTION` sans relation Prisma typée et le cas d'une entité
+      supprimée — `list-favorites.use-case.spec.ts`
+- [x] `favorites.controller.spec.ts` couvre 200/201/204/400/401/403/404 ;
+      `customers.controller.spec.ts` couvre 200/400/401/404
+- [x] `docs/checklist-implementation.md` : `customers` passé à ✅
+- [x] `pnpm --filter @angaly/api typecheck`, `lint`, `test` (366 tests) tous verts, y compris
+      les 4 fichiers de tests `creations`/`collections` mis à jour pour le nouveau
+      `findById()` ajouté à leurs interfaces de repository

@@ -1,8 +1,9 @@
 # Feature — `auth`
 
-**Statut : ✅ Fait** (backend). Phase 2 — Conversion. La page `authentification`
-(frontend, `docs/pages/authentification.md`) reste ⬜ — ce module expose les 6 endpoints
-qu'elle consommera, mais aucun écran n'est câblé dessus pour l'instant.
+**Statut : ✅ Fait** (backend + frontend). Phase 2 — Conversion. La page `authentification`
+(frontend, `docs/pages/authentification.md`) est câblée sur les 6 endpoints de ce module via
+NextAuth (Credentials provider, `apps/web/src/lib/auth/`) pour login/register, et directement
+pour forgot-password/reset-password.
 
 ## Objet
 
@@ -111,10 +112,12 @@ Aucun des deux ne stocke le jeton en clair, seulement son hash SHA-256
 
 ## Points d'intégration
 
-- **`customers`** : ce module n'existe pas encore (`docs/features/customers.md`, toujours ⬜)
-  — `auth` crée directement la ligne `Customer` (via `IUserRepository.createWithCustomer()`,
-  Prisma `$transaction`) plutôt que de dépendre d'une interface `customers` qui n'a pas de
-  quoi être implémentée pour l'instant. Voir Points d'attention pour le raisonnement complet
+- **`customers`** : ce module existe maintenant (`docs/features/customers.md`, ✅ — profil +
+  favoris) mais `auth` continue de créer directement la ligne `Customer` (via
+  `IUserRepository.createWithCustomer()`, Prisma `$transaction`) plutôt que de dépendre d'une
+  interface `customers` pour cette seule écriture — option explicitement retenue par
+  `customers` lui-même (voir sa fiche "Cas d'usage clés"). Voir Points d'attention pour le
+  raisonnement complet
   et ce que devra faire une future session `customers`.
 - **`users`** (Phase 6) : partage l'entité `User`/l'enum `Role`, mais gère exclusivement les
   comptes internes (COUTURIERE/MANAGER/ADMIN) — jamais l'inscription publique.
@@ -165,11 +168,11 @@ Aucun des deux ne stocke le jeton en clair, seulement son hash SHA-256
   pas encore et qui n'était pas justifiée pour ce seul cas. À la place :
   `IUserRepository.createWithCustomer()` (une seule méthode) encapsule tout le
   `prisma.$transaction()` (création de `User` + `Customer`) dans
-  `infrastructure/repositories/prisma-user.repository.ts`, côté `auth`. Le vrai module
-  `customers` (profil, favoris — `docs/features/customers.md`) n'existe toujours pas ; quand
-  il sera construit, il pourra soit continuer de laisser `auth` créer la ligne `Customer`
-  initiale (déjà correct et testé), soit absorber cette responsabilité sans changer le
-  contrat public de `createWithCustomer()`.
+  `infrastructure/repositories/prisma-user.repository.ts`, côté `auth`. Le module `customers`
+  (profil, favoris — `docs/features/customers.md`) est construit depuis et a choisi de
+  **continuer à laisser `auth` créer la ligne `Customer` initiale** (déjà correct et testé) —
+  `ICustomerRepository` n'expose donc pas de méthode `create`, `createWithCustomer()` garde
+  exactement le même contrat public.
 - **Vérification email non modélisée — décision prise : `isActive` fait foi pour l'instant**,
   la seconde option que cette fiche laissait ouverte (pas de champ `emailVerifiedAt`
   ajouté). Aucun flux de vérification par email n'existe (pas de `notifications` avant
@@ -210,4 +213,5 @@ Aucun des deux ne stocke le jeton en clair, seulement son hash SHA-256
       réellement changé) → suppression du `User` de test confirmée en cascade sur `Customer`/
       `RefreshToken`/`PasswordResetToken` (contraintes `onDelete: Cascade` vérifiées)
 - [x] `docs/checklist-implementation.md` : `auth` passé à ✅ (`customers` reste ⬜, voir
-      "Points d'attention" — `authentification` (page) reste ⬜, frontend non câblé)
+      "Points d'attention") — `authentification` (page) passée à ✅, frontend câblé via
+      NextAuth (voir `docs/pages/authentification.md`)

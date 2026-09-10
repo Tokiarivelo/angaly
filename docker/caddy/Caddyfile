@@ -9,8 +9,8 @@
 # Architecture:
 #   https://angaly.local/           → Next.js  host.docker.internal:3000
 #   https://angaly.local/api/auth/* → Next.js  host.docker.internal:3000 (NextAuth)
-#   https://angaly.local/api/*      → NestJS   host.docker.internal:3001
-#   https://angaly.local/docs       → NestJS   host.docker.internal:3001 (Swagger, dev only)
+#   https://angaly.local/api/*      → NestJS   host.docker.internal:3003
+#   https://angaly.local/docs       → NestJS   host.docker.internal:3003 (Swagger, dev only)
 
 {
   admin localhost:2019
@@ -18,6 +18,18 @@
 
 angaly.local {
   tls internal
+
+  # apps/api's own auth endpoints that have no NextAuth equivalent (they never
+  # establish a NextAuth session) — must be matched before the broader
+  # /api/auth/* handle below, since Caddy's `handle` blocks are mutually
+  # exclusive and evaluated in declaration order (first match wins).
+  handle /api/auth/forgot-password {
+    reverse_proxy host.docker.internal:3003
+  }
+
+  handle /api/auth/reset-password {
+    reverse_proxy host.docker.internal:3003
+  }
 
   handle /api/auth/* {
     reverse_proxy host.docker.internal:3000 {
@@ -27,11 +39,11 @@ angaly.local {
   }
 
   handle /api/* {
-    reverse_proxy host.docker.internal:3001
+    reverse_proxy host.docker.internal:3003
   }
 
   handle /docs* {
-    reverse_proxy host.docker.internal:3001
+    reverse_proxy host.docker.internal:3003
   }
 
   handle {

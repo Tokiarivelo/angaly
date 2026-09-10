@@ -87,25 +87,48 @@ phase n'a pas été traitée en session dédiée (voir `.cursor/rules/006-phase-
 
 ### Pages
 - [ ] ⬜ **personnalisation-creation** — Configurateur de personnalisation
-- [ ] ⬜ **sur-mesure-process** — Page process Sur Mesure
+- [x] ✅ **sur-mesure-process** — Page process Sur Mesure (7 sections), vérifiée contre
+      l'écran Stitch réel via `agy` — plusieurs écarts avec `stitch-prompts/
+      11-sur-mesure-process.md` corrigés (timeline sans description, grille mobile 2×4,
+      galerie à 4 pièces exactes, pas de bandeau CTA sticky mobile) — voir
+      `docs/pages/sur-mesure-process.md` "Points d'attention"
 - [ ] ⬜ **demande-sur-mesure** — Formulaire de demande (3 étapes)
 - [ ] ⬜ **devis** — Consultation d'un devis
-- [ ] ⬜ **prendre-rendez-vous** — Prise de rendez-vous + calendrier
-- [ ] ⬜ **confirmation-rendez-vous** — Confirmation
-- [ ] ⬜ **pret-a-porter-catalogue** — Catalogue boutique
-- [ ] ⬜ **fiche-produit** — Fiche produit prêt-à-porter
-- [ ] ⬜ **reservation-essayage** — Réservation d'essayage
-- [ ] ⬜ **authentification** — Connexion / Inscription / Mot de passe oublié
+- [x] ✅ **prendre-rendez-vous** — Prise de rendez-vous + calendrier (routée `(public)`,
+      pas `(client)` — voir `docs/pages/prendre-rendez-vous.md`)
+- [x] ✅ **confirmation-rendez-vous** — Confirmation (routée `(auth)` — voir
+      `docs/pages/confirmation-rendez-vous.md`)
+- [x] ✅ **pret-a-porter-catalogue** — Catalogue boutique (filtres sidebar synchronisés URL,
+      favoris réels auth-gated — voir `docs/pages/pret-a-porter-catalogue.md`)
+- [x] ✅ **fiche-produit** — Fiche produit prêt-à-porter (galerie+lightbox, variantes,
+      panier local Zustand, favoris réels — voir `docs/pages/fiche-produit.md`)
+- [x] ✅ **reservation-essayage** — Réservation d'essayage (routée `(public)` ; résumé
+      produit mocké MSW, `GET /api/products/:id` reste un TODO backend — voir
+      `docs/pages/reservation-essayage.md`)
+- [x] ✅ **authentification** — Connexion / Inscription / Mot de passe oublié (NextAuth v5 beta
+      + middleware/layouts (client)/(admin) — voir `docs/pages/authentification.md`)
 - [ ] ⬜ **mes-favoris** — Favoris client
 
 ### Modules backend
 - [x] ✅ **auth** — register/login/refresh (rotation)/logout/forgot-password/reset-password,
       RS256 JWT + httpOnly refresh cookie, testé de bout en bout contre Postgres réel
-      (`docs/features/auth.md`) — `authentification` (page) reste ⬜, frontend non câblé
-- [ ] ⬜ **customers** — seule la création transactionnelle `User`+`Customer` existe
-      (exception documentée dans `auth`, voir `docs/features/auth.md` "Points d'attention") ;
-      le vrai module (profil, favoris) reste à construire (`docs/features/customers.md`)
-- [ ] ⬜ **appointments** · **products** · **quotes** · **reviews**
+      (`docs/features/auth.md`) — frontend câblé via `authentification` (page), ✅
+- [x] ✅ **customers** — profil (GET/PATCH `/api/customers/me`) + favoris (GET/POST
+      `/api/favorites`, DELETE `/api/favorites/:id`, tous hydratés via `creations`/
+      `collections`/`products`) — création `User`+`Customer` reste dans `auth`
+      (`docs/features/customers.md`)
+- [x] ✅ **products** — catalogue (GET `/api/products` filtré/trié/paginé + mode "produits
+      similaires`), fiche produit (GET `/api/products/:slug`, variantes + inventaire),
+      disponibilité de variante (usage interne, `orders` Phase 3) — `docs/features/products.md`
+- [x] ✅ **appointments** — disponibilité (mois/jour), création (visiteur ou `Customer`
+      connecté), consultation/annulation par référence, confirmation+assignation staff
+      (RBAC `COUTURIERE`/`MANAGER`/`ADMIN`) — `docs/features/appointments.md`
+- [x] ✅ **quotes** — devis (demande sur-mesure + dossier de conception), cycle de vie
+      complet DRAFT→SENT→VIEWED→ACCEPTED/REJECTED/EXPIRED, export PDF via `media`
+      (nouveau `MediaEntityType.QUOTE_DOCUMENT`/bucket `quotes`) — `docs/features/quotes.md`
+      — pages consommatrices (`demande-sur-mesure`, `personnalisation-creation`, `devis`,
+      `sur-mesure-process`) restent ⬜
+- [ ] ⬜ **reviews**
 
 ---
 

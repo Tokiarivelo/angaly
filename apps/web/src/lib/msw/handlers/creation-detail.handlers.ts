@@ -1,7 +1,7 @@
-import { http, HttpResponse } from 'msw';
+import { HttpResponse, http } from 'msw';
 
 /** Default `GET /creations/:slug` fallback — tests needing specific content use `server.use()`. */
-const API_BASE_URL = 'http://localhost:3001/api';
+const API_BASE_URL = 'http://localhost:3003/api';
 
 export const creationDetailHandlers = [
   http.get(`${API_BASE_URL}/creations/:slug`, ({ params }) => {

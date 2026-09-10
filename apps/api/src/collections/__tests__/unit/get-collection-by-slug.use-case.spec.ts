@@ -5,7 +5,7 @@ import { CollectionEntity } from '../../domain/entities/collection.entity';
 import type { ICollectionRepository } from '../../domain/repositories/collection.repository';
 
 function buildRepository(): jest.Mocked<ICollectionRepository> {
-  return { findPublishedBySlug: jest.fn(), list: jest.fn() };
+  return { findPublishedBySlug: jest.fn(), findById: jest.fn(), list: jest.fn() };
 }
 
 function sampleCollection(): CollectionEntity {

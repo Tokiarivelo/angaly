@@ -2,15 +2,15 @@
 
 ## Prérequis
 
-| Outil          | Version minimale | Installation                                              |
-| -------------- | ----------------- | ------------------------------------------------------------ |
-| Node.js         | 20.x LTS           | https://nodejs.org                                          |
-| pnpm            | 9.x                 | `npm install -g pnpm@9`                                      |
-| Python          | 3.12               | https://python.org (uniquement pour `apps/ai-service`)      |
-| Docker          | 26.x               | https://docker.com                                          |
-| Docker Compose | 2.x                 | Inclus avec Docker Desktop                                    |
-| make            | 4.x                 | `sudo apt install make`                                       |
-| openssl         | —                   | Pour la génération des clés JWT                               |
+| Outil          | Version minimale | Installation                                           |
+| -------------- | ---------------- | ------------------------------------------------------ |
+| Node.js        | 20.x LTS         | https://nodejs.org                                     |
+| pnpm           | 9.x              | `npm install -g pnpm@9`                                |
+| Python         | 3.12             | https://python.org (uniquement pour `apps/ai-service`) |
+| Docker         | 26.x             | https://docker.com                                     |
+| Docker Compose | 2.x              | Inclus avec Docker Desktop                             |
+| make           | 4.x              | `sudo apt install make`                                |
+| openssl        | —                | Pour la génération des clés JWT                        |
 
 > **Windows** : utiliser **WSL2** (recommandé) ou Git Bash pour les commandes `make`/`pnpm`.
 
@@ -71,7 +71,7 @@ mise en production réelle).
 ```bash
 make dev
 # Web  → http://localhost:3000
-# API  → http://localhost:3001/docs (Swagger)
+# API  → http://localhost:3003/docs (Swagger)
 ```
 
 ### 6. (Optionnel) AI Service — Angaly Pattern Studio

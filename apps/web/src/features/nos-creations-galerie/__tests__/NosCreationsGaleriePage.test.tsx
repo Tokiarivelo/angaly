@@ -1,7 +1,8 @@
 import { render, screen, waitFor, within } from '@testing-library/react';
 import userEvent from '@testing-library/user-event';
-import { http, HttpResponse } from 'msw';
+import { HttpResponse, http } from 'msw';
 import { describe, expect, it } from 'vitest';
+
 import { CreationAvailability, type CreationDto } from '@angaly/types';
 
 import { server } from '@/lib/msw/server';
@@ -9,7 +10,7 @@ import { withQueryClient } from '@/lib/test-utils';
 
 import { NosCreationsGaleriePage } from '../ui/NosCreationsGaleriePage';
 
-const API_BASE_URL = 'http://localhost:3001/api';
+const API_BASE_URL = 'http://localhost:3003/api';
 
 function makeCreation(id: string): CreationDto {
   return {
@@ -39,7 +40,14 @@ function mockCreations(items: CreationDto[], hasNextPage = false) {
         success: true,
         data: {
           data: items,
-          meta: { total: items.length, page: 1, limit: 12, totalPages: 1, hasNextPage, hasPreviousPage: false },
+          meta: {
+            total: items.length,
+            page: 1,
+            limit: 12,
+            totalPages: 1,
+            hasNextPage,
+            hasPreviousPage: false,
+          },
         },
       }),
     ),
@@ -65,7 +73,9 @@ describe('NosCreationsGaleriePage', () => {
     render(<NosCreationsGaleriePage />, { wrapper: Wrapper });
 
     await waitFor(() =>
-      expect(screen.getByText('Aucune création ne correspond à ces filtres pour le moment.')).toBeInTheDocument(),
+      expect(
+        screen.getByText('Aucune création ne correspond à ces filtres pour le moment.'),
+      ).toBeInTheDocument(),
     );
   });
 
@@ -79,7 +89,10 @@ describe('NosCreationsGaleriePage', () => {
     const user = userEvent.setup();
     const favoriteButton = screen.getByRole('button', { name: 'Ajouter aux favoris' });
     await user.click(favoriteButton);
-    expect(screen.getByRole('button', { name: 'Retirer des favoris' })).toHaveAttribute('aria-pressed', 'true');
+    expect(screen.getByRole('button', { name: 'Retirer des favoris' })).toHaveAttribute(
+      'aria-pressed',
+      'true',
+    );
 
     await user.selectOptions(screen.getByLabelText('Trier par'), 'featured');
     expect(screen.getByLabelText('Trier par')).toHaveValue('featured');
@@ -235,7 +248,14 @@ describe('NosCreationsGaleriePage', () => {
           success: true,
           data: {
             data: [makeCreation(isFirstPage ? 'c1' : 'c2')],
-            meta: { total: 2, page, limit: 1, totalPages: 2, hasNextPage: isFirstPage, hasPreviousPage: !isFirstPage },
+            meta: {
+              total: 2,
+              page,
+              limit: 1,
+              totalPages: 2,
+              hasNextPage: isFirstPage,
+              hasPreviousPage: !isFirstPage,
+            },
           },
         });
       }),

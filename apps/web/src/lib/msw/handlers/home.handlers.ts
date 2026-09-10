@@ -1,4 +1,4 @@
-import { http, HttpResponse } from 'msw';
+import { HttpResponse, http } from 'msw';
 
 /**
  * MSW mocks every endpoint `home` calls, including the real ones
@@ -7,9 +7,16 @@ import { http, HttpResponse } from 'msw';
  * `testimonials`/`newsletter` mock endpoints that don't exist yet
  * (`reviews`/`notifications` are Phase 2+ — see docs/pages/home.md).
  */
-const API_BASE_URL = 'http://localhost:3001/api';
+const API_BASE_URL = 'http://localhost:3003/api';
 
-const PAGINATED_META = { total: 1, page: 1, limit: 20, totalPages: 1, hasNextPage: false, hasPreviousPage: false };
+const PAGINATED_META = {
+  total: 1,
+  page: 1,
+  limit: 20,
+  totalPages: 1,
+  hasNextPage: false,
+  hasPreviousPage: false,
+};
 
 export const homeHandlers = [
   http.get(`${API_BASE_URL}/creations`, () => {
@@ -95,7 +102,7 @@ export const homeHandlers = [
           id: 'testimonial-1',
           clientName: 'Nirina',
           creationLabel: 'Robe de mariée — Collection Éternelle',
-          quote: "Angaly a su donner vie à la robe dont je rêvais depuis toujours.",
+          quote: 'Angaly a su donner vie à la robe dont je rêvais depuis toujours.',
           verified: true,
         },
         {
@@ -120,7 +127,11 @@ export const homeHandlers = [
     const body = (await request.json()) as { email?: string };
     if (!body.email) {
       return HttpResponse.json(
-        { success: false, error: { code: 'BAD_REQUEST', message: 'email is required' }, statusCode: 400 },
+        {
+          success: false,
+          error: { code: 'BAD_REQUEST', message: 'email is required' },
+          statusCode: 400,
+        },
         { status: 400 },
       );
     }

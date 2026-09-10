@@ -13,5 +13,6 @@ import { CollectionsController } from './presentation/controllers/collections.co
     GetCollectionBySlugUseCase,
     { provide: COLLECTION_REPOSITORY, useClass: PrismaCollectionRepository },
   ],
+  exports: [COLLECTION_REPOSITORY],
 })
 export class CollectionsModule {}

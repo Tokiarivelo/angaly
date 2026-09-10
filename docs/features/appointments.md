@@ -1,6 +1,6 @@
 # Feature — `appointments`
 
-**Statut : ⬜ À faire.** Phase 2 — Conversion.
+**Statut : ✅ Fait.** Phase 2 — Conversion.
 
 ## Objet
 
@@ -97,14 +97,40 @@ pris rendez-vous) : la `reference` doit donc être suffisamment peu devinable (e
 inclus dans le format, pas une simple séquence `ANG-RDV-2026-00001` prévisible côté sécurité)
 — voir spec §75 (protection des données personnelles). Documenter ce compromis
 explicitement plutôt que de bloquer l'accès derrière un compte, ce qui casserait le parcours
-visiteur voulu par la spec.
+visiteur voulu par la spec. En pratique, `generateAppointmentReference()` utilise
+`randomBytes(6).toString('base64url')` (même pattern que `auth`'s `opaque-token.vo.ts`) —
+format `ANG-RDV-{année}-{8 caractères base64url}`, non séquentiel et non devinable.
+
+- **Granularité de créneau fixe** : `Appointment.durationMinutes` varie selon `type` (essayage
+  court vs. consultation longue), mais `availability-calculator.service.ts` calcule la
+  disponibilité avec une granularité fixe `DEFAULT_SLOT_MINUTES = 45` — simplification
+  assumée pour ce MVP plutôt qu'un calcul par-type qui complexifierait `computeDayAvailability`
+  sans réel besoin exprimé côté spec/maquette. À revisiter si un type nécessite un créneau
+  significativement plus long que 45 min en usage réel.
+- **`POST /api/appointments` avec authentification optionnelle** : la route reste publique
+  (visiteur non connecté), mais un `Authorization: Bearer` valide, s'il est présent, enrichit
+  automatiquement le rendez-vous avec le `Customer` associé. Implémenté via un helper
+  `extractOptionalUserId()` qui lit et vérifie le token manuellement dans le controller
+  (au lieu de `@UseGuards(JwtAuthGuard)`, qui rejetterait les visiteurs sans token) — retourne
+  silencieusement `null` si le token est absent ou invalide plutôt que de lever une erreur.
+- **`cancel`/`confirm` renvoient 200, pas 201** : NestJS `@Post()` répond `201 Created` par
+  défaut, incorrect pour une transition d'état sur une ressource existante — les deux routes
+  déclarent explicitement `@HttpCode(HttpStatus.OK)`.
+- **Exports ajoutés en amont** : `AteliersModule` et `CustomersModule` n'exportaient rien
+  avant ce module ; `ATELIER_REPOSITORY` et `CUSTOMER_REPOSITORY` sont maintenant exportés
+  pour permettre l'injection croisée dans `AppointmentsModule` (résolution de `customerId`
+  depuis `userId`, et validation de l'`atelierId`). `IAtelierRepository` a aussi gagné une
+  méthode `findById` (absente jusqu'ici, seul `findBySlug` existait).
 
 ## Vérification
 
-- [ ] `get-month-availability`/`get-day-slots` testés (jour complet, atelier fermé, créneau
+- [x] `get-month-availability`/`get-day-slots` testés (jour complet, atelier fermé, créneau
       déjà pris)
-- [ ] `create-appointment` testé (avec/sans `Customer` connecté, référence unique générée)
-- [ ] `cancel-appointment`/`confirm-appointment` testés (transitions de statut valides et
+- [x] `create-appointment` testé (avec/sans `Customer` connecté, référence unique générée)
+- [x] `cancel-appointment`/`confirm-appointment` testés (transitions de statut valides et
       invalides)
-- [ ] `appointments.controller.spec.ts` couvre les codes 200/201/404
-- [ ] `docs/checklist-implementation.md` : `appointments` passé à ✅
+- [x] `appointments.controller.spec.ts` couvre les codes 200/201/404
+- [x] `docs/checklist-implementation.md` : `appointments` passé à ✅
+
+Suite complète : `pnpm --filter @angaly/api lint` / `typecheck` / `test` — tous verts (492
+tests API, 0 erreur/warning lint, 0 erreur typecheck).

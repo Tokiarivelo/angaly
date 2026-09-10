@@ -1,3 +1,5 @@
+import { getSession } from 'next-auth/react';
+
 /**
  * The only place allowed to call `fetch` against the ANGALY API. Every
  * feature's `api/` folder (react-query queries/mutations) goes through this —
@@ -27,14 +29,25 @@ interface ApiErrorEnvelope {
   statusCode: number;
 }
 
-const API_BASE_URL = process.env['NEXT_PUBLIC_API_URL'] ?? 'http://localhost:3001/api';
+const API_BASE_URL = process.env['NEXT_PUBLIC_API_URL'] ?? 'http://localhost:3003/api';
 
+/**
+ * NestJS validates the RS256 access token from `Authorization: Bearer`, not
+ * a cookie — `credentials: 'include'` alone never authenticated anything
+ * cross-origin (the NextAuth session cookie lives on the web app's own
+ * domain, not the API's). `getSession()` is a no-op extra round trip for
+ * public endpoints (returns null, header just isn't added) but is required
+ * for every authenticated one — see docs/features/auth.md.
+ */
 async function request<T>(path: string, init?: RequestInit): Promise<T> {
+  const session = await getSession();
+
   const response = await fetch(`${API_BASE_URL}${path}`, {
     ...init,
     credentials: 'include',
     headers: {
       'Content-Type': 'application/json',
+      ...(session?.accessToken && { Authorization: `Bearer ${session.accessToken}` }),
       ...init?.headers,
     },
   });
@@ -59,6 +72,9 @@ export const apiClient = {
   post: <T>(path: string, body?: unknown) =>
     request<T>(path, { method: 'POST', ...(body !== undefined && { body: JSON.stringify(body) }) }),
   patch: <T>(path: string, body?: unknown) =>
-    request<T>(path, { method: 'PATCH', ...(body !== undefined && { body: JSON.stringify(body) }) }),
+    request<T>(path, {
+      method: 'PATCH',
+      ...(body !== undefined && { body: JSON.stringify(body) }),
+    }),
   delete: <T>(path: string) => request<T>(path, { method: 'DELETE' }),
 };

@@ -13,5 +13,6 @@ import { AteliersController } from './presentation/controllers/ateliers.controll
     GetAtelierBySlugUseCase,
     { provide: ATELIER_REPOSITORY, useClass: PrismaAtelierRepository },
   ],
+  exports: [ATELIER_REPOSITORY],
 })
 export class AteliersModule {}

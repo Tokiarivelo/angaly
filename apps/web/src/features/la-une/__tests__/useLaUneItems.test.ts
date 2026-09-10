@@ -1,5 +1,5 @@
 import { renderHook, waitFor } from '@testing-library/react';
-import { http, HttpResponse } from 'msw';
+import { HttpResponse, http } from 'msw';
 import { describe, expect, it } from 'vitest';
 
 import { server } from '@/lib/msw/server';
@@ -7,7 +7,7 @@ import { withQueryClient } from '@/lib/test-utils';
 
 import { useLaUneItems } from '../hooks/useLaUneItems';
 
-const API_BASE_URL = 'http://localhost:3001/api';
+const API_BASE_URL = 'http://localhost:3003/api';
 
 describe('useLaUneItems', () => {
   it('splits the featured creation into a hero and an empty grid when it is the only item', async () => {
@@ -40,7 +40,14 @@ describe('useLaUneItems', () => {
                 updatedAt: '2026-01-01T00:00:00.000Z',
               },
             ],
-            meta: { total: 1, page: 1, limit: 1, totalPages: 1, hasNextPage: false, hasPreviousPage: false },
+            meta: {
+              total: 1,
+              page: 1,
+              limit: 1,
+              totalPages: 1,
+              hasNextPage: false,
+              hasPreviousPage: false,
+            },
           },
         }),
       ),

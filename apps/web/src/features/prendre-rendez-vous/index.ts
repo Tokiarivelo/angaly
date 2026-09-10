@@ -1,0 +1,1 @@
+export { PrendreRendezVousPage } from './ui';

@@ -16,7 +16,7 @@ const CLOSED_WEEK: AtelierOpeningHours = {
 };
 
 function buildRepository(): jest.Mocked<IAtelierRepository> {
-  return { findBySlug: jest.fn(), list: jest.fn() };
+  return { findBySlug: jest.fn(), findById: jest.fn(), list: jest.fn() };
 }
 
 function sampleAtelier(): AtelierEntity {

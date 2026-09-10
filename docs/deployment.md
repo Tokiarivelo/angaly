@@ -13,7 +13,7 @@ Internet
 [Nginx :80/:443]            ← TLS termination, gzip (docker/nginx/)
    │      │        │
    ▼      ▼        ▼
-[Web:3000] [API:3001] [MinIO console/API — réseau interne uniquement, jamais public]
+[Web:3000] [API:3003] [MinIO console/API — réseau interne uniquement, jamais public]
               │
       ┌───────┴────────┐
       ▼                ▼
@@ -110,10 +110,27 @@ Voir `.env.example` pour la liste complète et les commentaires. Au minimum, val
 DATABASE_URL, POSTGRES_USER, POSTGRES_PASSWORD, POSTGRES_DB
 JWT_PRIVATE_KEY_BASE64, JWT_PUBLIC_KEY_BASE64
 NEXTAUTH_URL, NEXTAUTH_SECRET
+API_INTERNAL_URL (interne, ex. http://api:3003/api — voir "NextAuth et le reverse proxy" ci-dessous)
 NEXT_PUBLIC_API_URL, NEXT_PUBLIC_WS_URL, API_CORS_ORIGINS
 MINIO_ROOT_USER, MINIO_ROOT_PASSWORD, MINIO_PUBLIC_URL
 AI_SERVICE_URL (interne, ex. http://ai-service:8000)
 ```
+
+### NextAuth et le reverse proxy
+
+`apps/web` utilise NextAuth (v5 — encore en beta au moment de l'implémentation, mais seule
+version avec support natif de l'App Router ; voir `docs/pages/authentification.md` "Points
+d'attention") pour la connexion/inscription : `authorize()` appelle `apps/api` directement via
+`API_INTERNAL_URL` (jamais via le domaine public — le cookie `refresh_token` posé par
+`apps/api` reste alors côté serveur Next.js, il est reporté dans le JWT NextAuth lui-même,
+jamais renvoyé tel quel au navigateur).
+
+`docker/nginx/conf.d/angaly.conf` et `docker/caddy/Caddyfile` routent donc `/api/auth/*` vers
+`apps/web` (NextAuth possède ce chemin), **sauf** deux exceptions en `location =`/`handle`
+exact, placées avant le préfixe générique : `/api/auth/forgot-password` et
+`/api/auth/reset-password`, qui restent de vrais endpoints `apps/api` appelés directement par
+le navigateur (ils n'établissent aucune session). Toute nouvelle route d'auth appelée
+directement par le navigateur (hors NextAuth) doit recevoir le même traitement.
 
 ## Sauvegardes
 

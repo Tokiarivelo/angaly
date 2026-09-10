@@ -8,6 +8,7 @@ import type { PrismaService } from '../../../prisma/prisma.service';
 
 interface MockCollectionDelegate {
   findFirst: jest.Mock;
+  findUnique: jest.Mock;
   findMany: jest.Mock;
   count: jest.Mock;
 }
@@ -15,6 +16,7 @@ interface MockCollectionDelegate {
 function buildPrismaServiceMock(): { prisma: PrismaService; collection: MockCollectionDelegate } {
   const collection: MockCollectionDelegate = {
     findFirst: jest.fn(),
+    findUnique: jest.fn(),
     findMany: jest.fn(),
     count: jest.fn(),
   };
@@ -43,6 +45,25 @@ function sampleDetail(): CollectionDetailRecord {
 }
 
 describe('PrismaCollectionRepository', () => {
+  it('findById() returns null when no row matches', async () => {
+    const { prisma, collection } = buildPrismaServiceMock();
+    collection.findUnique.mockResolvedValue(null);
+    const repository = new PrismaCollectionRepository(prisma);
+
+    expect(await repository.findById('missing')).toBeNull();
+  });
+
+  it('findById() maps the row to a domain entity regardless of publication status', async () => {
+    const { prisma, collection } = buildPrismaServiceMock();
+    collection.findUnique.mockResolvedValue(sampleDetail());
+    const repository = new PrismaCollectionRepository(prisma);
+
+    const result = await repository.findById('collection-1');
+
+    expect(result?.id).toBe('collection-1');
+    expect(collection.findUnique).toHaveBeenCalledWith(expect.objectContaining({ where: { id: 'collection-1' } }));
+  });
+
   it('findPublishedBySlug() returns null when no published row matches', async () => {
     const { prisma, collection } = buildPrismaServiceMock();
     collection.findFirst.mockResolvedValue(null);

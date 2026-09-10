@@ -131,6 +131,7 @@ export enum MediaEntityType {
   PATTERN_EXPORT = 'PATTERN_EXPORT',
   BLOG_POST = 'BLOG_POST',
   PAGE_SECTION = 'PAGE_SECTION',
+  QUOTE_DOCUMENT = 'QUOTE_DOCUMENT',
 }
 
 export enum NotificationType {
@@ -364,6 +365,87 @@ export interface CollectionDetailDto extends CollectionDto {
 }
 
 // ============================================================
+// Products — GET /api/products, GET /api/products/:slug
+// ============================================================
+
+export interface ProductMediaDto {
+  id: string;
+  url: string;
+  altText: string;
+  sortOrder: number;
+}
+
+export interface ProductCategoryDto {
+  id: string;
+  slug: string;
+  name: string;
+}
+
+/** amount is a decimal string (never a float) — avoids float precision loss on money. */
+export interface ProductPriceDto {
+  amount: string;
+  currency: string;
+}
+
+export interface ProductVariantDto {
+  id: string;
+  sku: string;
+  size: string;
+  color: string;
+  material: string | null;
+  priceOverride: ProductPriceDto | null;
+  quantityAvailable: number;
+  quantityReserved: number;
+}
+
+export interface ProductDto extends Timestamps {
+  id: string;
+  sku: string;
+  slug: string;
+  name: string;
+  description: string;
+  price: ProductPriceDto;
+  status: ProductAvailability;
+  category: ProductCategoryDto;
+  media: ProductMediaDto[];
+  variants: ProductVariantDto[];
+}
+
+// ============================================================
+// Appointments — GET/POST /api/appointments, GET /api/appointments/availability*
+// ============================================================
+
+export interface AppointmentDto extends Timestamps {
+  id: string;
+  reference: string;
+  customerId: string | null;
+  firstName: string;
+  lastName: string;
+  phone: string;
+  email: string;
+  type: AppointmentType;
+  atelierId: string;
+  assignedToId: string | null;
+  scheduledAt: string;
+  durationMinutes: number;
+  status: AppointmentStatus;
+  message: string | null;
+}
+
+export type DayAvailabilityStatus = 'available' | 'full' | 'closed';
+
+export interface MonthAvailabilityDayDto {
+  /** YYYY-MM-DD */
+  date: string;
+  status: DayAvailabilityStatus;
+}
+
+export interface DaySlotsResponseDto {
+  /** ISO datetime strings, one per free slot start time that day. */
+  slots: string[];
+}
+
+// ============================================================
 // Identity
 // ============================================================
 
@@ -381,6 +463,53 @@ export interface CustomerDto extends Timestamps {
   firstName: string;
   lastName: string;
   phone: string | null;
+}
+
+export interface FavoriteDisplayDto {
+  name: string;
+  slug: string;
+  imageUrl: string | null;
+}
+
+export interface FavoriteDto {
+  id: string;
+  entityType: FavoriteEntityType;
+  entityId: string;
+  createdAt: string;
+  /**
+   * null when the referenced entity no longer exists, or isn't hydratable
+   * yet — PRODUCT favorites can't be hydrated until the `products` module
+   * ships (see docs/features/customers.md "Points d'attention").
+   */
+  display: FavoriteDisplayDto | null;
+}
+
+// ============================================================
+// Quotes — POST /api/quotes/requests, /design-briefs, GET/POST /api/quotes/:quoteNumber*
+// ============================================================
+
+/** unitPrice is a decimal string (e.g. "20.00"), never a float — see @angaly/database Decimal(12,2) columns. */
+export interface QuoteLineItemDto {
+  label: string;
+  quantity: number;
+  unitPrice: string;
+}
+
+/** subtotal/depositAmount/balanceAmount/total are decimal strings — same reasoning as ProductDto.price. */
+export interface QuoteDto extends Timestamps {
+  id: string;
+  quoteNumber: string;
+  customerId: string;
+  creationId: string | null;
+  description: string;
+  lineItems: QuoteLineItemDto[];
+  subtotal: string;
+  depositAmount: string;
+  balanceAmount: string;
+  total: string;
+  status: QuoteStatus;
+  validUntil: string | null;
+  estimatedDelayDays: number | null;
 }
 
 // ============================================================

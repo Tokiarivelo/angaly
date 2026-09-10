@@ -1,6 +1,6 @@
 import { render, screen, waitFor } from '@testing-library/react';
 import userEvent from '@testing-library/user-event';
-import { http, HttpResponse } from 'msw';
+import { HttpResponse, http } from 'msw';
 import { describe, expect, it } from 'vitest';
 
 import { server } from '@/lib/msw/server';
@@ -8,7 +8,7 @@ import { withQueryClient } from '@/lib/test-utils';
 
 import { LaUnePage } from '../ui/LaUnePage';
 
-const API_BASE_URL = 'http://localhost:3001/api';
+const API_BASE_URL = 'http://localhost:3003/api';
 
 function mockThreeCreations() {
   server.use(
@@ -72,7 +72,14 @@ function mockThreeCreations() {
               updatedAt: '2026-01-01T00:00:00.000Z',
             },
           ],
-          meta: { total: 3, page: 1, limit: 10, totalPages: 1, hasNextPage: false, hasPreviousPage: false },
+          meta: {
+            total: 3,
+            page: 1,
+            limit: 10,
+            totalPages: 1,
+            hasNextPage: false,
+            hasPreviousPage: false,
+          },
         },
       }),
     ),
@@ -89,7 +96,9 @@ describe('LaUnePage', () => {
 
     await waitFor(() => expect(screen.getByText('Robe Éternelle')).toBeInTheDocument());
 
-    expect(screen.getByRole('heading', { name: /Envie de porter une création Angaly/ })).toBeInTheDocument();
+    expect(
+      screen.getByRole('heading', { name: /Envie de porter une création Angaly/ }),
+    ).toBeInTheDocument();
     expect(screen.getByRole('link', { name: 'Prendre rendez-vous' })).toBeInTheDocument();
   });
 
@@ -108,7 +117,9 @@ describe('LaUnePage', () => {
     await user.click(screen.getByRole('button', { name: 'Coulisses' }));
 
     expect(screen.queryByText('Tailleur Sur Mesure')).not.toBeInTheDocument();
-    expect(screen.getByText('Aucune création ne correspond à ce filtre pour le moment.')).toBeInTheDocument();
+    expect(
+      screen.getByText('Aucune création ne correspond à ce filtre pour le moment.'),
+    ).toBeInTheDocument();
     // The hero stays visible regardless of the grid filter.
     expect(screen.getByText('Robe Éternelle')).toBeInTheDocument();
   });
