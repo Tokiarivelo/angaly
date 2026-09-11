@@ -26,5 +26,11 @@ describe('AProposPage', () => {
     // The text-prompt-only "Valeurs" section (Excellence/Authenticité/...) doesn't exist
     // on the real screen — asserting its absence guards against reintroducing it.
     expect(screen.queryByText('Excellence')).not.toBeInTheDocument();
+
+    // Verify images with descriptive alt text are rendered
+    expect(screen.getByAltText(/Portrait de Madame Angaly/i)).toBeInTheDocument();
+    expect(screen.getByAltText(/Origines de la maison ANGALY/i)).toBeInTheDocument();
+    expect(screen.getByAltText('Couture main')).toBeInTheDocument();
+    expect(screen.getByAltText('Patronage sur mesure')).toBeInTheDocument();
   });
 });

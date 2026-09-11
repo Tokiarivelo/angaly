@@ -765,6 +765,149 @@ async function main() {
       photo: '1509631179647-0177331693ae',
       photoAlt: 'Atelier de création virtuelle et patronage Angaly Pattern Studio',
     },
+    // --- Page Sections (À Propos / Héritage) ---------------------------------
+    {
+      page: 'a-propos',
+      sectionKey: 'hero',
+      locale: Locale.FR,
+      titleText: 'Notre histoire',
+      subtitleText: 'Une maison de couture née à Madagascar, pensée pour durer.',
+      status: ContentStatus.PUBLISHED,
+      photo:
+        'https://lh3.googleusercontent.com/aida-public/AB6AXuAot6Ae0jR3beKh6XaoU4Z5CCsF7dTJhjc9vU3CWjSmBhpMzxvMXuuPfInfT4sUAo5-zYPok6ZdthlmuzuHx1VGRLFRxWGBWFEKeH0FLGrcgdOe5q32QuaOXvtL3AHlfRk4twGO4aejz9XHMlPttIlSguOwx6VGvTm9Ll8n9Gp8Zd92FLsYssTRP786R5vqdMupzxfECxQ1BGaX0S33hyij-lCr4wGt_lLDWTXObrnaJW9zoX6vWm-xQmR-jNcFQmeTZNRNdfOswOs',
+      photoAlt: 'Atelier de couture Angaly à Madagascar, étoffes de soie drapées à la lumière dorée',
+    },
+    {
+      page: 'a-propos',
+      sectionKey: 'histoire',
+      locale: Locale.FR,
+      titleText: 'Comment tout a commencé',
+      bodyText:
+        "Fondée au cœur d'Antananarivo, la maison ANGALY est née d'une passion pour l'élégance intemporelle et le savoir-faire méticuleux. Dès nos premiers pas, nous avons cherché à marier l'héritage riche de Madagascar avec les exigences de la haute couture internationale.\n\nChaque création raconte une histoire, celle de mains expertes, de matières nobles sélectionnées avec rigueur, et d'une vision où le vêtement devient une œuvre d'art portée.",
+      dataJson: {
+        chronology: [
+          { year: '1998', title: 'La première esquisse', description: "L'ouverture de notre premier atelier confidentiel." },
+          { year: '2010', title: "L'expansion", description: 'Reconnaissance nationale et premières collections sur-mesure.' },
+        ],
+      },
+      status: ContentStatus.PUBLISHED,
+      photo:
+        'https://lh3.googleusercontent.com/aida-public/AB6AXuDE2e9E-bdCP0RbNDfvhhRxSPU9UQ6m9WN1HsYCbZSYub6ucWhuLWD2zoD5N6M9PIuy9_Raneh6af53_bTM4_a-9f7wqRg1IohzneW_YAayZ5pLWFHnWxldZXMSk0d2BapF-0-PT5cXGePJzENJknt8YaGdJjFrKQ4V_kdHEO4cg4SL22b_NSYmH950bm_xCjrdflV3CzXVx_O5L0yp6nb_YFDllisQSdoX0ynfwFzXRJFUdDATwtb39wUy-4kfPztD1h_iJmEjB1c',
+      photoAlt: 'Machine à coudre Singer patrimoniale sur table en bois d’atelier d’origine',
+    },
+    {
+      page: 'a-propos',
+      sectionKey: 'fondatrice',
+      locale: Locale.FR,
+      titleText: 'Qui est Angaly ?',
+      subtitleText: "L'âme de la maison",
+      bodyText:
+        "Visionnaire et artisane dans l'âme, Angaly a toujours cru que la véritable beauté réside dans les détails imperceptibles. Formée aux techniques traditionnelles et influencée par l'architecture moderne, elle insuffle à chaque collection une dualité unique : force et délicatesse, rigueur et fluidité.",
+      dataJson: {
+        quote: "Un vêtement n'est pas qu'une parure, c'est une architecture intime qui révèle la personne qui le porte.",
+      },
+      status: ContentStatus.PUBLISHED,
+      photo:
+        'https://lh3.googleusercontent.com/aida-public/AB6AXuC_t5pljMy3LwQA1SNjDkwgqtH-e_Skx84P4VoMDSReKm2Q0gmpsLzRCsnlpvu3XdWw8Ctmj6sV9s4jsPZPbU9cNUuy_6bYHRAnCMS05nzz3R8h9_Ot2gfG6Bnhk3xxDlrjV8aMJBvMl_zILsPbToQahuSrEU1f03xREtX395GBWXUvEmVTcoJfLiPKyyl9G5OY9fHRHS2FPoiY3NE7aNjP1yoDK2gPqgRttpkw9S1uuaIO5pRhlwfqag8TSszSWFGc-F4ZDRftY08',
+      photoAlt: 'Portrait de Madame Angaly, fondatrice et directrice artistique de la maison',
+    },
+    {
+      page: 'a-propos',
+      sectionKey: 'savoir-faire',
+      locale: Locale.FR,
+      titleText: 'Notre Savoir-Faire',
+      subtitleText: 'L’excellence de la haute couture malgache, cultivée dans nos ateliers.',
+      dataJson: {
+        items: [
+          {
+            title: 'Couture main',
+            description: 'Chaque point est une promesse de durabilité.',
+            imageUrl:
+              'https://lh3.googleusercontent.com/aida-public/AB6AXuBjm-f1cfDol4QbcrMhpOB6hy_14AI-xx6mWsRmYHsR9Ask6MdX4JngzGE3urBzJ5rVAv7unZ8TJ4Me9ljuPd-Pg4Zyq6C5av-MJ7bfve8gE5KPl7AeHTYzq3E2zIoz9f94Khn4_ulbODiknQ66r46N8yyMxOxXoEkteF_uoTsnSK6hmmFuhhCIPlwtROPwDQvhXK4Q8oZfanLfllVppL3z768awAGVLSE9R5hHYvBttbHq558JoLeOsdIAdsYqNvxwhR8DVEmQwWc',
+            icon: null,
+          },
+          {
+            title: 'Patronage sur mesure',
+            description: "L'architecture parfaite pour épouser la silhouette.",
+            imageUrl:
+              'https://lh3.googleusercontent.com/aida-public/AB6AXuBL_TANP845e5gFup5POkuvcgUUh6LiKPujdrhEa41kkZwKY-QS1Zkf5T9UwBKxkPcsfV37QYg6jwFm90s4RxXtdxj0wY1_RGES0jMkfhJzptV7eaONCI-FWEu_2KD_kU7PJBlGi458mlKYPIXM2CsSh81cqDMtzzqKPY9gFj8ZF7xFegQm67YOInK6918d-BDg4hhmL7Bht2igNrkAS4Kp709Tgio7EcwHXtSjiLObpfA-uVzAw-7sA7ZQ22wN_iXl09ur6tRiGLY',
+            icon: null,
+          },
+          {
+            title: 'Broderie',
+            description: 'Des motifs exclusifs, dessinés et brodés à la main.',
+            imageUrl: null,
+            icon: 'draw',
+          },
+          {
+            title: 'Finitions artisanales',
+            description: 'L’invisible perfection qui signe une grande pièce.',
+            imageUrl: null,
+            icon: 'cut',
+          },
+        ],
+      },
+      status: ContentStatus.PUBLISHED,
+      photo:
+        'https://lh3.googleusercontent.com/aida-public/AB6AXuBjm-f1cfDol4QbcrMhpOB6hy_14AI-xx6mWsRmYHsR9Ask6MdX4JngzGE3urBzJ5rVAv7unZ8TJ4Me9ljuPd-Pg4Zyq6C5av-MJ7bfve8gE5KPl7AeHTYzq3E2zIoz9f94Khn4_ulbODiknQ66r46N8yyMxOxXoEkteF_uoTsnSK6hmmFuhhCIPlwtROPwDQvhXK4Q8oZfanLfllVppL3z768awAGVLSE9R5hHYvBttbHq558JoLeOsdIAdsYqNvxwhR8DVEmQwWc',
+      photoAlt: 'Mains d’artisan brodant minutieusement des motifs dorés sur soie',
+    },
+    {
+      page: 'a-propos',
+      sectionKey: 'philosophie',
+      locale: Locale.FR,
+      bodyText:
+        "Nous ne créons pas de la mode pour l'instant présent, nous forgeons des héritages de soie et de lin pour les générations futures.",
+      status: ContentStatus.PUBLISHED,
+    },
+    {
+      page: 'a-propos',
+      sectionKey: 'atelier',
+      locale: Locale.FR,
+      titleText: "L'Atelier",
+      subtitleText: 'Dans les coulisses de la création',
+      dataJson: {
+        items: [
+          {
+            imageUrl: 'https://images.unsplash.com/photo-1641293498376-139cfe50ff67?w=1600&q=80',
+            icon: null,
+            label: null,
+            size: 'large',
+          },
+          {
+            imageUrl: 'https://images.unsplash.com/photo-1771098206650-81d713e2e2b9?w=1000&q=80',
+            icon: null,
+            label: null,
+            size: 'default',
+          },
+          {
+            imageUrl: null,
+            icon: 'styler',
+            label: 'Matières Nobles',
+            size: 'default',
+          },
+          {
+            imageUrl: 'https://images.unsplash.com/photo-1676893140066-df87af3bc566?w=1000&q=80',
+            icon: null,
+            label: null,
+            size: 'default',
+          },
+        ],
+      },
+      status: ContentStatus.PUBLISHED,
+      photo: '1641293498376-139cfe50ff67',
+      photoAlt: 'Établi de coupe et draperie artisanale au cœur de l’atelier Angaly',
+    },
+    {
+      page: 'a-propos',
+      sectionKey: 'vision',
+      locale: Locale.FR,
+      titleText: "Incarnez l'élégance",
+      bodyText: 'Découvrez des pièces uniques où chaque détail a été pensé pour sublimer votre allure.',
+      ctaPrimaryLabel: 'Découvrir nos créations',
+      ctaSecondaryLabel: 'Prendre rendez-vous',
+      status: ContentStatus.PUBLISHED,
+    },
   ];
 
   const createdPageSections = new Map<string, { id: string }>();
@@ -780,9 +923,9 @@ async function main() {
       update: sectionData,
       create: { ...sectionData, updatedById: adminUser.id },
     });
-    createdPageSections.set(section.sectionKey, section);
+    createdPageSections.set(`${section.page}:${section.sectionKey}`, section);
   }
-  console.log(`✅ ${pageSections.length} sections de page d'accueil créées`);
+  console.log(`✅ ${pageSections.length} sections de page (Accueil et À propos) créées`);
 
   // --- Testimonials ---------------------------------------------------------
   const testimonials = [
@@ -914,8 +1057,9 @@ async function main() {
     }
     console.log('✅ Photos des articles de journal vérifiées/hébergées sur MinIO');
 
-    for (const { sectionKey, photo, photoAlt } of pageSections) {
-      const section = createdPageSections.get(sectionKey);
+    for (const { page, sectionKey, photo, photoAlt } of pageSections) {
+      if (!photo) continue;
+      const section = createdPageSections.get(`${page}:${sectionKey}`);
       if (!section) continue;
       const existing = await prisma.media.findFirst({
         where: { entityType: MediaEntityType.PAGE_SECTION, entityId: section.id },
@@ -928,7 +1072,7 @@ async function main() {
         await attachPhoto(storage, 'customers', photo, photoAlt, MediaEntityType.PAGE_SECTION, section.id);
       }
     }
-    console.log("✅ Photos des sections d'accueil vérifiées/hébergées sur MinIO");
+    console.log("✅ Photos des sections de page (Accueil et À propos) vérifiées/hébergées sur MinIO");
 
     for (const t of createdTestimonials) {
       const exists = await prisma.media.findFirst({
@@ -949,10 +1093,14 @@ async function main() {
   console.log('🌱 Seed terminé.');
 }
 
-async function downloadUnsplashPhoto(photoId: string): Promise<Buffer> {
-  const response = await fetch(`https://images.unsplash.com/photo-${photoId}?w=1600&q=80&fm=jpg`);
+async function downloadPhoto(photoSource: string): Promise<Buffer> {
+  const url =
+    photoSource.startsWith('http://') || photoSource.startsWith('https://')
+      ? photoSource
+      : `https://images.unsplash.com/photo-${photoSource}?w=1600&q=80&fm=jpg`;
+  const response = await fetch(url);
   if (!response.ok) {
-    throw new Error(`Échec du téléchargement de la photo Unsplash ${photoId} : ${String(response.status)}`);
+    throw new Error(`Échec du téléchargement de la photo ${photoSource} : ${String(response.status)}`);
   }
   return Buffer.from(await response.arrayBuffer());
 }
@@ -960,15 +1108,18 @@ async function downloadUnsplashPhoto(photoId: string): Promise<Buffer> {
 async function attachPhoto(
   storage: StorageClient,
   bucket: StorageBucketName,
-  photoId: string,
+  photoSource: string,
   altText: string,
   entityType: MediaEntityType,
   entityId: string,
   sortOrder = 0,
 ): Promise<void> {
-  const buffer = await downloadUnsplashPhoto(photoId);
+  const buffer = await downloadPhoto(photoSource);
+  const filename = photoSource.startsWith('http')
+    ? `${entityId}-${sortOrder}.jpg`
+    : `${photoSource}.jpg`;
   const upload = await storage.uploadBuffer(bucket, buffer, {
-    originalFilename: `${photoId}.jpg`,
+    originalFilename: filename,
     mimeType: 'image/jpeg',
     keyPrefix: entityId,
   });

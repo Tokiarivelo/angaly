@@ -19,7 +19,13 @@ export function FondatriceSection({ content }: { content: AProposContent['fondat
           <div aria-hidden="true" className="border-angaly-champagne/40 pointer-events-none absolute -inset-4 z-0 translate-x-2 translate-y-2 border" />
           {content.imageUrl ? (
             <div className="relative z-10 aspect-[4/5] w-full shadow-md">
-              <Image src={content.imageUrl} alt="" fill sizes="(min-width: 1024px) 50vw, 100vw" className="object-cover" />
+              <Image
+                src={content.imageUrl}
+                alt="Portrait de Madame Angaly, fondatrice et directrice artistique"
+                fill
+                sizes="(min-width: 1024px) 50vw, 100vw"
+                className="object-cover"
+              />
             </div>
           ) : (
             <div

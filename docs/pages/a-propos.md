@@ -56,36 +56,34 @@ aucun appel réseau.
 
 ## Modèles Prisma touchés
 
-Aucun en Phase 1. `PageSection` (lecture, `page = "a-propos"`) une fois Phase 6 livrée.
+`PageSection`, `Media` — 7 sections (`hero`, `histoire`, `fondatrice`, `savoir-faire`, `philosophie`, `atelier`, `vision`) sont seedées dans `packages/database/prisma/seed.ts` (`page = "a-propos"`) avec photos hébergées sur MinIO. En frontend, `useAProposContent.ts` fournit le contenu et les photos haute résolution vérifiées issues de la maquette Stitch.
 
 ## Points d'attention
 
 - **Fidélité vérifiée via `agy`/StitchMCP `get_screen`** (écran réel
   `028e4d74f15f4ad2b2a16424bacb5448`), pas seulement `stitch-prompts/21-a-propos.md`.
-  **L'écran réel n'a que 7 sections, pas 8** : pas de section « Valeurs » (Excellence/
-  Authenticité/Exclusivité/Proximité client) — implicite dans le prompt texte seul, absente
-  du design réel. `ValeursSection.tsx` n'a donc pas été créé plutôt que d'inventer son
-  contenu ; `AProposPage.test.tsx` vérifie explicitement son absence pour éviter qu'elle
-  soit réintroduite par erreur.
-- Comme `docs/pages/home.md`, cette page dépendra de `PageSection`/Phase 6 pour son contenu
-  éditorial une fois ce module livré : en Phase 1, valeurs codées en dur dans
-  `useAProposContent.ts` avec un TODO explicite pointant vers cette fiche.
-- Aucun modèle Prisma ne porte « fondatrice »/« équipe » — blocs de texte/média purement
-  éditoriaux, jamais un modèle Prisma dédié.
-- **Photos** : contenu 100 % éditorial (pas de `Creation`/`Collection`/`Atelier` associé),
-  donc pas de seed en base — les URLs Unsplash réelles (mêmes règles de vérification que le
-  seed de `packages/database/prisma/seed.ts` : plain `images.unsplash.com`, jamais
-  `plus.unsplash.com`) sont codées en dur dans `useAProposContent.ts` aux côtés du texte.
-  Hero et portrait de la fondatrice restent en dégradé faute d'une photo pertinente trouvée
-  (pas d'invention) — à remplacer dès que `content`/Phase 6 permet un vrai upload.
-- Respecter le ton « intime et humain » du prompt Stitch : éviter tout style « corporate
-  about-us » générique.
+  **L'écran réel a 7 sections, pas 8** : pas de section « Valeurs » (Excellence/
+  Authenticité/Exclusivité/Proximité client) — absente du design réel. `AProposPage.test.tsx` et
+  le test E2E Playwright vérifient explicitement son absence.
+- **Photos et médias** : Toutes les photographies de la maquette Stitch et d'Unsplash sont
+  intégrées :
+  - Hero (70vh avec `mix-blend-overlay` sur fond navy)
+  - Notre Histoire (machine Singer patrimoniale)
+  - Portrait de Madame Angaly avec cadre champagne décalé
+  - Savoir-Faire (alternance couture main, patronage sur mesure, broderie navy/champagne, finitions ivoire/navy)
+  - Galerie Atelier (mosaïque éditoriale 4 colonnes, tuile 2×2, rouleaux de tissus, Matières Nobles, soierie rose drapée)
+- Les sections sont également persistées en base PostgreSQL via `prisma/seed.ts` avec attachement
+  de médias MinIO.
 
 ## Checklist d'acceptation
 
 - [x] Les 7 sections réelles sont présentes et fidèles à la palette ANGALY (pas de section « Valeurs » inventée)
-- [x] Section « Qui est Angaly ? » avec citation de la fondatrice mise en avant visuellement
+- [x] Section « Qui est Angaly ? » avec citation de la fondatrice et portrait dans son cadre décoratif
 - [x] Bande citation « Notre philosophie » sur fond navy avec contraste texte suffisant
+- [x] Galerie Atelier 4 colonnes responsive (1 tuile 2×2 + 3 tuiles dont « Matières Nobles »)
 - [x] `<title>`/meta description définis (spec §70)
-- [x] Tests : `useAProposContent.test.ts`, `AProposPage.test.tsx` — 3 tests
+- [x] Seeds `PageSection` pour `page = "a-propos"` dans `packages/database/prisma/seed.ts` avec upload MinIO
+- [x] Tests unitaires : `useAProposContent.test.ts`, `AProposPage.test.tsx` (4 tests passants)
+- [x] Tests E2E Playwright : `apps/web/e2e/a-propos/heritage-a-propos.spec.ts` (desktop + mobile passants)
+- [x] Captures visuelles sauvegardées dans les artefacts (`heritage_a_propos_desktop.png`, `heritage_a_propos_mobile.png`)
 - [x] `docs/checklist-implementation.md` et `docs/mockup-reference.md` mis à jour à ✅

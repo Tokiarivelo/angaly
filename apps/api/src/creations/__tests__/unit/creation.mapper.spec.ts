@@ -18,6 +18,10 @@ function creationRecord(overrides: Partial<CreationRecord> = {}): CreationRecord
     updatedAt: new Date('2026-01-02T00:00:00.000Z'),
     category: { id: 'cat-1', slug: 'robes', name: 'Robes' },
     collection: { id: 'coll-1', slug: 'eternelle', name: 'Éternelle' },
+    genre: null,
+    type: null,
+    color: null,
+    style: null,
     media: [{ id: 'media-1', url: 'http://localhost:9000/creations/a.jpg', altText: null, sortOrder: 0 }],
     ...overrides,
   };

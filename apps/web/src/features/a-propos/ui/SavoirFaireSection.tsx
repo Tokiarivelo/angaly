@@ -23,14 +23,20 @@ export function SavoirFaireSection({ content }: { content: AProposContent['savoi
                   {item.imageUrl ? (
                     <Image
                       src={item.imageUrl}
-                      alt=""
+                      alt={item.title}
                       fill
                       sizes="(min-width: 1024px) 25vw, (min-width: 768px) 50vw, 100vw"
                       className="object-cover transition-transform duration-700 group-hover:scale-105"
                     />
                   ) : (
                     Icon && (
-                      <div className="bg-angaly-navy text-angaly-champagne flex h-full w-full items-center justify-center">
+                      <div
+                        className={
+                          item.icon === 'cut'
+                            ? 'bg-angaly-warm-ivory text-angaly-navy flex h-full w-full items-center justify-center'
+                            : 'bg-angaly-navy text-angaly-champagne flex h-full w-full items-center justify-center'
+                        }
+                      >
                         <Icon className="h-14 w-14" strokeWidth={1} aria-hidden="true" />
                       </div>
                     )

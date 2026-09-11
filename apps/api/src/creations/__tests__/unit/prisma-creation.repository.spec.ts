@@ -35,6 +35,10 @@ function sampleRecord(): CreationRecord {
     updatedAt: new Date(),
     category: { id: 'cat-1', slug: 'robes', name: 'Robes' },
     collection: null,
+    genre: null,
+    type: null,
+    color: null,
+    style: null,
     media: [],
   };
 }

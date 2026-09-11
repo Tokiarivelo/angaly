@@ -10,7 +10,13 @@ export function NotreHistoireSection({ content }: { content: AProposContent['his
         <div className="relative">
           {content.imageUrl ? (
             <div className="relative aspect-[4/5] w-full border border-angaly-warm-ivory bg-white p-2 shadow-lg">
-              <Image src={content.imageUrl} alt="" fill sizes="(min-width: 1024px) 50vw, 100vw" className="object-cover" />
+              <Image
+                src={content.imageUrl}
+                alt="Origines de la maison ANGALY — atelier historique et machine à coudre Singer patrimoniale"
+                fill
+                sizes="(min-width: 1024px) 50vw, 100vw"
+                className="object-cover"
+              />
             </div>
           ) : (
             <div

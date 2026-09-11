@@ -24,4 +24,14 @@ describe('useAProposContent', () => {
     expect(withPhoto).toHaveLength(2);
     expect(withIcon).toHaveLength(2);
   });
+
+  it('provides high-resolution media URLs for hero, histoire, fondatrice, and atelier', () => {
+    const { result } = renderHook(() => useAProposContent());
+
+    expect(result.current.data.hero.imageUrl).toBeTruthy();
+    expect(result.current.data.hero.imageUrl).toMatch(/^https?:\/\//);
+    expect(result.current.data.histoire.imageUrl).toBeTruthy();
+    expect(result.current.data.fondatrice.imageUrl).toBeTruthy();
+    expect(result.current.data.atelier.items.filter((i) => i.imageUrl !== null).length).toBe(3);
+  });
 });

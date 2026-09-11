@@ -16,12 +16,16 @@ export function AtelierGallerySection({ content }: { content: AProposContent['at
           {content.items.map((item, index) => (
             <div
               key={index}
-              className={`group relative overflow-hidden ${item.size === 'large' ? 'col-span-2 row-span-2' : ''}`}
+              className={`group relative overflow-hidden ${
+                item.size === 'large'
+                  ? 'col-span-2 row-span-2 min-h-[376px] md:min-h-[496px]'
+                  : 'min-h-[180px] md:min-h-[240px]'
+              } ${index === 3 ? 'col-span-2 md:col-span-1' : ''}`}
             >
               {item.imageUrl ? (
                 <Image
                   src={item.imageUrl}
-                  alt=""
+                  alt={item.label ?? `Atelier de création ANGALY — vue ${index + 1}`}
                   fill
                   sizes={item.size === 'large' ? '(min-width: 768px) 50vw, 100vw' : '(min-width: 768px) 25vw, 50vw'}
                   className="object-cover transition-transform duration-1000 group-hover:scale-105"

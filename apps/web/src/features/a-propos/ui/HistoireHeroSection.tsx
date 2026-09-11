@@ -8,7 +8,14 @@ export function HistoireHeroSection({ content }: { content: AProposContent['hero
     <section className="relative flex h-[70vh] min-h-[500px] w-full items-center justify-center overflow-hidden">
       <div className="absolute inset-0 z-0 bg-angaly-navy">
         {content.imageUrl ? (
-          <Image src={content.imageUrl} alt="" fill priority sizes="100vw" className="object-cover opacity-60" />
+          <Image
+            src={content.imageUrl}
+            alt={content.title}
+            fill
+            priority
+            sizes="100vw"
+            className="object-cover opacity-60 mix-blend-overlay"
+          />
         ) : (
           <div aria-hidden="true" className="h-full w-full bg-gradient-to-br from-angaly-royal-navy to-angaly-navy" />
         )}
