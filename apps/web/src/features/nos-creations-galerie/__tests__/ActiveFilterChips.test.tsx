@@ -32,4 +32,37 @@ describe('ActiveFilterChips', () => {
     await user.click(screen.getByRole('button', { name: 'Réinitialiser les filtres' }));
     expect(onReset).toHaveBeenCalledTimes(2);
   });
+
+  it('shows chips for genre, type, color, and style with remove handlers', async () => {
+    const onRemoveGenre = vi.fn();
+    const onRemoveType = vi.fn();
+    const onRemoveColor = vi.fn();
+    const onRemoveStyle = vi.fn();
+    const user = userEvent.setup();
+
+    render(
+      <ActiveFilterChips
+        genre="Femme"
+        type="Mariage"
+        color="Ivoire"
+        style="Classique"
+        onRemoveGenre={onRemoveGenre}
+        onRemoveType={onRemoveType}
+        onRemoveColor={onRemoveColor}
+        onRemoveStyle={onRemoveStyle}
+        onReset={vi.fn()}
+      />,
+    );
+
+    expect(screen.getByRole('button', { name: /Genre: Femme/ })).toBeInTheDocument();
+    expect(screen.getByRole('button', { name: /Type: Mariage/ })).toBeInTheDocument();
+    expect(screen.getByRole('button', { name: /Couleur: Ivoire/ })).toBeInTheDocument();
+    expect(screen.getByRole('button', { name: /Style: Classique/ })).toBeInTheDocument();
+
+    await user.click(screen.getByRole('button', { name: /Genre: Femme/ }));
+    expect(onRemoveGenre).toHaveBeenCalledTimes(1);
+
+    await user.click(screen.getByRole('button', { name: /Type: Mariage/ }));
+    expect(onRemoveType).toHaveBeenCalledTimes(1);
+  });
 });

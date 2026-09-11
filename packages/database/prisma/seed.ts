@@ -28,32 +28,120 @@ async function main() {
   });
   console.log('✅ Admin user ready (admin@angaly.mg)');
 
-  const weekdayHours = { isOpen: true, slots: [{ open: '09:00', close: '18:00' }] };
+  const weekdayStandardHours = { isOpen: true, slots: [{ open: '09:00', close: '18:00' }] };
+  const weekdayIvandryHours = { isOpen: true, slots: [{ open: '10:00', close: '19:00' }] };
+  const weekdayAntsirabeHours = { isOpen: true, slots: [{ open: '08:30', close: '17:30' }] };
+  const closedDay = { isOpen: false, slots: [] };
+
   // Shape validated by apps/api/src/ateliers/domain/value-objects/opening-hours.vo.ts
   // (mirrors AtelierOpeningHours in @angaly/types — keep both in sync).
-  const atelierData = {
-    name: 'Atelier Antananarivo Centre',
-    address: "12 Rue de l'Artisanat, Ankorondrano",
-    city: 'Antananarivo',
-    latitude: -18.8827,
-    longitude: 47.5177,
-    openingHoursJson: {
-      monday: weekdayHours,
-      tuesday: weekdayHours,
-      wednesday: weekdayHours,
-      thursday: weekdayHours,
-      friday: weekdayHours,
-      saturday: { isOpen: true, slots: [{ open: '09:00', close: '13:00' }] },
-      sunday: { isOpen: false, slots: [] },
+  const ateliersData = [
+    {
+      slug: 'antananarivo-centre',
+      name: 'Maison Mère & Atelier Haute Couture',
+      address: "12 Rue de l'Artisanat, Ankorondrano",
+      city: 'Antananarivo',
+      phone: '+261 20 22 245 10',
+      latitude: -18.8827,
+      longitude: 47.5177,
+      openingHoursJson: {
+        monday: weekdayStandardHours,
+        tuesday: weekdayStandardHours,
+        wednesday: weekdayStandardHours,
+        thursday: weekdayStandardHours,
+        friday: weekdayStandardHours,
+        saturday: { isOpen: true, slots: [{ open: '09:00', close: '13:00' }] },
+        sunday: closedDay,
+      },
+      servicesJson: ['Essayage Privé', 'Haute Couture', 'Sur Mesure', 'Retouche d’Art'],
+      photos: [
+        { photo: '1641293498376-139cfe50ff67', alt: "L'atelier Antananarivo Centre" },
+        { photo: '1588618777461-81fe15d547be', alt: "Bobines de fil — l'atelier Antananarivo Centre" },
+        { photo: '1739127871640-044ef7c5f131', alt: "Détail de broderie — l'atelier Antananarivo Centre" },
+        { photo: '1457972657980-4c9fddebec8d', alt: "Mains d'une couturière au travail — l'atelier Antananarivo Centre" },
+      ],
     },
-    servicesJson: ['Essayage', 'Consultation', 'Retouche'],
-  };
-  const atelier = await prisma.atelier.upsert({
-    where: { slug: 'antananarivo-centre' },
-    update: atelierData,
-    create: { slug: 'antananarivo-centre', ...atelierData },
-  });
-  console.log('✅ Atelier principal créé');
+    {
+      slug: 'antananarivo-ivandry',
+      name: 'Salon Privé & Atelier Sur Mesure Ivandry',
+      address: 'Villa Colbert, Lot II M 85 Ter, Ivandry',
+      city: 'Antananarivo',
+      phone: '+261 20 22 412 80',
+      latitude: -18.8682,
+      longitude: 47.5305,
+      openingHoursJson: {
+        monday: weekdayIvandryHours,
+        tuesday: weekdayIvandryHours,
+        wednesday: weekdayIvandryHours,
+        thursday: weekdayIvandryHours,
+        friday: weekdayIvandryHours,
+        saturday: { isOpen: true, slots: [{ open: '10:00', close: '16:00' }] },
+        sunday: closedDay,
+      },
+      servicesJson: ['Sur Mesure Homme', 'Costumes de Gala', 'Salon VIP', 'Conseil Stylisme'],
+      photos: [
+        { photo: '1593030761757-71fae45fa0e7', alt: "Salon Privé Ivandry — Espace d'essayage sur mesure" },
+        { photo: '1507679799987-c73779587ccf', alt: 'Atelier de coupe tailleur et salon VIP — Ivandry' },
+      ],
+    },
+    {
+      slug: 'antsirabe-soie',
+      name: "Atelier Broderie d'Art & Soie Sauvage",
+      address: 'Avenue Jean Ralaimongo, Quartier des Thermes',
+      city: 'Antsirabe',
+      phone: '+261 20 44 489 30',
+      latitude: -19.8659,
+      longitude: 47.0333,
+      openingHoursJson: {
+        monday: closedDay,
+        tuesday: weekdayAntsirabeHours,
+        wednesday: weekdayAntsirabeHours,
+        thursday: weekdayAntsirabeHours,
+        friday: weekdayAntsirabeHours,
+        saturday: weekdayAntsirabeHours,
+        sunday: closedDay,
+      },
+      servicesJson: ['Filature de Soie Sauvage', 'Broderie de Lunéville', 'Confection Artisanale'],
+      photos: [
+        { photo: '1528459801416-a9e53bbf4e17', alt: 'Atelier de soierie et métiers à tisser — Antsirabe' },
+        { photo: '1516762689617-e1cffcef479d', alt: 'Détail de soierie sauvage malgache — Antsirabe' },
+      ],
+    },
+    {
+      slug: 'toamasina-croisiere',
+      name: 'Comptoir Côtier & Confection Maritime',
+      address: 'Boulevard de la Libération, Front de Mer',
+      city: 'Toamasina',
+      phone: '+261 20 53 355 20',
+      latitude: -18.1499,
+      longitude: 49.4023,
+      openingHoursJson: {
+        monday: weekdayStandardHours,
+        tuesday: weekdayStandardHours,
+        wednesday: weekdayStandardHours,
+        thursday: weekdayStandardHours,
+        friday: weekdayStandardHours,
+        saturday: { isOpen: true, slots: [{ open: '09:00', close: '14:00' }] },
+        sunday: closedDay,
+      },
+      servicesJson: ['Collection Croisière', 'Linge Noble & Soie', 'Ajustement Express'],
+      photos: [
+        { photo: '1441986300917-64674bd600d8', alt: 'Comptoir Côtier Toamasina' },
+        { photo: '1469334031218-e382a71b716b', alt: "Salon d'essayage vue océan — Toamasina" },
+      ],
+    },
+  ];
+
+  const createdAteliers = new Map<string, { id: string }>();
+  for (const { photos: _photos, ...data } of ateliersData) {
+    const atelier = await prisma.atelier.upsert({
+      where: { slug: data.slug },
+      update: data,
+      create: data,
+    });
+    createdAteliers.set(atelier.slug, atelier);
+  }
+  console.log(`✅ ${ateliersData.length} ateliers créés ou mis à jour`);
 
   const categories = [
     { slug: 'robes-de-mariee', name: 'Robes de mariée', kind: CategoryKind.CREATION },
@@ -120,13 +208,18 @@ async function main() {
   console.log('✅ 2 collections créées');
 
   const creations = [
+    // --- Robes de mariée ---
     {
       slug: 'robe-eternelle',
       name: 'Robe Éternelle',
-      categoryId: creationDuMoisCategory.id,
+      categoryId: mariage.id,
       collectionId: collectionEternelle.id,
       description:
         "L'incarnation du raffinement intemporel. La Robe Éternelle marie la structure architecturale d'un bustier corseté à la légèreté d'une jupe en cascade. Chaque détail est pensé pour sublimer la silhouette avec une élégance souveraine, digne des plus grands ateliers de couture.",
+      genre: 'Femme',
+      type: 'Mariage',
+      color: 'Ivoire',
+      style: 'Classique',
       materials: 'Satin duchesse de soie, Dentelle de Calais-Caudry',
       techniques: "Broderie d'art à l'aiguille, incrustation de perles nacrées",
       availability: CreationAvailability.PIECE_UNIQUE,
@@ -142,6 +235,10 @@ async function main() {
       categoryId: mariage.id,
       collectionId: null,
       description: 'Tulle et broderies fines pour une silhouette de mariée résolument romantique.',
+      genre: 'Femme',
+      type: 'Mariage',
+      color: 'Blanc',
+      style: 'Traditionnel',
       materials: 'Tulle et broderies fines',
       techniques: null,
       availability: CreationAvailability.PIECE_UNIQUE,
@@ -152,90 +249,119 @@ async function main() {
       photoAlt: 'Romance Royale — robe de mariée',
     },
     {
-      slug: 'creation-du-mois-symphonie',
-      name: 'Symphonie Champagne',
-      categoryId: creationDuMoisCategory.id,
+      slug: 'princesse-tsingy',
+      name: 'Princesse des Tsingy',
+      categoryId: mariage.id,
       collectionId: null,
       description:
-        "Notre création vedette du mois : une silhouette sirène sculptée en satin de soie champagne, ornée d'incrustations de cristaux et perles baroques.",
-      materials: 'Satin de soie champagne, cristaux Swarovski',
-      techniques: 'Broderie florale en relief, incrustation de perles',
+        'Une création féerique en organza de soie rebrodé, inspirée par les reliefs majestueux des Tsingy de Madagascar.',
+      genre: 'Femme',
+      type: 'Mariage',
+      color: 'Blanc',
+      style: 'Glamour',
+      materials: 'Organza de soie, cristaux de roche',
+      techniques: 'Plissé soleil, incrustations artisanales',
       availability: CreationAvailability.PIECE_UNIQUE,
       reproducible: false,
       isFeatured: true,
-      featuredFrom: new Date('2026-03-01T00:00:00.000Z'),
-      photo: '1566174053879-31528523f8ae',
-      photoAlt: 'Symphonie Champagne — Création du mois',
+      featuredFrom: new Date('2026-02-01T00:00:00.000Z'),
+      photo: '1546804784-896d0dca3805',
+      photoAlt: 'Princesse des Tsingy — robe de mariée couture',
     },
     {
-      slug: 'signature-artisan',
-      name: 'Signature Artisan',
-      categoryId: surMesureCategory.id,
+      slug: 'aurore-boheme',
+      name: 'Aurore Bohème',
+      categoryId: mariage.id,
       collectionId: null,
       description:
-        'Le raffinement du costume masculin sur mesure, cousu main dans nos ateliers pour une coupe irréprochable.',
-      materials: 'Détails à la main, laine d’exception',
-      techniques: 'Entoilage complet, boutonnières main',
+        'Robe de mariée fluide au dos nu vertigineux, rehaussée de motifs floraux en dentelle de Chantilly.',
+      genre: 'Femme',
+      type: 'Mariage',
+      color: 'Ivoire',
+      style: 'Moderne',
+      materials: 'Crêpe georgette de soie, dentelle de Chantilly',
+      techniques: 'Finitions roulottées à la main',
+      availability: CreationAvailability.SUR_DEMANDE,
+      reproducible: true,
+      isFeatured: false,
+      featuredFrom: new Date('2026-01-28T00:00:00.000Z'),
+      photo: '1595777457583-95e059d581b8',
+      photoAlt: 'Aurore Bohème — robe de mariée fluide',
+    },
+
+    // --- Costumes homme ---
+    {
+      slug: 'costume-trois-pieces-nuit',
+      name: 'Costume Trois-Pièces Nuit',
+      categoryId: costumes.id,
+      collectionId: null,
+      description:
+        'Costume trois-pièces d’exception taillé dans une laine Super 150’s bleu nuit, avec gilet ajusté et doublure en soie.',
+      genre: 'Homme',
+      type: 'Costume',
+      color: 'Bleu Nuit',
+      style: 'Classique',
+      materials: 'Laine Super 150’s, doublure en satin de soie',
+      techniques: 'Montage semi-traditionnel, surpiqûres AMF faites main',
       availability: CreationAvailability.SUR_DEMANDE,
       reproducible: true,
       isFeatured: true,
-      featuredFrom: new Date('2026-01-20T00:00:00.000Z'),
+      featuredFrom: new Date('2026-01-22T00:00:00.000Z'),
+      photo: '1617127365659-c47fa864d8bc',
+      photoAlt: 'Costume Trois-Pièces Nuit — coupe tailleur masculin',
+    },
+    {
+      slug: 'costume-prince-de-galles',
+      name: 'Costume Prince de Galles',
+      categoryId: costumes.id,
+      collectionId: null,
+      description:
+        'Veste croisée et pantalon à pinces dans un tissu Prince de Galles subtilement rehaussé de fils marine et bordeaux.',
+      genre: 'Homme',
+      type: 'Costume',
+      color: 'Gris',
+      style: 'Moderne',
+      materials: 'Laine peignée d’Angleterre, boutons en corne naturelle',
+      techniques: 'Piquage du revers à la main, plastron flottant',
+      availability: CreationAvailability.SUR_DEMANDE,
+      reproducible: true,
+      isFeatured: true,
+      featuredFrom: new Date('2026-01-18T00:00:00.000Z'),
+      photo: '1617137984095-74e4e5e3613f',
+      photoAlt: 'Costume Prince de Galles — tailleur croisé',
+    },
+    {
+      slug: 'smoking-grand-bal',
+      name: 'Smoking Grand Bal',
+      categoryId: costumes.id,
+      collectionId: null,
+      description:
+        'Smoking de cérémonie noir profond avec revers châle en satin de soie et galon tressé le long de la jambe.',
+      genre: 'Homme',
+      type: 'Costume',
+      color: 'Noir',
+      style: 'Classique',
+      materials: 'Laine mérinos extra-fine et satin de soie noir',
+      techniques: 'Entoilage complet traditionnel, boutonnière milanaise',
+      availability: CreationAvailability.SUR_DEMANDE,
+      reproducible: true,
+      isFeatured: false,
+      featuredFrom: new Date('2026-01-10T00:00:00.000Z'),
       photo: '1507679799987-c73779587ccf',
-      photoAlt: 'Signature Artisan — costume sur mesure',
+      photoAlt: 'Smoking Grand Bal — tenue de soirée masculine',
     },
-    {
-      slug: 'le-dandy',
-      name: 'Le Dandy',
-      categoryId: surMesureCategory.id,
-      collectionId: null,
-      description: 'Un costume trois-pièces à carreaux sur mesure, taillé dans une laine froide d’exception.',
-      materials: 'Laine froide sur mesure',
-      techniques: 'Gilet croisé, coutures ouvertes repassées au fer lourd',
-      availability: CreationAvailability.SUR_DEMANDE,
-      reproducible: true,
-      isFeatured: true,
-      featuredFrom: new Date('2026-01-15T00:00:00.000Z'),
-      photo: '1594938298603-c8148c4dae35',
-      photoAlt: 'Le Dandy — costume trois-pièces sur mesure',
-    },
-    {
-      slug: 'tailleur-sur-mesure',
-      name: 'Tailleur Sur Mesure',
-      categoryId: surMesureCategory.id,
-      collectionId: null,
-      description:
-        "L'art du costume tailleur confectionné sur mesure pour sublimer chaque morphologie avec une précision millimétrée.",
-      materials: 'Laine extra-fine et doublure soie',
-      techniques: 'Coupe au millimètre, finitions tailleur main',
-      availability: CreationAvailability.SUR_DEMANDE,
-      reproducible: true,
-      isFeatured: true,
-      featuredFrom: new Date('2026-01-25T00:00:00.000Z'),
-      photo: '1769868800959-533a3f907d60',
-      photoAlt: 'Tailleur Sur Mesure — détail de coupe',
-    },
-    {
-      slug: 'smoking-grand-soir-sur-mesure',
-      name: 'Smoking Grand Soir Sur Mesure',
-      categoryId: surMesureCategory.id,
-      collectionId: null,
-      description:
-        'Smoking deux-pièces sur mesure en laine extra-fine et revers châle en faille de soie, taillé pour les soirées de gala.',
-      materials: "Laine Super 150's, faille de soie",
-      techniques: 'Montage traditionnel entoilé, boutonnières milanaises cousues main',
-      availability: CreationAvailability.SUR_DEMANDE,
-      reproducible: true,
-      isFeatured: true,
-      featuredFrom: new Date('2026-02-22T00:00:00.000Z'),
-      photo: '1593030761757-71fae45fa0e7',
-      photoAlt: 'Smoking Grand Soir — Confection sur mesure',
-    },
+
+    // --- Robes de soirée ---
     {
       slug: 'nuit-opera',
       name: "Nuit d'Opéra",
       categoryId: soiree.id,
       collectionId: collectionEternelle.id,
       description: 'Soie fluide et accents champagne pour une soirée mémorable.',
+      genre: 'Femme',
+      type: 'Soirée',
+      color: 'Champagne',
+      style: 'Glamour',
       materials: 'Soie fluide et accents champagne',
       techniques: null,
       availability: CreationAvailability.PIECE_UNIQUE,
@@ -251,6 +377,10 @@ async function main() {
       categoryId: soiree.id,
       collectionId: collectionDentelle.id,
       description: 'Une silhouette de soirée ornée de broderies précieuses.',
+      genre: 'Femme',
+      type: 'Soirée',
+      color: 'Or',
+      style: 'Glamour',
       materials: null,
       techniques: null,
       availability: CreationAvailability.PIECE_UNIQUE,
@@ -267,6 +397,10 @@ async function main() {
       collectionId: collectionEternelle.id,
       description:
         'Une robe de bal majestueuse issue de la Collection Éternelle, rehaussée de cristaux et drapé sculptural.',
+      genre: 'Femme',
+      type: 'Soirée',
+      color: 'Bleu Nuit',
+      style: 'Classique',
       materials: 'Taffetas de soie, perles de cristal',
       techniques: 'Drapé haute couture, corset baleiné main',
       availability: CreationAvailability.PIECE_UNIQUE,
@@ -277,12 +411,119 @@ async function main() {
       photoAlt: 'Diadème Impérial — Collection Éternelle',
     },
     {
+      slug: 'crepuscule-dore',
+      name: 'Crépuscule Doré',
+      categoryId: soiree.id,
+      collectionId: null,
+      description:
+        'Robe fourreau en velours de soie noir avec découpes géométriques dorées et fente latérale haute.',
+      genre: 'Femme',
+      type: 'Soirée',
+      color: 'Noir',
+      style: 'Moderne',
+      materials: 'Velours de soie, lamé d’or',
+      techniques: 'Broderie au fil métallique, corset intégré',
+      availability: CreationAvailability.PIECE_UNIQUE,
+      reproducible: false,
+      isFeatured: false,
+      featuredFrom: new Date('2026-01-30T00:00:00.000Z'),
+      photo: '1520975916090-3105956dac38',
+      photoAlt: 'Crépuscule Doré — robe de cocktail haute couture',
+    },
+
+    // --- Sur Mesure ---
+    {
+      slug: 'signature-artisan',
+      name: 'Signature Artisan',
+      categoryId: surMesureCategory.id,
+      collectionId: null,
+      description:
+        'Le raffinement du costume masculin sur mesure, cousu main dans nos ateliers pour une coupe irréprochable.',
+      genre: 'Homme',
+      type: 'Sur mesure',
+      color: 'Noir',
+      style: 'Traditionnel',
+      materials: 'Détails à la main, laine d’exception',
+      techniques: 'Entoilage complet, boutonnières main',
+      availability: CreationAvailability.SUR_DEMANDE,
+      reproducible: true,
+      isFeatured: true,
+      featuredFrom: new Date('2026-01-20T00:00:00.000Z'),
+      photo: '1507679799987-c73779587ccf',
+      photoAlt: 'Signature Artisan — costume sur mesure',
+    },
+    {
+      slug: 'le-dandy',
+      name: 'Le Dandy',
+      categoryId: surMesureCategory.id,
+      collectionId: null,
+      description: 'Un costume trois-pièces à carreaux sur mesure, taillé dans une laine froide d’exception.',
+      genre: 'Homme',
+      type: 'Sur mesure',
+      color: 'Bleu Nuit',
+      style: 'Moderne',
+      materials: 'Laine froide sur mesure',
+      techniques: 'Gilet croisé, coutures ouvertes repassées au fer lourd',
+      availability: CreationAvailability.SUR_DEMANDE,
+      reproducible: true,
+      isFeatured: true,
+      featuredFrom: new Date('2026-01-15T00:00:00.000Z'),
+      photo: '1594938298603-c8148c4dae35',
+      photoAlt: 'Le Dandy — costume trois-pièces sur mesure',
+    },
+    {
+      slug: 'tailleur-sur-mesure',
+      name: 'Tailleur Sur Mesure',
+      categoryId: surMesureCategory.id,
+      collectionId: null,
+      description:
+        "L'art du costume tailleur confectionné sur mesure pour sublimer chaque morphologie avec une précision millimétrée.",
+      genre: 'Femme',
+      type: 'Sur mesure',
+      color: 'Noir',
+      style: 'Minimaliste',
+      materials: 'Laine extra-fine et doublure soie',
+      techniques: 'Coupe au millimètre, finitions tailleur main',
+      availability: CreationAvailability.SUR_DEMANDE,
+      reproducible: true,
+      isFeatured: true,
+      featuredFrom: new Date('2026-01-25T00:00:00.000Z'),
+      photo: '1769868800959-533a3f907d60',
+      photoAlt: 'Tailleur Sur Mesure — détail de coupe',
+    },
+    {
+      slug: 'smoking-grand-soir-sur-mesure',
+      name: 'Smoking Grand Soir Sur Mesure',
+      categoryId: surMesureCategory.id,
+      collectionId: null,
+      description:
+        'Smoking deux-pièces sur mesure en laine extra-fine et revers châle en faille de soie, taillé pour les soirées de gala.',
+      genre: 'Homme',
+      type: 'Sur mesure',
+      color: 'Noir',
+      style: 'Classique',
+      materials: "Laine Super 150's, faille de soie",
+      techniques: 'Montage traditionnel entoilé, boutonnières milanaises cousues main',
+      availability: CreationAvailability.SUR_DEMANDE,
+      reproducible: true,
+      isFeatured: true,
+      featuredFrom: new Date('2026-02-22T00:00:00.000Z'),
+      photo: '1593030761757-71fae45fa0e7',
+      photoAlt: 'Smoking Grand Soir — Confection sur mesure',
+    },
+
+    // --- Coulisses ---
+    {
       slug: 'coulisses-art-du-perlage',
       name: "L'Art du Perlage à la Main",
       categoryId: coulissesCategory.id,
       collectionId: null,
       description:
         'Dans le secret de nos ateliers : plus de 120 heures de broderie et de perlage minutieux sur dentelle de Calais.',
+      genre: 'Femme',
+      type: 'Coulisses',
+      color: 'Blanc',
+      style: 'Traditionnel',
       materials: "Dentelle de Calais, perles de verre de Bohême, fil d'argent",
       techniques: 'Point de Lunéville, perlage guidé à la loupe',
       availability: CreationAvailability.SUR_DEMANDE,
@@ -299,6 +540,10 @@ async function main() {
       collectionId: null,
       description:
         'Découvrez les étapes de confection artisanale de nos vestes à plastron flottant en crin de cheval naturel.',
+      genre: 'Homme',
+      type: 'Coulisses',
+      color: 'Ivoire',
+      style: 'Traditionnel',
       materials: "Toile de lin d'Irlande, crin de cheval naturel, laine d'agneau",
       techniques: 'Piquage du col à la main, montage traditionnel flottant',
       availability: CreationAvailability.SUR_DEMANDE,
@@ -307,6 +552,48 @@ async function main() {
       featuredFrom: new Date('2026-02-08T00:00:00.000Z'),
       photo: '1588618777461-81fe15d547be',
       photoAlt: 'Coulisses : entoilage traditionnel d’une veste tailleur',
+    },
+    {
+      slug: 'coulisses-plisse-soleil',
+      name: "Le Plissé Soleil : Géométrie et Poésie",
+      categoryId: coulissesCategory.id,
+      collectionId: null,
+      description:
+        'Mise en forme des cartons de plissage au métier traditionnel pour un mouvement aérien incomparable.',
+      genre: 'Femme',
+      type: 'Coulisses',
+      color: 'Doré',
+      style: 'Artisanal',
+      materials: 'Cartons de métier à plisser, mousseline de soie',
+      techniques: 'Plissage vapeur traditionnel au four à bois',
+      availability: CreationAvailability.SUR_DEMANDE,
+      reproducible: true,
+      isFeatured: false,
+      featuredFrom: new Date('2026-01-12T00:00:00.000Z'),
+      photo: '1739127871640-044ef7c5f131',
+      photoAlt: 'Coulisses : cartons de plissage soleil',
+    },
+
+    // --- Création du mois ---
+    {
+      slug: 'creation-du-mois-symphonie',
+      name: 'Symphonie Champagne',
+      categoryId: creationDuMoisCategory.id,
+      collectionId: null,
+      description:
+        "Notre création vedette du mois : une silhouette sirène sculptée en satin de soie champagne, ornée d'incrustations de cristaux et perles baroques.",
+      genre: 'Femme',
+      type: 'Soirée',
+      color: 'Champagne',
+      style: 'Glamour',
+      materials: 'Satin de soie champagne, cristaux Swarovski',
+      techniques: 'Broderie florale en relief, incrustation de perles',
+      availability: CreationAvailability.PIECE_UNIQUE,
+      reproducible: false,
+      isFeatured: true,
+      featuredFrom: new Date('2026-03-01T00:00:00.000Z'),
+      photo: '1566174053879-31528523f8ae',
+      photoAlt: 'Symphonie Champagne — Création du mois',
     },
   ];
 
@@ -600,45 +887,20 @@ async function main() {
       console.log('✅ Photos des collections téléchargées et hébergées sur MinIO');
     }
 
-    const hasAtelierMedia = await prisma.media.findFirst({ where: { entityType: MediaEntityType.ATELIER } });
-    if (!hasAtelierMedia) {
-      await attachPhoto(
-        storage,
-        'ateliers',
-        '1641293498376-139cfe50ff67',
-        "L'atelier Antananarivo Centre",
-        MediaEntityType.ATELIER,
-        atelier.id,
-      );
-      await attachPhoto(
-        storage,
-        'ateliers',
-        '1588618777461-81fe15d547be',
-        "Bobines de fil — l'atelier Antananarivo Centre",
-        MediaEntityType.ATELIER,
-        atelier.id,
-        1,
-      );
-      await attachPhoto(
-        storage,
-        'ateliers',
-        '1739127871640-044ef7c5f131',
-        "Détail de broderie — l'atelier Antananarivo Centre",
-        MediaEntityType.ATELIER,
-        atelier.id,
-        2,
-      );
-      await attachPhoto(
-        storage,
-        'ateliers',
-        '1457972657980-4c9fddebec8d',
-        "Mains d'une couturière au travail — l'atelier Antananarivo Centre",
-        MediaEntityType.ATELIER,
-        atelier.id,
-        3,
-      );
-      console.log("✅ Photos de l'atelier téléchargées et hébergées sur MinIO");
+    for (const atelierItem of ateliersData) {
+      const dbAtelier = createdAteliers.get(atelierItem.slug);
+      if (!dbAtelier) continue;
+      for (let i = 0; i < atelierItem.photos.length; i++) {
+        const p = atelierItem.photos[i]!;
+        const exists = await prisma.media.findFirst({
+          where: { entityType: MediaEntityType.ATELIER, entityId: dbAtelier.id, sortOrder: i },
+        });
+        if (!exists) {
+          await attachPhoto(storage, 'ateliers', p.photo, p.alt, MediaEntityType.ATELIER, dbAtelier.id, i);
+        }
+      }
     }
+    console.log("✅ Photos de tous les ateliers vérifiées/hébergées sur MinIO");
 
     for (const { slug, photo, photoAlt } of blogPosts) {
       const post = createdBlogPosts.get(slug);

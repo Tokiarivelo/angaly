@@ -1,23 +1,45 @@
 'use client';
 
-import { ChevronDown, LayoutGrid, List, SlidersHorizontal } from 'lucide-react';
+import { LayoutGrid, List, SlidersHorizontal } from 'lucide-react';
 import type { CategoryDto } from '@angaly/types';
 
-import { DECORATIVE_FILTER_LABELS, SORT_OPTIONS } from '../consts/gallery-filters.const';
+import {
+  COLOR_OPTIONS,
+  GENRE_OPTIONS,
+  SORT_OPTIONS,
+  STYLE_OPTIONS,
+  TYPE_OPTIONS,
+} from '../consts/gallery-filters.const';
 import { useCategoryFilter } from '../hooks/useCategoryFilter';
 import { useMobileFilterSheet } from '../hooks/useMobileFilterSheet';
 import type { GallerySort, GalleryView } from '../types/gallery.types';
 import { MobileFilterSheet } from './MobileFilterSheet';
 
-function DecorativeFilter({ label }: { label: string }) {
+function DropdownFilter({
+  label,
+  value,
+  options,
+  onChange,
+}: {
+  label: string;
+  value: string | null;
+  options: readonly string[];
+  onChange: (value: string | null) => void;
+}) {
   return (
-    <div
-      className="hover:text-angaly-champagne flex cursor-not-allowed items-center gap-1 text-sm tracking-wider text-angaly-navy uppercase transition-colors"
-      title="Filtre à venir — aucune donnée réelle ne le supporte encore"
+    <select
+      aria-label={label}
+      value={value ?? ''}
+      onChange={(event) => onChange(event.target.value || null)}
+      className="hover:text-angaly-champagne cursor-pointer border-none bg-transparent text-sm tracking-wider text-angaly-navy uppercase transition-colors focus:outline-none"
     >
-      <span>{label}</span>
-      <ChevronDown className="h-[18px] w-[18px]" aria-hidden="true" />
-    </div>
+      <option value="">{label}</option>
+      {options.map((option) => (
+        <option key={option} value={option}>
+          {option}
+        </option>
+      ))}
+    </select>
   );
 }
 
@@ -48,12 +70,8 @@ function CategorySelect({
 }
 
 /**
- * Real Stitch screen's sticky filter bar. Sort + view + Catégorie (the only
- * real filter — see gallery-filters.const.ts) are wired; Genre/Type/Couleur/
- * Style stay decorative. Below `md:` the whole cluster collapses into a
- * single "Filtrer" button opening `MobileFilterSheet` (real Stitch "MOBILE
- * BEHAVIOR" text) — "Trier par" stays visible at every breakpoint, matching
- * the real HTML (only the grid/list toggle is `hidden md:flex` there).
+ * Real Stitch screen's sticky filter bar with functional Genre, Type,
+ * Catégorie, Couleur, Style filters, plus Sort and view toggle.
  */
 export function FilterBar({
   sort,
@@ -62,6 +80,14 @@ export function FilterBar({
   onViewChange,
   categoryId,
   onCategoryChange,
+  genre,
+  onGenreChange,
+  type,
+  onTypeChange,
+  color,
+  onColorChange,
+  style,
+  onStyleChange,
 }: {
   sort: GallerySort;
   onSortChange: (sort: GallerySort) => void;
@@ -69,6 +95,14 @@ export function FilterBar({
   onViewChange: (view: GalleryView) => void;
   categoryId: string | null;
   onCategoryChange: (categoryId: string | null) => void;
+  genre?: string | null;
+  onGenreChange?: (genre: string | null) => void;
+  type?: string | null;
+  onTypeChange?: (type: string | null) => void;
+  color?: string | null;
+  onColorChange?: (color: string | null) => void;
+  style?: string | null;
+  onStyleChange?: (style: string | null) => void;
 }) {
   const { isOpen: isSheetOpen, open: openSheet, close: closeSheet } = useMobileFilterSheet();
   const { categories } = useCategoryFilter();
@@ -76,13 +110,31 @@ export function FilterBar({
   return (
     <div className="border-angaly-border sticky top-16 z-40 flex w-full flex-wrap items-center justify-between gap-4 border-y bg-angaly-ivory/95 px-8 py-4 backdrop-blur-md md:px-16">
       <div className="hidden flex-wrap items-center gap-6 md:flex">
-        {DECORATIVE_FILTER_LABELS.slice(0, 2).map((label) => (
-          <DecorativeFilter key={label} label={label} />
-        ))}
+        <DropdownFilter
+          label="Genre"
+          value={genre ?? null}
+          options={GENRE_OPTIONS}
+          onChange={(val) => onGenreChange?.(val)}
+        />
+        <DropdownFilter
+          label="Type"
+          value={type ?? null}
+          options={TYPE_OPTIONS}
+          onChange={(val) => onTypeChange?.(val)}
+        />
         <CategorySelect categories={categories} categoryId={categoryId} onCategoryChange={onCategoryChange} />
-        {DECORATIVE_FILTER_LABELS.slice(2).map((label) => (
-          <DecorativeFilter key={label} label={label} />
-        ))}
+        <DropdownFilter
+          label="Couleur"
+          value={color ?? null}
+          options={COLOR_OPTIONS}
+          onChange={(val) => onColorChange?.(val)}
+        />
+        <DropdownFilter
+          label="Style"
+          value={style ?? null}
+          options={STYLE_OPTIONS}
+          onChange={(val) => onStyleChange?.(val)}
+        />
       </div>
 
       <button
@@ -138,6 +190,14 @@ export function FilterBar({
         categories={categories}
         categoryId={categoryId}
         onCategoryChange={onCategoryChange}
+        genre={genre ?? null}
+        onGenreChange={onGenreChange}
+        type={type ?? null}
+        onTypeChange={onTypeChange}
+        color={color ?? null}
+        onColorChange={onColorChange}
+        style={style ?? null}
+        onStyleChange={onStyleChange}
       />
     </div>
   );

@@ -44,6 +44,9 @@ make env.generate-secret  # NEXTAUTH_SECRET → apps/web/.env.local
 Les valeurs MinIO par défaut dans `.env.example` fonctionnent telles quelles en local
 (`angaly_minio` / `changeme-minio-root-password`) — les changer uniquement en production.
 
+> 📖 Pour le détail de toutes les variables et la procédure d'obtention de la clé **Google Maps Platform**
+> (`NEXT_PUBLIC_GOOGLE_MAPS_API_KEY`), consulter [`docs/environment-variables.md`](./environment-variables.md).
+
 ### 3. Démarrer l'infrastructure Docker
 
 ```bash

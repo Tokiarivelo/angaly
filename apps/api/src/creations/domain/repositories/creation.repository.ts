@@ -5,6 +5,10 @@ export const CREATION_REPOSITORY = Symbol('ICreationRepository');
 export interface CreationListFilter {
   categoryId?: string;
   collectionId?: string;
+  genre?: string;
+  type?: string;
+  color?: string;
+  style?: string;
   isFeatured?: boolean;
   sort?: 'newest' | 'featured' | 'featuredFrom';
   page: number;

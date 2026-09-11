@@ -58,6 +58,18 @@ export class CreationResponseDto implements CreationDto {
   description!: string;
 
   @ApiProperty({ nullable: true })
+  genre!: string | null;
+
+  @ApiProperty({ nullable: true })
+  type!: string | null;
+
+  @ApiProperty({ nullable: true })
+  color!: string | null;
+
+  @ApiProperty({ nullable: true })
+  style!: string | null;
+
+  @ApiProperty({ nullable: true })
   materials!: string | null;
 
   @ApiProperty({ nullable: true })

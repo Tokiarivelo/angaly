@@ -11,6 +11,10 @@ export class CreationMapper {
       slug: record.slug,
       name: record.name,
       description: record.description,
+      genre: record.genre,
+      type: record.type,
+      color: record.color,
+      style: record.style,
       materials: record.materials,
       techniques: record.techniques,
       availability: record.availability,
@@ -32,6 +36,10 @@ export class CreationMapper {
     dto.slug = entity.slug;
     dto.name = entity.name;
     dto.description = entity.description;
+    dto.genre = entity.genre;
+    dto.type = entity.type;
+    dto.color = entity.color;
+    dto.style = entity.style;
     dto.materials = entity.materials;
     dto.techniques = entity.techniques;
     dto.availability = entity.availability as SharedCreationAvailability;

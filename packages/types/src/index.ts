@@ -251,6 +251,10 @@ export interface CreationDto extends Timestamps {
   slug: string;
   name: string;
   description: string;
+  genre: string | null;
+  type: string | null;
+  color: string | null;
+  style: string | null;
   materials: string | null;
   techniques: string | null;
   availability: CreationAvailability;

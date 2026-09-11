@@ -25,6 +25,10 @@ export interface CreationProps {
   slug: string;
   name: string;
   description: string;
+  genre: string | null;
+  type: string | null;
+  color: string | null;
+  style: string | null;
   materials: string | null;
   techniques: string | null;
   availability: string;
@@ -74,6 +78,22 @@ export class CreationEntity {
 
   get description(): string {
     return this.props.description;
+  }
+
+  get genre(): string | null {
+    return this.props.genre;
+  }
+
+  get type(): string | null {
+    return this.props.type;
+  }
+
+  get color(): string | null {
+    return this.props.color;
+  }
+
+  get style(): string | null {
+    return this.props.style;
   }
 
   get materials(): string | null {

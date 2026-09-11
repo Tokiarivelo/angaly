@@ -28,13 +28,28 @@ describe('useGalleryFilters', () => {
     expect(result.current.categoryId).toBeNull();
   });
 
-  it('sets and resets the category filter', () => {
+  it('sets and resets the category and attribute filters', () => {
     const { result } = renderHook(() => useGalleryFilters());
 
-    act(() => result.current.setCategoryId('cat-1'));
+    act(() => {
+      result.current.setCategoryId('cat-1');
+      result.current.setGenre('Homme');
+      result.current.setType('Costume');
+      result.current.setColor('Bleu Nuit');
+      result.current.setStyle('Classique');
+    });
+
     expect(result.current.categoryId).toBe('cat-1');
+    expect(result.current.genre).toBe('Homme');
+    expect(result.current.type).toBe('Costume');
+    expect(result.current.color).toBe('Bleu Nuit');
+    expect(result.current.style).toBe('Classique');
 
     act(() => result.current.resetFilters());
     expect(result.current.categoryId).toBeNull();
+    expect(result.current.genre).toBeNull();
+    expect(result.current.type).toBeNull();
+    expect(result.current.color).toBeNull();
+    expect(result.current.style).toBeNull();
   });
 });

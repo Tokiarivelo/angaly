@@ -321,6 +321,10 @@ model Creation {
   categoryId    String
   collectionId  String?
   description   String
+  genre         String?
+  type          String?
+  color         String?
+  style         String?
   materials     String?
   techniques    String?
   availability  CreationAvailability @default(DISPONIBLE)
@@ -340,6 +344,10 @@ model Creation {
   @@index([categoryId])
   @@index([collectionId])
   @@index([isFeatured])
+  @@index([genre])
+  @@index([type])
+  @@index([color])
+  @@index([style])
   @@map("creations")
 }
 

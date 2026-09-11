@@ -15,6 +15,26 @@ export class ListCreationsQueryDto {
 
   @ApiProperty({ required: false })
   @IsOptional()
+  @IsString()
+  genre?: string;
+
+  @ApiProperty({ required: false })
+  @IsOptional()
+  @IsString()
+  type?: string;
+
+  @ApiProperty({ required: false })
+  @IsOptional()
+  @IsString()
+  color?: string;
+
+  @ApiProperty({ required: false })
+  @IsOptional()
+  @IsString()
+  style?: string;
+
+  @ApiProperty({ required: false })
+  @IsOptional()
   @Transform(({ value }: { value: unknown }) => (value === 'true' ? true : value === 'false' ? false : value))
   @IsBoolean()
   isFeatured?: boolean;

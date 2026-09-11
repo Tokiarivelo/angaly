@@ -58,6 +58,10 @@ cp .env.example .env.prod
 nano .env.prod
 ```
 
+> 📖 Voir [`docs/environment-variables.md`](./environment-variables.md) pour la documentation exhaustive
+> de chaque variable, notamment la restriction de la clé **Google Maps Platform** (`NEXT_PUBLIC_GOOGLE_MAPS_API_KEY`)
+> par référent HTTP de production (`https://angaly.mg/*`).
+
 ### 3. Générer les secrets
 
 ```bash

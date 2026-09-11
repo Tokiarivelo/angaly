@@ -1,6 +1,6 @@
 import { render, screen } from '@testing-library/react';
 import userEvent from '@testing-library/user-event';
-import { describe, expect, it, vi } from 'vitest';
+import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest';
 
 import type { AtelierDto } from '@angaly/types';
 
@@ -70,4 +70,45 @@ describe('AteliersMapPanel', () => {
     );
     expect(screen.getByRole('tooltip')).toHaveClass('opacity-100');
   });
+
+  describe('with Google Maps configured', () => {
+    const originalEnv = process.env.NEXT_PUBLIC_GOOGLE_MAPS_API_KEY;
+
+    beforeEach(() => {
+      process.env.NEXT_PUBLIC_GOOGLE_MAPS_API_KEY = 'AIzaSyTestKey';
+    });
+
+    afterEach(() => {
+      if (originalEnv !== undefined) {
+        process.env.NEXT_PUBLIC_GOOGLE_MAPS_API_KEY = originalEnv;
+      } else {
+        delete process.env.NEXT_PUBLIC_GOOGLE_MAPS_API_KEY;
+      }
+    });
+
+    it('renders view mode buttons and toggles between Google Maps and editorial views', async () => {
+      const user = userEvent.setup();
+      render(
+        <AteliersMapPanel
+          ateliers={[makeAtelier(), makeAtelier({ id: 'atelier-2', slug: 'ivandry', name: 'Ivandry' })]}
+          activeSlug={null}
+          onHoverChange={vi.fn()}
+        />,
+      );
+
+      const gmapBtn = screen.getByRole('button', { name: /Google Maps/i });
+      const editorialBtn = screen.getByRole('button', { name: /Plan Éditorial/i });
+      expect(gmapBtn).toBeInTheDocument();
+      expect(editorialBtn).toBeInTheDocument();
+
+      // Switch to editorial view
+      await user.click(editorialBtn);
+      expect(screen.getByText('Atelier Antananarivo Centre')).toBeInTheDocument();
+
+      // Switch back to Google Maps
+      await user.click(gmapBtn);
+      expect(gmapBtn).toHaveClass('bg-angaly-navy');
+    });
+  });
 });
+

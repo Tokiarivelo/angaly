@@ -15,6 +15,10 @@ export const CREATION_DETAIL_SELECT = {
   slug: true,
   name: true,
   description: true,
+  genre: true,
+  type: true,
+  color: true,
+  style: true,
   materials: true,
   techniques: true,
   availability: true,
@@ -68,6 +72,10 @@ export class PrismaCreationRepository implements ICreationRepository {
     const where: Prisma.CreationWhereInput = {
       ...(filter.categoryId ? { categoryId: filter.categoryId } : {}),
       ...(filter.collectionId ? { collectionId: filter.collectionId } : {}),
+      ...(filter.genre ? { genre: { equals: filter.genre, mode: 'insensitive' } } : {}),
+      ...(filter.type ? { type: { equals: filter.type, mode: 'insensitive' } } : {}),
+      ...(filter.color ? { color: { equals: filter.color, mode: 'insensitive' } } : {}),
+      ...(filter.style ? { style: { equals: filter.style, mode: 'insensitive' } } : {}),
       ...(filter.isFeatured !== undefined ? { isFeatured: filter.isFeatured } : {}),
     };
 
