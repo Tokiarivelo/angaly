@@ -39,7 +39,7 @@ export const NotificationsPreviewCard: React.FC<NotificationsPreviewCardProps> =
         )}
       </div>
 
-      <Link href="/notifications" className="mt-6 text-sm font-medium text-primary-deep-navy hover:underline underline-offset-4">
+      <Link href="/mes-messages?tab=notifications" className="mt-6 text-sm font-medium text-primary-deep-navy hover:underline underline-offset-4">
         Toutes les notifications &rarr;
       </Link>
     </div>

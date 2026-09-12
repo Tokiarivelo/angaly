@@ -1,12 +1,13 @@
 import { Module } from '@nestjs/common';
 import { PrismaModule } from '../prisma/prisma.module';
+import { AuthModule } from '../auth/auth.module';
 import { OrdersController } from './presentation/controllers/orders.controller';
 import { CreateOrderFromCartUseCase } from './application/use-cases/create-order-from-cart.use-case';
 import { PrismaOrderRepository } from './infrastructure/repositories/prisma-order.repository';
 import { ORDER_REPOSITORY_TOKEN } from './domain/repositories/order.repository';
 
 @Module({
-  imports: [PrismaModule],
+  imports: [PrismaModule, AuthModule],
   controllers: [OrdersController],
   providers: [
     CreateOrderFromCartUseCase,

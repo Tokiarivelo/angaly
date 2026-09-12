@@ -1,6 +1,7 @@
 import { Module } from '@nestjs/common';
 import { PrismaModule } from '../prisma/prisma.module';
 import { ConfigModule } from '@nestjs/config';
+import { AuthModule } from '../auth/auth.module';
 
 import { AI_CONVERSATION_REPOSITORY } from './domain/repositories/ai-conversation.repository';
 import { PrismaAIConversationRepository } from './infrastructure/repositories/prisma-ai-conversation.repository';
@@ -14,7 +15,7 @@ import { AiAssistantController } from './presentation/controllers/ai-assistant.c
 import { AiInspirationController } from './presentation/controllers/ai-inspiration.controller';
 
 @Module({
-  imports: [PrismaModule, ConfigModule],
+  imports: [PrismaModule, ConfigModule, AuthModule],
   controllers: [AiAssistantController, AiInspirationController],
   providers: [
     {

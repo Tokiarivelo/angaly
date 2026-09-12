@@ -5,7 +5,7 @@ import { ConfirmPaymentUseCase } from '../../application/use-cases/confirm-payme
 import { InitiatePaymentPayload } from '@angaly/types';
 
 @ApiTags('Payments')
-@Controller('api/payments')
+@Controller('payments')
 export class PaymentsController {
   constructor(
     private readonly initiatePaymentUseCase: InitiatePaymentUseCase,

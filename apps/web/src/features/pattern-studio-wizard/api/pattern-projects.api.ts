@@ -27,7 +27,7 @@ export const updatePatternProject = async (
 
 export const generatePattern = async (
   id: string,
-  payload?: { measurements?: Record<string, number> | undefined } | undefined,
+  payload?: { measurements?: Record<string, number> | undefined },
 ): Promise<PatternVersionDto> => {
   const res = await apiClient.post<PatternVersionDto | { data: PatternVersionDto }>(
     `/api/pattern-projects/${id}/generate`,
@@ -57,8 +57,11 @@ export const uploadInspirationMedia = async (
     };
   }
 
-  const data = await res.json();
-  return { mediaId: data.id ?? data.mediaId, url: data.url };
+  const data = (await res.json()) as { id?: string; mediaId?: string; url?: string };
+  return {
+    mediaId: data.id ?? data.mediaId ?? 'mock-media',
+    url: data.url ?? URL.createObjectURL(file),
+  };
 };
 
 export const analyzeInspirationPhoto = async (

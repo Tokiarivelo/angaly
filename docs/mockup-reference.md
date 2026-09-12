@@ -56,17 +56,17 @@
 | checkout                                | `docs/pages/checkout.md`                      | `stitch-prompts/10-essayage-panier-checkout.md`                 | ANGALY — Expédition (Checkout) / Paiement (Checkout) / Confirmation de commande | §14 | 🟡 |
 | espace-client-dashboard                   | `docs/pages/espace-client-dashboard.md`       | `stitch-prompts/25-espace-client-dashboard.md`                   | ANGALY — Espace Client (Tableau de bord)               | §51-52        | 🟡     |
 | mes-rendez-vous                             | `docs/pages/mes-rendez-vous.md`               | `stitch-prompts/26-espace-client-rendezvous-suivi.md`             | ANGALY — Mes rendez-vous                                | §51           | 🟡     |
-| suivi-commande                               | `docs/pages/suivi-commande.md`                | `stitch-prompts/26-espace-client-rendezvous-suivi.md`             | ANGALY — Suivi de commande                              | §54-55        | ⬜     |
-| messages-factures-notifications                | `docs/pages/messages-factures-notifications.md` | `stitch-prompts/28-espace-client-favoris-messages.md`            | ANGALY — Messages, Factures & Notifications             | §51           | ⬜     |
+| suivi-commande                               | `docs/pages/suivi-commande.md`                | `stitch-prompts/26-espace-client-rendezvous-suivi.md`             | ANGALY — Suivi de commande                              | §54-55        | 🟡     |
+| messages-factures-notifications                | `docs/pages/messages-factures-notifications.md` | `stitch-prompts/28-espace-client-favoris-messages.md`            | ANGALY — Messages, Factures & Notifications             | §51           | 🟡     |
 
 ## PHASE 4 — Premium (Angaly Pattern Studio)
 
 | Page (slug)                              | Fiche                                            | Prompt Stitch                                                          | Écran Stitch (titre)                              | Section spéc | Statut |
 | ------------------------------------------- | --------------------------------------------------- | ---------------------------------------------------------------------------- | ---------------------------------------------------- | ------------- | ------ |
-| pattern-studio-landing                        | `docs/pages/pattern-studio-landing.md`              | `stitch-prompts/16-pattern-studio-landing.md`                                  | ANGALY — Pattern Studio Landing Page                  | §18           | ⬜     |
-| pattern-studio-wizard                          | `docs/pages/pattern-studio-wizard.md`               | `stitch-prompts/17-pattern-studio-wizard-creation.md`                          | ANGALY Pattern Studio — Étape 1 / Étape 7 / Génération en cours | §19-24 | ⬜ |
-| pattern-studio-preview-validation-export        | `docs/pages/pattern-studio-preview-validation-export.md` | `stitch-prompts/18-pattern-studio-preview-validation-export.md`              | ANGALY — Validation de Patron (Studio)                 | §26-29        | ⬜     |
-| mes-projets-patron                               | `docs/pages/mes-projets-patron.md`                  | `stitch-prompts/27-espace-client-patron-mesures.md`                            | ANGALY — Mes projets de patron                          | §53, §66      | ⬜     |
+| pattern-studio-landing                        | `docs/pages/pattern-studio-landing.md`              | `stitch-prompts/16-pattern-studio-landing.md`                                  | ANGALY — Pattern Studio Landing Page                  | §18           | ✅     |
+| pattern-studio-wizard                          | `docs/pages/pattern-studio-wizard.md`               | `stitch-prompts/17-pattern-studio-wizard-creation.md`                          | ANGALY Pattern Studio — Étape 1 / Étape 7 / Génération en cours | §19-24 | ✅ |
+| pattern-studio-preview-validation-export        | `docs/pages/pattern-studio-preview-validation-export.md` | `stitch-prompts/18-pattern-studio-preview-validation-export.md`              | ANGALY — Validation de Patron (Studio)                 | §26-29        | ✅     |
+| mes-projets-patron                               | `docs/pages/mes-projets-patron.md`                  | `stitch-prompts/27-espace-client-patron-mesures.md`                            | ANGALY — Mes projets de patron                          | §53, §66      | ✅     |
 | mes-mesures                                        | `docs/pages/mes-mesures.md`                         | `stitch-prompts/27-espace-client-patron-mesures.md`                            | ANGALY — Mes mesures                                     | §22-23, §56   | ✅     |
 
 ## PHASE 5 — IA avancée

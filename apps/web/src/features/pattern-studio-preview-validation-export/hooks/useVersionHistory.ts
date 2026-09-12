@@ -17,8 +17,8 @@ export const useVersionHistory = (projectId: string) => {
   const restoreMutation = useMutation({
     mutationFn: (versionId: string) => restoreVersion(versionId),
     onSuccess: () => {
-      queryClient.invalidateQueries({ queryKey: PATTERN_PROJECT_KEY(projectId) });
-      queryClient.invalidateQueries({ queryKey: PATTERN_VERSIONS_KEY(projectId) });
+      void queryClient.invalidateQueries({ queryKey: PATTERN_PROJECT_KEY(projectId) });
+      void queryClient.invalidateQueries({ queryKey: PATTERN_VERSIONS_KEY(projectId) });
     },
   });
 

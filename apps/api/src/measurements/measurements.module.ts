@@ -1,5 +1,6 @@
 import { Module } from '@nestjs/common';
 import { PrismaModule } from '../prisma/prisma.module';
+import { AuthModule } from '../auth/auth.module';
 import { PrismaMeasurementProfileRepository } from './infrastructure/repositories/prisma-measurement-profile.repository';
 import { CreateMeasurementProfileUseCase } from './application/use-cases/create-measurement-profile.use-case';
 import { UpdateMeasurementProfileUseCase } from './application/use-cases/update-measurement-profile.use-case';
@@ -10,7 +11,7 @@ import { GetMeasurementProfileUseCase } from './application/use-cases/get-measur
 import { MeasurementProfilesController } from './presentation/controllers/measurement-profiles.controller';
 
 @Module({
-  imports: [PrismaModule],
+  imports: [PrismaModule, AuthModule],
   controllers: [MeasurementProfilesController],
   providers: [
     {

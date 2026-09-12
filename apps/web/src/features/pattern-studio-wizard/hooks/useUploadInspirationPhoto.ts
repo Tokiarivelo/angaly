@@ -33,7 +33,7 @@ export const useUploadInspirationPhoto = (
         detectedFeatures: analysis.detectedFeatures,
         suggestedCutType: analysis.suggestedCutType,
       });
-    } catch (err) {
+    } catch {
       setIsUploading(false);
       setIsAnalyzing(false);
       setError('Impossible de traiter la photo. Vous pouvez continuer sans photo.');

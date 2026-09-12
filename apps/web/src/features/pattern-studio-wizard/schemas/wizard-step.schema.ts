@@ -32,7 +32,7 @@ export const measurementsBaseSchema = z.object({
 });
 
 export const measurementsSchema = measurementsBaseSchema.refine(
-  (data) => data.measurementProfileId || (data.measurements && Object.keys(data.measurements).length > 0),
+  (data) => Boolean(data.measurementProfileId ?? (data.measurements && Object.keys(data.measurements).length > 0)),
   { message: 'Veuillez sélectionner un profil de mesures ou saisir vos mensurations' },
 );
 
@@ -44,7 +44,7 @@ export const patternWizardSchema = garmentTypeSchema
   .merge(inspirationSchema)
   .merge(measurementsBaseSchema)
   .refine(
-    (data) => data.measurementProfileId || (data.measurements && Object.keys(data.measurements).length > 0),
+    (data) => Boolean(data.measurementProfileId ?? (data.measurements && Object.keys(data.measurements).length > 0)),
     { message: 'Veuillez sélectionner un profil de mesures ou saisir vos mensurations' }
   );
 

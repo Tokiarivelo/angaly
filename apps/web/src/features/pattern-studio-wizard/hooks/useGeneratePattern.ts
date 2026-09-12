@@ -12,7 +12,7 @@ export const useGeneratePattern = (projectId: string) => {
     mutationFn: (payload?: { measurements?: Record<string, number> | undefined }) =>
       generatePattern(projectId, payload),
     onSuccess: () => {
-      queryClient.invalidateQueries({ queryKey: ['pattern-project', projectId] });
+      void queryClient.invalidateQueries({ queryKey: ['pattern-project', projectId] });
       // Redirect to preview and validation studio screen
       router.push(`/pattern-studio/projects/${projectId}`);
     },

@@ -25,7 +25,6 @@ export const PatternStudioWizard: React.FC<PatternStudioWizardProps> = ({ projec
     currentStep,
     formData,
     projectRef,
-    isProjectLoading: _isProjectLoading,
     updateField,
     updateDetail,
     isStepValid,
@@ -141,7 +140,7 @@ export const PatternStudioWizard: React.FC<PatternStudioWizardProps> = ({ projec
               measurements={formData.measurements}
               onSelectProfile={(id) => updateField('measurementProfileId', id)}
               onUpdateMeasurement={(k, v) => {
-                const current = formData.measurements || {};
+                const current = formData.measurements ?? {};
                 updateField('measurements', { ...current, [k]: v });
               }}
             />

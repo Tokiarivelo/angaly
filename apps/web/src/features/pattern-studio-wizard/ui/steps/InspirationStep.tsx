@@ -27,7 +27,7 @@ export const InspirationStep: React.FC<InspirationStepProps> = ({
   const handleFileChange = (e: React.ChangeEvent<HTMLInputElement>) => {
     const file = e.target.files?.[0];
     if (file) {
-      uploadAndAnalyze(file);
+      void uploadAndAnalyze(file);
     }
   };
 
@@ -69,6 +69,7 @@ export const InspirationStep: React.FC<InspirationStepProps> = ({
         ) : inspirationImageUrl ? (
           <div className="flex flex-col items-center gap-4">
             <div className="w-32 h-32 rounded-xl overflow-hidden border border-[#C5B190] relative shadow-md">
+              {/* eslint-disable-next-line @next/next/no-img-element */}
               <img
                 src={inspirationImageUrl}
                 alt="Inspiration"

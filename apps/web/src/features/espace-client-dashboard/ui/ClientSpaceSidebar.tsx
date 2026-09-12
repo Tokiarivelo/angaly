@@ -27,9 +27,9 @@ const navItems = [
   { label: 'Mes projets de patron', href: '/mes-projets-patron', icon: Layers },
   { label: 'Mes mesures', href: '/mes-mesures', icon: Ruler },
   { label: 'Mes favoris', href: '/mes-favoris', icon: Heart },
-  { label: 'Mes messages', href: '/messages', icon: MessageSquare },
-  { label: 'Mes factures', href: '/factures', icon: FileText },
-  { label: 'Notifications', href: '/notifications', icon: Bell },
+  { label: 'Mes messages', href: '/mes-messages?tab=messages', icon: MessageSquare },
+  { label: 'Mes factures', href: '/mes-messages?tab=factures', icon: FileText },
+  { label: 'Notifications', href: '/mes-messages?tab=notifications', icon: Bell },
   { label: 'Paramètres', href: '/parametres', icon: Settings },
 ];
 

@@ -9,7 +9,7 @@ export const useRequestReview = (projectId: string) => {
     mutationFn: () => requestReview(projectId),
     onSuccess: (updated) => {
       queryClient.setQueryData(PATTERN_PROJECT_KEY(projectId), updated);
-      queryClient.invalidateQueries({ queryKey: PATTERN_PROJECT_KEY(projectId) });
+      void queryClient.invalidateQueries({ queryKey: PATTERN_PROJECT_KEY(projectId) });
     },
   });
 };

@@ -10,7 +10,7 @@ export const useExportPattern = (projectId: string, versionId: string) => {
     mutationFn: (format: PatternExportFormat) =>
       exportPatternVersion(versionId, format),
     onSuccess: (data) => {
-      queryClient.invalidateQueries({ queryKey: PATTERN_PROJECT_KEY(projectId) });
+      void queryClient.invalidateQueries({ queryKey: PATTERN_PROJECT_KEY(projectId) });
       if (data.mediaUrl) {
         window.open(data.mediaUrl, '_blank');
       }

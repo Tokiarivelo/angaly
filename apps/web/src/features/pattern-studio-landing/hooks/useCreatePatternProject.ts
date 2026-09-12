@@ -1,3 +1,5 @@
+'use client';
+
 import { useMutation, useQueryClient } from '@tanstack/react-query';
 import { useRouter } from 'next/navigation';
 import { createPatternProject, type CreatePatternProjectPayload } from '../api/pattern-projects.api';
@@ -10,7 +12,7 @@ export const useCreatePatternProject = () => {
   return useMutation({
     mutationFn: (payload?: CreatePatternProjectPayload) => createPatternProject(payload),
     onSuccess: (project) => {
-      queryClient.invalidateQueries({ queryKey: IN_PROGRESS_PROJECT_QUERY_KEY });
+      void queryClient.invalidateQueries({ queryKey: IN_PROGRESS_PROJECT_QUERY_KEY });
       router.push(`/pattern-studio/wizard/${project.id}`);
     },
   });

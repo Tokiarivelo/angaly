@@ -137,8 +137,8 @@ phase n'a pas été traitée en session dédiée (voir `.cursor/rules/006-phase-
 - [ ] 🟡 **checkout** — Adresse / Livraison / Paiement / Confirmation (Interface UI créée)
 - [ ] 🟡 **espace-client-dashboard** — Tableau de bord client (Frontend UI créé)
 - [ ] 🟡 **mes-rendez-vous** — Liste des rendez-vous client (Frontend UI créé)
-- [ ] ⬜ **suivi-commande** — Timeline de suivi commande/création
-- [ ] ⬜ **messages-factures-notifications** — Messagerie, factures, notifications
+- [ ] 🟡 **suivi-commande** — Timeline de suivi commande/création (Frontend UI créé)
+- [ ] 🟡 **messages-factures-notifications** — Messagerie, factures, notifications (Frontend UI créé)
 
 ### Modules backend
 - [ ] 🟡 **orders** · ✅ **payments** · ⬜ **notifications**
@@ -148,10 +148,10 @@ phase n'a pas été traitée en session dédiée (voir `.cursor/rules/006-phase-
 ## 🧵 PHASE 4 — Premium — Angaly Pattern Studio (5 pages, 3 modules)
 
 ### Pages
-- [ ] ⬜ **pattern-studio-landing** — Landing Pattern Studio
-- [ ] ⬜ **pattern-studio-wizard** — Assistant de création (7 étapes)
-- [ ] ⬜ **pattern-studio-preview-validation-export** — Prévisualisation, validation, export
-- [ ] ⬜ **mes-projets-patron** — Liste des projets de patron
+- [x] ✅ **pattern-studio-landing** — Landing Pattern Studio
+- [x] ✅ **pattern-studio-wizard** — Assistant de création (7 étapes)
+- [x] ✅ **pattern-studio-preview-validation-export** — Prévisualisation, validation, export
+- [x] ✅ **mes-projets-patron** — Liste des projets de patron
 - [x] ✅ **mes-mesures** — Profils de mesures
 
 ### Modules backend

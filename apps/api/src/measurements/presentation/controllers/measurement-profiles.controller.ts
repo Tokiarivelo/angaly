@@ -31,7 +31,7 @@ import { MeasurementProfileMapper } from '../../infrastructure/mappers/measureme
 @ApiBearerAuth('access-token')
 @UseGuards(JwtAuthGuard, RolesGuard)
 @Roles(Role.CLIENT)
-@Controller('api/measurement-profiles')
+@Controller('measurement-profiles')
 export class MeasurementProfilesController {
   constructor(
     private readonly createMeasurementProfileUseCase: CreateMeasurementProfileUseCase,

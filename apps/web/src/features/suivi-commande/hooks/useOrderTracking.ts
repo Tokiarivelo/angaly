@@ -6,7 +6,7 @@ export interface TrackingTimelineStep {
   label: string;
   description: string;
   state: 'completed' | 'current' | 'upcoming';
-  timestamp?: string; // Only for completed or current
+  timestamp?: string | undefined; // Only for completed or current
 }
 
 export interface OrderDetails {
@@ -52,13 +52,10 @@ export const useOrderTracking = (orderNumber: string) => {
     }
   };
 
-  const currentStatusIndex = TRACKING_STEPS.findIndex(s => s.mappedStatuses.includes(mockOrder.status));
-  // In a real scenario with shared statuses like IN_PRODUCTION, we'd rely on timestamps in history
-  // to know exactly which sub-step we are at. Here we use history keys presence.
-
   const timelineSteps: TrackingTimelineStep[] = TRACKING_STEPS.map((step, index) => {
-    const hasTimestamp = !!mockOrder.history[step.key];
-    const nextStepHasTimestamp = TRACKING_STEPS[index + 1] && !!mockOrder.history[TRACKING_STEPS[index + 1].key];
+    const hasTimestamp = Boolean(mockOrder.history[step.key]);
+    const nextStep = TRACKING_STEPS[index + 1];
+    const nextStepHasTimestamp = Boolean(nextStep && mockOrder.history[nextStep.key]);
     
     let state: 'completed' | 'current' | 'upcoming' = 'upcoming';
     

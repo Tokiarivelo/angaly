@@ -1,6 +1,6 @@
 # Page — `mes-projets-patron`
 
-**Statut : ⬜ À faire.** Phase 4 — Premium (Angaly Pattern Studio).
+**Statut : ✅ Fait.** Phase 4 — Premium (Angaly Pattern Studio).
 
 ## Objet
 

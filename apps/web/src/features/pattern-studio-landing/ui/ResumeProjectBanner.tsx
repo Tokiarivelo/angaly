@@ -3,6 +3,7 @@
 import React from 'react';
 import Link from 'next/link';
 import { Sparkles, ArrowRight } from 'lucide-react';
+import { PatternStatus } from '@angaly/types';
 import { useInProgressProject } from '../hooks/useInProgressProject';
 
 export const ResumeProjectBanner = () => {
@@ -13,7 +14,7 @@ export const ResumeProjectBanner = () => {
   }
 
   const destinationUrl =
-    project.status === 'DRAFT' && (!project.versions || project.versions.length === 0)
+    project.status === PatternStatus.DRAFT && (!project.versions || project.versions.length === 0)
       ? `/pattern-studio/wizard/${project.id}`
       : `/pattern-studio/projects/${project.id}`;
 

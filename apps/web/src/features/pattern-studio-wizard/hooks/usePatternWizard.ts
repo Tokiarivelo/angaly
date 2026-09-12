@@ -30,12 +30,12 @@ export const usePatternWizard = (projectId: string) => {
     if (project) {
       setFormData((prev) => ({
         ...prev,
-        garmentType: project.garmentType || prev.garmentType,
-        occasion: project.occasion || prev.occasion,
-        style: project.style || prev.style,
-        cutType: project.cutType || prev.cutType,
-        details: (project.detailsJson as Record<string, string>) || prev.details,
-        measurementProfileId: project.measurementProfileId || prev.measurementProfileId,
+        garmentType: project.garmentType ? project.garmentType : prev.garmentType,
+        occasion: project.occasion ?? prev.occasion,
+        style: project.style ?? prev.style,
+        cutType: project.cutType ?? prev.cutType,
+        details: project.detailsJson ?? prev.details,
+        measurementProfileId: project.measurementProfileId ?? prev.measurementProfileId,
       }));
     }
   }, [project]);
@@ -94,7 +94,7 @@ export const usePatternWizard = (projectId: string) => {
           return true; // Inspiration photo is optional
         case 7:
           return Boolean(
-            formData.measurementProfileId ||
+            formData.measurementProfileId ??
               (formData.measurements && Object.keys(formData.measurements).length > 0),
           );
         default:
