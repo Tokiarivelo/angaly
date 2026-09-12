@@ -1,12 +1,20 @@
 from fastapi.testclient import TestClient
-
-from app.inference import PLACEHOLDER_MODEL_VERSION
+from unittest.mock import patch
 from app.main import app
 
 client = TestClient(app)
 
+class MockGenerateContentResponse:
+    def __init__(self, text):
+        self.text = text
 
-def test_suggest_parameters_returns_placeholder_with_zero_confidence() -> None:
+@patch("google.genai.Client")
+def test_suggest_parameters_returns_suggestion(mock_client_class) -> None:
+    mock_instance = mock_client_class.return_value
+    mock_instance.models.generate_content.return_value = MockGenerateContentResponse(
+        '{"suggestedCutType": "DROITE", "suggestedDetails": {}, "detectedInspirationFeatures": null, "confidence": 0.8, "modelVersion": "gemini-2.5-flash"}'
+    )
+
     response = client.post(
         "/v1/pattern/suggest-parameters",
         json={
@@ -20,21 +28,25 @@ def test_suggest_parameters_returns_placeholder_with_zero_confidence() -> None:
 
     assert response.status_code == 200
     body = response.json()
-    assert body["confidence"] == 0.0
-    assert body["modelVersion"] == PLACEHOLDER_MODEL_VERSION
+    assert body["confidence"] == 0.8
+    assert body["modelVersion"] == "gemini-2.5-flash"
     assert body["detectedInspirationFeatures"] is None
 
 
-def test_suggest_parameters_flags_inspiration_image_as_unanalyzed() -> None:
+@patch("google.genai.Client")
+def test_chat_assistant_returns_response(mock_client_class) -> None:
+    mock_instance = mock_client_class.return_value
+    mock_instance.models.generate_content.return_value = MockGenerateContentResponse(
+        'Oui, je peux vous aider.'
+    )
+
     response = client.post(
-        "/v1/pattern/suggest-parameters",
+        "/v1/chat/assistant",
         json={
-            "garmentType": "ROBE_MARIEE",
-            "measurements": {},
-            "inspirationImageUrl": "http://localhost:9000/patterns/some-photo.jpg",
+            "message": "Bonjour",
         },
     )
 
     assert response.status_code == 200
     body = response.json()
-    assert body["detectedInspirationFeatures"] is not None
+    assert body["response"] == "Oui, je peux vous aider."

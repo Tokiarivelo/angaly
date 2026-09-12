@@ -152,17 +152,17 @@ async function main() {
     { slug: 'creation-du-mois', name: 'Création du mois', kind: CategoryKind.CREATION },
     { slug: 'pret-a-porter', name: 'Prêt-à-porter', kind: CategoryKind.PRODUCT },
     { slug: 'conseils-mode', name: 'Conseils mode', kind: CategoryKind.BLOG },
-    { slug: 'mariage-a-madagascar', name: 'Mariage', kind: CategoryKind.BLOG },
-    { slug: 'conseils-costume', name: 'Conseils Costume', kind: CategoryKind.BLOG },
+    { slug: 'mariage-a-madagascar', name: 'Mariage à Madagascar', kind: CategoryKind.BLOG },
+    { slug: 'conseils-costume', name: 'Conseils costume', kind: CategoryKind.BLOG },
     { slug: 'tendances', name: 'Tendances', kind: CategoryKind.BLOG },
-    { slug: 'coulisses-atelier', name: 'Coulisses', kind: CategoryKind.BLOG },
-    { slug: 'entretien-vetements', name: 'Entretien', kind: CategoryKind.BLOG },
+    { slug: 'coulisses-atelier', name: "Coulisses de l'atelier", kind: CategoryKind.BLOG },
+    { slug: 'entretien-vetements', name: 'Entretien des vêtements', kind: CategoryKind.BLOG },
     { slug: 'haute-couture', name: 'Haute Couture', kind: CategoryKind.BLOG },
   ];
   for (const category of categories) {
     await prisma.category.upsert({
       where: { slug: category.slug },
-      update: {},
+      update: { name: category.name, kind: category.kind },
       create: category,
     });
   }
@@ -615,6 +615,8 @@ async function main() {
   const coulissesAtelier = categoryBySlug.get('coulisses-atelier')!;
   const conseilsMode = categoryBySlug.get('conseils-mode')!;
   const conseilsCostume = categoryBySlug.get('conseils-costume')!;
+  const tendances = categoryBySlug.get('tendances')!;
+  const entretienVetements = categoryBySlug.get('entretien-vetements')!;
 
   const blogPosts = [
     {
@@ -630,6 +632,30 @@ async function main() {
       photoAlt: 'Détail brodé de la Robe Éternelle',
     },
     {
+      slug: 'tendances-couture-2026-minimalisme-et-reliefs',
+      title: 'Tendances Couture 2026 : Entre pureté architecturale et reliefs organiques',
+      categoryId: tendances.id,
+      excerpt:
+        "Découvrez les mouvements esthétiques qui redéfinissent la haute couture cette saison : plissés sculpturaux, tons minéraux et fluidité aérienne.",
+      content:
+        "L'année 2026 marque un retour affirmé à l'essentiel : les coupes se font plus architecturales, les lignes plus franches, mais la matière conserve une sensualité tactile incomparable.\n\nDans les ateliers ANGALY, cette tendance prend corps à travers l'alternance de volumes audacieux et de tombés verticaux presque liquides. Les teintes minérales — argile douce, basalte feutré, sable chaud — rencontrent nos bleus signature pour esquisser une féminité à la fois protectrice et affirmée.",
+      publishedAt: new Date('2026-03-04T00:00:00.000Z'),
+      photo: '1490481651871-ab68de25d43d',
+      photoAlt: 'Silhouette haute couture contemporaine, tons neutres et coupe fluide',
+    },
+    {
+      slug: 'guide-entretien-soie-lin-pieces-exception',
+      title: "Prendre soin de ses étoffes : Le guide d'entretien des soies et lins d'art",
+      categoryId: entretienVetements.id,
+      excerpt:
+        "Soie sauvage malgache, lin texturé, broderies fines : les gestes et rituels indispensables pour que vos créations traversent le temps sans rien perdre de leur éclat.",
+      content:
+        "Un vêtement d'exception est fait pour durer et raconter une histoire au fil des générations. Pourtant, la délicatesse des fibres naturelles exige une attention respectueuse et des gestes précis.\n\nLe lavage à la main à eau tiède, l'usage d'un savon neutre sans enzymes agressives, le séchage à plat à l'abri du soleil direct : autant de rituels qui préservent la structure des fibres et l'éclat des pigments naturels. Pour le repassage, privilégiez toujours une pattemouille légèrement humide et une chaleur douce sur l'envers du tissu.",
+      publishedAt: new Date('2026-02-28T00:00:00.000Z'),
+      photo: '1489987707025-afc232f7ea0f',
+      photoAlt: 'Pliage méticuleux de textiles nobles et soies naturelles',
+    },
+    {
       slug: 'porter-bleu-nuit-elegance',
       title: 'Comment porter le bleu nuit avec élégance',
       categoryId: conseilsMode.id,
@@ -640,6 +666,18 @@ async function main() {
       publishedAt: new Date('2026-02-20T00:00:00.000Z'),
       photo: '1762605135318-f34a993cbcf0',
       photoAlt: 'Ensemble bleu nuit, styling éditorial minimaliste',
+    },
+    {
+      slug: 'vodiondry-haute-couture-tradition-et-modernite',
+      title: "Le Vodiondry réinventé : L'élégance de la tradition sublimée",
+      categoryId: mariageMadagascar.id,
+      excerpt:
+        "Comment marier l'émotion des fiançailles traditionnelles malgaches avec les codes d'une haute couture contemporaine et intemporelle.",
+      content:
+        "Le Vodiondry est un moment d'une rare intensité émotionnelle dans la vie d'une famille malgache. Il réunit deux lignées dans le respect des coutumes et l'échange des paroles sacrées.\n\nPour cette cérémonie, la tenue de la future mariée doit allier modestie, solennité et grâce. La Maison ANGALY conçoit des pièces inspirées des drapés traditionnels, travaillées dans des soies légères et rehaussées de broderies dorées délicates qui célèbrent notre patrimoine sans jamais figer la création dans le passé.",
+      publishedAt: new Date('2026-02-15T00:00:00.000Z'),
+      photo: '1519741497674-611481863552',
+      photoAlt: 'Célébration de mariage élégante avec parures et étoffes raffinées',
     },
     {
       slug: 'secret-atelier-travail-soie',
@@ -654,6 +692,30 @@ async function main() {
       photoAlt: "Mains d'une couturière travaillant la soie",
     },
     {
+      slug: 'secret-des-broderies-main-patrimoine-vivant',
+      title: "Le geste et l'aiguille : L'art séculaire de la broderie à la main",
+      categoryId: coulissesAtelier.id,
+      excerpt:
+        "Immersion aux côtés de nos artisanes brodeuses à Antananarivo, gardiennes d'un savoir-faire virtuose transmis de mère en fille.",
+      content:
+        "Sous la verrière de notre atelier principal, le silence n'est troublé que par le souffle régulier des brodeuses et le passage soyeux du fil à travers le tissu.\n\nChaque pétale, chaque relief est composé point par point, nécessitant parfois plus de deux cents heures d'un labeur qui tient de la méditation. Ce travail d'orfèvre donne à chaque robe une âme unique, impossible à reproduire par une machine.",
+      publishedAt: new Date('2026-02-05T00:00:00.000Z'),
+      photo: '1558769132-cb1aea458c5e',
+      photoAlt: "Artisane concentrée brodant un motif floral sur une pièce d'atelier",
+    },
+    {
+      slug: 'choisir-ses-accessoires-pour-une-soiree-de-gala',
+      title: "L'art du détail : Comment accessoiriser une robe d'exception",
+      categoryId: conseilsMode.id,
+      excerpt:
+        "Pochette sculpturale, bijoux discrets et souliers sur-mesure : les principes fondamentaux pour parfaire une silhouette sans la surcharger.",
+      content:
+        "Une robe haute couture se suffit souvent à elle-même, mais le choix des accessoires en révèle toute la subtilité.\n\nLorsque la robe arbore des détails complexes de broderie ou de perlage, les bijoux doivent s'effacer : une simple boucle d'oreille en perle naturelle ou un bracelet d'or fin suffisent. À l'inverse, une coupe épurée en satin unicolore invite un bijou sculptural affirmé pour créer un point focal captivant.",
+      publishedAt: new Date('2026-01-30T00:00:00.000Z'),
+      photo: '1515886657613-9f3515b0c78f',
+      photoAlt: 'Accessoires de luxe et silhouette de soirée aux finitions soignées',
+    },
+    {
       slug: 'se-marier-antananarivo-guide-lieux',
       title: "Se marier à Antananarivo : Guide des lieux d'exception",
       categoryId: mariageMadagascar.id,
@@ -666,6 +728,18 @@ async function main() {
       photoAlt: 'Table de réception de mariage élégante',
     },
     {
+      slug: 'choisir-le-tissu-ideal-costume-tropical',
+      title: 'Lin, laine froide et mélanges soie : Le costume sous le climat malgache',
+      categoryId: conseilsCostume.id,
+      excerpt:
+        'Nos recommandations de maîtres tailleurs pour allier confort thermique absolu et tenue impeccable lors des réceptions en plein air.',
+      content:
+        "Concevoir un costume élégant sous les latitudes tropicales est un défi de coupe et de matière. La laine froide haute torsion (Fresco) et les mélanges lin-soie offrent une respirabilité remarquable tout en conservant une ligne nette et sans faux plis.\n\nNos tailleurs recommandent également une construction semi-entoilée plus légère, qui épouse le corps naturellement sans l'alourdir, même aux heures les plus chaudes des célébrations.",
+      publishedAt: new Date('2026-01-18T00:00:00.000Z'),
+      photo: '1594938298603-c8148c4dae35',
+      photoAlt: "Nuancier d'étoffes nobles et finitions intérieures d'une veste de costume",
+    },
+    {
       slug: 'art-costume-sur-mesure-marie',
       title: "L'art du costume sur-mesure pour le marié",
       categoryId: conseilsCostume.id,
@@ -676,6 +750,156 @@ async function main() {
       publishedAt: new Date('2026-01-10T00:00:00.000Z'),
       photo: '1507679799987-c73779587ccf',
       photoAlt: 'Détail de couture sur costume sur-mesure',
+    },
+    // --- Mariage à Madagascar (ajouts supplémentaires) ---
+    {
+      slug: 'choisir-sa-robe-mariage-civil-vs-religieux',
+      title: 'Mariage civil et mariage religieux : Comment harmoniser vos deux tenues',
+      categoryId: mariageMadagascar.id,
+      excerpt:
+        'Entre la solennité de la mairie et la grandeur de la cérémonie religieuse, nos conseils de stylistes pour choisir deux tenues complémentaires sans fausse note.',
+      content:
+        "Célébrer son mariage à Madagascar implique fréquemment deux temps forts distincts : le passage civil devant monsieur le Maire et la bénédiction nuptiale à l'église. Deux atmosphères, deux exigences de style.\n\nPour la cérémonie civile, nous préconisons souvent une silhouette tailleur pantalon en crêpe de soie ou une robe midi structurée aux accents contemporains. Pour l'église, la majesté d'une robe longue à traîne et dentelle prend tout son sens. L'art réside dans la continuité d'un fil conducteur — une nuance d'ivoire partagée, un bijou de famille récurrent ou une broderie hommage.",
+      publishedAt: new Date('2026-03-03T00:00:00.000Z'),
+      photo: '1465495976277-4387d4b0b4c6',
+      photoAlt: 'Couple de mariés élégant lors d’une cérémonie romantique',
+    },
+    {
+      slug: 'les-fleurs-de-madagascar-dans-votre-bouquet-et-parure',
+      title: "Orchidées et flore de l'Île Rouge : Sublimer son cortège nuptial",
+      categoryId: mariageMadagascar.id,
+      excerpt:
+        "L'art d'intégrer les espèces florales endémiques de Madagascar dans les accessoires de coiffure, boutonnières et décors de réception.",
+      content:
+        "La richesse botanique de Madagascar offre une source d'inspiration inépuisable pour la scénographie florale d'un mariage de prestige.\n\nL'orchidée Angraecum sesquipedale (l'étoile de Madagascar), aux pétales cireux d'un blanc immaculé et au parfum envoûtant à la tombée du jour, s'accorde merveilleusement avec la pureté des soies ANGALY. Délicatement piquée dans une coiffure sculptée ou reprise en motif de broderie sur le voile, elle scelle l'ancrage précieux de votre union dans la terre malgache.",
+      publishedAt: new Date('2026-02-12T00:00:00.000Z'),
+      photo: '1544078751-58fee2d8a03b',
+      photoAlt: 'Compositions florales et parures délicates de mariage',
+    },
+    // --- Conseils mode (ajouts supplémentaires) ---
+    {
+      slug: 'silhouette-et-morphologie-trouver-la-coupe-ideale',
+      title: 'Morphologie et haute couture : Trouver la coupe qui magnifie vos atouts',
+      categoryId: conseilsMode.id,
+      excerpt:
+        "Taille cintrée, décolleté plongeant ou ligne trapèze : comprendre l'architecture d'une robe pour équilibrer parfaitement les proportions.",
+      content:
+        "La haute couture ne cherche pas à adapter un corps à un vêtement, mais à concevoir une architecture textile qui dialogue intimement avec chaque silhouette.\n\nQu'il s'agisse d'allonger la jambe par une taille subtilement surélevée, de souligner le port de tête grâce à un col montant asymétrique ou d'adoucir les hanches avec un plissé soleil en organza, chaque décision de coupe répond à des lois géométriques strictes. Nos essayages sur toile permettent d'ajuster chaque millimètre avant la découpe définitive de l'étoffe précieuse.",
+      publishedAt: new Date('2026-02-24T00:00:00.000Z'),
+      photo: '1496747611176-843222e1e57c',
+      photoAlt: 'Drapé haute couture sur mannequin d’atelier',
+    },
+    {
+      slug: 'palette-de-couleurs-carnation-sublimer-le-teint',
+      title: 'La colorimétrie selon ANGALY : Quelles teintes pour votre carnation ?',
+      categoryId: conseilsMode.id,
+      excerpt:
+        'Champagne, ivoire chaud, blanc pur ou bleu nuit : comment identifier les reflets de tissus qui illumineront naturellement votre visage.',
+      content:
+        "L'éclat d'une tenue dépend autant de sa coupe que de la résonance entre la couleur du tissu et la carnation de celle qui le porte.\n\nPour les peaux aux sous-tons chauds ou dorés, les soies champagne, vanille et sable chaud captent la lumière avec une douceur flatteuse. Les carnations aux nuances fraîches ou très contrastées rayonneront au contact de notre bleu nuit profond ou d'un blanc glacier immaculé. Lors de la première consultation en salon privé, nos stylistes testent plusieurs échantillons d'étoffes à la lumière naturelle pour révéler votre nuance idéale.",
+      publishedAt: new Date('2026-01-22T00:00:00.000Z'),
+      photo: '1539109136881-3be0616acf4b',
+      photoAlt: 'Nuances de tissus et palette de couleurs haute couture',
+    },
+    // --- Conseils costume (ajouts supplémentaires) ---
+    {
+      slug: 'gilet-cravate-ou-noeud-papillon-le-guide-du-marie',
+      title: 'Cravate, lavallière ou nœud papillon : Choisir ses accessoires de marié',
+      categoryId: conseilsCostume.id,
+      excerpt:
+        "Guide complet des règles d'élégance masculine pour accessoiriser avec distinction un costume trois pièces ou un smoking d'apparat.",
+      content:
+        "Les détails font la distinction du marié. Si la coupe de la veste et le tombé du pantalon constituent les fondations de l'allure, le choix du tour de cou en dicte le registre stylistique.\n\nLe nœud papillon en satin de soie noir ou midnight blue demeure le complice indissociable du smoking pour les soirées black tie. Pour une célébration de jour plus champêtre ou romantique, une cravate étroite en grenadine de soie ou une lavallière souple apporte une touche aristocratique sans ostentation. Le gilet croisé contrasté, quant à lui, sculpte le buste dès que la veste est retirée.",
+      publishedAt: new Date('2026-02-18T00:00:00.000Z'),
+      photo: '1593032465175-481ac7f401a0',
+      photoAlt: 'Finitions impeccables et accessoires d’un costume trois pièces',
+    },
+    {
+      slug: 'les-souliers-du-gentleman-richelieu-ou-derby',
+      title: 'Richelieu, Derby ou Mocassins : Le guide des souliers de cérémonie',
+      categoryId: conseilsCostume.id,
+      excerpt:
+        'Cuir patiné, montage Blake ou cousu Goodyear : investir dans des souliers nobles capables de compléter avec grâce un costume sur-mesure.',
+      content:
+        "Une tenue masculine impeccable ne saurait tolérer une hésitation au niveau des souliers. Le Richelieu à empeigne lisse ou plastron one-cut représente le summum du formalisme pour le marié : son laçage fermé prolonge la pureté de la jambe du pantalon sans rupture visuelle.\n\nLe Derby, avec ses garants ouverts, convient parfaitement aux morphologies de pied plus fortes et aux costumes de ville décontractés. Enfin, pour les réceptions en bord de mer ou dans un domaine ensoleillé, le mocassin à pampilles en cuir suédé offre une décontraction sophistiquée incomparable.",
+      publishedAt: new Date('2026-01-05T00:00:00.000Z'),
+      photo: '1617137984095-74e4e5e3613f',
+      photoAlt: 'Paire de souliers Richelieu en cuir patiné artisanal',
+    },
+    // --- Tendances (ajouts supplémentaires) ---
+    {
+      slug: 'le-retour-de-la-cape-et-de-la-traine-amovible',
+      title: "Capes fluides et traînes amovibles : La polyvalence couture s'impose",
+      categoryId: tendances.id,
+      excerpt:
+        "Passer d'une entrée magistrale à une liberté de mouvement totale pour la soirée : la traîne amovible s'affirme comme l'incontournable de 2026.",
+      content:
+        "Les mariées contemporaines ne souhaitent plus sacrifier la fête au cérémonial. La réponse de nos ateliers réside dans la modularité haute couture.\n\nFixée par d'invisibles petits boutons de nacre sous un ruché de dentelle, la traîne majestueuse de trois mètres se détache en un geste après la cérémonie religieuse. La mariée dévoile ainsi une silhouette fluide et dansante pour la réception, sans avoir eu besoin de changer entièrement de tenue.",
+      publishedAt: new Date('2026-02-26T00:00:00.000Z'),
+      photo: '1509631179647-0177331693ae',
+      photoAlt: 'Robe de mariée contemporaine avec cape vaporeuse en mouvement',
+    },
+    {
+      slug: 'transparences-et-jeux-d-organza-l-audace-subtile',
+      title: "Transparences maîtrisées : L'organza et le tulle réinventent la robe du soir",
+      categoryId: tendances.id,
+      excerpt:
+        "Comment les jeux de superposition et les transparences architecturales insufflent de la modernité aux tenues d'apparat sans compromettre la pudeur.",
+      content:
+        "Travailler la transparence en haute couture relève d'une alchimie complexe : suggérer la lumière sans tout dévoiler, créer de la profondeur sans alourdir.\n\nEn superposant des couches successives d'organza de soie fumé et de gaze de lin ultra-fine, nos créateurs façonnent des effets de moirage envoûtants. Les bustiers illusion, ornés de nervures minutieusement appliquées à la main, semblent flotter directement sur la peau comme un tatouage textile précieux.",
+      publishedAt: new Date('2026-01-15T00:00:00.000Z'),
+      photo: '1512436991641-6745cdb1723f',
+      photoAlt: 'Jeux de matières transparentes et reflets soyeux sur silhouette de gala',
+    },
+    // --- Coulisses de l'atelier (ajouts supplémentaires) ---
+    {
+      slug: 'naissance-d-un-croquis-de-l-idee-au-dessin',
+      title: "De l'esquisse au patron : Dans le carnet de notre directrice artistique",
+      categoryId: coulissesAtelier.id,
+      excerpt:
+        "Chaque chef-d'œuvre commence par un coup de crayon. Découvrez les coulisses créatives où naissent les premières esquisses de nos collections.",
+      content:
+        "Avant le premier coup de ciseaux dans la toile à patronner, il y a l'intimité du carnet à croquis. C'est là que se cristallisent les inspirations : les nervures d'une feuille de ravinala, le souvenir d'une façade coloniale d'Ambohimanga, le bruissement d'une mousseline au vent du soir.\n\nLe croquis fixe les proportions, les points de tension et le mouvement souhaité. Transmis aux modélistes, ce dessin devient un tracé géométrique précis, première étape d'une longue métamorphose vers la réalité de l'étoffe.",
+      publishedAt: new Date('2026-02-02T00:00:00.000Z'),
+      photo: '1544816155-12df9643f363',
+      photoAlt: 'Esquisse de mode dessinée à la main sur table de patronage',
+    },
+    {
+      slug: 'la-selection-des-fils-de-soie-malgache-au-coeur-des-hauts-plateaux',
+      title: "Sur la route de la soie sauvage : À la rencontre de nos fileuses de l'Imerina",
+      categoryId: coulissesAtelier.id,
+      excerpt:
+        'Voyage au cœur des Hauts Plateaux malgaches pour sourcer les cocons de soie sauvage qui donneront vie à nos étoffes les plus précieuses.',
+      content:
+        "La soie sauvage malgache — le fameux landibe récolté sur les tapia — possède une texture brute et dorée qu'aucune fibre industrielle ne peut égaler.\n\nDans les villages de l'Imerina, nos partenaires perpétuent un dévidage entièrement manuel des cocons, préservant la résistance singulière du fil. En intégrant cette matière d'exception dans nos collections haute couture, la Maison ANGALY soutient un écosystème artisanal local précieux tout en offrant au monde entier un aperçu du raffinement malgache.",
+      publishedAt: new Date('2026-01-08T00:00:00.000Z'),
+      photo: '1503342217505-b0a15ec3261c',
+      photoAlt: 'Métier à tisser artisanal et bobines de fil de soie naturelle',
+    },
+    // --- Entretien des vêtements (ajouts supplémentaires) ---
+    {
+      slug: 'stocker-et-preserver-sa-robe-de-mariee-apres-la-fete',
+      title: 'Conserver sa robe de mariée : Les précautions indispensables après le grand jour',
+      categoryId: entretienVetements.id,
+      excerpt:
+        'Boîte de conservation au pH neutre, papier de soie sans acide et nettoyage professionnel : les secrets pour transmettre votre robe intacte.',
+      content:
+        "La fête terminée, votre robe de mariée porte les traces heureuses d'une journée inoubliable : poussière de piste de danse, traces imperceptibles de parfum ou gouttes de champagne.\n\nIl est impératif de confier la pièce à un pressing spécialisé dans les fibres d'art sous 48 à 72 heures. Évitez absolument les housses plastiques étanches qui piègent l'humidité et provoquent le jaunissement des fibres. Rangez votre robe à plat dans un coffret de conservation garni de papier de soie sans acide, à l'abri de la lumière et des variations thermiques.",
+      publishedAt: new Date('2026-02-14T00:00:00.000Z'),
+      photo: '1582735689369-4fe89db7114c',
+      photoAlt: 'Dressing soigné abritant des vêtements protégés dans des housses textiles',
+    },
+    {
+      slug: 'defroisser-les-tissus-nobles-a-la-vapeur-mode-d-emploi',
+      title: 'Le défroissage vertical à la vapeur : Pourquoi bannir le fer traditionnel',
+      categoryId: entretienVetements.id,
+      excerpt:
+        'Protégez le velours de soie, la dentelle et le crêpe lourd : comment un défroisseur vapeur professionnel redonne tout son gonflant à une étoffe.',
+      content:
+        "Le contact direct de la semelle chaude d'un fer à repasser peut écraser irrémédiablement le poil d'un velours, faire lustrer une laine froide ou brûler les fibres sensibles d'une dentelle.\n\nLe défroissage à jet de vapeur vertical reste la méthode privilégiée par nos couturières. La vapeur d'eau douce détend les fibres en profondeur sans exercer de pression mécanique, permettant au vêtement de retrouver son tombé naturel et son volume d'origine en quelques passes légères.",
+      publishedAt: new Date('2026-01-12T00:00:00.000Z'),
+      photo: '1567401893414-76b7b1e5a7a5',
+      photoAlt: 'Soin du linge et défroissage vertical de vêtements délicats',
     },
   ];
 
@@ -977,6 +1201,157 @@ async function main() {
     createdTestimonials.push({ id: record.id, photo: item.photo, photoAlt: item.photoAlt });
   }
   console.log(`✅ ${testimonials.length} témoignages créés`);
+
+  // --- Utilisateur Client (Test) et Pattern Studio --------------------------
+  const clientPasswordHash = await bcrypt.hash('Client@Angaly2026!', 12);
+  const clientUser = await prisma.user.upsert({
+    where: { email: 'client@angaly.mg' },
+    update: {},
+    create: {
+      email: 'client@angaly.mg',
+      passwordHash: clientPasswordHash,
+      role: Role.CLIENT,
+    },
+  });
+
+  const customer = await prisma.customer.upsert({
+    where: { userId: clientUser.id },
+    update: {},
+    create: {
+      userId: clientUser.id,
+      firstName: 'Jeanne',
+      lastName: 'Dupont',
+      phone: '+261 34 00 000 00',
+    },
+  });
+  console.log('✅ Client user ready (client@angaly.mg)');
+
+  const profileCount = await prisma.measurementProfile.count({ where: { customerId: customer.id } });
+  if (profileCount === 0) {
+    const profile = await prisma.measurementProfile.create({
+      data: {
+        customerId: customer.id,
+        label: 'Mesures Principales',
+        values: {
+          create: [
+            { key: 'TOUR_POITRINE', valueCm: 90 },
+            { key: 'TOUR_TAILLE', valueCm: 70 },
+            { key: 'TOUR_BASSIN', valueCm: 95 },
+            { key: 'LONGUEUR_BRAS', valueCm: 60 },
+            { key: 'CARRURE_DOS', valueCm: 38 },
+          ],
+        },
+      },
+    });
+
+    const patternProjectsData = [
+      {
+        projectRef: 'ANG-PAT-2026-00001',
+        garmentType: 'Robe de mariée',
+        occasion: 'Mariage',
+        style: 'Sirène',
+        status: 'VALIDATED' as any,
+        versions: [
+          {
+            versionNumber: 1,
+            parametersJson: { fit: 'tight', neckline: 'v-neck', sleeve: 'none' },
+            generatedByAI: true,
+            pieces: [
+              { name: 'Corsage Devant', dimensionsJson: { width: 45, length: 40 }, quantity: 1, fabricRecommendation: 'Satin Duchesse' },
+              { name: 'Corsage Dos', dimensionsJson: { width: 45, length: 40 }, quantity: 2, fabricRecommendation: 'Satin Duchesse' },
+              { name: 'Jupe Devant', dimensionsJson: { width: 70, length: 110 }, quantity: 1, fabricRecommendation: 'Tulle' },
+              { name: 'Jupe Dos avec traîne', dimensionsJson: { width: 90, length: 150 }, quantity: 2, fabricRecommendation: 'Tulle' },
+            ],
+          },
+        ],
+      },
+      {
+        projectRef: 'ANG-PAT-2026-00002',
+        garmentType: 'Costume 3 pièces',
+        occasion: 'Gala',
+        style: 'Slim fit',
+        status: 'GENERATED' as any,
+        versions: [
+          {
+            versionNumber: 1,
+            parametersJson: { fit: 'slim', lapel: 'peak', vents: 'double' },
+            generatedByAI: true,
+            pieces: [
+              { name: 'Veste Devant', dimensionsJson: { width: 35, length: 75 }, quantity: 2, fabricRecommendation: 'Laine Super 150s' },
+              { name: 'Veste Dos', dimensionsJson: { width: 40, length: 75 }, quantity: 1, fabricRecommendation: 'Laine Super 150s' },
+              { name: 'Manche', dimensionsJson: { width: 25, length: 65 }, quantity: 2, fabricRecommendation: 'Laine Super 150s' },
+              { name: 'Pantalon Devant', dimensionsJson: { width: 30, length: 105 }, quantity: 2, fabricRecommendation: 'Laine Super 150s' },
+              { name: 'Pantalon Dos', dimensionsJson: { width: 35, length: 105 }, quantity: 2, fabricRecommendation: 'Laine Super 150s' },
+            ],
+          },
+        ],
+      },
+      {
+        projectRef: 'ANG-PAT-2026-00003',
+        garmentType: 'Robe de cocktail',
+        occasion: 'Soirée',
+        style: 'Asymétrique',
+        status: 'DRAFT' as any,
+        versions: [
+          {
+            versionNumber: 1,
+            parametersJson: { fit: 'regular', length: 'midi' },
+            generatedByAI: true,
+            pieces: [
+              { name: 'Devant Asymétrique', dimensionsJson: { width: 50, length: 90 }, quantity: 1, fabricRecommendation: 'Soie' },
+              { name: 'Dos', dimensionsJson: { width: 45, length: 90 }, quantity: 2, fabricRecommendation: 'Soie' },
+            ],
+          },
+        ],
+      },
+      {
+        projectRef: 'ANG-PAT-2026-00004',
+        garmentType: 'Chemise Sur Mesure',
+        occasion: 'Business',
+        style: 'Classique',
+        status: 'REVIEW_REQUIRED' as any,
+        versions: [
+          {
+            versionNumber: 1,
+            parametersJson: { fit: 'regular', collar: 'cutaway', cuff: 'french' },
+            generatedByAI: true,
+            pieces: [
+              { name: 'Devant Gauche', dimensionsJson: { width: 30, length: 80 }, quantity: 1, fabricRecommendation: 'Popeline de coton' },
+              { name: 'Devant Droit', dimensionsJson: { width: 30, length: 80 }, quantity: 1, fabricRecommendation: 'Popeline de coton' },
+              { name: 'Dos', dimensionsJson: { width: 50, length: 82 }, quantity: 1, fabricRecommendation: 'Popeline de coton' },
+              { name: 'Col', dimensionsJson: { width: 45, length: 10 }, quantity: 2, fabricRecommendation: 'Popeline de coton' },
+              { name: 'Manche', dimensionsJson: { width: 25, length: 65 }, quantity: 2, fabricRecommendation: 'Popeline de coton' },
+            ],
+          },
+        ],
+      },
+    ];
+
+    for (const data of patternProjectsData) {
+      await prisma.patternProject.create({
+        data: {
+          projectRef: data.projectRef,
+          customerId: customer.id,
+          measurementProfileId: profile.id,
+          garmentType: data.garmentType,
+          occasion: data.occasion,
+          style: data.style,
+          status: data.status,
+          versions: {
+            create: data.versions.map((v) => ({
+              versionNumber: v.versionNumber,
+              parametersJson: v.parametersJson,
+              generatedByAI: v.generatedByAI,
+              pieces: {
+                create: v.pieces,
+              },
+            })),
+          },
+        },
+      });
+    }
+    console.log(`✅ ${patternProjectsData.length} projets Pattern Studio créés pour le client test`);
+  }
 
   // --- Media (real free stock photos uploaded to MinIO) ---------------------
   // See docs/pages/*.md "Points d'attention" for the "no real photography yet"

@@ -1,6 +1,6 @@
 # Feature — `pattern-engine`
 
-**Statut : ⬜ À faire.** Phase 4 — Premium (Angaly Pattern Studio).
+**Statut : ✅ Fait.** Phase 4 — Premium (Angaly Pattern Studio).
 
 ## Objet
 
@@ -97,7 +97,7 @@ exports NestJS (`PatternEngineModule`) et consommé en injection de dépendance 
 
 ## Vérification
 
-- [ ] `generate-pattern-pieces` testé avec une `IPatternRule` stub (succès, mesures manquantes, `GarmentType` sans règle enregistrée)
-- [ ] Au moins un test d'intégration avec une règle concrète une fois `pattern-engine-rule` utilisé pour en scaffolder une (cf. `docs/features/patterns.md`)
-- [ ] Aucun import de `@angaly/pattern-engine` détecté en dehors de `apps/api/src/pattern-engine/` (vérification statique/lint)
-- [ ] `docs/checklist-implementation.md` : `pattern-engine` passé à ✅
+- [x] `generate-pattern-pieces` testé avec une `IPatternRule` stub (succès, mesures manquantes, `GarmentType` sans règle enregistrée)
+- [x] Au moins un test d'intégration avec une règle concrète une fois `pattern-engine-rule` utilisé pour en scaffolder une (cf. `docs/features/patterns.md`)
+- [x] Aucun import de `@angaly/pattern-engine` détecté en dehors de `apps/api/src/pattern-engine/` (vérification statique/lint)
+- [x] `docs/checklist-implementation.md` : `pattern-engine` passé à ✅

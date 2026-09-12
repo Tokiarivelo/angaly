@@ -18,11 +18,20 @@ export const metadata: Metadata = {
   description: "L'élégance, créée pour vous. Maison de couture malgache — sur-mesure, prêt-à-porter et Angaly Pattern Studio.",
 };
 
-export default function RootLayout({ children }: { children: React.ReactNode }) {
+export default function RootLayout({
+  children,
+  modal,
+}: {
+  children: React.ReactNode;
+  modal: React.ReactNode;
+}) {
   return (
     <html lang="fr" suppressHydrationWarning>
       <body className={`${inter.variable} ${cormorantGaramond.variable} font-sans antialiased`}>
-        <Providers>{children}</Providers>
+        <Providers>
+          {children}
+          {modal}
+        </Providers>
       </body>
     </html>
   );

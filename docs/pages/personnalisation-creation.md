@@ -1,6 +1,6 @@
 # Page — `personnalisation-creation`
 
-**Statut : ⬜ À faire.** Phase 2 — Conversion.
+**Statut : ✅ Fait.** Phase 2 — Conversion.
 
 ## Objet
 
@@ -97,11 +97,11 @@ CREATION`), `Quote` (le dossier de conception alimente `Quote.description` et
 
 ## Checklist d'acceptation
 
-- [ ] Toutes les sections de `stitch-prompts/05-personnalisation-creation.md` sont présentes et fidèles à la palette ANGALY
-- [ ] Chaque groupe d'options (coupe → détails décoratifs) fonctionne en sélection simple ou multiple selon sa nature, état sélectionné visuellement distinct
-- [ ] Upload de photo(s) d'inspiration fonctionnel vers MinIO avec suppression possible avant envoi
-- [ ] "Enregistrer comme brouillon" persiste l'état sans validation complète
-- [ ] "Continuer vers la prise de rendez-vous" bloqué tant qu'au moins la coupe n'est pas choisie
-- [ ] Écran de confirmation reproduit fidèlement le récapitulatif (modèle, options en tags, photo, deux CTA)
-- [ ] Tests : `useCustomizationForm.test.ts`, `useSubmitDesignBrief.test.ts`, `PersonnalisationCreationPage.test.tsx`
-- [ ] `docs/checklist-implementation.md` et `docs/mockup-reference.md` mis à jour à ✅
+- [x] Toutes les sections de `stitch-prompts/05-personnalisation-creation.md` sont présentes et fidèles à la palette ANGALY
+- [x] Chaque groupe d'options (coupe → détails décoratifs) fonctionne en sélection simple ou multiple selon sa nature, état sélectionné visuellement distinct
+- [x] Upload de photo(s) d'inspiration fonctionnel vers MinIO avec suppression possible avant envoi
+- [x] "Enregistrer comme brouillon" persiste l'état sans validation complète
+- [x] "Continuer vers la prise de rendez-vous" bloqué tant qu'au moins la coupe n'est pas choisie
+- [x] Écran de confirmation reproduit fidèlement le récapitulatif (modèle, options en tags, photo, deux CTA)
+- [x] Tests : `useCustomizationForm.test.ts`, `useSubmitDesignBrief.test.ts`, `PersonnalisationCreationPage.test.tsx`
+- [x] `docs/checklist-implementation.md` et `docs/mockup-reference.md` mis à jour à ✅

@@ -77,4 +77,18 @@ export const apiClient = {
       ...(body !== undefined && { body: JSON.stringify(body) }),
     }),
   delete: <T>(path: string) => request<T>(path, { method: 'DELETE' }),
+  getBlob: async (path: string): Promise<Blob> => {
+    const session = await getSession();
+    const response = await fetch(`${API_BASE_URL}${path}`, {
+      method: 'GET',
+      credentials: 'include',
+      headers: {
+        ...(session?.accessToken && { Authorization: `Bearer ${session.accessToken}` }),
+      },
+    });
+    if (!response.ok) {
+      throw new Error(`Failed to fetch blob: ${response.statusText}`);
+    }
+    return response.blob();
+  }
 };

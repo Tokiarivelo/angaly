@@ -1,6 +1,6 @@
 # Page — `devis`
 
-**Statut : ⬜ À faire.** Phase 2 — Conversion.
+**Statut : ✅ Fait.** Phase 2 — Conversion.
 
 ## Objet
 
@@ -95,11 +95,11 @@ devis et les mutations d'action vivent dans `hooks/`.
 
 ## Checklist d'acceptation
 
-- [ ] Reproduit fidèlement `stitch-prompts/13-devis.md` (carte document, table de lignes, totaux, actions, frise de statut)
-- [ ] Badge de statut affiche le bon ton pour chacun des 6 statuts `QuoteStatus`
-- [ ] Table de lignes devient une liste empilée lisible sur mobile (label au-dessus de la valeur)
-- [ ] Actions Accepter/Refuser/Demander une modification appellent bien les mutations correspondantes et mettent à jour l'UI sans rechargement
-- [ ] Téléchargement PDF fonctionnel
-- [ ] Accès refusé pour un client qui n'est pas propriétaire du devis (403/redirection)
-- [ ] Tests : `useQuote.test.ts`, `useAcceptQuote.test.ts`, `DevisPage.test.tsx`
-- [ ] `docs/checklist-implementation.md` et `docs/mockup-reference.md` mis à jour à ✅
+- [x] Reproduit fidèlement `stitch-prompts/13-devis.md` (carte document, table de lignes, totaux, actions, frise de statut)
+- [x] Badge de statut affiche le bon ton pour chacun des 6 statuts `QuoteStatus`
+- [x] Table de lignes devient une liste empilée lisible sur mobile (label au-dessus de la valeur)
+- [x] Actions Accepter/Refuser/Demander une modification appellent bien les mutations correspondantes et mettent à jour l'UI sans rechargement
+- [x] Téléchargement PDF fonctionnel
+- [x] Accès refusé pour un client qui n'est pas propriétaire du devis (403/redirection)
+- [x] Tests : `useQuote.test.ts`, `useAcceptQuote.test.ts`, `DevisPage.test.tsx`
+- [x] `docs/checklist-implementation.md` et `docs/mockup-reference.md` mis à jour à ✅

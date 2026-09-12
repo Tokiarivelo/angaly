@@ -36,26 +36,26 @@
 
 | Page (slug)                | Fiche                                    | Prompt Stitch                                          | Écran Stitch (titre)                          | Section spéc | Statut |
 | ---------------------------- | ------------------------------------------ | --------------------------------------------------------- | ------------------------------------------------ | ------------- | ------ |
-| personnalisation-creation      | `docs/pages/personnalisation-creation.md`  | `stitch-prompts/05-personnalisation-creation.md`           | ANGALY — Personnaliser votre Robe Éternelle       | §9            | ⬜     |
+| personnalisation-creation      | `docs/pages/personnalisation-creation.md`  | `stitch-prompts/05-personnalisation-creation.md`           | ANGALY — Personnaliser votre Robe Éternelle       | §9            | ✅     |
 | sur-mesure-process               | `docs/pages/sur-mesure-process.md`         | `stitch-prompts/11-sur-mesure-process.md`                   | ANGALY — L'Art du Sur Mesure                       | §15           | ✅     |
-| demande-sur-mesure                | `docs/pages/demande-sur-mesure.md`         | `stitch-prompts/12-demande-sur-mesure-formulaire.md`        | ANGALY — Demande sur Mesure (Étape 1/2/3) + Demande Envoyée | §16 | ⬜     |
-| devis                               | `docs/pages/devis.md`                      | `stitch-prompts/13-devis.md`                                | ANGALY — Devis #ANG-DEV-2026-014                   | §17, §57      | ⬜     |
+| demande-sur-mesure                | `docs/pages/demande-sur-mesure.md`         | `stitch-prompts/12-demande-sur-mesure-formulaire.md`        | ANGALY — Demande sur Mesure (Étape 1/2/3) + Demande Envoyée | §16 | ✅     |
+| devis                               | `docs/pages/devis.md`                      | `stitch-prompts/13-devis.md`                                | ANGALY — Devis #ANG-DEV-2026-014                   | §17, §57      | ✅     |
 | prendre-rendez-vous                  | `docs/pages/prendre-rendez-vous.md`        | `stitch-prompts/14-prendre-rendez-vous.md`                  | ANGALY — Prendre rendez-vous (Booking)             | §33-34        | ✅     |
 | confirmation-rendez-vous               | `docs/pages/confirmation-rendez-vous.md`   | `stitch-prompts/15-confirmation-rendez-vous.md`             | ANGALY — Confirmation de rendez-vous               | §35-36        | ✅     |
 | pret-a-porter-catalogue                  | `docs/pages/pret-a-porter-catalogue.md`    | `stitch-prompts/08-pret-a-porter-catalogue.md`              | ANGALY — Prêt-à-porter Catalogue                    | §11           | ✅     |
 | fiche-produit                              | `docs/pages/fiche-produit.md`               | `stitch-prompts/09-fiche-produit.md`                         | ANGALY — Robe Solène (Product Page)                 | §12           | ✅     |
 | reservation-essayage                         | `docs/pages/reservation-essayage.md`        | `stitch-prompts/10-essayage-panier-checkout.md`              | ANGALY — Réserver un essayage                        | §13           | ✅     |
 | authentification                              | `docs/pages/authentification.md`            | `stitch-prompts/29-connexion-inscription.md`                  | ANGALY — Connexion / Inscription / Mot de passe oublié | §82         | ✅     |
-| mes-favoris                                    | `docs/pages/mes-favoris.md`                 | `stitch-prompts/28-espace-client-favoris-messages.md`         | ANGALY — Mes favoris                                   | §47           | ⬜     |
+| mes-favoris                                    | `docs/pages/mes-favoris.md`                 | `stitch-prompts/28-espace-client-favoris-messages.md`         | ANGALY — Mes favoris                                   | §47           | ✅     |
 
 ## PHASE 3 — Production
 
 | Page (slug)                     | Fiche                                       | Prompt Stitch                                             | Écran Stitch (titre)                              | Section spéc | Statut |
 | ---------------------------------- | --------------------------------------------- | -------------------------------------------------------------- | ---------------------------------------------------- | ------------- | ------ |
-| panier                                | `docs/pages/panier.md`                        | `stitch-prompts/10-essayage-panier-checkout.md`                 | ANGALY — Votre Panier                                 | §14           | ⬜     |
-| checkout                                | `docs/pages/checkout.md`                      | `stitch-prompts/10-essayage-panier-checkout.md`                 | ANGALY — Expédition (Checkout) / Paiement (Checkout) / Confirmation de commande | §14 | ⬜ |
-| espace-client-dashboard                   | `docs/pages/espace-client-dashboard.md`       | `stitch-prompts/25-espace-client-dashboard.md`                   | ANGALY — Espace Client (Tableau de bord)               | §51-52        | ⬜     |
-| mes-rendez-vous                             | `docs/pages/mes-rendez-vous.md`               | `stitch-prompts/26-espace-client-rendezvous-suivi.md`             | ANGALY — Mes rendez-vous                                | §51           | ⬜     |
+| panier                                | `docs/pages/panier.md`                        | `stitch-prompts/10-essayage-panier-checkout.md`                 | ANGALY — Votre Panier                                 | §14           | 🟡     |
+| checkout                                | `docs/pages/checkout.md`                      | `stitch-prompts/10-essayage-panier-checkout.md`                 | ANGALY — Expédition (Checkout) / Paiement (Checkout) / Confirmation de commande | §14 | 🟡 |
+| espace-client-dashboard                   | `docs/pages/espace-client-dashboard.md`       | `stitch-prompts/25-espace-client-dashboard.md`                   | ANGALY — Espace Client (Tableau de bord)               | §51-52        | 🟡     |
+| mes-rendez-vous                             | `docs/pages/mes-rendez-vous.md`               | `stitch-prompts/26-espace-client-rendezvous-suivi.md`             | ANGALY — Mes rendez-vous                                | §51           | 🟡     |
 | suivi-commande                               | `docs/pages/suivi-commande.md`                | `stitch-prompts/26-espace-client-rendezvous-suivi.md`             | ANGALY — Suivi de commande                              | §54-55        | ⬜     |
 | messages-factures-notifications                | `docs/pages/messages-factures-notifications.md` | `stitch-prompts/28-espace-client-favoris-messages.md`            | ANGALY — Messages, Factures & Notifications             | §51           | ⬜     |
 
@@ -67,7 +67,7 @@
 | pattern-studio-wizard                          | `docs/pages/pattern-studio-wizard.md`               | `stitch-prompts/17-pattern-studio-wizard-creation.md`                          | ANGALY Pattern Studio — Étape 1 / Étape 7 / Génération en cours | §19-24 | ⬜ |
 | pattern-studio-preview-validation-export        | `docs/pages/pattern-studio-preview-validation-export.md` | `stitch-prompts/18-pattern-studio-preview-validation-export.md`              | ANGALY — Validation de Patron (Studio)                 | §26-29        | ⬜     |
 | mes-projets-patron                               | `docs/pages/mes-projets-patron.md`                  | `stitch-prompts/27-espace-client-patron-mesures.md`                            | ANGALY — Mes projets de patron                          | §53, §66      | ⬜     |
-| mes-mesures                                        | `docs/pages/mes-mesures.md`                         | `stitch-prompts/27-espace-client-patron-mesures.md`                            | ANGALY — Mes mesures                                     | §22-23, §56   | ⬜     |
+| mes-mesures                                        | `docs/pages/mes-mesures.md`                         | `stitch-prompts/27-espace-client-patron-mesures.md`                            | ANGALY — Mes mesures                                     | §22-23, §56   | ✅     |
 
 ## PHASE 5 — IA avancée
 

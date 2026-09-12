@@ -3,6 +3,7 @@
 import * as Dialog from '@radix-ui/react-dialog';
 import { Facebook, Heart, Instagram, Search, User, X } from 'lucide-react';
 import Link from 'next/link';
+import { useSession } from 'next-auth/react';
 import { usePathname } from 'next/navigation';
 
 import { useMobileDrawer } from '@/features/navigation/hooks/useMobileDrawer';
@@ -19,6 +20,7 @@ export function MobileDrawer() {
   const { isOpen, close } = useMobileDrawer();
   const { open: openSearch } = useMobileSearchOverlay();
   const pathname = usePathname();
+  const { status } = useSession();
 
   return (
     <Dialog.Root open={isOpen} onOpenChange={(open) => !open && close()}>
@@ -41,10 +43,14 @@ export function MobileDrawer() {
           <nav aria-label="Navigation principale" className="flex flex-1 flex-col space-y-6 overflow-y-auto">
             {DRAWER_NAV_LINKS.map((link) => {
               const isActive = pathname === link.href;
+              let href: string = link.href;
+              if (link.label === 'Patron Premium' && status === 'unauthenticated') {
+                href = `${ROUTES.connexion}?redirectTo=${encodeURIComponent(link.href)}`;
+              }
               return (
                 <Link
                   key={link.href}
-                  href={link.href}
+                  href={href}
                   onClick={close}
                   aria-current={isActive ? 'page' : undefined}
                   className={`font-heading flex items-center gap-3 pl-4 text-3xl tracking-tight italic transition-all duration-300 ${

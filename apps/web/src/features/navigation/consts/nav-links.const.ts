@@ -1,5 +1,16 @@
 import { ROUTES } from '@/lib/routes';
 
+/** Desktop header primary navigation links. */
+export const HEADER_NAV_LINKS = [
+  { label: 'Accueil', href: ROUTES.home },
+  { label: 'La Une', href: ROUTES.laUne },
+  { label: 'Nos Créations', href: ROUTES.creations },
+  { label: 'Atelier', href: ROUTES.ateliers },
+  { label: 'Héritage', href: ROUTES.aPropos },
+  { label: 'Journal', href: ROUTES.journal },
+  { label: 'Pattern Studio', href: ROUTES.patternStudio },
+] as const;
+
 /** Real Stitch "Menu Mobile" screen's drawer links, in order. */
 export const DRAWER_NAV_LINKS = [
   { label: 'Accueil', href: ROUTES.home },

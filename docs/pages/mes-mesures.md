@@ -88,9 +88,9 @@ profil), `Customer`.
 
 ## Checklist d'acceptation
 
-- [ ] Reproduit `stitch-prompts/27-*.md` (SCREEN B) : liste de profils, vue détail/édition avec toggle cm/inch, note de confidentialité
-- [ ] Création, édition, duplication, suppression (avec confirmation) fonctionnelles et scoping par client vérifié côté backend
-- [ ] Chaque champ de mesure affiche définition + illustration au clic sur l'icône "?"
-- [ ] "Utiliser pour un nouveau projet" enchaîne correctement vers le Pattern Studio
-- [ ] Tests : `useMeasurementProfiles.test.ts`, `useMeasurementProfileForm.test.ts`, `useDeleteMeasurementProfile.test.ts`
-- [ ] `docs/checklist-implementation.md` et `docs/mockup-reference.md` mis à jour à ✅
+- [x] Reproduit `stitch-prompts/27-*.md` (SCREEN B) : liste de profils, vue détail/édition avec toggle cm/inch, note de confidentialité
+- [x] Création, édition, duplication, suppression (avec confirmation) fonctionnelles et scoping par client vérifié côté backend
+- [x] Chaque champ de mesure affiche définition + illustration au clic sur l'icône "?"
+- [x] "Utiliser pour un nouveau projet" enchaîne correctement vers le Pattern Studio
+- [x] Tests : `useMeasurementProfiles.test.ts`, `useMeasurementProfileForm.test.ts`, `useDeleteMeasurementProfile.test.ts`
+- [x] `docs/checklist-implementation.md` et `docs/mockup-reference.md` mis à jour à ✅

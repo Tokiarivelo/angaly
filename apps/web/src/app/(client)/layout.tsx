@@ -10,6 +10,10 @@ export default async function ClientLayout({ children }: { children: ReactNode }
 
   if (!session?.user) {
     const currentPath = (await headers()).get('x-pathname') ?? '/';
+    const pathname = currentPath.split('?')[0];
+    if (pathname === '/pattern-studio') {
+      return <>{children}</>;
+    }
     redirect(`/connexion?${REDIRECT_TO_PARAM}=${encodeURIComponent(currentPath)}`);
   }
 

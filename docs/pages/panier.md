@@ -62,42 +62,21 @@ Toute logique (état du panier, fusion à la connexion, quantités, code promo) 
 
 ## Endpoints API consommés
 
-| Endpoint | Module | Usage |
-| --- | --- | --- |
-| `GET /api/orders/pending` | `orders` | Panier serveur (`Order` statut `PENDING`) d'un client connecté, avec ses `OrderItem` |
-| `POST /api/orders/pending/items` / `PATCH .../items/:id` / `DELETE .../items/:id` | `orders` | Ajout/mise à jour de quantité/retrait — client connecté uniquement |
-| `POST /api/orders/pending/promo-code` | `orders` | Application d'un code promo |
-
-> Pour un visiteur non connecté, aucun de ces endpoints n'est appelé tant que le checkout n'a
-> pas démarré — voir le point d'attention ci-dessous sur la contrainte de schéma.
+Le panier (ajout/retrait d'articles avant commande) reste un état frontend volatile (Zustand), comme spécifié dans `docs/features/orders.md`. 
+Aucun endpoint n'est consommé directement sur cette page avant le checkout.
 
 ## Modèles Prisma touchés
 
-`Order` (statut `PENDING`, `subtotal`, `shippingCost`, `total`, `currency`, `customerId` — voir
-point d'attention), `OrderItem` (`productVariantId`, `quantity`, `unitPrice`),
-`ProductVariant` + `Inventory` (résolution du statut/stock pour l'avertissement "Dernière
-pièce"), `Customer`.
+Aucun côté serveur pour cette page (le panier n'est pas persisté en base). La page interagit avec le store Zustand `useCartStore`.
 
 ## Points d'attention
 
-- **Hypothèse explicite (le spec §14 ne tranche pas ce point, "Prévoir éventuellement")** :
-  `Order.customerId` est **non-nullable** dans `packages/database/prisma/schema.prisma` — un
-  panier de visiteur non connecté ne peut donc **pas** être persisté comme un `Order` réel.
-  Décision retenue ici : le panier vit entièrement côté client (store Zustand + `localStorage`,
-  clé dédiée) pour un visiteur non connecté, et n'est matérialisé en `Order` (`PENDING`) qu'au
-  moment où l'étape "Expédition" de `checkout` crée ou rattache un `Customer` (compte existant,
-  connexion, ou création d'un compte minimal — voir `docs/pages/checkout.md`). Pour un client
-  déjà connecté, le panier peut être une véritable `Order PENDING` mise à jour en direct à
-  chaque changement. Cette hypothèse est à valider avec le module `orders` avant
-  l'implémentation.
+- **Hypothèse clarifiée** : Conformément à `docs/features/orders.md`, le panier vit entièrement côté client (store Zustand + `localStorage`, clé dédiée) pour tous les utilisateurs (connectés ou non). Il n'est matérialisé en `Order` (`PENDING`) qu'au moment du checkout (via un POST `/api/orders`). Il n'y a donc pas de "fusion" serveur à faire.
 - Le badge "Dernière pièce — stock limité" réutilise la logique de disponibilité de
   `pret-a-porter-catalogue`/`fiche-produit` (`ProductStatusBadge`) — ne pas dupliquer les règles
   de couleur.
 - Le total affiché sur cette page reste **indicatif** : le total définitif (avec frais de
   livraison réels) n'est calculé qu'à l'étape Livraison du `checkout`.
-- Fusion à la connexion : si un visiteur avec un panier local se connecte pendant sa session,
-  fusionner les lignes locales avec l'`Order PENDING` existant côté serveur (ou en créer un)
-  sans perte d'article, avec une résolution de conflit simple (addition des quantités).
 - Mobile : icône panier flottante sticky (déjà prévue sur `pret-a-porter-catalogue`), résumé de
   commande transformé en barre sticky basse avec total et CTA "Passer la commande" toujours
   visibles.
@@ -105,10 +84,9 @@ pièce"), `Customer`.
 ## Checklist d'acceptation
 
 - [ ] Reproduit fidèlement `stitch-prompts/10-*.md` Écran C (liste, résumé sticky, warning stock, code promo)
-- [ ] Ajout/retrait/mise à jour de quantité fonctionnel pour visiteur connecté et non connecté (persistance `localStorage` pour ce dernier)
-- [ ] Fusion du panier local avec l'`Order` serveur à la connexion sans perte d'article
+- [ ] Ajout/retrait/mise à jour de quantité fonctionnel pour tous via le store Zustand
 - [ ] Code promo appliqué, résumé recalculé
 - [ ] "Passer la commande" renvoie vers `checkout` (étape Expédition)
 - [ ] État vide ("Continuer mes achats") conforme
-- [ ] Tests : `useCart.test.ts`, `useCartSync.test.ts`, `PanierPage.test.tsx`
+- [ ] Tests : `PanierPage.test.tsx`
 - [ ] `docs/checklist-implementation.md` et `docs/mockup-reference.md` mis à jour à ✅

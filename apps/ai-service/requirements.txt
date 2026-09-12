@@ -2,6 +2,7 @@ fastapi==0.115.6
 uvicorn[standard]==0.34.0
 pydantic==2.10.4
 httpx==0.28.1
+google-genai==0.3.0
 
 # Dev/test only — split into requirements-dev.txt if the list grows
 pytest==8.3.4

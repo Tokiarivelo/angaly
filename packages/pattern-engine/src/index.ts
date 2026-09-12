@@ -11,3 +11,4 @@ export type {
   PatternPieceGeometry,
 } from './types';
 export { PatternEngineValidationError } from './types';
+export { JupeRule } from './rules/jupe.rule';

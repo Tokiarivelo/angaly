@@ -1,6 +1,6 @@
 # Feature — `measurements`
 
-**Statut : ⬜ À faire.** Phase 4 — Premium (Angaly Pattern Studio).
+**Statut : ✅ Fait.** Phase 4 — Premium (Angaly Pattern Studio).
 
 ## Objet
 
@@ -93,7 +93,7 @@ __tests__/
 
 ## Vérification
 
-- [ ] `create-measurement-profile`/`update-measurement-profile` testés (validation des clés/valeurs)
-- [ ] `duplicate-measurement-profile` testé (copie fidèle, nouveau `id`)
-- [ ] Guard "propriétaire du profil" testé (un client ne peut pas accéder au profil d'un autre)
-- [ ] `docs/checklist-implementation.md` : `measurements` passé à ✅
+- [x] `create-measurement-profile`/`update-measurement-profile` testés (validation des clés/valeurs)
+- [x] `duplicate-measurement-profile` testé (copie fidèle, nouveau `id`)
+- [x] Guard "propriétaire du profil" testé (un client ne peut pas accéder au profil d'un autre)
+- [x] `docs/checklist-implementation.md` : `measurements` passé à ✅

@@ -591,3 +591,141 @@ export interface PatternAiSuggestionResponse {
   confidence: number; // 0..1 — surfaced to the couturière during REVIEW_REQUIRED
   modelVersion: string;
 }
+
+export interface PatternPieceDto {
+  id: string;
+  versionId: string;
+  name: string;
+  dimensionsJson: {
+    widthMm?: number;
+    heightMm?: number;
+    outlineMm?: Array<{ x: number; y: number }>;
+  } | Record<string, unknown>;
+  fabricRecommendation: string | null;
+  quantity: number;
+  grainlineJson: {
+    angleDegrees: number;
+    originX: number;
+    originY: number;
+  } | null;
+  seamAllowanceCm: number | null;
+  notchesJson: Array<{
+    positionAlongEdge: number;
+    edgeIndex: number;
+  }> | null;
+}
+
+export interface PatternExportDto {
+  id: string;
+  versionId: string;
+  format: PatternExportFormat;
+  mediaId: string;
+  mediaUrl?: string | null;
+  createdAt: string;
+}
+
+export interface PatternVersionDto {
+  id: string;
+  projectId: string;
+  versionNumber: number;
+  changeLabel: string | null;
+  parametersJson: Record<string, unknown>;
+  generatedByAI: boolean;
+  reviewedById: string | null;
+  reviewNote: string | null;
+  createdAt: string;
+  pieces: PatternPieceDto[];
+  exports?: PatternExportDto[];
+}
+
+export interface PatternProjectDto extends Timestamps {
+  id: string;
+  projectRef: string;
+  customerId: string;
+  measurementProfileId: string | null;
+  garmentType: string;
+  occasion: string | null;
+  style: string | null;
+  cutType: string | null;
+  detailsJson: Record<string, string> | null;
+  inspirationMediaId: string | null;
+  inspirationMediaUrl?: string | null;
+  status: PatternStatus;
+  versions?: PatternVersionDto[];
+  currentVersion?: PatternVersionDto | null;
+  versionsCount?: number;
+}
+
+// ============================================================
+// Reviews & Testimonials
+// ============================================================
+
+export interface ReviewDto extends Timestamps {
+  id: string;
+  customerId: string;
+  productId: string | null;
+  rating: number;
+  comment: string | null;
+  isVerified: boolean;
+}
+
+export interface TestimonialDto extends Timestamps {
+  id: string;
+  customerName: string;
+  creationLabel: string | null;
+  quote: string;
+  isVerified: boolean;
+  mediaUrl: string | null;
+}
+
+// ============================================================
+// Orders — POST /api/orders, GET /api/orders
+// ============================================================
+
+export interface OrderItemDto {
+  id: string;
+  orderId: string;
+  productVariantId: string;
+  quantity: number;
+  unitPrice: string; // Decimal as string
+}
+
+export interface OrderDto extends Timestamps {
+  id: string;
+  orderNumber: string;
+  customerId: string;
+  status: OrderStatus;
+  subtotal: string; // Decimal as string
+  shippingCost: string; // Decimal as string
+  total: string; // Decimal as string
+  currency: string;
+  shippingAddressJson: unknown | null;
+  items: OrderItemDto[];
+}
+
+export interface CreateOrderPayload {
+  items: {
+    productVariantId: string;
+    quantity: number;
+  }[];
+  shippingAddressJson?: unknown;
+}
+
+// ============================================================
+// Payments — POST /api/payments, GET /api/payments
+// ============================================================
+
+export interface PaymentDto extends Timestamps {
+  id: string;
+  orderId: string;
+  method: PaymentMethod;
+  status: PaymentStatus;
+  amount: string;
+  transactionRef: string | null;
+  paidAt: string | null;
+}
+
+export interface InitiatePaymentPayload {
+  orderId: string;
+  method: PaymentMethod;
+}

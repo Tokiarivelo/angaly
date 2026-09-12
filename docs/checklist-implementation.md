@@ -86,14 +86,14 @@ phase n'a pas été traitée en session dédiée (voir `.cursor/rules/006-phase-
 ## 💳 PHASE 2 — Conversion (11 pages, 6 modules)
 
 ### Pages
-- [ ] ⬜ **personnalisation-creation** — Configurateur de personnalisation
+- [x] ✅ **personnalisation-creation** — Configurateur de personnalisation
 - [x] ✅ **sur-mesure-process** — Page process Sur Mesure (7 sections), vérifiée contre
       l'écran Stitch réel via `agy` — plusieurs écarts avec `stitch-prompts/
       11-sur-mesure-process.md` corrigés (timeline sans description, grille mobile 2×4,
       galerie à 4 pièces exactes, pas de bandeau CTA sticky mobile) — voir
       `docs/pages/sur-mesure-process.md` "Points d'attention"
-- [ ] ⬜ **demande-sur-mesure** — Formulaire de demande (3 étapes)
-- [ ] ⬜ **devis** — Consultation d'un devis
+- [x] ✅ **demande-sur-mesure** — Formulaire de demande (3 étapes)
+- [x] ✅ **devis** — Consultation d'un devis
 - [x] ✅ **prendre-rendez-vous** — Prise de rendez-vous + calendrier (routée `(public)`,
       pas `(client)` — voir `docs/pages/prendre-rendez-vous.md`)
 - [x] ✅ **confirmation-rendez-vous** — Confirmation (routée `(auth)` — voir
@@ -107,7 +107,7 @@ phase n'a pas été traitée en session dédiée (voir `.cursor/rules/006-phase-
       `docs/pages/reservation-essayage.md`)
 - [x] ✅ **authentification** — Connexion / Inscription / Mot de passe oublié (NextAuth v5 beta
       + middleware/layouts (client)/(admin) — voir `docs/pages/authentification.md`)
-- [ ] ⬜ **mes-favoris** — Favoris client
+- [x] ✅ **mes-favoris** — Favoris client
 
 ### Modules backend
 - [x] ✅ **auth** — register/login/refresh (rotation)/logout/forgot-password/reset-password,
@@ -126,24 +126,22 @@ phase n'a pas été traitée en session dédiée (voir `.cursor/rules/006-phase-
 - [x] ✅ **quotes** — devis (demande sur-mesure + dossier de conception), cycle de vie
       complet DRAFT→SENT→VIEWED→ACCEPTED/REJECTED/EXPIRED, export PDF via `media`
       (nouveau `MediaEntityType.QUOTE_DOCUMENT`/bucket `quotes`) — `docs/features/quotes.md`
-      — pages consommatrices (`demande-sur-mesure`, `personnalisation-creation`, `devis`,
-      `sur-mesure-process`) restent ⬜
-- [ ] ⬜ **reviews**
+- [x] ✅ **reviews**
 
 ---
 
 ## 📦 PHASE 3 — Production (6 pages, 3 modules)
 
 ### Pages
-- [ ] ⬜ **panier** — Panier d'achat
-- [ ] ⬜ **checkout** — Adresse / Livraison / Paiement / Confirmation
-- [ ] ⬜ **espace-client-dashboard** — Tableau de bord client
-- [ ] ⬜ **mes-rendez-vous** — Liste des rendez-vous client
+- [ ] 🟡 **panier** — Panier d'achat (UI + local store créés)
+- [ ] 🟡 **checkout** — Adresse / Livraison / Paiement / Confirmation (Interface UI créée)
+- [ ] 🟡 **espace-client-dashboard** — Tableau de bord client (Frontend UI créé)
+- [ ] 🟡 **mes-rendez-vous** — Liste des rendez-vous client (Frontend UI créé)
 - [ ] ⬜ **suivi-commande** — Timeline de suivi commande/création
 - [ ] ⬜ **messages-factures-notifications** — Messagerie, factures, notifications
 
 ### Modules backend
-- [ ] ⬜ **orders** · **payments** · **notifications**
+- [ ] 🟡 **orders** · ✅ **payments** · ⬜ **notifications**
 
 ---
 
@@ -154,10 +152,11 @@ phase n'a pas été traitée en session dédiée (voir `.cursor/rules/006-phase-
 - [ ] ⬜ **pattern-studio-wizard** — Assistant de création (7 étapes)
 - [ ] ⬜ **pattern-studio-preview-validation-export** — Prévisualisation, validation, export
 - [ ] ⬜ **mes-projets-patron** — Liste des projets de patron
-- [ ] ⬜ **mes-mesures** — Profils de mesures
+- [x] ✅ **mes-mesures** — Profils de mesures
 
 ### Modules backend
-- [ ] ⬜ **measurements** · **patterns** · **pattern-engine** (le moteur géométrique
+- [x] ✅ **measurements**
+- [x] ✅ **patterns** · **pattern-engine** (le moteur géométrique
       lui-même a déjà une orchestration testée en Phase 0 — reste à écrire les règles par
       type de vêtement, voir le skill `pattern-engine-rule`)
 
@@ -165,7 +164,7 @@ phase n'a pas été traitée en session dédiée (voir `.cursor/rules/006-phase-
 
 ## 🤖 PHASE 5 — IA avancée (0 nouvelle page, 1 module)
 
-- [ ] ⬜ **ai-inference** — Vrai modèle de suggestion (remplace le placeholder), analyse
+- [x] ✅ **ai-inference** — Vrai modèle de suggestion (remplace le placeholder), analyse
       réelle de photo d'inspiration, widget assistant IA global (spec §31-32)
 
 `apps/ai-service` reste en mode placeholder (`modelVersion: "placeholder-0.0.0"`) tant que

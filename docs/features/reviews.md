@@ -1,6 +1,6 @@
 # Feature — `reviews`
 
-**Statut : ⬜ À faire.** Phase 2 — Conversion.
+**Statut : ✅ Terminé.** Phase 2 — Conversion.
 
 ## Objet
 
@@ -103,9 +103,9 @@ __tests__/
 
 ## Vérification
 
-- [ ] `create-review` testé (rating hors bornes rejeté, `isVerified` toujours `false` à la
+- [x] `create-review` testé (rating hors bornes rejeté, `isVerified` toujours `false` à la
       création)
-- [ ] `list-featured-testimonials` testé (exclusion des témoignages non publiés, tri, limite)
-- [ ] `reviews.controller.spec.ts`/`testimonials.controller.spec.ts` couvrent les codes
+- [x] `list-featured-testimonials` testé (exclusion des témoignages non publiés, tri, limite)
+- [x] `reviews.controller.spec.ts`/`testimonials.controller.spec.ts` couvrent les codes
       200/201/400/403
-- [ ] `docs/checklist-implementation.md` : `reviews` passé à ✅
+- [x] `docs/checklist-implementation.md` : `reviews` passé à ✅

@@ -1,6 +1,6 @@
 # Page — `mes-favoris`
 
-**Statut : ⬜ À faire.** Phase 2 — Conversion.
+**Statut : ✅ Fait.** Phase 2 — Conversion.
 
 ## Objet
 
@@ -87,11 +87,11 @@ composants `ui/` restent purement présentationnels.
 
 ## Checklist d'acceptation
 
-- [ ] Reproduit fidèlement `stitch-prompts/28-*.md` Écran A (filtre, grille, cœur de retrait, CTA, état vide)
-- [ ] Filtres Toutes/Créations/Produits/Collections fonctionnels et synchronisés à l'URL
-- [ ] Retrait d'un favori fonctionnel avec mise à jour optimiste
-- [ ] "Préparer un rendez-vous avec mes favoris" renvoie vers `prendre-rendez-vous` avec le contexte pré-rempli
-- [ ] État vide conforme (icône, message, CTA "Découvrir nos créations")
-- [ ] Résolution correcte des favoris de type `COLLECTION` malgré l'absence de relation Prisma directe
-- [ ] Tests : `useFavorites.test.ts`, `useToggleFavorite.test.ts`, `MesFavorisPage.test.tsx`
-- [ ] `docs/checklist-implementation.md` et `docs/mockup-reference.md` mis à jour à ✅
+- [x] Reproduit fidèlement `stitch-prompts/28-*.md` Écran A (filtre, grille, cœur de retrait, CTA, état vide)
+- [x] Filtres Toutes/Créations/Produits/Collections fonctionnels et synchronisés à l'URL
+- [x] Retrait d'un favori fonctionnel avec mise à jour optimiste
+- [x] "Préparer un rendez-vous avec mes favoris" renvoie vers `prendre-rendez-vous` avec le contexte pré-rempli
+- [x] État vide conforme (icône, message, CTA "Découvrir nos créations")
+- [x] Résolution correcte des favoris de type `COLLECTION` malgré l'absence de relation Prisma directe
+- [x] Tests : `useFavorites.test.ts`, `useToggleFavorite.test.ts`, `MesFavorisPage.test.tsx`
+- [x] `docs/checklist-implementation.md` et `docs/mockup-reference.md` mis à jour à ✅

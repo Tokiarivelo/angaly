@@ -4,46 +4,39 @@ import { Menu, Search, ShoppingBag, User } from 'lucide-react';
 import Link from 'next/link';
 import { usePathname } from 'next/navigation';
 
+import { HEADER_NAV_LINKS } from '@/features/navigation/consts/nav-links.const';
+import { useSession } from 'next-auth/react';
 import { useMobileDrawer } from '@/features/navigation/hooks/useMobileDrawer';
 import { useMobileSearchOverlay } from '@/features/navigation/hooks/useMobileSearchOverlay';
 import { ROUTES } from '@/lib/routes';
-
-/**
- * Matches the real Stitch "Homepage" screen (`f4fa1f6a3d0241cd9d1c5e003cbc1c38`) at `lg:`
- * and above: 5 links, centered logo, bag + account icons only. Below `lg:`, the same
- * `<header>` renders the real "Navigation Mobile & FAB" screen's top bar instead (menu
- * button → drawer, centered logo, search button → overlay) — the "degrades to a minimal
- * bar in the meantime" placeholder this header used to have, now wired to
- * `docs/pages/navigation-mobile.md`'s real components rather than a hidden nav row.
- */
-const NAV_LINKS = [
-  { label: 'Accueil', href: ROUTES.home },
-  { label: 'La Une', href: ROUTES.laUne },
-  { label: 'Nos Créations', href: ROUTES.creations },
-  { label: 'Atelier', href: ROUTES.ateliers },
-  { label: 'Héritage', href: ROUTES.aPropos },
-];
 
 export function Header() {
   const pathname = usePathname();
   const { open: openDrawer } = useMobileDrawer();
   const { open: openSearch } = useMobileSearchOverlay();
+  const { status } = useSession();
 
   return (
     <header className="sticky top-0 z-50 bg-angaly-navy text-white">
       <div className="mx-auto grid h-16 max-w-7xl grid-cols-[1fr_auto_1fr] items-center gap-6 px-6">
         <div className="flex items-center">
-          <nav aria-label="Navigation principale" className="hidden items-center gap-5 lg:flex">
-            {NAV_LINKS.map((link) => (
-              <Link
-                key={link.href}
-                href={link.href}
-                aria-current={pathname === link.href ? 'page' : undefined}
-                className="border-b border-transparent pb-1 text-xs tracking-widest text-angaly-ivory/80 uppercase transition-all hover:text-angaly-champagne hover:opacity-100 aria-[current=page]:border-angaly-champagne aria-[current=page]:text-angaly-champagne aria-[current=page]:opacity-100"
-              >
-                {link.label}
-              </Link>
-            ))}
+          <nav aria-label="Navigation principale" className="hidden items-center gap-3.5 xl:gap-5 lg:flex">
+            {HEADER_NAV_LINKS.map((link) => {
+              let href: string = link.href;
+              if (link.label === 'Pattern Studio' && status === 'unauthenticated') {
+                href = `${ROUTES.connexion}?redirectTo=${encodeURIComponent(link.href)}`;
+              }
+              return (
+                <Link
+                  key={link.href}
+                  href={href}
+                  aria-current={pathname === link.href ? 'page' : undefined}
+                  className="border-b border-transparent pb-1 text-xs tracking-widest text-angaly-ivory/80 uppercase whitespace-nowrap transition-all hover:text-angaly-champagne hover:opacity-100 aria-[current=page]:border-angaly-champagne aria-[current=page]:text-angaly-champagne aria-[current=page]:opacity-100"
+                >
+                  {link.label}
+                </Link>
+              );
+            })}
           </nav>
           <button
             type="button"
@@ -67,13 +60,13 @@ export function Header() {
           >
             <ShoppingBag className="h-5 w-5" aria-hidden="true" />
           </button>
-          <button
-            type="button"
+          <Link
+            href={ROUTES.compte}
             aria-label="Mon compte"
             className="hidden text-angaly-ivory transition-colors hover:text-angaly-champagne lg:block"
           >
             <User className="h-5 w-5" aria-hidden="true" />
-          </button>
+          </Link>
           <button
             type="button"
             aria-label="Rechercher"

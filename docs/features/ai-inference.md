@@ -1,6 +1,6 @@
 # Feature — `ai-inference`
 
-**Statut : ⬜ À faire.** Phase 5 — IA avancée.
+**Statut : ✅ Fait.** Phase 5 — IA avancée.
 
 ## Objet
 

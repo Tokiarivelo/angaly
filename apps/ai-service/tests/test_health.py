@@ -11,4 +11,4 @@ def test_health_returns_ok_and_model_loaded_flag() -> None:
     assert response.status_code == 200
     body = response.json()
     assert body["status"] == "ok"
-    assert body["modelLoaded"] is False
+    assert body["modelLoaded"] is True

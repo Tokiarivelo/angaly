@@ -15,6 +15,11 @@ import { PrismaModule } from './prisma/prisma.module';
 import { ProductsModule } from './products/products.module';
 import { QuotesModule } from './quotes/quotes.module';
 import { SearchModule } from './search/search.module';
+import { MeasurementsModule } from './measurements/measurements.module';
+import { AiInferenceModule } from './ai-inference/ai-inference.module';
+import { ReviewsModule } from './reviews/reviews.module';
+import { OrdersModule } from './orders/orders.module';
+import { PaymentsModule } from './payments/payments.module';
 import { HealthController } from './shared/health/health.controller';
 
 // Remaining domain modules (users, orders, payments, measurements,
@@ -49,6 +54,11 @@ import { HealthController } from './shared/health/health.controller';
     BlogModule,
     SearchModule,
     QuotesModule,
+    MeasurementsModule,
+    AiInferenceModule,
+    ReviewsModule,
+    OrdersModule,
+    PaymentsModule,
   ],
   controllers: [HealthController],
 })
