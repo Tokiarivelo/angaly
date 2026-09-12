@@ -23,7 +23,15 @@ export class PatternEngine implements IPatternEngine {
   }
 
   generate(parameters: PatternParameters, measurements: MeasurementSet): PatternGenerationResult {
-    const rule = this.rulesByGarmentType.get(parameters.garmentType);
+    let rule = this.rulesByGarmentType.get(parameters.garmentType);
+    if (!rule || !rule.appliesTo(parameters)) {
+      for (const candidate of this.rulesByGarmentType.values()) {
+        if (candidate.appliesTo(parameters)) {
+          rule = candidate;
+          break;
+        }
+      }
+    }
     if (!rule || !rule.appliesTo(parameters)) {
       throw new PatternEngineValidationError(
         `No pattern rule registered for garment type "${parameters.garmentType}"`,

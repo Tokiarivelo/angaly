@@ -101,4 +101,45 @@ describe('GeneratePatternVersionUseCase', () => {
       'Vous n’avez pas accès',
     );
   });
+
+  it('normalizes PANTALON garment type and passes it to pattern engine', async () => {
+    const pantalonProject = PatternProjectEntity.create({
+      id: 'proj-pantalon',
+      projectRef: 'ANG-PAT-2026-00002',
+      customerId: 'cust-1',
+      measurementProfileId: null,
+      garmentType: 'PANTALON',
+      occasion: 'Bureau',
+      style: 'Cigarette',
+      cutType: 'SLIM',
+      detailsJson: null,
+      inspirationMediaId: null,
+      status: 'DRAFT',
+      createdAt: new Date(),
+      updatedAt: new Date(),
+    });
+
+    mockProjectRepo.findById.mockResolvedValueOnce(pantalonProject);
+    mockProjectRepo.update.mockResolvedValueOnce(pantalonProject);
+
+    await useCase.execute('proj-pantalon', 'cust-1');
+
+    expect(mockGeneratePiecesUseCase.execute).toHaveBeenCalledWith(
+      expect.objectContaining({ garmentType: 'PANTALON', cutType: 'SLIM' }),
+      expect.any(Object),
+    );
+  });
+
+  it('translates PatternEngineValidationError into UnprocessableEntityException', async () => {
+    const { PatternEngineValidationError } = await import('@angaly/pattern-engine');
+    mockGeneratePiecesUseCase.execute.mockRejectedValueOnce(
+      new PatternEngineValidationError('Missing measurements'),
+    );
+
+    const { UnprocessableEntityException } = await import('@nestjs/common');
+    await expect(useCase.execute('proj-1', 'cust-1')).rejects.toThrow(
+      UnprocessableEntityException,
+    );
+  });
 });
+

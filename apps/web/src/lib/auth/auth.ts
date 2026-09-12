@@ -90,8 +90,7 @@ export const { handlers, auth, signIn, signOut } = NextAuth({
         token.accessTokenExpiresAt = refreshed.accessTokenExpiresAt;
         token.refreshToken = refreshed.refreshToken;
         delete token.error;
-      } catch (error) {
-        console.warn('Backend refresh token expired or invalid:', error instanceof Error ? error.message : String(error));
+      } catch {
         token.error = 'RefreshAccessTokenError';
         delete token.accessToken;
         delete token.accessTokenExpiresAt;

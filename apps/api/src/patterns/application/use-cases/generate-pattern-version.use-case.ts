@@ -1,4 +1,10 @@
-import { ForbiddenException, Inject, Injectable, NotFoundException } from '@nestjs/common';
+import {
+  ForbiddenException,
+  Inject,
+  Injectable,
+  NotFoundException,
+  UnprocessableEntityException,
+} from '@nestjs/common';
 import { randomUUID } from 'node:crypto';
 import {
   IPatternProjectRepository,
@@ -11,7 +17,8 @@ import {
 import { PatternVersionEntity } from '../../domain/entities/pattern-version.entity';
 import { GeneratePatternPiecesUseCase } from '../../../pattern-engine/application/use-cases/generate-pattern-pieces.use-case';
 import { GeneratePatternVersionDto } from '../dtos/generate-pattern-version.dto';
-import type { GarmentType } from '@angaly/pattern-engine';
+import { type GarmentType, PatternEngineValidationError } from '@angaly/pattern-engine';
+
 
 @Injectable()
 export class GeneratePatternVersionUseCase {
@@ -66,10 +73,18 @@ export class GeneratePatternVersionUseCase {
     };
 
     // Calcul géométrique déterministe via le pattern-engine
-    const generationResult = await this.generatePatternPiecesUseCase.execute(
-      parameters,
-      measurements,
-    );
+    let generationResult;
+    try {
+      generationResult = await this.generatePatternPiecesUseCase.execute(
+        parameters,
+        measurements,
+      );
+    } catch (error) {
+      if (error instanceof PatternEngineValidationError) {
+        throw new UnprocessableEntityException(error.message);
+      }
+      throw error;
+    }
 
     // Récupérer le dernier numéro de version
     const latestVersion = await this.versionRepository.findLatestByProjectId(projectId);

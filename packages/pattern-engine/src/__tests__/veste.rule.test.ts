@@ -45,8 +45,10 @@ describe('VesteRule', () => {
     for (const piece of pieces) {
       const first = piece.outlineMm[0];
       const last = piece.outlineMm[piece.outlineMm.length - 1];
-      expect(first.x).toBe(last.x);
-      expect(first.y).toBe(last.y);
+      expect(first).toBeDefined();
+      expect(last).toBeDefined();
+      expect(first?.x).toBe(last?.x);
+      expect(first?.y).toBe(last?.y);
     }
   });
 });

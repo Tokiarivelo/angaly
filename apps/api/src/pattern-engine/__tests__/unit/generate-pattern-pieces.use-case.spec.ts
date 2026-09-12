@@ -37,4 +37,23 @@ describe('GeneratePatternPiecesUseCase', () => {
 
     await expect(useCase.execute(params, measurements)).rejects.toThrow(PatternEngineValidationError);
   });
+
+  it('should generate pieces for PANTALON when measurements are provided', async () => {
+    provider.onModuleInit();
+
+    const params: PatternParameters = {
+      garmentType: 'PANTALON',
+      cutType: 'DROITE',
+      style: null,
+      details: {},
+    };
+
+    const measurements = { TOUR_TAILLE: 72, TOUR_BASSIN: 96, LONGUEUR_JAMBE: 100 };
+
+    const result = await useCase.execute(params, measurements);
+    expect(result.pieces.length).toBeGreaterThan(0);
+    expect(result.pieces.some((p) => p.name === 'Devant Pantalon')).toBe(true);
+    expect(result.pieces.some((p) => p.name === 'Dos Pantalon')).toBe(true);
+  });
 });
+

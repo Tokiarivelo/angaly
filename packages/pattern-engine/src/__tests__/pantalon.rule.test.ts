@@ -61,14 +61,16 @@ describe('PantalonRule', () => {
     expect(ceinture?.quantity).toBe(1);
 
     // Ceinture length = 720 + 80 = 800
-    expect(ceinture?.outlineMm[1].x).toBe(800);
+    expect(ceinture?.outlineMm[1]?.x).toBe(800);
 
     // Closed outlines
     for (const piece of pieces) {
       const first = piece.outlineMm[0];
       const last = piece.outlineMm[piece.outlineMm.length - 1];
-      expect(first.x).toBe(last.x);
-      expect(first.y).toBe(last.y);
+      expect(first).toBeDefined();
+      expect(last).toBeDefined();
+      expect(first?.x).toBe(last?.x);
+      expect(first?.y).toBe(last?.y);
     }
   });
 
@@ -86,8 +88,8 @@ describe('PantalonRule', () => {
     const devantLarge = largePieces.find((p) => p.name === 'Devant Pantalon');
 
     // Hem width point 4 - point 5
-    const widthSlim = (devantSlim?.outlineMm[4].x ?? 0) - (devantSlim?.outlineMm[5].x ?? 0);
-    const widthLarge = (devantLarge?.outlineMm[4].x ?? 0) - (devantLarge?.outlineMm[5].x ?? 0);
+    const widthSlim = (devantSlim?.outlineMm[4]?.x ?? 0) - (devantSlim?.outlineMm[5]?.x ?? 0);
+    const widthLarge = (devantLarge?.outlineMm[4]?.x ?? 0) - (devantLarge?.outlineMm[5]?.x ?? 0);
 
     expect(widthLarge).toBeGreaterThan(widthSlim);
   });

@@ -28,7 +28,6 @@ export const useCreateProject = () => {
       router.push(`/pattern-studio/wizard/${project.id}`);
     },
     onError: (error) => {
-      console.error('Erreur lors de la création du projet de patron:', error);
       if (error instanceof ApiError && error.statusCode === 401) {
         router.push(`${ROUTES.connexion}?${REDIRECT_TO_PARAM}=${encodeURIComponent('/mes-projets-patron')}`);
       }

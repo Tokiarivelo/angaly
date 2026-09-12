@@ -1,5 +1,12 @@
 import { Injectable, OnModuleInit } from '@nestjs/common';
-import { PatternEngine, JupeRule, RobeRule } from '@angaly/pattern-engine';
+import {
+  PatternEngine,
+  JupeRule,
+  RobeRule,
+  PantalonRule,
+  VesteRule,
+  ChemiseRule,
+} from '@angaly/pattern-engine';
 
 @Injectable()
 export class PatternEngineProvider implements OnModuleInit {
@@ -13,6 +20,9 @@ export class PatternEngineProvider implements OnModuleInit {
     // Enregistrement des règles géométriques supportées
     this.engine.registerRule(JupeRule);
     this.engine.registerRule(RobeRule);
+    this.engine.registerRule(PantalonRule);
+    this.engine.registerRule(VesteRule);
+    this.engine.registerRule(ChemiseRule);
   }
 
   getEngine(): PatternEngine {
