@@ -20,6 +20,7 @@ import { AiInferenceModule } from './ai-inference/ai-inference.module';
 import { ReviewsModule } from './reviews/reviews.module';
 import { OrdersModule } from './orders/orders.module';
 import { PaymentsModule } from './payments/payments.module';
+import { PatternsModule } from './patterns/patterns.module';
 import { HealthController } from './shared/health/health.controller';
 
 // Remaining domain modules (users, orders, payments, measurements,
@@ -59,6 +60,7 @@ import { HealthController } from './shared/health/health.controller';
     ReviewsModule,
     OrdersModule,
     PaymentsModule,
+    PatternsModule,
   ],
   controllers: [HealthController],
 })

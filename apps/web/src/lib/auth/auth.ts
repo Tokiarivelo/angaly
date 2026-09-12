@@ -5,7 +5,7 @@ import { env } from '@/lib/env';
 
 import { loginWithBackend, logoutWithBackend, refreshWithBackend, registerWithBackend } from './backend-auth-client';
 
-/** Refresh once the access token is within this many seconds of expiring. */
+/** Refresh once the access token is within this many seconds of expiring (60 seconds). */
 const REFRESH_BUFFER_SECONDS = 60;
 
 function readCredential(credentials: Partial<Record<string, unknown>>, key: string): string | undefined {
@@ -63,7 +63,7 @@ export const { handlers, auth, signIn, signOut } = NextAuth({
     }),
   ],
   callbacks: {
-    async jwt({ token, user }) {
+    async jwt({ token, user, trigger, session }) {
       if (user?.id) {
         token.userId = user.id;
         token.role = user.role;
@@ -76,7 +76,11 @@ export const { handlers, auth, signIn, signOut } = NextAuth({
 
       const expiresAt = token.accessTokenExpiresAt ?? 0;
       const isNearExpiry = expiresAt - Math.floor(Date.now() / 1000) < REFRESH_BUFFER_SECONDS;
-      if (!isNearExpiry || !token.refreshToken) {
+      const isForceRefresh =
+        trigger === 'update' ||
+        Boolean((session as Record<string, unknown> | undefined)?.['forceRefresh']);
+
+      if ((!isNearExpiry && !isForceRefresh) || !token.refreshToken) {
         return token;
       }
 
@@ -86,13 +90,27 @@ export const { handlers, auth, signIn, signOut } = NextAuth({
         token.accessTokenExpiresAt = refreshed.accessTokenExpiresAt;
         token.refreshToken = refreshed.refreshToken;
         delete token.error;
-      } catch {
+      } catch (error) {
+        console.warn('Backend refresh token expired or invalid:', error instanceof Error ? error.message : String(error));
         token.error = 'RefreshAccessTokenError';
+        delete token.accessToken;
+        delete token.accessTokenExpiresAt;
+        delete token.refreshToken;
+        delete token.userId;
+        delete token.role;
       }
 
       return token;
     },
     session({ session, token }) {
+      if (token.error === 'RefreshAccessTokenError' || !token.userId) {
+        session.error = 'RefreshAccessTokenError';
+        // @ts-expect-error - Clear user to indicate unauthenticated session
+        session.user = undefined;
+        delete session.accessToken;
+        delete session.accessTokenExpiresAt;
+        return session;
+      }
       if (token.userId) {
         session.user.id = token.userId;
       }
@@ -101,6 +119,9 @@ export const { handlers, auth, signIn, signOut } = NextAuth({
       }
       if (token.accessToken) {
         session.accessToken = token.accessToken;
+      }
+      if (token.accessTokenExpiresAt) {
+        session.accessTokenExpiresAt = token.accessTokenExpiresAt;
       }
       if (token.error) {
         session.error = token.error;

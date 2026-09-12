@@ -15,11 +15,11 @@ export const JupeRule: IPatternRule = {
     return parameters.garmentType === 'JUPE';
   },
   computePieces(
-    parameters: PatternParameters,
+    _parameters: PatternParameters,
     measurements: MeasurementSet,
   ): PatternPieceGeometry[] {
-    const tourTaille = measurements['TOUR_TAILLE'];
-    const tourBassin = measurements['TOUR_BASSIN'];
+    const tourTaille = measurements['TOUR_TAILLE'] ?? 70;
+    const tourBassin = measurements['TOUR_BASSIN'] ?? 95;
     const longueur = measurements['LONGUEUR_DOS'] || 60; // default 60cm
 
     // Valeurs de base en mm

@@ -14,10 +14,13 @@ export interface RefreshResult {
   refreshTokenExpiresAt: Date;
 }
 
+const ROTATION_GRACE_PERIOD_MS = 30_000;
+
 /**
- * Rotation: the presented refresh token is always revoked, whether or not a
- * new one ends up issued — a reused/stolen token can never be replayed
- * twice, even if the request fails after revocation.
+ * Rotation: the presented refresh token is revoked upon first use.
+ * A 30-second grace period allows concurrent requests or race conditions
+ * (e.g. parallel page renders, RSC + client fetches) to complete safely
+ * without invalidating the user's active session.
  */
 @Injectable()
 export class RefreshAccessTokenUseCase {
@@ -32,11 +35,22 @@ export class RefreshAccessTokenUseCase {
     const tokenHash = hashOpaqueToken(rawRefreshToken);
     const stored = await this.refreshTokenRepository.findByTokenHash(tokenHash);
 
-    if (!stored || stored.revokedAt || stored.expiresAt < new Date()) {
+    if (!stored || stored.expiresAt < new Date()) {
       throw new UnauthorizedException('Invalid or expired refresh token');
     }
 
-    await this.refreshTokenRepository.revoke(stored.id);
+    const isRevoked = Boolean(stored.revokedAt);
+    const isWithinGracePeriod =
+      stored.revokedAt !== null &&
+      Date.now() - stored.revokedAt.getTime() < ROTATION_GRACE_PERIOD_MS;
+
+    if (isRevoked && !isWithinGracePeriod) {
+      throw new UnauthorizedException('Invalid or expired refresh token');
+    }
+
+    if (!isRevoked) {
+      await this.refreshTokenRepository.revoke(stored.id);
+    }
 
     const user = await this.userRepository.findById(stored.userId);
     if (!user?.isActive) {

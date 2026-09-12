@@ -22,4 +22,5 @@ export interface ICustomerRepository {
   findByUserId: (userId: string) => Promise<CustomerEntity | null>;
   findById: (id: string) => Promise<CustomerEntity | null>;
   update: (id: string, changes: UpdateCustomerProfileInput) => Promise<CustomerEntity>;
+  create?: (userId: string, data: { firstName: string; lastName: string; phone?: string | null }) => Promise<CustomerEntity>;
 }

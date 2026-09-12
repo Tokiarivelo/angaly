@@ -4,7 +4,7 @@ import { QueryProvider } from './QueryProvider';
 
 export function Providers({ children }: { children: React.ReactNode }) {
   return (
-    <SessionProvider>
+    <SessionProvider refetchInterval={4 * 60} refetchOnWindowFocus={true}>
       <QueryProvider>{children}</QueryProvider>
     </SessionProvider>
   );

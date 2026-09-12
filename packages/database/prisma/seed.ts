@@ -26,6 +26,16 @@ async function main() {
       role: Role.ADMIN,
     },
   });
+  await prisma.customer.upsert({
+    where: { userId: adminUser.id },
+    update: {},
+    create: {
+      userId: adminUser.id,
+      firstName: 'Admin',
+      lastName: 'ANGALY',
+      phone: '+261 20 22 245 10',
+    },
+  });
   console.log('✅ Admin user ready (admin@angaly.mg)');
 
   const weekdayStandardHours = { isOpen: true, slots: [{ open: '09:00', close: '18:00' }] };

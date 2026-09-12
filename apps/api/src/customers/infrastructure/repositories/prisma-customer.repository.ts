@@ -40,4 +40,17 @@ export class PrismaCustomerRepository implements ICustomerRepository {
     });
     return CustomerMapper.toDomain(record);
   }
+
+  async create(userId: string, data: { firstName: string; lastName: string; phone?: string | null }): Promise<CustomerEntity> {
+    const record = await this.prisma.customer.create({
+      data: {
+        userId,
+        firstName: data.firstName,
+        lastName: data.lastName,
+        phone: data.phone ?? null,
+      },
+      select: CUSTOMER_SELECT,
+    });
+    return CustomerMapper.toDomain(record);
+  }
 }

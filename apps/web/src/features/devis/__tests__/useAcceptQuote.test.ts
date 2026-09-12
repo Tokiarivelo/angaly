@@ -10,7 +10,7 @@ vi.mock('@/lib/api-client');
 describe('useAcceptQuote', () => {
   it('should accept a quote', async () => {
     const mockAcceptedQuote = { status: QuoteStatus.ACCEPTED };
-    vi.mocked(apiClient.post).mockResolvedValueOnce({ data: mockAcceptedQuote });
+    vi.mocked(apiClient.post).mockResolvedValueOnce(mockAcceptedQuote as any);
 
     const { result } = renderHook(() => useAcceptQuote(), { wrapper: withQueryClient() });
 

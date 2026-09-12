@@ -6,12 +6,11 @@ import type { PatternProjectDto } from '@angaly/types';
 import { PatternStatus } from '@angaly/types';
 
 export const resolveProjectRoute = (project: PatternProjectDto): string => {
-  const hasGeneratedVersion =
-    Boolean(project.currentVersion) ||
-    Boolean(project.versions && project.versions.length > 0) ||
-    (project.status !== PatternStatus.DRAFT && project.status !== PatternStatus.GENERATING);
+  const isDraft =
+    project.status === PatternStatus.DRAFT ||
+    project.status === ('DRAFT' as PatternStatus);
 
-  if (!hasGeneratedVersion && project.status === PatternStatus.DRAFT) {
+  if (isDraft) {
     return `/pattern-studio/wizard/${project.id}`;
   }
 

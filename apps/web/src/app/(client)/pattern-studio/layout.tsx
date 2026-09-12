@@ -12,7 +12,7 @@ export default async function PatternStudioLayout({ children }: { children: Reac
 
   if (pathname.startsWith('/pattern-studio/wizard') || pathname.startsWith('/pattern-studio/projects')) {
     const session = await auth();
-    if (!session?.user) {
+    if (!session?.user || session.error === 'RefreshAccessTokenError') {
       redirect(`/connexion?${REDIRECT_TO_PARAM}=${encodeURIComponent(currentPath)}`);
     }
   }

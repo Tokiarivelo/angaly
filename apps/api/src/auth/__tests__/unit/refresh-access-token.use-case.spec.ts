@@ -71,11 +71,31 @@ describe('RefreshAccessTokenUseCase', () => {
     expect(deps.refreshTokenRepository.revoke).not.toHaveBeenCalled();
   });
 
-  it('rejects an already-revoked token', async () => {
+  it('rejects an already-revoked token outside grace period', async () => {
     const deps = buildDeps();
-    deps.refreshTokenRepository.findByTokenHash.mockResolvedValue(storedToken({ revokedAt: new Date() }));
+    deps.refreshTokenRepository.findByTokenHash.mockResolvedValue(
+      storedToken({ revokedAt: new Date(Date.now() - 60_000) }),
+    );
 
     await expect(buildUseCase(deps).execute('raw-token')).rejects.toThrow('Invalid or expired refresh token');
+  });
+
+  it('allows rotation during grace period for concurrent requests', async () => {
+    const deps = buildDeps();
+    deps.refreshTokenRepository.findByTokenHash.mockResolvedValue(
+      storedToken({ revokedAt: new Date(Date.now() - 5_000) }),
+    );
+    deps.userRepository.findById.mockResolvedValue(sampleUser());
+    deps.accessTokenService.sign.mockReturnValue('concurrent-access-token');
+    const expiresAt = new Date('2026-01-08T00:00:00.000Z');
+    deps.tokenExpiryPolicy.refreshTokenExpiresAt.mockReturnValue(expiresAt);
+
+    const result = await buildUseCase(deps).execute('raw-token');
+
+    expect(result.accessToken).toBe('concurrent-access-token');
+    expect(result.refreshToken).toHaveLength(64);
+    // Already revoked token does not need a second revoke
+    expect(deps.refreshTokenRepository.revoke).not.toHaveBeenCalled();
   });
 
   it('rejects an expired token', async () => {

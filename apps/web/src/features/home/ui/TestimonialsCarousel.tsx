@@ -1,7 +1,9 @@
 'use client';
 
 import { useRef } from 'react';
+
 import Image from 'next/image';
+
 import { ChevronLeft, ChevronRight } from 'lucide-react';
 
 import { cn } from '@/lib/utils';
@@ -37,41 +39,47 @@ export function TestimonialsCarousel() {
       onTouchStart={handleTouchStart}
       onTouchEnd={handleTouchEnd}
     >
-      {activeTestimonial && (() => {
-        const avatarUrl = activeTestimonial.avatarUrl ?? activeTestimonial.mediaUrl;
-        const clientName = activeTestimonial.clientName ?? activeTestimonial.customerName ?? '';
-        const isVerified = Boolean(activeTestimonial.verified ?? activeTestimonial.isVerified ?? false);
+      {activeTestimonial &&
+        (() => {
+          const avatarUrl = activeTestimonial.avatarUrl ?? activeTestimonial.mediaUrl;
+          const clientName = activeTestimonial.clientName ?? activeTestimonial.customerName ?? '';
+          const isVerified = Boolean(
+            activeTestimonial.verified ?? activeTestimonial.isVerified ?? false,
+          );
 
-        return (
-          <figure className="text-center" aria-live="polite">
-            {avatarUrl ? (
-              <div className="relative mx-auto h-16 w-16 overflow-hidden rounded-full border-2 border-angaly-champagne/40 shadow-sm">
-                <Image
-                  src={avatarUrl}
-                  alt={clientName}
-                  fill
-                  sizes="64px"
-                  className="object-cover"
+          return (
+            <figure className="text-center" aria-live="polite">
+              {avatarUrl ? (
+                <div className="border-angaly-champagne/40 relative mx-auto h-16 w-16 overflow-hidden rounded-full border-2 shadow-sm">
+                  <Image
+                    src={avatarUrl}
+                    alt={clientName}
+                    fill
+                    sizes="64px"
+                    className="object-cover"
+                  />
+                </div>
+              ) : (
+                <div
+                  aria-hidden="true"
+                  className="bg-angaly-champagne mx-auto h-16 w-16 rounded-full"
                 />
-              </div>
-            ) : (
-              <div aria-hidden="true" className="mx-auto h-16 w-16 rounded-full bg-angaly-champagne" />
-            )}
-            <blockquote className="font-heading mt-6 text-xl text-angaly-navy italic">
-              « {activeTestimonial.quote} »
-            </blockquote>
-            <figcaption className="mt-4 text-sm text-angaly-slate">
-              <span className="font-medium text-angaly-navy">{clientName}</span> —{' '}
-              {activeTestimonial.creationLabel}
-              {isVerified && (
-                <span className="ml-2 rounded-sm bg-angaly-champagne/30 px-2 py-0.5 text-xs text-angaly-navy">
-                  Avis vérifié
-                </span>
               )}
-            </figcaption>
-          </figure>
-        );
-      })()}
+              <blockquote className="font-heading text-angaly-navy mt-6 text-xl italic">
+                « {activeTestimonial.quote} »
+              </blockquote>
+              <figcaption className="text-angaly-slate mt-4 text-sm">
+                <span className="text-angaly-navy font-medium">{clientName}</span> —{' '}
+                {activeTestimonial.creationLabel}
+                {isVerified && (
+                  <span className="bg-angaly-champagne/30 text-angaly-navy ml-2 rounded-sm px-2 py-0.5 text-xs">
+                    Avis vérifié
+                  </span>
+                )}
+              </figcaption>
+            </figure>
+          );
+        })()}
 
       <div className="mt-8 flex items-center justify-center gap-6">
         <button

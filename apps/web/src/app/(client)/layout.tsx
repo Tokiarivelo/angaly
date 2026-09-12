@@ -8,7 +8,7 @@ import { auth } from '@/lib/auth/auth';
 export default async function ClientLayout({ children }: { children: ReactNode }) {
   const session = await auth();
 
-  if (!session?.user) {
+  if (!session?.user || session.error === 'RefreshAccessTokenError') {
     const currentPath = (await headers()).get('x-pathname') ?? '/';
     const pathname = currentPath.split('?')[0];
     if (pathname === '/pattern-studio') {

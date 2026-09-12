@@ -27,7 +27,7 @@ const MOCK_QUOTE = {
 
 describe('useQuote', () => {
   it('should fetch a quote by number', async () => {
-    vi.mocked(apiClient.get).mockResolvedValueOnce({ data: MOCK_QUOTE });
+    vi.mocked(apiClient.get).mockResolvedValueOnce(MOCK_QUOTE as any);
 
     const { result } = renderHook(() => useQuote('ANG-DEV-123'), { wrapper: withQueryClient() });
 
