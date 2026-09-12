@@ -672,10 +672,13 @@ export interface ReviewDto extends Timestamps {
 export interface TestimonialDto extends Timestamps {
   id: string;
   customerName: string;
+  clientName?: string;
   creationLabel: string | null;
   quote: string;
   isVerified: boolean;
+  verified?: boolean;
   mediaUrl: string | null;
+  avatarUrl?: string | null;
 }
 
 // ============================================================

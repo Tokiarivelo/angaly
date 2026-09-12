@@ -1,4 +1,4 @@
-import { useCallback, useState } from 'react';
+import { useCallback, useMemo, useState } from 'react';
 
 import { useTestimonialsQuery } from '../api/home.api';
 import type { Testimonial } from '../types';
@@ -41,8 +41,24 @@ export function useTestimonials(): {
   goToIndex: (index: number) => void;
 } {
   const query = useTestimonialsQuery();
-  const testimonials = query.data ?? (query.isError ? FALLBACK_TESTIMONIALS : []);
   const [activeIndex, setActiveIndex] = useState(0);
+
+  const testimonials = useMemo<Testimonial[]>(() => {
+    if (query.data && query.data.length > 0) {
+      return query.data.map((item) => ({
+        id: item.id,
+        clientName: item.clientName ?? item.customerName ?? '',
+        customerName: item.customerName ?? item.clientName ?? '',
+        creationLabel: item.creationLabel ?? '',
+        quote: item.quote,
+        verified: Boolean(item.verified ?? item.isVerified ?? false),
+        isVerified: Boolean(item.isVerified ?? item.verified ?? false),
+        avatarUrl: item.avatarUrl ?? item.mediaUrl ?? undefined,
+        mediaUrl: item.mediaUrl ?? item.avatarUrl ?? null,
+      }));
+    }
+    return query.isError ? FALLBACK_TESTIMONIALS : [];
+  }, [query.data, query.isError]);
 
   const goToNext = useCallback(() => {
     setActiveIndex((current) => (testimonials.length === 0 ? 0 : (current + 1) % testimonials.length));

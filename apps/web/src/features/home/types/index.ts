@@ -7,7 +7,10 @@ export interface Testimonial {
   creationLabel: string;
   quote: string;
   verified: boolean;
-  avatarUrl?: string;
+  avatarUrl?: string | null | undefined;
+  customerName?: string | undefined;
+  mediaUrl?: string | null | undefined;
+  isVerified?: boolean | undefined;
 }
 
 export type AtelierSummary = AtelierDto;

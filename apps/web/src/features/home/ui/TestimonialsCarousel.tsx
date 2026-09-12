@@ -37,35 +37,41 @@ export function TestimonialsCarousel() {
       onTouchStart={handleTouchStart}
       onTouchEnd={handleTouchEnd}
     >
-      {activeTestimonial && (
-        <figure className="text-center" aria-live="polite">
-          {activeTestimonial.avatarUrl ? (
-            <div className="relative mx-auto h-16 w-16 overflow-hidden rounded-full border-2 border-angaly-champagne/40 shadow-sm">
-              <Image
-                src={activeTestimonial.avatarUrl}
-                alt={activeTestimonial.clientName}
-                fill
-                sizes="64px"
-                className="object-cover"
-              />
-            </div>
-          ) : (
-            <div aria-hidden="true" className="mx-auto h-16 w-16 rounded-full bg-angaly-champagne" />
-          )}
-          <blockquote className="font-heading mt-6 text-xl text-angaly-navy italic">
-            « {activeTestimonial.quote} »
-          </blockquote>
-          <figcaption className="mt-4 text-sm text-angaly-slate">
-            <span className="font-medium text-angaly-navy">{activeTestimonial.clientName}</span> —{' '}
-            {activeTestimonial.creationLabel}
-            {activeTestimonial.verified && (
-              <span className="ml-2 rounded-sm bg-angaly-champagne/30 px-2 py-0.5 text-xs text-angaly-navy">
-                Avis vérifié
-              </span>
+      {activeTestimonial && (() => {
+        const avatarUrl = activeTestimonial.avatarUrl ?? activeTestimonial.mediaUrl;
+        const clientName = activeTestimonial.clientName ?? activeTestimonial.customerName ?? '';
+        const isVerified = Boolean(activeTestimonial.verified ?? activeTestimonial.isVerified ?? false);
+
+        return (
+          <figure className="text-center" aria-live="polite">
+            {avatarUrl ? (
+              <div className="relative mx-auto h-16 w-16 overflow-hidden rounded-full border-2 border-angaly-champagne/40 shadow-sm">
+                <Image
+                  src={avatarUrl}
+                  alt={clientName}
+                  fill
+                  sizes="64px"
+                  className="object-cover"
+                />
+              </div>
+            ) : (
+              <div aria-hidden="true" className="mx-auto h-16 w-16 rounded-full bg-angaly-champagne" />
             )}
-          </figcaption>
-        </figure>
-      )}
+            <blockquote className="font-heading mt-6 text-xl text-angaly-navy italic">
+              « {activeTestimonial.quote} »
+            </blockquote>
+            <figcaption className="mt-4 text-sm text-angaly-slate">
+              <span className="font-medium text-angaly-navy">{clientName}</span> —{' '}
+              {activeTestimonial.creationLabel}
+              {isVerified && (
+                <span className="ml-2 rounded-sm bg-angaly-champagne/30 px-2 py-0.5 text-xs text-angaly-navy">
+                  Avis vérifié
+                </span>
+              )}
+            </figcaption>
+          </figure>
+        );
+      })()}
 
       <div className="mt-8 flex items-center justify-center gap-6">
         <button

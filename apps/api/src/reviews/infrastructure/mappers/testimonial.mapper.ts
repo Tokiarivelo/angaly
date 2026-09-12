@@ -27,10 +27,13 @@ export class TestimonialMapper {
     return {
       id: testimonial.id,
       customerName: testimonial.customerName,
+      clientName: testimonial.customerName,
       creationLabel: testimonial.creationLabel,
       quote: testimonial.quote,
       isVerified: testimonial.isVerified,
+      verified: testimonial.isVerified,
       mediaUrl,
+      avatarUrl: mediaUrl,
       createdAt: testimonial.createdAt.toISOString(),
       updatedAt: testimonial.createdAt.toISOString(), // Testimonials don't have updatedAt in Prisma, fallback to createdAt
     };
