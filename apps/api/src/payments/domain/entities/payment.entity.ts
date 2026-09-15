@@ -1,4 +1,5 @@
-import { PaymentMethod, PaymentStatus } from '@angaly/types';
+import type { PaymentMethod } from '@angaly/types';
+import { PaymentStatus } from '@angaly/types';
 
 export class Payment {
   constructor(

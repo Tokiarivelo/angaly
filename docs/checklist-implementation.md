@@ -142,7 +142,9 @@ phase n'a pas été traitée en session dédiée (voir `.cursor/rules/006-phase-
 
 ### Modules backend
 - [x] ✅ **orders** (module backend seul — les pages consommatrices ci-dessus restent 🟡, non
-      câblées à cette API ; voir `docs/features/orders.md`) · ✅ **payments** · ⬜ **notifications**
+      câblées à cette API ; voir `docs/features/orders.md`) ·
+      ✅ **payments** (repris : guards d'authentification, transitions via `orders`, module
+      testé — voir `docs/features/payments.md`) · ⬜ **notifications**
 
 ---
 

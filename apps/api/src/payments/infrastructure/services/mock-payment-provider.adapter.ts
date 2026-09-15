@@ -1,19 +1,19 @@
-import { IPaymentProviderPort, PaymentInitializationResult } from '../../domain/ports/payment-provider.port';
+import type { IPaymentProviderPort, PaymentInitializationResult } from '../../domain/ports/payment-provider.port';
 import { randomUUID } from 'crypto';
 
 export class MockPaymentProviderAdapter implements IPaymentProviderPort {
-  async initiatePayment(_orderId: string, _amount: number): Promise<PaymentInitializationResult> {
-    return {
+  initiatePayment(_orderId: string, _amount: number): Promise<PaymentInitializationResult> {
+    return Promise.resolve({
       transactionRef: `mock-txn-${randomUUID().substring(0, 8)}`,
       requiresManualConfirmation: false,
-    };
+    });
   }
 
-  async confirmPayment(_transactionRef: string): Promise<boolean> {
-    return true; // Auto success
+  confirmPayment(_transactionRef: string): Promise<boolean> {
+    return Promise.resolve(true); // Auto success
   }
 
-  async refund(_transactionRef: string, _amount: number): Promise<boolean> {
-    return true; // Auto success
+  refund(_transactionRef: string, _amount: number): Promise<boolean> {
+    return Promise.resolve(true); // Auto success
   }
 }

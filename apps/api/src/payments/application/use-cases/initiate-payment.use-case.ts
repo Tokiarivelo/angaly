@@ -1,12 +1,16 @@
-import { Inject, Injectable, BadRequestException } from '@nestjs/common';
+import { BadRequestException, ForbiddenException, Inject, Injectable, NotFoundException } from '@nestjs/common';
 import { PaymentMethod, PaymentStatus } from '@angaly/types';
-import { IPaymentRepository, PAYMENT_REPOSITORY_TOKEN } from '../../domain/repositories/payment.repository';
-import { Payment } from '../../domain/entities/payment.entity';
-import { PAYMENT_PROVIDER_FACTORY_TOKEN, IPaymentProviderPort } from '../../domain/ports/payment-provider.port';
 import { randomUUID } from 'crypto';
+
+import { CUSTOMER_REPOSITORY, ICustomerRepository } from '../../../customers/domain/repositories/customer.repository';
 import { PrismaService } from '../../../prisma/prisma.service';
+import { Payment } from '../../domain/entities/payment.entity';
+import { IPaymentProviderPort, PAYMENT_PROVIDER_FACTORY_TOKEN } from '../../domain/ports/payment-provider.port';
+import { IPaymentRepository, PAYMENT_REPOSITORY_TOKEN } from '../../domain/repositories/payment.repository';
+import { resolveCustomerId } from '../lib/resolve-customer-id';
 
 export interface InitiatePaymentCommand {
+  userId: string;
   orderId: string;
   method: PaymentMethod;
 }
@@ -18,6 +22,8 @@ export class InitiatePaymentUseCase {
     private readonly paymentRepository: IPaymentRepository,
     @Inject(PAYMENT_PROVIDER_FACTORY_TOKEN)
     private readonly providerFactory: (method: PaymentMethod) => IPaymentProviderPort,
+    @Inject(CUSTOMER_REPOSITORY)
+    private readonly customerRepository: ICustomerRepository,
     private readonly prisma: PrismaService,
   ) {}
 
@@ -27,7 +33,12 @@ export class InitiatePaymentUseCase {
     });
 
     if (!order) {
-      throw new BadRequestException('Order not found');
+      throw new NotFoundException('Order not found');
+    }
+
+    const customerId = await resolveCustomerId(this.customerRepository, command.userId);
+    if (order.customerId !== customerId) {
+      throw new ForbiddenException('This order does not belong to the current user');
     }
 
     if (order.status !== 'PENDING') {
@@ -36,7 +47,7 @@ export class InitiatePaymentUseCase {
 
     const provider = this.providerFactory(command.method);
     const amount = Number(order.total);
-    
+
     const initResult = await provider.initiatePayment(command.orderId, amount);
 
     const payment = new Payment(

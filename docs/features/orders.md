@@ -72,13 +72,10 @@ __tests__/
   moment de `create-order-from-cart` — décrémentation de `quantityAvailable` dans une transaction
   Prisma unique pour éviter la survente en cas de commandes concurrentes.
 - **`payments`** : le passage au statut `PAID` est déclenché par `payments` (jamais l'inverse) —
-  le Domain d'`orders` reste agnostique du moyen de paiement utilisé. `UpdateOrderStatusUseCase`
-  est exporté par `OrdersModule` pour ce usage précis, mais **n'est pas encore appelé par
-  `payments`** : `payments/application/use-cases/confirm-payment.use-case.ts` écrit encore
-  `OrderStatus.PAID` directement via `PrismaService`, en contournant `Order.transitionTo()` (donc
-  sans valider que la transition part bien de `CONFIRMED`) — à corriger dans une session dédiée à
-  `payments`, avec son guard d'authentification manquant sur `payments.controller.ts` (voir
-  "Points d'attention").
+  le Domain d'`orders` reste agnostique du moyen de paiement utilisé. `confirm-payment`/
+  `refund-payment` (module `payments`) injectent `ORDER_REPOSITORY_TOKEN` depuis `OrdersModule`
+  et transitionnent la commande via `Order.transitionTo()`, jamais une écriture de statut brute
+  — voir `docs/features/payments.md`.
 - **`notifications`** : émettre un événement `ORDER_STATUS_CHANGED` à chaque transition de
   statut, via le service exporté du module `notifications` (jamais une écriture directe dans la
   table `Notification`) — **pas encore câblé, `notifications` reste ⬜** (module vide, seul un
@@ -103,11 +100,9 @@ __tests__/
   Corrigé : `variant.priceOverride ?? variant.product.price`. Le contrôleur passait aussi
   directement `req.user.sub` (le `User.id` du JWT) comme `Order.customerId`, alors que ce champ
   référence `Customer.id` — corrigé via `resolveCustomerId()` (même pattern que `quotes`).
-- **Non corrigés dans cette session, car hors module `orders`** : `payments.controller.ts` n'a
-  aucun guard d'authentification (`POST /api/payments`, `PATCH /api/payments/:id/confirm` sont
-  appelables sans être connecté), et `payments` n'a aucun test (`payments/__tests__/` n'existe
-  pas) malgré son statut ✅ dans `docs/checklist-implementation.md`. À traiter dans une session
-  dédiée à `payments`.
+- **`payments` a été repris dans une session suivante** (guards d'authentification ajoutés,
+  `confirm-payment`/`refund-payment` branchés sur `Order.transitionTo()`, module testé de bout
+  en bout) — voir `docs/features/payments.md`.
 
 ## Vérification
 

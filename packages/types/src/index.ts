@@ -725,7 +725,12 @@ export interface UpdateOrderStatusPayload {
 // Payments — POST /api/payments, GET /api/payments
 // ============================================================
 
-export interface PaymentDto extends Timestamps {
+/**
+ * Does NOT extend `Timestamps` on purpose: `Payment` (schema.prisma) has no
+ * `updatedAt` column, only `createdAt` — `paidAt` already tracks the one
+ * meaningful "when did this change" moment for a payment.
+ */
+export interface PaymentDto {
   id: string;
   orderId: string;
   method: PaymentMethod;
@@ -733,6 +738,7 @@ export interface PaymentDto extends Timestamps {
   amount: string;
   transactionRef: string | null;
   paidAt: string | null;
+  createdAt: string;
 }
 
 export interface InitiatePaymentPayload {

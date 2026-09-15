@@ -1,5 +1,5 @@
-import { PaymentMethod } from '@angaly/types';
-import { IPaymentProviderPort } from '../../domain/ports/payment-provider.port';
+import type { PaymentMethod } from '@angaly/types';
+import type { IPaymentProviderPort } from '../../domain/ports/payment-provider.port';
 import { MockPaymentProviderAdapter } from './mock-payment-provider.adapter';
 
 export const paymentProviderFactory = (_method: PaymentMethod): IPaymentProviderPort => {
