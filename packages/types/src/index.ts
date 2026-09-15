@@ -717,6 +717,10 @@ export interface CreateOrderPayload {
   shippingAddressJson?: unknown;
 }
 
+export interface UpdateOrderStatusPayload {
+  status: OrderStatus;
+}
+
 // ============================================================
 // Payments — POST /api/payments, GET /api/payments
 // ============================================================

@@ -1,6 +1,6 @@
 # Feature — `orders`
 
-**Statut : ⬜ À faire.** Phase 3 — Production.
+**Statut : ✅ Fait** (module backend). Phase 3 — Production.
 
 ## Objet
 
@@ -16,27 +16,29 @@ créée.
 
 ```
 domain/
-  entities/order.entity.ts             → invariants (total = subtotal + shippingCost, devise cohérente)
-  entities/order-item.entity.ts
+  entities/order.entity.ts             → invariants (total = subtotal + shippingCost) ; transitionTo() encode le cycle OrderStatus
+  entities/order-item.entity.ts        → invariants (quantity > 0, unitPrice >= 0)
   repositories/order.repository.ts     → IOrderRepository (zéro import Prisma)
-  value-objects/order-status.vo.ts     → transitions valides du cycle OrderStatus
 application/
+  lib/resolve-customer-id.ts           → résout Customer.id depuis le userId du JWT (même pattern que quotes/patterns, dupliqué par module)
   use-cases/
-    create-order-from-cart.use-case.ts → construit Order + OrderItem[] depuis un payload panier, vérifie/réserve le stock
-    get-order.use-case.ts
-    list-customer-orders.use-case.ts
-    update-order-status.use-case.ts    → transition contrôlée (jamais un statut arbitraire)
-    cancel-order.use-case.ts           → uniquement tant que PENDING/CONFIRMED
+    create-order-from-cart.use-case.ts → construit Order + OrderItem[] depuis un payload panier, réserve le stock atomiquement
+    get-order.use-case.ts              → CLIENT (propriétaire) ou MANAGER/ADMIN (tout)
+    list-customer-orders.use-case.ts   → CLIENT (ses commandes) ou MANAGER/ADMIN (toutes)
+    update-order-status.use-case.ts    → transition contrôlée via Order.transitionTo(), jamais un statut arbitraire
+    cancel-order.use-case.ts           → uniquement tant que PENDING/CONFIRMED (encodé dans transitionTo())
   dtos/
+    create-order-request.dto.ts, update-order-status-request.dto.ts, order-response.dto.ts
 infrastructure/
   repositories/prisma-order.repository.ts
-  mappers/order.mapper.ts
+  mappers/order.mapper.ts              → toDomain() + toResponseDto() (Decimal ↔ number ↔ "xx.xx" string)
 presentation/
-  controllers/orders.controller.ts
-  guards/ (propriétaire de la commande, ou MANAGER/ADMIN)
+  controllers/orders.controller.ts     → JwtAuthGuard partout, RolesGuard+@Roles('MANAGER','ADMIN') sur PATCH :id/status
 __tests__/
-  unit/create-order-from-cart.use-case.spec.ts
-  unit/update-order-status.use-case.spec.ts
+  unit/order.entity.spec.ts, order-item.entity.spec.ts, resolve-customer-id.spec.ts,
+  unit/create-order-from-cart.use-case.spec.ts, get-order.use-case.spec.ts,
+  unit/list-customer-orders.use-case.spec.ts, update-order-status.use-case.spec.ts,
+  unit/cancel-order.use-case.spec.ts, order.mapper.spec.ts, prisma-order.repository.spec.ts
   integration/orders.controller.spec.ts
 ```
 
@@ -70,22 +72,56 @@ __tests__/
   moment de `create-order-from-cart` — décrémentation de `quantityAvailable` dans une transaction
   Prisma unique pour éviter la survente en cas de commandes concurrentes.
 - **`payments`** : le passage au statut `PAID` est déclenché par `payments` (jamais l'inverse) —
-  le Domain d'`orders` reste agnostique du moyen de paiement utilisé.
+  le Domain d'`orders` reste agnostique du moyen de paiement utilisé. `UpdateOrderStatusUseCase`
+  est exporté par `OrdersModule` pour ce usage précis, mais **n'est pas encore appelé par
+  `payments`** : `payments/application/use-cases/confirm-payment.use-case.ts` écrit encore
+  `OrderStatus.PAID` directement via `PrismaService`, en contournant `Order.transitionTo()` (donc
+  sans valider que la transition part bien de `CONFIRMED`) — à corriger dans une session dédiée à
+  `payments`, avec son guard d'authentification manquant sur `payments.controller.ts` (voir
+  "Points d'attention").
 - **`notifications`** : émettre un événement `ORDER_STATUS_CHANGED` à chaque transition de
   statut, via le service exporté du module `notifications` (jamais une écriture directe dans la
-  table `Notification`).
-- **`customers`** : relation `Customer` propriétaire de la commande.
+  table `Notification`) — **pas encore câblé, `notifications` reste ⬜** (module vide, seul un
+  `README.md` existe). `update-order-status.use-case.ts` documente ce point en attente dans son
+  propre commentaire.
+- **`customers`** : relation `Customer` propriétaire de la commande, résolue depuis le JWT via
+  `resolveCustomerId()`.
 
 ## Points d'attention
 
 - Le panier (ajout/retrait d'articles avant validation) vit côté frontend — `orders` ne
   persiste que la commande une fois "passée", pas les états intermédiaires du panier.
-- La vérification/réservation de stock doit être atomique : deux commandes concurrentes sur le
-  dernier exemplaire d'une variante ne doivent jamais aboutir toutes les deux.
+- **Réservation de stock atomique** : `create-order-from-cart` utilise un `inventory.updateMany`
+  conditionné sur `quantityAvailable >= quantity` (jamais un `findUnique` puis `update` séparés)
+  — la réévaluation du `WHERE` sous le verrou de ligne que Postgres prend pour l'`UPDATE`
+  garantit qu'une deuxième commande concurrente sur le dernier exemplaire d'une variante ne peut
+  jamais aboutir en même temps que la première (`count: 0` côté perdant).
+- **Trouvé en reprenant ce module** (il existait déjà en squelette 🟡, jamais exécuté de bout en
+  bout) : le calcul du prix unitaire lisait `variant.price`, un champ qui n'existe pas sur
+  `ProductVariant` (seul `ProductVariant.priceOverride` existe, le prix "de base" vit sur
+  `Product.price`) — chaque commande créée avant ce correctif aurait eu un `subtotal: NaN`.
+  Corrigé : `variant.priceOverride ?? variant.product.price`. Le contrôleur passait aussi
+  directement `req.user.sub` (le `User.id` du JWT) comme `Order.customerId`, alors que ce champ
+  référence `Customer.id` — corrigé via `resolveCustomerId()` (même pattern que `quotes`).
+- **Non corrigés dans cette session, car hors module `orders`** : `payments.controller.ts` n'a
+  aucun guard d'authentification (`POST /api/payments`, `PATCH /api/payments/:id/confirm` sont
+  appelables sans être connecté), et `payments` n'a aucun test (`payments/__tests__/` n'existe
+  pas) malgré son statut ✅ dans `docs/checklist-implementation.md`. À traiter dans une session
+  dédiée à `payments`.
 
 ## Vérification
 
-- [ ] `create-order-from-cart` testé avec stock suffisant et insuffisant (rejet propre, aucune commande partielle créée)
-- [ ] `update-order-status` testé pour les transitions valides et invalides du cycle `OrderStatus`
-- [ ] Guard "propriétaire de la commande" testé (un client ne peut pas accéder à la commande d'un autre)
-- [ ] `docs/checklist-implementation.md` : `orders` passé à ✅
+- [x] `create-order-from-cart` testé avec stock suffisant et insuffisant (rejet propre, aucune
+      commande partielle créée), y compris la réservation atomique et le calcul du prix
+      (`priceOverride` vs prix produit) — `create-order-from-cart.use-case.spec.ts`
+- [x] `update-order-status` testé pour les transitions valides et invalides du cycle `OrderStatus`
+      — `update-order-status.use-case.spec.ts`, `order.entity.spec.ts`
+- [x] Ownership testé (un `CLIENT` ne peut pas accéder à/annuler la commande d'un autre ; un
+      `MANAGER`/`ADMIN` le peut) — `get-order.use-case.spec.ts`, `cancel-order.use-case.spec.ts`,
+      `list-customer-orders.use-case.spec.ts`
+- [x] `orders.controller.spec.ts` couvre 200/201/400/401/403/404 sur les 5 routes
+- [x] `pnpm --filter @angaly/api typecheck`, `pnpm --filter @angaly/api exec eslint src/orders`
+      (0 erreur) et `pnpm --filter @angaly/api exec jest src/orders` (68 tests) tous verts
+- [x] `docs/checklist-implementation.md` : module backend `orders` passé à ✅ (les 6 pages
+      consommatrices — `panier`, `checkout`, etc. — restent 🟡, non câblées à cette API dans
+      cette session)

@@ -141,7 +141,8 @@ phase n'a pas été traitée en session dédiée (voir `.cursor/rules/006-phase-
 - [ ] 🟡 **messages-factures-notifications** — Messagerie, factures, notifications (Frontend UI créé)
 
 ### Modules backend
-- [ ] 🟡 **orders** · ✅ **payments** · ⬜ **notifications**
+- [x] ✅ **orders** (module backend seul — les pages consommatrices ci-dessus restent 🟡, non
+      câblées à cette API ; voir `docs/features/orders.md`) · ✅ **payments** · ⬜ **notifications**
 
 ---
 
