@@ -1,5 +1,5 @@
 import { OrderStatus } from '@angaly/types';
-import { OrderItem } from './order-item.entity';
+import type { OrderItem } from './order-item.entity';
 
 export class Order {
   constructor(
@@ -11,7 +11,7 @@ export class Order {
     public shippingCost: number,
     public total: number,
     public currency: string,
-    public shippingAddressJson: any | null,
+    public shippingAddressJson: unknown,
     public readonly createdAt: Date,
     public readonly updatedAt: Date,
     public items: OrderItem[] = [],

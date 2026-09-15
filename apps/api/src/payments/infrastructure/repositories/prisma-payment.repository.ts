@@ -27,8 +27,8 @@ export class PrismaPaymentRepository implements IPaymentRepository {
       data: {
         id: payment.id,
         orderId: payment.orderId,
-        method: payment.method as any,
-        status: payment.status as any,
+        method: payment.method,
+        status: payment.status,
         amount: payment.amount,
         transactionRef: payment.transactionRef,
         paidAt: payment.paidAt,
@@ -57,7 +57,7 @@ export class PrismaPaymentRepository implements IPaymentRepository {
     await this.prisma.payment.update({
       where: { id: payment.id },
       data: {
-        status: payment.status as any,
+        status: payment.status,
         transactionRef: payment.transactionRef,
         paidAt: payment.paidAt,
       },

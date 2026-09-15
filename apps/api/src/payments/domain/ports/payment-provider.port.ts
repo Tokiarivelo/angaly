@@ -7,7 +7,7 @@ export interface PaymentInitializationResult {
 }
 
 export interface IPaymentProviderPort {
-  initiatePayment(orderId: string, amount: number): Promise<PaymentInitializationResult>;
-  confirmPayment(transactionRef: string): Promise<boolean>;
-  refund(transactionRef: string, amount: number): Promise<boolean>;
+  initiatePayment: (orderId: string, amount: number) => Promise<PaymentInitializationResult>;
+  confirmPayment: (transactionRef: string) => Promise<boolean>;
+  refund: (transactionRef: string, amount: number) => Promise<boolean>;
 }

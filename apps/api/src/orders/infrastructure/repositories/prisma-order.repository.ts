@@ -19,7 +19,7 @@ export class PrismaOrderRepository implements IOrderRepository {
         shippingCost: order.shippingCost,
         total: order.total,
         currency: order.currency,
-        shippingAddressJson: order.shippingAddressJson || undefined,
+        shippingAddressJson: order.shippingAddressJson ?? undefined,
         items: {
           create: order.items.map((item) => ({
             id: item.id,
@@ -56,7 +56,15 @@ export class PrismaOrderRepository implements IOrderRepository {
       include: { items: true },
       orderBy: { createdAt: 'desc' },
     });
-    return orders.map(OrderMapper.toDomain);
+    return orders.map((order) => OrderMapper.toDomain(order));
+  }
+
+  async findAll(): Promise<Order[]> {
+    const orders = await this.prisma.order.findMany({
+      include: { items: true },
+      orderBy: { createdAt: 'desc' },
+    });
+    return orders.map((order) => OrderMapper.toDomain(order));
   }
 
   async update(order: Order): Promise<void> {

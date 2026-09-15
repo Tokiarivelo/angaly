@@ -1,23 +1,37 @@
-import { Injectable, BadRequestException } from '@nestjs/common';
-import { Order } from '../../domain/entities/order.entity';
-import { OrderItem } from '../../domain/entities/order-item.entity';
+import { BadRequestException, Inject, Injectable } from '@nestjs/common';
 import { OrderStatus } from '@angaly/types';
-import { PrismaService } from '../../../prisma/prisma.service';
 import { randomUUID } from 'crypto';
 
+import { CUSTOMER_REPOSITORY, ICustomerRepository } from '../../../customers/domain/repositories/customer.repository';
+import { PrismaService } from '../../../prisma/prisma.service';
+import { Order } from '../../domain/entities/order.entity';
+import { OrderItem } from '../../domain/entities/order-item.entity';
+import { resolveCustomerId } from '../lib/resolve-customer-id';
+
 export interface CreateOrderCommand {
-  customerId: string;
+  userId: string;
   items: {
     productVariantId: string;
     quantity: number;
   }[];
-  shippingAddressJson?: any;
+  shippingAddressJson?: unknown;
 }
 
+/**
+ * Creates an `Order` from cart items, reserving stock as it goes.
+ *
+ * Writes `Order`/`OrderItem`/`Inventory` directly via `PrismaService` inside
+ * a single `$transaction`, bypassing `IOrderRepository` — `IOrderRepository.create()`
+ * has no way to join the transaction that also has to touch `Inventory`
+ * (same tradeoff `payments`' `confirm-payment.use-case.ts` makes for its own
+ * cross-table transaction). Every other `orders` use-case goes through the
+ * repository as usual.
+ */
 @Injectable()
 export class CreateOrderFromCartUseCase {
   constructor(
     private readonly prisma: PrismaService,
+    @Inject(CUSTOMER_REPOSITORY) private readonly customerRepository: ICustomerRepository,
   ) {}
 
   async execute(command: CreateOrderCommand): Promise<Order> {
@@ -25,55 +39,43 @@ export class CreateOrderFromCartUseCase {
       throw new BadRequestException('Cannot create an order with no items');
     }
 
-    // 1. Resolve variants and check inventory in a transaction
-    return this.prisma.$transaction(async (tx: any) => {
+    const customerId = await resolveCustomerId(this.customerRepository, command.userId);
+
+    return this.prisma.$transaction(async (tx) => {
       let subtotal = 0;
       const orderItems: OrderItem[] = [];
       const orderId = randomUUID();
 
       for (const itemCommand of command.items) {
-        // Fetch variant + inventory (locking would be ideal if supported, e.g. raw query FOR UPDATE)
         const variant = await tx.productVariant.findUnique({
           where: { id: itemCommand.productVariantId },
-          include: { inventory: true },
+          include: { inventory: true, product: true },
         });
 
         if (!variant) {
           throw new BadRequestException(`Variant ${itemCommand.productVariantId} not found`);
         }
-
         if (!variant.inventory) {
           throw new BadRequestException(`Inventory missing for variant ${itemCommand.productVariantId}`);
         }
 
-        if (variant.inventory.quantityAvailable < itemCommand.quantity) {
+        // Atomic reservation: the WHERE clause is re-evaluated at UPDATE time under
+        // the row lock Postgres takes for the statement, so two concurrent orders
+        // racing for the last unit can never both succeed — the loser's `count` is 0.
+        const reservation = await tx.inventory.updateMany({
+          where: { id: variant.inventory.id, quantityAvailable: { gte: itemCommand.quantity } },
+          data: { quantityAvailable: { decrement: itemCommand.quantity } },
+        });
+        if (reservation.count === 0) {
           throw new BadRequestException(
             `Not enough stock for variant ${itemCommand.productVariantId}. Available: ${variant.inventory.quantityAvailable}, Requested: ${itemCommand.quantity}`,
           );
         }
 
-        // Decrement inventory
-        await tx.inventory.update({
-          where: { id: variant.inventory.id },
-          data: {
-            quantityAvailable: {
-              decrement: itemCommand.quantity,
-            },
-          },
-        });
-
-        const unitPrice = Number(variant.price);
+        const unitPrice = Number(variant.priceOverride ?? variant.product.price);
         subtotal += unitPrice * itemCommand.quantity;
 
-        orderItems.push(
-          new OrderItem(
-            randomUUID(),
-            orderId,
-            itemCommand.productVariantId,
-            itemCommand.quantity,
-            unitPrice,
-          ),
-        );
+        orderItems.push(new OrderItem(randomUUID(), orderId, itemCommand.productVariantId, itemCommand.quantity, unitPrice));
       }
 
       const shippingCost = 0; // Simple rule for now
@@ -84,21 +86,18 @@ export class CreateOrderFromCartUseCase {
       const order = new Order(
         orderId,
         orderNumber,
-        command.customerId,
+        customerId,
         OrderStatus.PENDING,
         subtotal,
         shippingCost,
         total,
         'MGA',
-        command.shippingAddressJson || null,
+        command.shippingAddressJson ?? null,
         now,
         now,
         orderItems,
       );
 
-      // Create order via repository logic, passing tx would be better for clean arch, 
-      // but since the repo uses this.prisma, we either pass tx to the repo method or do it directly here.
-      // To respect the repository abstraction but ensure transaction safety:
       await tx.order.create({
         data: {
           id: order.id,
@@ -109,7 +108,7 @@ export class CreateOrderFromCartUseCase {
           shippingCost: order.shippingCost,
           total: order.total,
           currency: order.currency,
-          shippingAddressJson: order.shippingAddressJson || undefined,
+          shippingAddressJson: order.shippingAddressJson ?? undefined,
           items: {
             create: order.items.map((item) => ({
               id: item.id,

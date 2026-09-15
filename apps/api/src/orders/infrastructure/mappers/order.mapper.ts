@@ -1,7 +1,8 @@
-import { Order as PrismaOrder, OrderItem as PrismaOrderItem } from '@angaly/database';
-import { OrderStatus } from '@angaly/types';
+import type { Order as PrismaOrder, OrderItem as PrismaOrderItem } from '@angaly/database';
+import type { OrderStatus } from '@angaly/types';
 import { Order } from '../../domain/entities/order.entity';
 import { OrderItem } from '../../domain/entities/order-item.entity';
+import { OrderItemResponseDto, OrderResponseDto } from '../../application/dtos/order-response.dto';
 
 type PrismaOrderWithItems = PrismaOrder & { items?: PrismaOrderItem[] };
 
@@ -16,7 +17,7 @@ export class OrderMapper {
           item.quantity,
           Number(item.unitPrice),
         )
-    ) || [];
+    ) ?? [];
 
     return new Order(
       prismaOrder.id,
@@ -32,5 +33,30 @@ export class OrderMapper {
       prismaOrder.updatedAt,
       items,
     );
+  }
+
+  static toResponseDto(order: Order): OrderResponseDto {
+    const dto = new OrderResponseDto();
+    dto.id = order.id;
+    dto.orderNumber = order.orderNumber;
+    dto.customerId = order.customerId;
+    dto.status = order.status;
+    dto.subtotal = order.subtotal.toFixed(2);
+    dto.shippingCost = order.shippingCost.toFixed(2);
+    dto.total = order.total.toFixed(2);
+    dto.currency = order.currency;
+    dto.shippingAddressJson = order.shippingAddressJson;
+    dto.items = order.items.map((item) => {
+      const itemDto = new OrderItemResponseDto();
+      itemDto.id = item.id;
+      itemDto.orderId = item.orderId;
+      itemDto.productVariantId = item.productVariantId;
+      itemDto.quantity = item.quantity;
+      itemDto.unitPrice = item.unitPrice.toFixed(2);
+      return itemDto;
+    });
+    dto.createdAt = order.createdAt.toISOString();
+    dto.updatedAt = order.updatedAt.toISOString();
+    return dto;
   }
 }
