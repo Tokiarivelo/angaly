@@ -63,11 +63,11 @@ cd apps/ai-service
 python3 -m venv .venv
 source .venv/bin/activate
 pip install -r requirements.txt
-uvicorn app.main:app --reload --port 8000
+uvicorn app.main:app --reload --port 8001
 ```
 
-Health check: `GET http://localhost:8000/health`. Interactive docs (dev only,
-FastAPI's built-in Swagger UI): `http://localhost:8000/docs`.
+Health check: `GET http://localhost:8001/health`. Interactive docs (dev only,
+FastAPI's built-in Swagger UI): `http://localhost:8001/docs`.
 
 To also enable `LOCAL_STATISTICAL` measurement estimation, download the ANSUR II CSVs
 (URLs in `ml/scripts/train_measurement_model.py`'s docstring) into `ml/data/raw/`, then

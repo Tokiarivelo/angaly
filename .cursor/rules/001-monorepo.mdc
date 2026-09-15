@@ -10,7 +10,7 @@ globs: ['**/*']
 - Turborepo 2.x + pnpm 9.x
 - `apps/web` — Next.js 15 (port 3000) — vitrine + boutique + espace client + back-office
 - `apps/api` — NestJS 11, Clean Architecture (port 3003)
-- `apps/ai-service` — FastAPI Python (port 8000) — DL pour Angaly Pattern Studio
+- `apps/ai-service` — FastAPI Python (port 8001) — DL pour Angaly Pattern Studio
 - `packages/database` — Prisma 6 schema + seed (PostgreSQL 16)
 - `packages/types` — Types TypeScript partagés front/back
 - `packages/config` — Configs ESLint, TypeScript, Vitest partagées

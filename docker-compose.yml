@@ -2,7 +2,7 @@
 # docker-compose.yml
 # RÔLE : INFRASTRUCTURE LOCALE UNIQUEMENT (PostgreSQL + MinIO + Adminer)
 # Usage : docker compose up -d
-# Les apps (web :3000, api :3003, ai-service :8000) tournent sur le HOST via
+# Les apps (web :3000, api :3003, ai-service :8001) tournent sur le HOST via
 # `pnpm dev` / `uvicorn` — voir docs/development.md.
 # Pour le stack entièrement conteneurisé (prod-like), voir docker-compose.prod.yml.
 # =============================================================================

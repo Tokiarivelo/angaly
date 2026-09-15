@@ -81,7 +81,7 @@ make dev
 
 ```bash
 make install.ai   # crée apps/ai-service/.venv et installe les dépendances
-make dev.ai        # démarre uvicorn sur http://localhost:8000
+make dev.ai        # démarre uvicorn sur http://localhost:8001
 ```
 
 Sans ce service démarré, tout ce qui touche aux suggestions IA de Pattern Studio répond en
