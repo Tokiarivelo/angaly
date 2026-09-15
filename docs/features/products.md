@@ -82,6 +82,13 @@ __tests__/
 
 ## Points d'attention
 
+- **Données de démo** : `packages/database/prisma/seed.ts` seed désormais 6 produits
+  prêt-à-porter réels (`ANG-PAP-001` à `006`, catégorie `pret-a-porter`), chacun avec
+  variantes taille (FR 34-44, alignées sur `CATALOGUE_SIZES`) × couleur (palette
+  `CATALOGUE_COLOR_FILTERS` : Navy/White/Champagne/Black/Grey), `Inventory` par variante, une
+  photo (`MediaEntityType.PRODUCT`, bucket MinIO `products`) et une courte description — les
+  5 valeurs de `ProductAvailability` sont chacune couvertes par au moins un produit pour
+  exercer le filtre Disponibilité de `pret-a-porter-catalogue`.
 - Le panier (`POST /api/cart/items` référencé par `docs/pages/fiche-produit.md`) est
   volontairement **hors périmètre** de ce module : le découpage exact (sous-module de
   `products` vs. module `orders` dédié) est renvoyé à la session d'implémentation de Phase 3

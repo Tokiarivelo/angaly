@@ -8,6 +8,7 @@ import {
   Locale,
   MediaEntityType,
   PrismaClient,
+  ProductAvailability,
   Role,
 } from '../generated/client';
 
@@ -617,6 +618,149 @@ async function main() {
     createdCreations.set(creation.slug, creation);
   }
   console.log(`✅ ${creations.length} créations créées`);
+
+  // --- Produits Prêt-à-porter (docs/pages/pret-a-porter-catalogue.md, docs/pages/fiche-produit.md) ---
+  // Distinct des créations pièce-unique ci-dessus : vêtements disponibles immédiatement,
+  // avec variantes taille (CATALOGUE_SIZES — tailles FR 34-44) et couleur (palette du filtre
+  // CATALOGUE_COLOR_FILTERS : Navy/White/Champagne/Black/Grey) pour que les filtres du
+  // catalogue et le sélecteur de couleur de la fiche produit aient de vraies données à filtrer.
+  const pretAPorterCategory = categoryBySlug.get('pret-a-porter')!;
+  const atelierAntananarivo = createdAteliers.get('antananarivo-centre');
+
+  const products = [
+    {
+      sku: 'ANG-PAP-001',
+      slug: 'chemise-lin-antsirabe',
+      name: 'Chemise Lin Antsirabe',
+      categoryId: pretAPorterCategory.id,
+      atelierId: atelierAntananarivo?.id ?? null,
+      description:
+        'Chemise fluide en lin naturel tissé à Madagascar, coupe droite et col mao discret — un essentiel intemporel pour toutes les saisons.',
+      price: 138000,
+      status: ProductAvailability.AVAILABLE,
+      material: 'Lin',
+      sizes: ['36', '38', '40', '42'],
+      colors: ['White', 'Champagne'],
+      photo: '1509631179647-0177331693ae',
+      photoAlt: 'Chemise Lin Antsirabe',
+    },
+    {
+      sku: 'ANG-PAP-002',
+      slug: 'robe-portefeuille-soiree',
+      name: 'Robe Portefeuille Soirée',
+      categoryId: pretAPorterCategory.id,
+      atelierId: atelierAntananarivo?.id ?? null,
+      description:
+        'Robe portefeuille en crêpe fluide, silhouette cintrée à la taille et jupe évasée pour une allure élégante en toute occasion.',
+      price: 245000,
+      status: ProductAvailability.LAST_PIECE,
+      material: 'Crêpe',
+      sizes: ['34', '36', '38'],
+      colors: ['Black', 'Champagne'],
+      photo: '1512436991641-6745cdb1723f',
+      photoAlt: 'Robe Portefeuille Soirée',
+    },
+    {
+      sku: 'ANG-PAP-003',
+      slug: 'blazer-structure-marine',
+      name: 'Blazer Structuré Marine',
+      categoryId: pretAPorterCategory.id,
+      atelierId: atelierAntananarivo?.id ?? null,
+      description:
+        "Blazer cintré à l'épaule structurée et doublure satinée — la pièce signature d'un vestiaire de bureau sophistiqué.",
+      price: 312000,
+      status: ProductAvailability.AVAILABLE,
+      material: 'Laine mélangée',
+      sizes: ['36', '38', '40', '42'],
+      colors: ['Navy', 'Black'],
+      photo: '1534528741775-53994a69daeb',
+      photoAlt: 'Blazer Structuré Marine',
+    },
+    {
+      sku: 'ANG-PAP-004',
+      slug: 'pantalon-tailleur-ivoire',
+      name: 'Pantalon Tailleur Ivoire',
+      categoryId: pretAPorterCategory.id,
+      atelierId: atelierAntananarivo?.id ?? null,
+      description:
+        'Pantalon fluide à pinces, taille haute et coupe droite — le compagnon parfait du blazer structuré.',
+      price: 168000,
+      status: ProductAvailability.ON_ORDER,
+      material: 'Viscose',
+      sizes: ['34', '36', '38', '40'],
+      colors: ['White', 'Black'],
+      photo: '1544078751-58fee2d8a03b',
+      photoAlt: 'Pantalon Tailleur Ivoire',
+    },
+    {
+      sku: 'ANG-PAP-005',
+      slug: 'chemisier-soie-champagne',
+      name: 'Chemisier Soie Champagne',
+      categoryId: pretAPorterCategory.id,
+      atelierId: atelierAntananarivo?.id ?? null,
+      description:
+        'Chemisier en soie naturelle au tombé délicat et col lavallière discret — la touche précieuse du vestiaire quotidien.',
+      price: 198000,
+      status: ProductAvailability.RESERVED,
+      material: 'Soie',
+      sizes: ['34', '36', '38'],
+      colors: ['Champagne', 'White'],
+      photo: '1571908599407-cdb918ed83bf',
+      photoAlt: 'Chemisier Soie Champagne',
+    },
+    {
+      sku: 'ANG-PAP-006',
+      slug: 'jupe-plissee-grise',
+      name: 'Jupe Plissée Grise',
+      categoryId: pretAPorterCategory.id,
+      atelierId: atelierAntananarivo?.id ?? null,
+      description:
+        'Jupe plissée mi-longue en satin, mouvement fluide à chaque pas — pour une silhouette élégante du bureau au dîner.',
+      price: 132000,
+      status: ProductAvailability.OUT_OF_STOCK,
+      material: 'Satin',
+      sizes: ['36', '38', '40', '42'],
+      colors: ['Grey', 'Black'],
+      photo: '1593032465175-481ac7f401a0',
+      photoAlt: 'Jupe Plissée Grise',
+    },
+  ];
+
+  const createdProducts = new Map<string, { id: string }>();
+  for (const { sizes, colors, material, photo: _photo, photoAlt: _photoAlt, ...productData } of products) {
+    const product = await prisma.product.upsert({
+      where: { slug: productData.slug },
+      update: productData,
+      create: productData,
+    });
+    createdProducts.set(product.slug, product);
+
+    const quantityAvailable =
+      productData.status === ProductAvailability.OUT_OF_STOCK
+        ? 0
+        : productData.status === ProductAvailability.LAST_PIECE
+          ? 1
+          : 6;
+    const quantityReserved = productData.status === ProductAvailability.RESERVED ? 1 : 0;
+
+    for (const size of sizes) {
+      for (const color of colors) {
+        const colorCode = color.slice(0, 3).toUpperCase();
+        const variantSku = `${productData.sku}-${size}-${colorCode}`;
+        const variant = await prisma.productVariant.upsert({
+          where: { sku: variantSku },
+          update: { productId: product.id, size, color, material },
+          create: { productId: product.id, sku: variantSku, size, color, material },
+        });
+        await prisma.inventory.upsert({
+          where: { variantId: variant.id },
+          update: {},
+          create: { variantId: variant.id, quantityAvailable, quantityReserved },
+        });
+      }
+    }
+  }
+  console.log(`✅ ${products.length} produits prêt-à-porter créés (avec variantes et stock)`);
 
   // journal-liste (docs/pages/journal-liste.md) needs real content to render against —
   // authorId is a required FK to User, seeded directly per docs/features/blog.md.
@@ -1468,6 +1612,18 @@ async function main() {
       }
     }
     console.log('✅ Avatars des témoignages vérifiés/hébergés sur MinIO');
+
+    for (const { slug, photo, photoAlt } of products) {
+      const product = createdProducts.get(slug);
+      if (!product) continue;
+      const exists = await prisma.media.findFirst({
+        where: { entityType: MediaEntityType.PRODUCT, entityId: product.id },
+      });
+      if (!exists) {
+        await attachPhoto(storage, 'products', photo, photoAlt, MediaEntityType.PRODUCT, product.id);
+      }
+    }
+    console.log('✅ Photos des produits prêt-à-porter vérifiées/hébergées sur MinIO');
   } catch (error) {
     console.warn(
       '⚠️  Seed média ignoré (MinIO ou réseau indisponible) — les pages afficheront des dégradés de substitution.',
@@ -1522,7 +1678,9 @@ async function attachPhoto(
               ? 'pageSectionRefs'
               : entityType === MediaEntityType.CUSTOMER_AVATAR
                 ? 'testimonialRefs'
-                : null;
+                : entityType === MediaEntityType.PRODUCT
+                  ? 'productRefs'
+                  : null;
 
   await prisma.media.create({
     data: {
