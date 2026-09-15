@@ -19,6 +19,7 @@ function sampleVariant(quantityAvailable: number, quantityReserved: number): Pro
     priceOverride: null,
     quantityAvailable,
     quantityReserved,
+    media: [],
   });
 }
 

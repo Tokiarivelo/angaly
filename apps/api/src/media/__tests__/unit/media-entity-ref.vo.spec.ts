@@ -19,6 +19,7 @@ describe('resolveBucketForEntityType', () => {
   it.each([
     ['CREATION', 'creations'],
     ['PRODUCT', 'products'],
+    ['PRODUCT_VARIANT', 'products'],
     ['COLLECTION', 'collections'],
     ['ATELIER', 'ateliers'],
     ['CUSTOMER_AVATAR', 'avatars'],

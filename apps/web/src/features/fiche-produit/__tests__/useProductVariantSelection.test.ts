@@ -14,6 +14,7 @@ function variant(overrides: Partial<ProductVariantDto>): ProductVariantDto {
     priceOverride: null,
     quantityAvailable: 3,
     quantityReserved: 0,
+    media: [],
     ...overrides,
   };
 }

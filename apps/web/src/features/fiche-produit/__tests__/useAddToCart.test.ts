@@ -30,6 +30,7 @@ const VARIANT: ProductVariantDto = {
   priceOverride: null,
   quantityAvailable: 3,
   quantityReserved: 0,
+  media: [],
 };
 
 describe('useAddToCart', () => {

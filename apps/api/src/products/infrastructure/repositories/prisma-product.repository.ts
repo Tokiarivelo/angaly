@@ -21,6 +21,10 @@ export const PRODUCT_VARIANT_SELECT = {
   material: true,
   priceOverride: true,
   inventory: { select: { quantityAvailable: true, quantityReserved: true } },
+  media: {
+    orderBy: { sortOrder: 'asc' },
+    select: { id: true, url: true, altText: true, sortOrder: true },
+  },
 } satisfies Prisma.ProductVariantSelect;
 
 export type ProductVariantRecord = Prisma.ProductVariantGetPayload<{ select: typeof PRODUCT_VARIANT_SELECT }>;

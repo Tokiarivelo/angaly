@@ -34,6 +34,7 @@ function variantRecord(): ProductVariantRecord {
     material: null,
     priceOverride: null,
     inventory: { quantityAvailable: 10, quantityReserved: 3 },
+    media: [],
   };
 }
 

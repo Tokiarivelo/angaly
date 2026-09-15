@@ -152,6 +152,7 @@ enum FavoriteEntityType {
 enum MediaEntityType {
   CREATION
   PRODUCT
+  PRODUCT_VARIANT
   COLLECTION
   ATELIER
   CUSTOMER_AVATAR
@@ -401,6 +402,9 @@ model ProductVariant {
   product   Product     @relation(fields: [productId], references: [id], onDelete: Cascade)
   inventory Inventory?
   orderItems OrderItem[]
+  // Colorway-specific photos (e.g. the "Navy" swatch shows the navy photos) —
+  // optional: a variant with none falls back to the product's shared media.
+  media     Media[]     @relation("ProductVariantMedia")
 
   @@index([productId])
   @@map("product_variants")
@@ -795,6 +799,7 @@ model Media {
 
   creationRefs         Creation[]        @relation("CreationMedia")
   productRefs          Product[]         @relation("ProductMedia")
+  productVariantRefs   ProductVariant[]  @relation("ProductVariantMedia")
   collectionRefs       Collection[]      @relation("CollectionMedia")
   atelierRefs          Atelier[]         @relation("AtelierMedia")
   blogPostRefs         BlogPost[]        @relation("BlogPostMedia")

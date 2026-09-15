@@ -125,6 +125,7 @@ export enum FavoriteEntityType {
 export enum MediaEntityType {
   CREATION = 'CREATION',
   PRODUCT = 'PRODUCT',
+  PRODUCT_VARIANT = 'PRODUCT_VARIANT',
   COLLECTION = 'COLLECTION',
   ATELIER = 'ATELIER',
   CUSTOMER_AVATAR = 'CUSTOMER_AVATAR',
@@ -400,6 +401,8 @@ export interface ProductVariantDto {
   priceOverride: ProductPriceDto | null;
   quantityAvailable: number;
   quantityReserved: number;
+  /** Colorway-specific photos (e.g. the "Navy" swatch shows the navy photos). Empty when this variant has none — callers fall back to `ProductDto.media`. */
+  media: ProductMediaDto[];
 }
 
 export interface ProductDto extends Timestamps {

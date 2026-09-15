@@ -1,4 +1,5 @@
 import type { Price } from '../value-objects/price.vo';
+import type { ProductMediaSummary } from './product.entity';
 
 export interface ProductVariantProps {
   id: string;
@@ -10,6 +11,8 @@ export interface ProductVariantProps {
   priceOverride: Price | null;
   quantityAvailable: number;
   quantityReserved: number;
+  /** Colorway-specific photos — empty when this variant shares the product's media. */
+  media: ProductMediaSummary[];
 }
 
 /** Invariants: size/color non-empty. */
@@ -60,6 +63,10 @@ export class ProductVariantEntity {
 
   get quantityReserved(): number {
     return this.props.quantityReserved;
+  }
+
+  get media(): ProductMediaSummary[] {
+    return this.props.media;
   }
 
   /**

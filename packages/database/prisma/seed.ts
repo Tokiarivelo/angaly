@@ -640,7 +640,12 @@ async function main() {
       status: ProductAvailability.AVAILABLE,
       material: 'Lin',
       sizes: ['36', '38', '40', '42'],
-      colors: ['White', 'Champagne'],
+      // Each color has its own photo — picking a swatch on the product page
+      // swaps the gallery to that colorway's pictures (see ColorSelector.tsx).
+      colorPhotos: [
+        { color: 'White', photo: '1496747611176-843222e1e57c', photoAlt: 'Chemise Lin Antsirabe — White' },
+        { color: 'Champagne', photo: '1503342217505-b0a15ec3261c', photoAlt: 'Chemise Lin Antsirabe — Champagne' },
+      ],
       photo: '1509631179647-0177331693ae',
       photoAlt: 'Chemise Lin Antsirabe',
     },
@@ -656,7 +661,10 @@ async function main() {
       status: ProductAvailability.LAST_PIECE,
       material: 'Crêpe',
       sizes: ['34', '36', '38'],
-      colors: ['Black', 'Champagne'],
+      colorPhotos: [
+        { color: 'Black', photo: '1507003211169-0a1dd7228f2d', photoAlt: 'Robe Portefeuille Soirée — Black' },
+        { color: 'Champagne', photo: '1507679799987-c73779587ccf', photoAlt: 'Robe Portefeuille Soirée — Champagne' },
+      ],
       photo: '1512436991641-6745cdb1723f',
       photoAlt: 'Robe Portefeuille Soirée',
     },
@@ -672,7 +680,10 @@ async function main() {
       status: ProductAvailability.AVAILABLE,
       material: 'Laine mélangée',
       sizes: ['36', '38', '40', '42'],
-      colors: ['Navy', 'Black'],
+      colorPhotos: [
+        { color: 'Navy', photo: '1515886657613-9f3515b0c78f', photoAlt: 'Blazer Structuré Marine — Navy' },
+        { color: 'Black', photo: '1517841905240-472988babdf9', photoAlt: 'Blazer Structuré Marine — Black' },
+      ],
       photo: '1534528741775-53994a69daeb',
       photoAlt: 'Blazer Structuré Marine',
     },
@@ -688,7 +699,10 @@ async function main() {
       status: ProductAvailability.ON_ORDER,
       material: 'Viscose',
       sizes: ['34', '36', '38', '40'],
-      colors: ['White', 'Black'],
+      colorPhotos: [
+        { color: 'White', photo: '1519741497674-611481863552', photoAlt: 'Pantalon Tailleur Ivoire — White' },
+        { color: 'Black', photo: '1520006403909-838d6b92c22e', photoAlt: 'Pantalon Tailleur Ivoire — Black' },
+      ],
       photo: '1544078751-58fee2d8a03b',
       photoAlt: 'Pantalon Tailleur Ivoire',
     },
@@ -704,7 +718,10 @@ async function main() {
       status: ProductAvailability.RESERVED,
       material: 'Soie',
       sizes: ['34', '36', '38'],
-      colors: ['Champagne', 'White'],
+      colorPhotos: [
+        { color: 'Champagne', photo: '1520975916090-3105956dac38', photoAlt: 'Chemisier Soie Champagne — Champagne' },
+        { color: 'White', photo: '1528459801416-a9e53bbf4e17', photoAlt: 'Chemisier Soie Champagne — White' },
+      ],
       photo: '1571908599407-cdb918ed83bf',
       photoAlt: 'Chemisier Soie Champagne',
     },
@@ -720,14 +737,21 @@ async function main() {
       status: ProductAvailability.OUT_OF_STOCK,
       material: 'Satin',
       sizes: ['36', '38', '40', '42'],
-      colors: ['Grey', 'Black'],
+      colorPhotos: [
+        { color: 'Grey', photo: '1539109136881-3be0616acf4b', photoAlt: 'Jupe Plissée Grise — Grey' },
+        { color: 'Black', photo: '1546804784-896d0dca3805', photoAlt: 'Jupe Plissée Grise — Black' },
+      ],
       photo: '1593032465175-481ac7f401a0',
       photoAlt: 'Jupe Plissée Grise',
     },
   ];
 
   const createdProducts = new Map<string, { id: string }>();
-  for (const { sizes, colors, material, photo: _photo, photoAlt: _photoAlt, ...productData } of products) {
+  // Variant ids sharing the same (productSlug, color) — every size of a color
+  // points at the same colorway photo below, keyed as "<slug>::<color>".
+  const variantIdsByProductColor = new Map<string, string[]>();
+
+  for (const { sizes, colorPhotos, material, photo: _photo, photoAlt: _photoAlt, ...productData } of products) {
     const product = await prisma.product.upsert({
       where: { slug: productData.slug },
       update: productData,
@@ -744,7 +768,7 @@ async function main() {
     const quantityReserved = productData.status === ProductAvailability.RESERVED ? 1 : 0;
 
     for (const size of sizes) {
-      for (const color of colors) {
+      for (const { color } of colorPhotos) {
         const colorCode = color.slice(0, 3).toUpperCase();
         const variantSku = `${productData.sku}-${size}-${colorCode}`;
         const variant = await prisma.productVariant.upsert({
@@ -757,6 +781,9 @@ async function main() {
           update: {},
           create: { variantId: variant.id, quantityAvailable, quantityReserved },
         });
+
+        const key = `${product.slug}::${color}`;
+        variantIdsByProductColor.set(key, [...(variantIdsByProductColor.get(key) ?? []), variant.id]);
       }
     }
   }
@@ -1624,6 +1651,21 @@ async function main() {
       }
     }
     console.log('✅ Photos des produits prêt-à-porter vérifiées/hébergées sur MinIO');
+
+    for (const { slug, colorPhotos } of products) {
+      for (const { color, photo, photoAlt } of colorPhotos) {
+        const variantIds = variantIdsByProductColor.get(`${slug}::${color}`) ?? [];
+        if (variantIds.length === 0) continue;
+        const [ownerVariantId] = variantIds;
+        const exists = await prisma.media.findFirst({
+          where: { entityType: MediaEntityType.PRODUCT_VARIANT, entityId: ownerVariantId },
+        });
+        if (!exists) {
+          await attachVariantColorPhoto(storage, photo, photoAlt, ownerVariantId!, variantIds);
+        }
+      }
+    }
+    console.log('✅ Photos par couleur des variantes prêt-à-porter vérifiées/hébergées sur MinIO');
   } catch (error) {
     console.warn(
       '⚠️  Seed média ignoré (MinIO ou réseau indisponible) — les pages afficheront des dégradés de substitution.',
@@ -1694,6 +1736,43 @@ async function attachPhoto(
       entityId,
       sortOrder,
       ...(relationField ? { [relationField]: { connect: { id: entityId } } } : {}),
+    },
+  });
+}
+
+/**
+ * One photo per colorway, shared by every size of that color (the
+ * `_ProductVariantMedia` many-to-many) — tagged with `ownerVariantId` as its
+ * `entityId` only so the idempotency check in the caller has a single row to
+ * look up per color, not one per size.
+ */
+async function attachVariantColorPhoto(
+  storage: StorageClient,
+  photoSource: string,
+  altText: string,
+  ownerVariantId: string,
+  variantIds: string[],
+): Promise<void> {
+  const buffer = await downloadPhoto(photoSource);
+  const filename = photoSource.startsWith('http') ? `${ownerVariantId}-0.jpg` : `${photoSource}.jpg`;
+  const upload = await storage.uploadBuffer('products', buffer, {
+    originalFilename: filename,
+    mimeType: 'image/jpeg',
+    keyPrefix: ownerVariantId,
+  });
+
+  await prisma.media.create({
+    data: {
+      bucket: upload.bucket,
+      objectKey: upload.objectKey,
+      url: upload.url,
+      altText,
+      mimeType: 'image/jpeg',
+      sizeBytes: upload.sizeBytes,
+      entityType: MediaEntityType.PRODUCT_VARIANT,
+      entityId: ownerVariantId,
+      sortOrder: 0,
+      productVariantRefs: { connect: variantIds.map((id) => ({ id })) },
     },
   });
 }

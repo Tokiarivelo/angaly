@@ -13,6 +13,7 @@ function variantRecord(overrides: Partial<ProductVariantRecord> = {}): ProductVa
     material: null,
     priceOverride: null,
     inventory: { quantityAvailable: 10, quantityReserved: 3 },
+    media: [],
     ...overrides,
   };
 }
@@ -61,12 +62,44 @@ describe('ProductMapper', () => {
     expect(entity.variants[0]?.priceOverride).toEqual({ amount: '99000', currency: 'MGA' });
   });
 
-  it('maps a domain entity to a response DTO with ISO date strings', () => {
+  it('maps a variant colorway-specific media, defaulting altText to an empty string', () => {
+    const entity = ProductMapper.toDomain(
+      productRecord({
+        variants: [
+          variantRecord({
+            media: [{ id: 'media-2', url: 'http://localhost:9000/products/navy.jpg', altText: null, sortOrder: 0 }],
+          }),
+        ],
+      }),
+    );
+
+    expect(entity.variants[0]?.media).toEqual([
+      { id: 'media-2', url: 'http://localhost:9000/products/navy.jpg', altText: '', sortOrder: 0 },
+    ]);
+  });
+
+  it('defaults a variant with no dedicated photos to an empty media array', () => {
     const entity = ProductMapper.toDomain(productRecord());
+    expect(entity.variants[0]?.media).toEqual([]);
+  });
+
+  it('maps a domain entity to a response DTO with ISO date strings', () => {
+    const entity = ProductMapper.toDomain(
+      productRecord({
+        variants: [
+          variantRecord({
+            media: [{ id: 'media-2', url: 'http://localhost:9000/products/navy.jpg', altText: 'Navy', sortOrder: 0 }],
+          }),
+        ],
+      }),
+    );
     const dto = ProductMapper.toResponseDto(entity);
 
     expect(dto.createdAt).toBe('2026-01-01T00:00:00.000Z');
     expect(dto.price).toEqual({ amount: '150000', currency: 'MGA' });
     expect(dto.variants).toHaveLength(1);
+    expect(dto.variants[0]?.media).toEqual([
+      { id: 'media-2', url: 'http://localhost:9000/products/navy.jpg', altText: 'Navy', sortOrder: 0 },
+    ]);
   });
 });

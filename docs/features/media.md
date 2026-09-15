@@ -115,11 +115,12 @@ Relations inverses polymorphiques : `CreationMedia`, `ProductMedia`, `Collection
   `packages/storage/src/storage-client.ts` ; ce module est le seul à instancier
   `StorageClient`.
 - Mapping `entityType` → bucket (`resolveBucketForEntityType()`) : `CREATION`→`creations`,
-  `PRODUCT`→`products`, `COLLECTION`→`collections`, `ATELIER`→`ateliers`,
+  `PRODUCT`→`products`, `PRODUCT_VARIANT`→`products` (photos par couleur, voir
+  `docs/features/products.md`), `COLLECTION`→`collections`, `ATELIER`→`ateliers`,
   `CUSTOMER_AVATAR`→`avatars`, `PATTERN_EXPORT`→`patterns`, `BLOG_POST`→`blog`,
-  `PAGE_SECTION`→`customers`. Les 7 premiers sont un match direct par nom ; `PAGE_SECTION`
-  hérite du bucket restant (`customers`) faute de bucket dédié dans la spec — à revoir si
-  Phase 6 (admin-gestion-contenu) introduit un bucket propre pour le contenu CMS.
+  `PAGE_SECTION`→`customers`. `PAGE_SECTION` hérite du bucket restant (`customers`) faute de
+  bucket dédié dans la spec — à revoir si Phase 6 (admin-gestion-contenu) introduit un bucket
+  propre pour le contenu CMS.
 - Le seuil de couverture de branches Jest (`apps/api/jest.config.ts`) est fixé à 75 % (au
   lieu de 80 % pour les 3 autres métriques) : les décorateurs NestJS (`@Inject()`, `@Body()`,
   `@Query()`, paramètres de constructeur avec `emitDecoratorMetadata`) produisent des

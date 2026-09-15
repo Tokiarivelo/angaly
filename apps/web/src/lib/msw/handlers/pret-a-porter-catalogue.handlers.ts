@@ -25,6 +25,7 @@ export const SAMPLE_PRODUCTS: ProductDto[] = [
         priceOverride: null,
         quantityAvailable: 1,
         quantityReserved: 0,
+        media: [],
       },
     ],
     createdAt: '2026-01-01T00:00:00.000Z',

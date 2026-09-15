@@ -6,7 +6,7 @@ import { ProductAvailability, type ProductDto, type ProductVariantDto } from '@a
 import { formatPriceAriary } from '@/lib/utils';
 
 import { useAddToCart } from '../hooks/useAddToCart';
-import { useProductVariantSelection } from '../hooks/useProductVariantSelection';
+import type { UseProductVariantSelectionResult } from '../hooks/useProductVariantSelection';
 import { useToggleFavorite } from '../hooks/useToggleFavorite';
 import { ColorSelector } from './ColorSelector';
 import { ProductActionsGroup } from './ProductActionsGroup';
@@ -32,10 +32,23 @@ export function resolveVariantStatus(productStatus: ProductAvailability, variant
   return productStatus;
 }
 
-/** Verified against the real Stitch screen: kicker + H1 + ref, price/status row, selectors, material note, actions — sticky on desktop. */
-export function PurchasePanel({ product }: { product: ProductDto }) {
+interface PurchasePanelProps {
+  product: ProductDto;
+  variantSelection: UseProductVariantSelectionResult;
+}
+
+/**
+ * Verified against the real Stitch screen: kicker + H1 + ref, price/status
+ * row, selectors, material note, actions — sticky on desktop.
+ *
+ * Variant selection state (`variantSelection`) is owned by `FicheProduitPage`,
+ * not this component — `ProductGallery` needs the same `selectedVariant` to
+ * swap its photos when the color changes, so the two siblings share one hook
+ * instance instead of drifting out of sync.
+ */
+export function PurchasePanel({ product, variantSelection }: PurchasePanelProps) {
   const { sizes, colors, selectedSize, selectedColor, selectedVariant, isSizeAvailable, selectSize, selectColor } =
-    useProductVariantSelection(product.variants);
+    variantSelection;
   const { addToCart, justAdded } = useAddToCart(product);
   const { isFavorite, toggleFavorite } = useToggleFavorite();
   const [quantity, setQuantity] = useState(1);
