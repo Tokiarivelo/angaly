@@ -83,9 +83,12 @@ __tests__/
 - **`customers`** : associe `Appointment.customerId` si l'utilisateur est connecté ; reste
   fonctionnel pour un visiteur non connecté (champs `firstName`/`lastName`/`phone`/`email`
   saisis directement dans le formulaire, spec §33).
-- **`notifications`** (Phase 3) : `create-appointment`/`confirm-appointment`/
-  `cancel-appointment` déclenchent chacun une notification (spec §36) une fois le module
-  livré ; en attendant, TODO explicite (pas d'envoi réel avant Phase 3).
+- **`notifications`** (Phase 3) : `confirm-appointment` émet `APPOINTMENT_CONFIRMED` — **câblé**
+  (session 2026-09-15), mais seulement quand `Appointment.customerId` est renseigné (visiteur
+  connecté) : un visiteur anonyme sans `Customer` lié n'a pas de `User` auquel rattacher une
+  `Notification` in-app, la notification est alors silencieusement sautée (voir
+  `docs/features/notifications.md` "Points d'attention"). `create-appointment`/
+  `cancel-appointment` (`APPOINTMENT_REMINDER`/`APPOINTMENT_CANCELLED`) restent **TODO**.
 - **Pages consommatrices** : `prendre-rendez-vous`, `confirmation-rendez-vous`,
   `reservation-essayage` (même module, `type = ESSAYAGE`).
 

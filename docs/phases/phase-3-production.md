@@ -1,7 +1,9 @@
 # Phase 3 — Production
 
-**Statut : ⬜ À faire.** Dépend de : Phase 2 (`auth`, `customers`, `products`, `appointments`,
-`quotes`).
+**Statut : 🟡 En cours.** Dépend de : Phase 2 (`auth`, `customers`, `products`, `appointments`,
+`quotes`). Modules backend `orders`/`payments`/`notifications` : ✅ (`notifications` livré
+session 2026-09-15, voir `docs/features/notifications.md`). Les 6 pages listées ci-dessous
+restent 🟡 (UI/store créés, non câblées aux API) — reste l'étape 4 de l'"Ordre suggéré".
 
 ## Objectif (spec §101, Phase 3)
 
@@ -25,14 +27,20 @@ phase qui rend le parcours d'achat/production réellement transactionnel de bout
 
 ## Ordre suggéré
 
-1. `orders` (panier → commande, statuts spec §97) → pages `panier`, `checkout`
-2. `payments` (couche d'abstraction — spec §59 : Mobile Money, carte, virement, à la
+1. ✅ `orders` (panier → commande, statuts spec §97) → pages `panier`, `checkout` (module
+   backend fait, pages restent 🟡)
+2. ✅ `payments` (couche d'abstraction — spec §59 : Mobile Money, carte, virement, à la
    livraison ; ne pas coupler le domaine à un prestataire précis)
-3. `notifications` (email + notification web a minima ; WhatsApp si un fournisseur est
-   disponible, sinon documenter l'écart dans `docs/features/notifications.md`)
-4. `espace-client-dashboard`, `mes-rendez-vous` (complète Phase 2's `prendre-rendez-vous`
+3. ✅ `notifications` (email SMTP générique + notification web — session 2026-09-15). WhatsApp
+   **non branché** : aucun fournisseur (Twilio, WhatsApp Business API, Meta Cloud API…) n'est
+   confirmé à ce jour — `whatsapp-channel.adapter.ts` reste un stub non enregistré, écart
+   documenté dans `docs/features/notifications.md` "Points d'attention". Câblage dans
+   `orders`/`payments`/`appointments` fait ; `quotes`/`patterns`/`create-appointment`/
+   `cancel-appointment`/`refund-payment` restent TODO (voir `docs/features/notifications.md`
+   "Points d'intégration").
+4. ⬜ `espace-client-dashboard`, `mes-rendez-vous` (complète Phase 2's `prendre-rendez-vous`
    avec une vue liste/gestion), `suivi-commande` (timeline spec §54-55),
-   `messages-factures-notifications`
+   `messages-factures-notifications` — et câbler `panier`/`checkout` aux API `orders`/`payments`
 
 ## Points d'attention
 

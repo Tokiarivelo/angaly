@@ -747,6 +747,23 @@ export interface InitiatePaymentPayload {
 }
 
 // ============================================================
+// Notifications — GET /api/notifications
+// ============================================================
+
+/** Does NOT extend `Timestamps`: `Notification` (schema.prisma) has no `updatedAt` column. */
+export interface NotificationDto {
+  id: string;
+  userId: string;
+  type: NotificationType;
+  title: string;
+  body: string;
+  isRead: boolean;
+  relatedEntityType: string | null;
+  relatedEntityId: string | null;
+  createdAt: string;
+}
+
+// ============================================================
 // Angaly Pattern Studio — tailles standard
 // ============================================================
 

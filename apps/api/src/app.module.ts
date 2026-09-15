@@ -20,13 +20,13 @@ import { AiInferenceModule } from './ai-inference/ai-inference.module';
 import { ReviewsModule } from './reviews/reviews.module';
 import { OrdersModule } from './orders/orders.module';
 import { PaymentsModule } from './payments/payments.module';
+import { NotificationsModule } from './notifications/notifications.module';
 import { PatternsModule } from './patterns/patterns.module';
 import { AdminAiSettingsModule } from './admin-ai-settings/admin-ai-settings.module';
 import { HealthController } from './shared/health/health.controller';
 
-// Remaining domain modules (users, orders, payments, measurements,
-// patterns, pattern-engine, ai-inference, reviews, notifications) are
-// scaffolded as empty directories under src/ —
+// Remaining domain modules (users, measurements, patterns, pattern-engine,
+// ai-inference, reviews) are scaffolded as empty directories under src/ —
 // see each module's docs/features/<slug>.md and
 // .cursor/rules/006-phase-workflow.mdc. They are wired into this module's
 // `imports` array as each is implemented, one phase at a time
@@ -61,6 +61,7 @@ import { HealthController } from './shared/health/health.controller';
     ReviewsModule,
     OrdersModule,
     PaymentsModule,
+    NotificationsModule,
     PatternsModule,
     AdminAiSettingsModule,
   ],

@@ -1,6 +1,6 @@
 # Feature — `notifications`
 
-**Statut : ⬜ À faire.** Phase 3 — Production.
+**Statut : ✅ Fait** (session 2026-09-15). Phase 3 — Production.
 
 ## Objet
 
@@ -35,8 +35,15 @@ presentation/
   controllers/notifications.controller.ts
   guards/ (utilisateur courant uniquement)
 __tests__/
+  unit/notification.entity.spec.ts
+  unit/notification.mapper.spec.ts
+  unit/prisma-notification.repository.spec.ts
   unit/create-notification.use-case.spec.ts
+  unit/list-user-notifications.use-case.spec.ts
   unit/mark-notification-read.use-case.spec.ts
+  unit/mark-all-read.use-case.spec.ts
+  unit/email-channel.adapter.spec.ts
+  unit/web-channel.adapter.spec.ts
   integration/notifications.controller.spec.ts
 ```
 
@@ -69,28 +76,50 @@ table `Notification`.
 
 ## Points d'intégration
 
-- **`appointments`** : `APPOINTMENT_CONFIRMED`/`APPOINTMENT_REMINDER`/`APPOINTMENT_CANCELLED`
-- **`orders`** / **`payments`** : `ORDER_STATUS_CHANGED` (y compris pour un paiement confirmé,
-  voir `docs/features/payments.md`)
-- **`quotes`** : `QUOTE_RECEIVED`
-- **`patterns`** : `PATTERN_STATUS_CHANGED`
-- Chacun de ces modules injecte le service exporté de `notifications` (`create-notification`)
+- **`orders`** : `create-order-from-cart`/`update-order-status` émettent `ORDER_STATUS_CHANGED`
+  — **câblé**.
+- **`payments`** : `confirm-payment` émet `ORDER_STATUS_CHANGED` une fois le paiement confirmé
+  (le statut `Order` passe à `PAID` dans la même transaction) — **câblé**. `refund-payment`
+  transitionne aussi l'`Order` (`REFUNDED`) mais n'émet pas encore de notification — non couvert
+  par la vérification de sortie de phase, TODO explicite.
+- **`appointments`** : `confirm-appointment` émet `APPOINTMENT_CONFIRMED` — **câblé**, mais
+  seulement quand le rendez-vous est lié à un `Customer` connecté (`Appointment.customerId`
+  non nul) : un visiteur anonyme n'a pas de `User` auquel rattacher une notification in-app.
+  `create-appointment`/`cancel-appointment` (donc `APPOINTMENT_REMINDER`/`APPOINTMENT_CANCELLED`)
+  ne sont **pas encore câblés** — TODO explicite dans `docs/features/appointments.md`.
+- **`quotes`** : `QUOTE_RECEIVED` — **pas encore câblé**, TODO explicite dans
+  `docs/features/quotes.md` (`send-quote`/`accept-quote`/`reject-quote`/`request-quote-change`).
+- **`patterns`** : `PATTERN_STATUS_CHANGED` — **pas encore câblé**.
+- Chacun de ces modules injecte le service exporté de `notifications` (`CreateNotificationUseCase`)
   plutôt que d'écrire directement dans la table `Notification`.
 
 ## Points d'attention
 
 - **WhatsApp** (spec §84 « WhatsApp si intégré ») : aucun prestataire (Twilio, WhatsApp Business
   API, Meta Cloud API…) n'est confirmé à ce jour. `whatsapp-channel.adapter.ts` reste un stub
-  non branché tant qu'un prestataire n'est pas choisi — `INotificationChannelPort` doit rester
-  extensible pour l'ajouter sans changer le Domain. Email + in-app constituent donc le minimum
-  couvert par cette phase ; documenter ce gap dans `docs/phases/phase-3-production.md` au moment
-  de l'implémentation.
+  non branché (pas enregistré dans `NOTIFICATION_CHANNELS`, `notifications.module.ts`) tant
+  qu'un prestataire n'est pas choisi — `INotificationChannelPort` reste extensible pour
+  l'ajouter sans changer le Domain. Email + in-app couvrent donc le minimum de cette phase.
+- **Email** : `email-channel.adapter.ts` utilise `nodemailer` via SMTP générique (variables
+  `SMTP_*`, voir `docs/environment-variables.md` §7) — provider-agnostique, aucun prestataire
+  transactionnel précis imposé. `SMTP_HOST` vide désactive le canal (log + skip), la
+  notification in-app reste créée.
 - L'échec d'un canal (ex. email indisponible) ne doit jamais faire échouer la persistance
-  in-app de la notification — `create-notification` reste best-effort par canal.
+  in-app de la notification — `create-notification` reste best-effort par canal (`Promise.all`
+  avec `try/catch` par canal). De même, l'échec de `CreateNotificationUseCase` lui-même (ex.
+  DB indisponible) ne doit jamais faire échouer l'opération métier qui l'a déclenché — chaque
+  point d'intégration (`orders`, `payments`, `appointments`) l'appelle dans son propre
+  `try/catch`, après que l'écriture principale (commande, paiement, rendez-vous) a déjà été
+  persistée.
+- Un rendez-vous visiteur (`Appointment.customerId` nul) n'a pas de `User` auquel rattacher une
+  `Notification` — `confirm-appointment` saute silencieusement la notification dans ce cas (voir
+  "Points d'intégration"). Un envoi email direct à `Appointment.email`, indépendant du modèle
+  `Notification`/`User`, resterait à concevoir si ce cas doit être couvert.
 
 ## Vérification
 
-- [ ] `create-notification` testé pour chaque `NotificationType` déclencheur (au moins un cas par canal, avec un mock du provider email)
-- [ ] `mark-notification-read`/`mark-all-read` testés
-- [ ] Guard "notifications d'un autre utilisateur inaccessibles" testé
-- [ ] `docs/checklist-implementation.md` : `notifications` passé à ✅
+- [x] `create-notification` testé pour chaque scénario clé (persistance + best-effort multi-canal, y compris un canal en échec) — voir `__tests__/unit/create-notification.use-case.spec.ts`
+- [x] `mark-notification-read`/`mark-all-read` testés
+- [x] Guard "notifications d'un autre utilisateur inaccessibles" testé
+- [x] `docs/checklist-implementation.md` : `notifications` passé à ✅
+- [ ] `quotes`/`patterns`/`create-appointment`/`cancel-appointment`/`refund-payment` restent à câbler (voir "Points d'intégration")

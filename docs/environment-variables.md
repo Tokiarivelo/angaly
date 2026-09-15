@@ -192,7 +192,30 @@ Toutes les photographies (créations, ateliers, collections, blog) sont stockée
 
 ---
 
-## 7. Initialisation pas-à-pas en développement local
+## 7. Notifications — canal email (`SMTP_*`)
+
+Utilisé par `apps/api/src/notifications/infrastructure/services/email-channel.adapter.ts`
+(module `notifications`, Phase 3) pour l'envoi d'emails transactionnels (rendez-vous confirmé,
+statut de commande changé…). Volontairement agnostique du prestataire (spec §84 n'en impose
+aucun) — n'importe quel service compatible SMTP fonctionne : SendGrid, Mailgun, AWS SES, un
+relai interne, etc.
+
+| Variable | Exemple | Description |
+| --- | --- | --- |
+| `SMTP_HOST` | `smtp.sendgrid.net` | Hôte SMTP. **Vide = canal email désactivé** (la notification in-app reste créée, aucun email n'est tenté) — pratique en dev local sans relai mail configuré. |
+| `SMTP_PORT` | `587` | Port SMTP. |
+| `SMTP_SECURE` | `false` | `true` pour une connexion TLS implicite (port 465), `false` pour STARTTLS (port 587). |
+| `SMTP_USER` | `apikey` | Identifiant SMTP. Omis si le relai n'exige pas d'authentification. |
+| `SMTP_PASSWORD` | `...` | Mot de passe/clé API SMTP. |
+| `SMTP_FROM` | `ANGALY <no-reply@angaly.mg>` | Adresse d'expéditeur affichée. |
+
+> Le canal WhatsApp (`whatsapp-channel.adapter.ts`) n'est pas branché — aucun prestataire
+> (Twilio, WhatsApp Business API, Meta Cloud API…) n'est confirmé à ce jour, voir
+> `docs/features/notifications.md`.
+
+---
+
+## 8. Initialisation pas-à-pas en développement local
 
 Pour configurer l'ensemble de votre environnement local en une seule fois :
 

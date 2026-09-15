@@ -3,6 +3,7 @@ import { Module } from '@nestjs/common';
 import { AteliersModule } from '../ateliers/ateliers.module';
 import { AuthModule } from '../auth/auth.module';
 import { CustomersModule } from '../customers/customers.module';
+import { NotificationsModule } from '../notifications/notifications.module';
 import { CancelAppointmentUseCase } from './application/use-cases/cancel-appointment.use-case';
 import { ConfirmAppointmentUseCase } from './application/use-cases/confirm-appointment.use-case';
 import { CreateAppointmentUseCase } from './application/use-cases/create-appointment.use-case';
@@ -15,9 +16,10 @@ import { AppointmentsController } from './presentation/controllers/appointments.
 
 @Module({
   // AteliersModule: ATELIER_REPOSITORY (opening hours for availability calculation).
-  // CustomersModule: CUSTOMER_REPOSITORY (links a connected CLIENT's Customer).
+  // CustomersModule: CUSTOMER_REPOSITORY (links a connected CLIENT's Customer, resolved again by confirm-appointment for notifying).
   // AuthModule: JwtAuthGuard/RolesGuard (confirm-appointment, staff-only) + ACCESS_TOKEN_SERVICE (optional auth on create).
-  imports: [AteliersModule, CustomersModule, AuthModule],
+  // NotificationsModule: CreateNotificationUseCase (confirm-appointment emits APPOINTMENT_CONFIRMED).
+  imports: [AteliersModule, CustomersModule, AuthModule, NotificationsModule],
   controllers: [AppointmentsController],
   providers: [
     GetMonthAvailabilityUseCase,

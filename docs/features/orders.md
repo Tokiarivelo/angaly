@@ -76,11 +76,11 @@ __tests__/
   `refund-payment` (module `payments`) injectent `ORDER_REPOSITORY_TOKEN` depuis `OrdersModule`
   et transitionnent la commande via `Order.transitionTo()`, jamais une écriture de statut brute
   — voir `docs/features/payments.md`.
-- **`notifications`** : émettre un événement `ORDER_STATUS_CHANGED` à chaque transition de
-  statut, via le service exporté du module `notifications` (jamais une écriture directe dans la
-  table `Notification`) — **pas encore câblé, `notifications` reste ⬜** (module vide, seul un
-  `README.md` existe). `update-order-status.use-case.ts` documente ce point en attente dans son
-  propre commentaire.
+- **`notifications`** : `create-order-from-cart` et `update-order-status` émettent
+  `ORDER_STATUS_CHANGED` via `CreateNotificationUseCase` (jamais une écriture directe dans la
+  table `Notification`) — **câblé** (session 2026-09-15, voir `docs/features/notifications.md`).
+  Best-effort : un échec de notification ne fait jamais échouer la création/transition de la
+  commande elle-même.
 - **`customers`** : relation `Customer` propriétaire de la commande, résolue depuis le JWT via
   `resolveCustomerId()`.
 

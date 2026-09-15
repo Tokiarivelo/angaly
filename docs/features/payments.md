@@ -75,9 +75,11 @@ de colonne `updatedAt` (seulement `createdAt` + `paidAt`) — `PaymentDto` (`@an
   statut écrit sans passer par cette validation. Le paiement et la commande sont mis à jour
   dans un seul `$transaction`, la validation du domaine se fait avant (aucune écriture si la
   transition est invalide).
-- **`notifications`** : un paiement confirmé se traduit par une notification
-  `ORDER_STATUS_CHANGED` — l'enum `NotificationType` ne définit pas de type dédié au paiement à
-  ce jour. **Pas encore câblé** : `notifications` reste ⬜ (module vide).
+- **`notifications`** : `confirm-payment` émet une notification `ORDER_STATUS_CHANGED` une fois
+  le paiement confirmé et l'`Order` transitionné à `PAID` — l'enum `NotificationType` ne définit
+  pas de type dédié au paiement à ce jour. **Câblé** (session 2026-09-15, voir
+  `docs/features/notifications.md`). `refund-payment` transitionne aussi l'`Order` (`REFUNDED`)
+  mais n'émet pas encore de notification — TODO.
 - **`products`** : aucune dépendance directe — la disponibilité du stock est vérifiée en amont
   par `orders`.
 

@@ -1,8 +1,9 @@
-import { BadRequestException, Inject, Injectable } from '@nestjs/common';
+import { BadRequestException, Inject, Injectable, Logger } from '@nestjs/common';
 import { OrderStatus } from '@angaly/types';
 import { randomUUID } from 'crypto';
 
 import { CUSTOMER_REPOSITORY, ICustomerRepository } from '../../../customers/domain/repositories/customer.repository';
+import { CreateNotificationUseCase } from '../../../notifications/application/use-cases/create-notification.use-case';
 import { PrismaService } from '../../../prisma/prisma.service';
 import { Order } from '../../domain/entities/order.entity';
 import { OrderItem } from '../../domain/entities/order-item.entity';
@@ -29,9 +30,12 @@ export interface CreateOrderCommand {
  */
 @Injectable()
 export class CreateOrderFromCartUseCase {
+  private readonly logger = new Logger(CreateOrderFromCartUseCase.name);
+
   constructor(
     private readonly prisma: PrismaService,
     @Inject(CUSTOMER_REPOSITORY) private readonly customerRepository: ICustomerRepository,
+    private readonly createNotificationUseCase: CreateNotificationUseCase,
   ) {}
 
   async execute(command: CreateOrderCommand): Promise<Order> {
@@ -41,7 +45,7 @@ export class CreateOrderFromCartUseCase {
 
     const customerId = await resolveCustomerId(this.customerRepository, command.userId);
 
-    return this.prisma.$transaction(async (tx) => {
+    const order = await this.prisma.$transaction(async (tx) => {
       let subtotal = 0;
       const orderItems: OrderItem[] = [];
       const orderId = randomUUID();
@@ -122,6 +126,29 @@ export class CreateOrderFromCartUseCase {
 
       return order;
     });
+
+    await this.notifyOrderCreated(command.userId, order);
+
+    return order;
+  }
+
+  /**
+   * Best-effort — a `notifications` outage must never fail order creation
+   * (the order is already committed by the time this runs).
+   */
+  private async notifyOrderCreated(userId: string, order: Order): Promise<void> {
+    try {
+      await this.createNotificationUseCase.execute({
+        userId,
+        type: 'ORDER_STATUS_CHANGED',
+        title: 'Commande créée',
+        body: `Votre commande ${order.orderNumber} a été créée et est en attente de confirmation.`,
+        relatedEntityType: 'Order',
+        relatedEntityId: order.id,
+      });
+    } catch (error) {
+      this.logger.warn(`Failed to emit ORDER_STATUS_CHANGED for order ${order.id}: ${error instanceof Error ? error.message : String(error)}`);
+    }
   }
 
   private generateOrderNumber(): string {

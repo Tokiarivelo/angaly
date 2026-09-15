@@ -144,7 +144,12 @@ phase n'a pas été traitée en session dédiée (voir `.cursor/rules/006-phase-
 - [x] ✅ **orders** (module backend seul — les pages consommatrices ci-dessus restent 🟡, non
       câblées à cette API ; voir `docs/features/orders.md`) ·
       ✅ **payments** (repris : guards d'authentification, transitions via `orders`, module
-      testé — voir `docs/features/payments.md`) · ⬜ **notifications**
+      testé — voir `docs/features/payments.md`) ·
+      ✅ **notifications** (session 2026-09-15 : email SMTP générique + in-app, câblé dans
+      `orders`/`payments` (`ORDER_STATUS_CHANGED`) et `appointments` (`APPOINTMENT_CONFIRMED`,
+      visiteurs anonymes exclus) — `quotes`/`patterns`/`create-appointment`/`cancel-appointment`/
+      `refund-payment` restent à câbler ; WhatsApp non branché (aucun prestataire confirmé) —
+      voir `docs/features/notifications.md`)
 
 ---
 
