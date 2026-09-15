@@ -2,6 +2,7 @@ import React from 'react';
 import { ZoomIn, ZoomOut, RotateCcw, Sliders } from 'lucide-react';
 import type { PatternPieceDto } from '@angaly/types';
 import type { CanvasViewMode } from '../types/pattern-piece-view.types';
+import { computePatternViewBox, toViewBoxAttribute } from '../utils/computePatternViewBox';
 
 interface PatternPieceCanvasProps {
   piece: PatternPieceDto | null;
@@ -37,15 +38,36 @@ export const PatternPieceCanvas: React.FC<PatternPieceCanvasProps> = ({
     outlineMm?: Array<{ x: number; y: number }>;
   } | null;
 
-  const points = dims?.outlineMm && dims.outlineMm.length >= 3
-    ? dims.outlineMm.map((p) => `${p.x},${p.y}`).join(' ')
-    : '50,40 150,40 180,240 20,240';
+  const outline =
+    dims?.outlineMm && dims.outlineMm.length >= 3
+      ? dims.outlineMm
+      : [
+          { x: 50, y: 40 },
+          { x: 150, y: 40 },
+          { x: 180, y: 240 },
+          { x: 20, y: 240 },
+        ];
+
+  const points = outline.map((p) => `${p.x},${p.y}`).join(' ');
+
+  // Fit the SVG viewBox to the piece's real bounds — real generated pieces
+  // span mm coordinates far beyond any single fixed canvas size, so a fixed
+  // viewBox clips them regardless of zoom level.
+  const viewBox = computePatternViewBox(outline);
+  const boundsCenterX = viewBox.minX + viewBox.width / 2;
+  const boundsCenterY = viewBox.minY + viewBox.height / 2;
+  const arrowSize = Math.max(viewBox.width, viewBox.height) * 0.02;
 
   const grainline = piece.grainlineJson as {
     angleDegrees?: number;
     originX?: number;
     originY?: number;
   } | null;
+
+  const grainlineOriginX = grainline?.originX ?? boundsCenterX;
+  const grainlineOriginY = grainline?.originY ?? boundsCenterY - viewBox.height * 0.3;
+  const grainlineLength = viewBox.height * 0.6;
+  const grainlineEndY = grainlineOriginY + grainlineLength;
 
   return (
     <div className="flex-1 min-h-[440px] bg-[#041329] border border-[#C5B190]/30 rounded-xl p-6 relative flex flex-col justify-between overflow-hidden shadow-inner">
@@ -75,7 +97,9 @@ export const PatternPieceCanvas: React.FC<PatternPieceCanvasProps> = ({
       {/* Main SVG Render Area */}
       <div className="flex-1 flex items-center justify-center my-4 overflow-hidden relative">
         <svg
-          viewBox="0 0 240 280"
+          data-testid="pattern-piece-svg"
+          viewBox={toViewBoxAttribute(viewBox)}
+          preserveAspectRatio="xMidYMid meet"
           className="w-full max-h-[360px] transition-transform duration-200 select-none"
           style={{ transform: `scale(${zoomLevel})` }}
         >
@@ -108,28 +132,28 @@ export const PatternPieceCanvas: React.FC<PatternPieceCanvasProps> = ({
 
           {/* Grainline Arrow */}
           <line
-            x1={grainline?.originX ?? 100}
-            y1={grainline?.originY ?? 80}
-            x2={grainline?.originX ?? 100}
-            y2={(grainline?.originY ?? 80) + 120}
+            x1={grainlineOriginX}
+            y1={grainlineOriginY}
+            x2={grainlineOriginX}
+            y2={grainlineEndY}
             className="stroke-[#C5B190] stroke-1"
           />
           <polygon
-            points="97,85 100,75 103,85"
+            points={`${grainlineOriginX - arrowSize},${grainlineOriginY + arrowSize} ${grainlineOriginX},${grainlineOriginY - arrowSize} ${grainlineOriginX + arrowSize},${grainlineOriginY + arrowSize}`}
             className="fill-[#C5B190]"
           />
           <polygon
-            points="97,195 100,205 103,195"
+            points={`${grainlineOriginX - arrowSize},${grainlineEndY - arrowSize} ${grainlineOriginX},${grainlineEndY + arrowSize} ${grainlineOriginX + arrowSize},${grainlineEndY - arrowSize}`}
             className="fill-[#C5B190]"
           />
 
           {/* Grainline Label */}
           {viewMode === 'technical' && (
             <text
-              x="106"
-              y="145"
+              x={grainlineOriginX + arrowSize * 1.5}
+              y={grainlineOriginY + grainlineLength / 2}
               fill="#C5B190"
-              fontSize="8"
+              fontSize={viewBox.width * 0.033}
               fontFamily="sans-serif"
               letterSpacing="0.5"
             >
@@ -138,7 +162,13 @@ export const PatternPieceCanvas: React.FC<PatternPieceCanvasProps> = ({
           )}
 
           {/* Notch indicator */}
-          <line x1="30" y1="130" x2="22" y2="130" className="stroke-[#936C3E] stroke-2" />
+          <line
+            x1={viewBox.minX + viewBox.width * 0.12}
+            y1={boundsCenterY}
+            x2={viewBox.minX + viewBox.width * 0.08}
+            y2={boundsCenterY}
+            className="stroke-[#936C3E] stroke-2"
+          />
         </svg>
       </div>
 
