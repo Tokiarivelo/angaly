@@ -732,3 +732,9 @@ export interface InitiatePaymentPayload {
   orderId: string;
   method: PaymentMethod;
 }
+
+// ============================================================
+// Angaly Pattern Studio — tailles standard
+// ============================================================
+
+export * from './size-charts';

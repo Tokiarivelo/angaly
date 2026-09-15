@@ -183,6 +183,26 @@ Aucun des deux ne stocke le jeton en clair, seulement son hash SHA-256
 - `bcrypt` (natif, coût 12) plutôt que `argon2` — le `Dockerfile` d'`apps/api` anticipait déjà
   explicitement `bcrypt` depuis le scaffold Phase 0 (commentaire "fallback toolchain for
   native addons (bcrypt, etc.)").
+- **Correction 2026-09-15 — déconnexions intempestives côté frontend ("token invalid")** :
+  bug dans `apps/web/src/lib/auth/auth.ts` (NextAuth, hors périmètre Clean Architecture de
+  cette fiche mais partage le même cycle de vie de rafraîchissement). Le callback `jwt()`
+  traitait **toute** erreur de `refreshWithBackend()` de la même façon — y compris une simple
+  panne réseau ou un redémarrage momentané d'`apps/api` — en effaçant intégralement la
+  session (`accessToken`/`refreshToken`/`userId` supprimés, `session.error =
+  'RefreshAccessTokenError'`). Une fois effacé, plus aucun refresh token n'existait côté
+  client pour retenter : l'utilisateur restait déconnecté même si son refresh token était
+  encore parfaitement valide en base. Corrigé en distinguant deux cas dans
+  `backend-auth-client.ts` : un vrai rejet 401 du endpoint `/api/auth/refresh` (jeton
+  effectivement invalide/expiré/révoqué — `InvalidRefreshTokenError`, seul cas qui efface la
+  session) vs toute autre erreur (réseau, 5xx, réponse tronquée — transitoire, la session
+  existante est conservée telle quelle pour permettre une nouvelle tentative à la requête
+  suivante). Logique extraite et testée dans
+  `apps/web/src/lib/auth/refresh-jwt.ts`/`__tests__/refresh-jwt.test.ts` (même pattern
+  d'extraction que `current-user.decorator.ts` pour rendre un callback de framework
+  testable). Voir aussi `packages/database`/`RefreshAccessTokenUseCase` ci-dessus pour la
+  fenêtre de grâce de 30s côté rotation, qui reste le filet de sécurité pour les requêtes
+  concurrentes légitimes (plusieurs onglets, rendus parallèles) — ce correctif ne la modifie
+  pas, il évite seulement qu'un problème *transitoire* soit interprété comme un jeton mort.
 
 ## Vérification
 

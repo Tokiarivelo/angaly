@@ -33,10 +33,12 @@ apps/web/src/features/pattern-studio-wizard/
       GarmentTypeStep.tsx       → étape 1 : grille de cartes vêtement
       OccasionStep.tsx          → étape 2 : chips occasion
       StyleStep.tsx             → étape 3 : cartes style
-      CutStep.tsx               → étape 4 : chips coupe
+      CutStep.tsx               → étape 4 : chips coupe + bouton "Obtenir une suggestion IA"
+                                    (session 2026-09-14 — voir Points d'attention)
       DetailsStep.tsx           → étape 5 : accordéons de détails
       InspirationStep.tsx       → étape 6 : dropzone + résultat d'analyse IA (placeholder Phase 4/5)
-      MeasurementsStep.tsx      → étape 7 : sélection/saisie de profil de mesures
+      MeasurementsStep.tsx      → étape 7 : profil existant, saisie manuelle, ou "taille standard"
+                                    (XS/S/M/L/XL…, session 2026-09-14 — voir Points d'attention)
     WizardFooterNav.tsx         → boutons Retour/Continuer, réutilisé à chaque étape
     GenerationLoadingScreen.tsx → écran "Génération en cours"
   hooks/
@@ -45,10 +47,12 @@ apps/web/src/features/pattern-studio-wizard/
     useCreatePatternProject.ts  → mutation de création (étape 1) → renvoie projectId
     useUploadInspirationPhoto.ts→ upload vers MinIO (bucket `patterns/`) + appel `ai-inference`
     useMeasurementProfiles.ts   → liste des profils existants du client (module `measurements`)
+    useSizeCharts.ts            → table de tailles standard par genre (module `measurements`)
     useGeneratePattern.ts       → mutation finale → appelle `pattern-engine` (+ suggestion `ai-inference`)
   api/
     pattern-projects.api.ts
     measurements.api.ts
+    size-charts.api.ts
   schemas/
     wizard-step.schema.ts       → un schema Zod par étape, composés en un schema global
   consts/
@@ -72,6 +76,8 @@ vit dans `usePatternWizard.ts`.
 | `POST /api/pattern-projects` | `patterns` | Création du projet (étape 1) |
 | `PATCH /api/pattern-projects/:id` | `patterns` | Mise à jour incrémentale à chaque étape |
 | `GET /api/measurement-profiles` | `measurements` | Profils du client pour l'étape 7 |
+| `GET /api/measurements/size-charts` | `measurements` | Table de tailles standard (XS/S/M/L/XL…) pour l'étape 7 |
+| `POST /api/ai-inference/pattern-suggestions` | `ai-inference` | Suggestion de coupe à l'étape 4 (bouton, jamais appliquée automatiquement) |
 | `POST /api/media/presigned-upload` | `media` | URL pré-signée MinIO pour la photo d'inspiration |
 | `POST /api/ai-inference/inspiration-analysis` | `ai-inference` | Analyse de la photo (placeholder tant que Phase 5 n'est pas traitée) |
 | `POST /api/pattern-projects/:id/generate` | `patterns` → `pattern-engine` | Génération de la première version du patron |
@@ -95,6 +101,31 @@ l'assistant a lieu pendant le wizard).
   `mes-mesures` sinon, mais l'inline est préférable pour ne pas casser le flux).
 - Chaque étape est un `dynamic import()` pour ne pas charger tout le wizard au premier
   rendu (poids des cartes illustrées).
+- **Correction 2026-09-14 — vocabulaire de mesures** : `MeasurementsStep.tsx` utilisait un jeu
+  de clés (`TOUR_HANCHES`, `LARGEUR_EPAULES`, `LONGUEUR_VETEMENT`, `LONGUEUR_BRAS`) différent du
+  vocabulaire canonique utilisé par `mes-mesures` et par `packages/pattern-engine`
+  (`TOUR_POITRINE`, `TOUR_TAILLE`, `TOUR_BASSIN`, `LONGUEUR_DOS`, `CARRURE_DOS`, `TOUR_COU`) —
+  les mesures saisies dans le wizard n'atteignaient donc jamais le moteur de patron, qui
+  retombait systématiquement sur un corps par défaut codé en dur. Corrigé : les 6 champs de
+  l'étape 7 utilisent désormais le vocabulaire canonique.
+- **Ajout 2026-09-14 — taille standard** : mode alternatif à la saisie manuelle
+  (`Ruler` toggle « Mesures personnalisées » / « Taille standard »), avec sélecteur de genre et
+  pastilles XS/S/M/L/XL/XXL… pré-remplissant les mesures depuis
+  `packages/types/src/size-charts.ts`. **Écran Stitch non revérifié pour cet ajout** : `agy
+  --print` échoue en mode headless dans cet environnement (interruption avant réponse) et les
+  outils MCP Stitch directs (`get_screen`/`list_screens`) échouent avec `Incompatible auth
+  server: does not support dynamic client registration` — ni la session interactive `agy` ni le
+  fallback MCP direct n'ont pu être utilisés (règle absolue #9). Le nouveau bloc réutilise
+  strictement les patterns visuels déjà présents sur cet écran (toggle pilule `cm`/`pouces`,
+  cartes de sélection du profil existant) plutôt que d'inventer une nouvelle mise en page — à
+  confirmer contre l'écran Stitch réel dès qu'un accès `agy`/MCP fonctionnel est disponible.
+- **Ajout 2026-09-14 — suggestion IA à l'étape 4** : `CutStep.tsx` gagne un bouton « Obtenir une
+  suggestion IA » (icône `Sparkles`) qui appelle `POST /api/ai-inference/pattern-suggestions`
+  avec le `garmentType`/`occasion`/`style` déjà choisis ; le résultat s'affiche dans un bandeau
+  indicatif avec un bouton explicite « Appliquer cette coupe » — la suggestion n'est **jamais**
+  appliquée automatiquement (règle absolue #18). Même caveat Stitch que ci-dessus : réutilise le
+  style de bandeau déjà établi (`EstimatedMeasurementsBanner.tsx`) plutôt qu'une mise en page
+  inventée.
 
 ## Checklist d'acceptation
 

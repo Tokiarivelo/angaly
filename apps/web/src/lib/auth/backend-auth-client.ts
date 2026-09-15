@@ -17,6 +17,10 @@ import type { AuthTokensDto } from '@angaly/types';
 
 import { env } from '@/lib/env';
 
+import { InvalidRefreshTokenError } from './invalid-refresh-token-error';
+
+export { InvalidRefreshTokenError };
+
 interface ApiSuccessEnvelope<T> {
   success: true;
   data: T;
@@ -56,7 +60,12 @@ function extractRefreshToken(setCookieHeader: string | null): string | null {
   return match?.[1] ? decodeURIComponent(match[1]) : null;
 }
 
-async function callBackend(path: string, body: unknown, cookieHeader?: string): Promise<BackendSession> {
+async function callBackend(
+  path: string,
+  body: unknown,
+  cookieHeader?: string,
+  isRefreshCall = false,
+): Promise<BackendSession> {
   const response = await fetch(`${env.API_INTERNAL_URL}${path}`, {
     method: 'POST',
     headers: {
@@ -69,7 +78,14 @@ async function callBackend(path: string, body: unknown, cookieHeader?: string): 
   const json = (await response.json()) as ApiSuccessEnvelope<AuthTokensDto> | ApiErrorEnvelope;
 
   if (!response.ok || !json.success) {
-    throw new Error(!json.success ? json.error.message : 'Erreur inattendue du serveur.');
+    const message = !json.success ? json.error.message : 'Erreur inattendue du serveur.';
+    // Only a 401 on the refresh endpoint means the refresh token itself is
+    // dead — any other status here (5xx, a proxy error, ...) is the backend
+    // having a bad moment, not proof the token is invalid.
+    if (isRefreshCall && response.status === 401) {
+      throw new InvalidRefreshTokenError(message);
+    }
+    throw new Error(message);
   }
 
   const refreshToken = extractRefreshToken(response.headers.get('set-cookie'));
@@ -100,7 +116,7 @@ export function registerWithBackend(input: {
 }
 
 export function refreshWithBackend(refreshToken: string): Promise<BackendSession> {
-  return callBackend('/auth/refresh', undefined, `${REFRESH_TOKEN_COOKIE}=${refreshToken}`);
+  return callBackend('/auth/refresh', undefined, `${REFRESH_TOKEN_COOKIE}=${refreshToken}`, true);
 }
 
 export async function logoutWithBackend(accessToken: string, refreshToken: string): Promise<void> {

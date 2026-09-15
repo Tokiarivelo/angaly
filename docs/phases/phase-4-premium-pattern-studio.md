@@ -1,14 +1,19 @@
 # Phase 4 — Premium : Angaly Pattern Studio
 
-**Statut : ⬜ À faire.** Dépend de : Phase 2 (`auth`, `customers`), Phase 0
-(`packages/pattern-engine` orchestrateur déjà testé, `apps/ai-service` en mode placeholder).
+**Statut : ✅ Fait**, avec corrections de fond apportées le 2026-09-14 (voir
+`docs/features/patterns.md` et `docs/features/measurements.md`) — les 5 pages et 3 modules
+backend étaient marqués ✅ dans `docs/checklist-implementation.md` mais un bug de nommage de
+mesures empêchait en pratique toute génération correcte ; corrigé, avec ajout d'un sélecteur de
+taille standard. Dépend de : Phase 2 (`auth`, `customers`), Phase 0 (`packages/pattern-engine`
+orchestrateur déjà testé).
 
 ## Objectif (spec §101 Phase 4, §18-30)
 
 Le module différenciant : profil de mesures, génération paramétrique de patron, prévisualisation,
-vérification professionnelle, export. **Sans le vrai modèle IA** (Phase 5) — les suggestions
-restent en mode placeholder (`confidence: 0`), ce qui doit être visible dans l'UI, jamais
-présenté comme une suggestion fiable.
+vérification professionnelle, export. Les suggestions IA (Phase 5, `docs/features/ai-inference.md`)
+sont désormais réellement branchées sur Gemini plutôt qu'un placeholder statique, mais restent
+un wrapper prompt-engineered (pas de modèle fine-tuné) — leur `confidence`/`modelVersion` doit
+rester visible comme indicatif dans l'UI, jamais présenté comme une suggestion fiable.
 
 ## Pages en scope
 

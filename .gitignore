@@ -33,6 +33,8 @@ apps/ai-service/.venv/
 apps/ai-service/__pycache__/
 apps/ai-service/**/__pycache__/
 apps/ai-service/ml/notebooks/.ipynb_checkpoints/
+apps/ai-service/ml/models/
+apps/ai-service/ml/data/raw/
 *.pyc
 
 # Editors / OS

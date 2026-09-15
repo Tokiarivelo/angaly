@@ -4,6 +4,7 @@ import type { ReactNode } from 'react';
 import { Role } from '@angaly/types';
 
 import { auth } from '@/lib/auth/auth';
+import { AdminLayout as AdminShell } from '@/features/admin-dashboard';
 
 const STAFF_ROLES: Role[] = [Role.COUTURIERE, Role.MANAGER, Role.ADMIN];
 
@@ -14,5 +15,5 @@ export default async function AdminLayout({ children }: { children: ReactNode })
     redirect('/');
   }
 
-  return <>{children}</>;
+  return <AdminShell>{children}</AdminShell>;
 }

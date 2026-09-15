@@ -1,7 +1,9 @@
 import { GeneratePatternVersionUseCase } from '../../application/use-cases/generate-pattern-version.use-case';
-import { IPatternProjectRepository } from '../../domain/repositories/pattern-project.repository';
-import { IPatternVersionRepository } from '../../domain/repositories/pattern-version.repository';
-import { GeneratePatternPiecesUseCase } from '../../../pattern-engine/application/use-cases/generate-pattern-pieces.use-case';
+import type { IPatternProjectRepository } from '../../domain/repositories/pattern-project.repository';
+import type { IPatternVersionRepository } from '../../domain/repositories/pattern-version.repository';
+import type { GeneratePatternPiecesUseCase } from '../../../pattern-engine/application/use-cases/generate-pattern-pieces.use-case';
+import type { GetMeasurementProfileUseCase } from '../../../measurements/application/use-cases/get-measurement-profile.use-case';
+import type { EstimateMissingMeasurementsUseCase } from '../../../ai-inference/application/use-cases/estimate-missing-measurements.use-case';
 import { PatternProjectEntity } from '../../domain/entities/pattern-project.entity';
 import { PatternVersionEntity } from '../../domain/entities/pattern-version.entity';
 
@@ -10,6 +12,8 @@ describe('GeneratePatternVersionUseCase', () => {
   let mockProjectRepo: jest.Mocked<IPatternProjectRepository>;
   let mockVersionRepo: jest.Mocked<IPatternVersionRepository>;
   let mockGeneratePiecesUseCase: jest.Mocked<GeneratePatternPiecesUseCase>;
+  let mockGetMeasurementProfileUseCase: jest.Mocked<GetMeasurementProfileUseCase>;
+  let mockEstimateMissingMeasurementsUseCase: jest.Mocked<EstimateMissingMeasurementsUseCase>;
 
   const mockProject = PatternProjectEntity.create({
     id: 'proj-1',
@@ -46,7 +50,7 @@ describe('GeneratePatternVersionUseCase', () => {
             versionNumber: data.versionNumber,
             changeLabel: data.changeLabel ?? null,
             parametersJson: data.parametersJson,
-            generatedByAI: false,
+            generatedByAI: data.generatedByAI ?? false,
             reviewedById: null,
             reviewNote: null,
             createdAt: new Date(),
@@ -79,10 +83,23 @@ describe('GeneratePatternVersionUseCase', () => {
       }),
     } as any;
 
+    mockGetMeasurementProfileUseCase = {
+      execute: jest.fn().mockRejectedValue(new Error('no profile linked')),
+    } as any;
+
+    mockEstimateMissingMeasurementsUseCase = {
+      execute: jest.fn().mockResolvedValue({
+        estimation: { estimatedMeasurements: {}, estimatedKeys: [], confidence: 0, modelVersion: 'fallback-0.0.0' },
+        isIndicativeOnly: true,
+      }),
+    } as any;
+
     useCase = new GeneratePatternVersionUseCase(
       mockProjectRepo,
       mockVersionRepo,
       mockGeneratePiecesUseCase,
+      mockGetMeasurementProfileUseCase,
+      mockEstimateMissingMeasurementsUseCase,
     );
   });
 
@@ -140,6 +157,113 @@ describe('GeneratePatternVersionUseCase', () => {
     await expect(useCase.execute('proj-1', 'cust-1')).rejects.toThrow(
       UnprocessableEntityException,
     );
+  });
+
+  it('rejects unrecognized garment types instead of silently defaulting to ROBE', async () => {
+    const weirdProject = PatternProjectEntity.create({
+      id: 'proj-weird',
+      projectRef: 'ANG-PAT-2026-00003',
+      customerId: 'cust-1',
+      measurementProfileId: null,
+      garmentType: 'CHAPEAU',
+      occasion: 'Autre',
+      style: 'Créatif',
+      cutType: 'DROITE',
+      detailsJson: null,
+      inspirationMediaId: null,
+      status: 'DRAFT',
+      createdAt: new Date(),
+      updatedAt: new Date(),
+    });
+    mockProjectRepo.findById.mockResolvedValueOnce(weirdProject);
+
+    const { UnprocessableEntityException } = await import('@nestjs/common');
+    await expect(useCase.execute('proj-weird', 'cust-1')).rejects.toThrow(
+      UnprocessableEntityException,
+    );
+    expect(mockGeneratePiecesUseCase.execute).not.toHaveBeenCalled();
+  });
+
+  it('merges measurements from the linked measurement profile before manual overrides', async () => {
+    const profiledProject = PatternProjectEntity.create({
+      id: 'proj-profile',
+      projectRef: 'ANG-PAT-2026-00004',
+      customerId: 'cust-1',
+      measurementProfileId: 'profile-1',
+      garmentType: 'ROBE',
+      occasion: 'Mariage',
+      style: 'Sirène',
+      cutType: 'SIRENE',
+      detailsJson: null,
+      inspirationMediaId: null,
+      status: 'DRAFT',
+      createdAt: new Date(),
+      updatedAt: new Date(),
+    });
+    mockProjectRepo.findById.mockResolvedValueOnce(profiledProject);
+    mockProjectRepo.update.mockResolvedValueOnce(profiledProject);
+    mockGetMeasurementProfileUseCase.execute.mockResolvedValueOnce({
+      values: new Map([
+        ['TOUR_POITRINE', 88],
+        ['TOUR_TAILLE', 68],
+      ]),
+    } as any);
+
+    await useCase.execute('proj-profile', 'cust-1', { measurements: { TOUR_TAILLE: 70 } });
+
+    expect(mockGetMeasurementProfileUseCase.execute).toHaveBeenCalledWith('profile-1', 'cust-1');
+    expect(mockGeneratePiecesUseCase.execute).toHaveBeenCalledWith(
+      expect.any(Object),
+      expect.objectContaining({ TOUR_POITRINE: 88, TOUR_TAILLE: 70 }),
+    );
+  });
+
+  it('fills missing required measurements via AI estimation and retries generation once', async () => {
+    const { PatternEngineValidationError } = await import('@angaly/pattern-engine');
+    mockGeneratePiecesUseCase.execute
+      .mockRejectedValueOnce(
+        new PatternEngineValidationError('Missing measurements', ['TOUR_BASSIN']),
+      )
+      .mockResolvedValueOnce({
+        pieces: [],
+        warnings: [],
+        metadata: { engineVersion: '0.1.0' },
+      } as any);
+    mockEstimateMissingMeasurementsUseCase.execute.mockResolvedValueOnce({
+      estimation: {
+        estimatedMeasurements: { TOUR_BASSIN: 95 },
+        estimatedKeys: ['TOUR_BASSIN'],
+        confidence: 0.4,
+        modelVersion: 'gemini-2.5-flash',
+      },
+      isIndicativeOnly: true,
+    });
+
+    const version = await useCase.execute('proj-1', 'cust-1');
+
+    expect(mockEstimateMissingMeasurementsUseCase.execute).toHaveBeenCalledWith(
+      expect.objectContaining({ garmentType: 'ROBE', requiredKeys: ['TOUR_BASSIN'] }),
+    );
+    expect(mockGeneratePiecesUseCase.execute).toHaveBeenCalledTimes(2);
+    expect(version.generatedByAI).toBe(true);
+    expect((version.parametersJson as any).estimatedMeasurementKeys).toEqual(['TOUR_BASSIN']);
+  });
+
+  it('rejects with the original error if AI estimation returns nothing usable', async () => {
+    const { PatternEngineValidationError } = await import('@angaly/pattern-engine');
+    mockGeneratePiecesUseCase.execute.mockRejectedValueOnce(
+      new PatternEngineValidationError('Missing measurements', ['TOUR_BASSIN']),
+    );
+    mockEstimateMissingMeasurementsUseCase.execute.mockResolvedValueOnce({
+      estimation: { estimatedMeasurements: {}, estimatedKeys: [], confidence: 0, modelVersion: 'fallback-0.0.0' },
+      isIndicativeOnly: true,
+    });
+
+    const { UnprocessableEntityException } = await import('@nestjs/common');
+    await expect(useCase.execute('proj-1', 'cust-1')).rejects.toThrow(
+      UnprocessableEntityException,
+    );
+    expect(mockGeneratePiecesUseCase.execute).toHaveBeenCalledTimes(1);
   });
 });
 

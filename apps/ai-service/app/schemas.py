@@ -37,3 +37,37 @@ class HealthCheckResponse(BaseModel):
     model_loaded: bool = Field(..., alias="modelLoaded")
 
     model_config = {"populate_by_name": True}
+
+
+class AvailableModelsResponse(BaseModel):
+    """Lists which model backends are actually usable right now, so the admin
+    settings screen can grey out a choice whose artifact isn't loaded rather
+    than let an admin pick a model that will silently fall back."""
+
+    measurement_estimation: list[str] = Field(..., alias="measurementEstimation")
+
+    model_config = {"populate_by_name": True}
+
+
+class PatternMeasurementEstimationRequest(BaseModel):
+    garment_type: str = Field(..., alias="garmentType")
+    gender: str | None = None
+    known_measurements: dict[str, float] = Field(default_factory=dict, alias="knownMeasurements")
+    required_keys: list[str] = Field(default_factory=list, alias="requiredKeys")
+    # 'GEMINI' (default) or 'LOCAL_STATISTICAL' — admin-controlled, see
+    # docs/features/ai-model-settings.md. Falls back to Gemini if the local
+    # model artifact isn't available.
+    model_preference: str = Field(default="GEMINI", alias="modelPreference")
+
+    model_config = {"populate_by_name": True}
+
+
+class PatternMeasurementEstimationResponse(BaseModel):
+    estimated_measurements: dict[str, float] = Field(
+        default_factory=dict, alias="estimatedMeasurements"
+    )
+    estimated_keys: list[str] = Field(default_factory=list, alias="estimatedKeys")
+    confidence: float
+    model_version: str = Field(..., alias="modelVersion")
+
+    model_config = {"populate_by_name": True}

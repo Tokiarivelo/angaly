@@ -16,9 +16,21 @@ import {
 } from '../../domain/repositories/pattern-version.repository';
 import { PatternVersionEntity } from '../../domain/entities/pattern-version.entity';
 import { GeneratePatternPiecesUseCase } from '../../../pattern-engine/application/use-cases/generate-pattern-pieces.use-case';
+import { GetMeasurementProfileUseCase } from '../../../measurements/application/use-cases/get-measurement-profile.use-case';
+import { EstimateMissingMeasurementsUseCase } from '../../../ai-inference/application/use-cases/estimate-missing-measurements.use-case';
 import { GeneratePatternVersionDto } from '../dtos/generate-pattern-version.dto';
 import { type GarmentType, PatternEngineValidationError } from '@angaly/pattern-engine';
 
+const KNOWN_GARMENT_TYPES: readonly GarmentType[] = [
+  'ROBE',
+  'JUPE',
+  'PANTALON',
+  'VESTE',
+  'COSTUME',
+  'CHEMISE',
+  'ROBE_MARIEE',
+  'AUTRE',
+];
 
 @Injectable()
 export class GeneratePatternVersionUseCase {
@@ -28,6 +40,8 @@ export class GeneratePatternVersionUseCase {
     @Inject(PATTERN_VERSION_REPOSITORY)
     private readonly versionRepository: IPatternVersionRepository,
     private readonly generatePatternPiecesUseCase: GeneratePatternPiecesUseCase,
+    private readonly getMeasurementProfileUseCase: GetMeasurementProfileUseCase,
+    private readonly estimateMissingMeasurementsUseCase: EstimateMissingMeasurementsUseCase,
   ) {}
 
   async execute(
@@ -44,26 +58,13 @@ export class GeneratePatternVersionUseCase {
       throw new ForbiddenException('Vous n’avez pas accès à ce projet de patron.');
     }
 
-    // Determine normalized garment type
-    let garmentType: GarmentType = 'ROBE';
-    const rawType = project.garmentType.toUpperCase();
-    if (rawType.includes('JUPE')) garmentType = 'JUPE';
-    else if (rawType.includes('MARIEE')) garmentType = 'ROBE_MARIEE';
-    else if (rawType.includes('PANTALON')) garmentType = 'PANTALON';
-    else if (rawType.includes('VESTE')) garmentType = 'VESTE';
-    else if (rawType.includes('COSTUME')) garmentType = 'COSTUME';
-    else if (rawType.includes('CHEMISE')) garmentType = 'CHEMISE';
+    const garmentType = this.resolveGarmentType(project.garmentType);
 
-    // Mesures de travail (avec fallback standard pour la confection sur mesure)
-    const measurements: Record<string, number> = {
-      TOUR_POITRINE: 90,
-      TOUR_TAILLE: 70,
-      TOUR_BASSIN: 95,
-      LONGUEUR_DOS: 40,
-      LONGUEUR_BRAS: 60,
-      CARRURE_DOS: 38,
-      ...(dto?.measurements ?? {}),
-    };
+    let measurements = await this.buildInitialMeasurements(
+      project.measurementProfileId,
+      project.customerId,
+      dto,
+    );
 
     const parameters = {
       garmentType,
@@ -72,18 +73,44 @@ export class GeneratePatternVersionUseCase {
       details: (project.detailsJson as Record<string, string>) ?? {},
     };
 
-    // Calcul géométrique déterministe via le pattern-engine
+    // Calcul géométrique déterministe via le pattern-engine — aucune valeur
+    // par défaut devinée ici : si des mesures requises manquent, on tente une
+    // estimation IA explicite (marquée comme telle) avant de réessayer une
+    // seule fois ; sinon on rejette (règle absolue #19/pattern-engine.provider).
+    let estimatedMeasurementKeys: string[] = [];
     let generationResult;
     try {
-      generationResult = await this.generatePatternPiecesUseCase.execute(
-        parameters,
-        measurements,
-      );
+      generationResult = await this.generatePatternPiecesUseCase.execute(parameters, measurements);
     } catch (error) {
-      if (error instanceof PatternEngineValidationError) {
+      if (!(error instanceof PatternEngineValidationError)) {
+        throw error;
+      }
+      if (error.missingMeasurementKeys.length === 0) {
         throw new UnprocessableEntityException(error.message);
       }
-      throw error;
+
+      const { estimation } = await this.estimateMissingMeasurementsUseCase.execute({
+        garmentType,
+        gender: null,
+        knownMeasurements: measurements,
+        requiredKeys: error.missingMeasurementKeys,
+      });
+
+      if (Object.keys(estimation.estimatedMeasurements).length === 0) {
+        throw new UnprocessableEntityException(error.message);
+      }
+
+      measurements = { ...measurements, ...estimation.estimatedMeasurements };
+      estimatedMeasurementKeys = estimation.estimatedKeys;
+
+      try {
+        generationResult = await this.generatePatternPiecesUseCase.execute(parameters, measurements);
+      } catch (retryError) {
+        if (retryError instanceof PatternEngineValidationError) {
+          throw new UnprocessableEntityException(retryError.message);
+        }
+        throw retryError;
+      }
     }
 
     // Récupérer le dernier numéro de version
@@ -109,9 +136,10 @@ export class GeneratePatternVersionUseCase {
       parametersJson: {
         parameters,
         measurements,
+        estimatedMeasurementKeys,
         metadata: generationResult.metadata,
       },
-      generatedByAI: false,
+      generatedByAI: estimatedMeasurementKeys.length > 0,
       pieces: piecesData,
     });
 
@@ -121,5 +149,43 @@ export class GeneratePatternVersionUseCase {
     });
 
     return version;
+  }
+
+  /**
+   * Fusionne les mesures dans l'ordre : profil de mesures lié au projet, puis
+   * mesures manuelles transmises pour cette génération (celles-ci écrasent le
+   * profil). Aucune valeur par défaut codée en dur : ce qui manque encore est
+   * traité par `execute()` via l'estimation IA.
+   */
+  private async buildInitialMeasurements(
+    measurementProfileId: string | null,
+    customerId: string,
+    dto?: GeneratePatternVersionDto,
+  ): Promise<Record<string, number>> {
+    let profileMeasurements: Record<string, number> = {};
+
+    if (measurementProfileId) {
+      try {
+        const profile = await this.getMeasurementProfileUseCase.execute(
+          measurementProfileId,
+          customerId,
+        );
+        profileMeasurements = Object.fromEntries(profile.values);
+      } catch {
+        // Profil introuvable/inaccessible : on continue avec les mesures manuelles seules.
+      }
+    }
+
+    return { ...profileMeasurements, ...(dto?.measurements ?? {}) };
+  }
+
+  private resolveGarmentType(rawType: string): GarmentType {
+    const normalized = rawType.trim().toUpperCase();
+    if ((KNOWN_GARMENT_TYPES as string[]).includes(normalized)) {
+      return normalized as GarmentType;
+    }
+    throw new UnprocessableEntityException(
+      `Type de vêtement non reconnu pour la génération de patron: "${rawType}"`,
+    );
   }
 }

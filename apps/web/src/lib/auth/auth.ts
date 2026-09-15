@@ -4,9 +4,7 @@ import Credentials from 'next-auth/providers/credentials';
 import { env } from '@/lib/env';
 
 import { loginWithBackend, logoutWithBackend, refreshWithBackend, registerWithBackend } from './backend-auth-client';
-
-/** Refresh once the access token is within this many seconds of expiring (60 seconds). */
-const REFRESH_BUFFER_SECONDS = 60;
+import { maybeRefreshToken } from './refresh-jwt';
 
 function readCredential(credentials: Partial<Record<string, unknown>>, key: string): string | undefined {
   const value = credentials[key];
@@ -74,32 +72,11 @@ export const { handlers, auth, signIn, signOut } = NextAuth({
         return token;
       }
 
-      const expiresAt = token.accessTokenExpiresAt ?? 0;
-      const isNearExpiry = expiresAt - Math.floor(Date.now() / 1000) < REFRESH_BUFFER_SECONDS;
       const isForceRefresh =
         trigger === 'update' ||
         Boolean((session as Record<string, unknown> | undefined)?.['forceRefresh']);
 
-      if ((!isNearExpiry && !isForceRefresh) || !token.refreshToken) {
-        return token;
-      }
-
-      try {
-        const refreshed = await refreshWithBackend(token.refreshToken);
-        token.accessToken = refreshed.accessToken;
-        token.accessTokenExpiresAt = refreshed.accessTokenExpiresAt;
-        token.refreshToken = refreshed.refreshToken;
-        delete token.error;
-      } catch {
-        token.error = 'RefreshAccessTokenError';
-        delete token.accessToken;
-        delete token.accessTokenExpiresAt;
-        delete token.refreshToken;
-        delete token.userId;
-        delete token.role;
-      }
-
-      return token;
+      return maybeRefreshToken(token, isForceRefresh, refreshWithBackend);
     },
     session({ session, token }) {
       if (token.error === 'RefreshAccessTokenError' || !token.userId) {

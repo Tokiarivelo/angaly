@@ -4,7 +4,16 @@ pydantic==2.10.4
 httpx==0.28.1
 google-genai==0.3.0
 
+# Local statistical measurement model (app/local_model.py) — unpickles the
+# IterativeImputer artifact trained by ml/scripts/train_measurement_model.py.
+# Optional at runtime (graceful fallback to Gemini if unavailable), but the
+# libraries must be installed for LOCAL_STATISTICAL to ever be usable.
+scikit-learn==1.9.1
+numpy==2.4.6
+joblib==1.6.0
+
 # Dev/test only — split into requirements-dev.txt if the list grows
+pandas==3.0.5
 pytest==8.3.4
 pytest-cov==6.0.0
 pytest-asyncio==0.25.0

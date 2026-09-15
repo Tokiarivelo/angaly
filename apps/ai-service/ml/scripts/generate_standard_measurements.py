@@ -1,5 +1,5 @@
-import json
 import csv
+import json
 import os
 
 # Mensurations standards basées sur les normes (type AFNOR / ISO 8559-1) pour le prêt-à-porter femme.

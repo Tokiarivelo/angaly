@@ -1,34 +1,52 @@
 'use client';
 
 import React, { useState } from 'react';
-import { UserCheck, HelpCircle, Check } from 'lucide-react';
+import { UserCheck, HelpCircle, Check, Ruler } from 'lucide-react';
 import { useMeasurementProfiles } from '../../hooks/useMeasurementProfiles';
+import { useSizeCharts } from '../../hooks/useSizeCharts';
+import type { SizeChartGender } from '@angaly/types';
 
 interface MeasurementsStepProps {
   selectedProfileId?: string | undefined;
   measurements?: Record<string, number> | undefined;
   onSelectProfile: (profileId: string) => void;
   onUpdateMeasurement: (key: string, value: number) => void;
+  onApplyMeasurements: (values: Record<string, number>) => void;
 }
 
+// Vocabulaire canonique des mesures — identique à celui du profil "Mes mesures"
+// (apps/web/src/features/mes-mesures/consts/measurement-fields.const.ts) et à
+// celui attendu par le pattern-engine (packages/pattern-engine/src/rules/*).
 const DEFAULT_MEASUREMENT_KEYS = [
-  { key: 'TOUR_POITRINE', label: 'Tour de poitrine', hint: 'À l’endroit le plus fort de la poitrine' },
-  { key: 'TOUR_TAILLE', label: 'Tour de taille', hint: 'Au creux naturel de la taille' },
-  { key: 'TOUR_HANCHES', label: 'Tour de hanches', hint: 'À l’endroit le plus large du bassin' },
-  { key: 'LONGUEUR_VETEMENT', label: 'Longueur souhaitée', hint: 'De la taille ou l’épaule jusqu’à l’ourlet' },
-  { key: 'LARGEUR_EPAULES', label: 'Largeur des épaules', hint: 'D’une pointe d’épaule à l’autre au dos' },
-  { key: 'LONGUEUR_BRAS', label: 'Longueur du bras', hint: 'De l’épaule au poignet, coude légèrement plié' },
+  { key: 'TOUR_POITRINE', label: 'Tour de poitrine', hint: 'Mesurez horizontalement au point le plus fort de la poitrine.' },
+  { key: 'TOUR_TAILLE', label: 'Tour de taille', hint: 'Mesurez au creux de la taille, sans serrer.' },
+  { key: 'TOUR_BASSIN', label: 'Tour de bassin', hint: 'Mesurez horizontalement au point le plus fort du bassin.' },
+  { key: 'LONGUEUR_DOS', label: 'Longueur dos', hint: "De la base du cou jusqu'au creux de la taille." },
+  { key: 'CARRURE_DOS', label: 'Carrure dos', hint: 'Distance entre les emmanchures au dos.' },
+  { key: 'TOUR_COU', label: 'Tour de cou', hint: 'Mesurez à la base du cou.' },
 ];
+
+type MeasurementMode = 'MANUAL' | 'STANDARD_SIZE';
 
 export const MeasurementsStep: React.FC<MeasurementsStepProps> = ({
   selectedProfileId,
   measurements = {},
   onSelectProfile,
   onUpdateMeasurement,
+  onApplyMeasurements,
 }) => {
   const { data: profiles = [] } = useMeasurementProfiles();
   const [unit, setUnit] = useState<'cm' | 'inch'>('cm');
   const [activeHint, setActiveHint] = useState<string | null>(null);
+  const [mode, setMode] = useState<MeasurementMode>('MANUAL');
+  const [gender, setGender] = useState<SizeChartGender>('FEMME');
+  const [selectedSizeLabel, setSelectedSizeLabel] = useState<string | null>(null);
+  const { data: sizeChart = [], isLoading: isSizeChartLoading } = useSizeCharts(gender);
+
+  const handleSelectSize = (label: string, values: Record<string, number>) => {
+    setSelectedSizeLabel(label);
+    onApplyMeasurements(values);
+  };
 
   return (
     <div>
@@ -38,7 +56,7 @@ export const MeasurementsStep: React.FC<MeasurementsStepProps> = ({
             Vos mesures
           </h2>
           <p className="text-[#D8D3C8] text-sm font-light">
-            Sélectionnez un profil enregistré ou renseignez vos mensurations pour ce modèle.
+            Sélectionnez un profil enregistré, choisissez une taille standard ou renseignez vos mensurations pour ce modèle.
           </p>
         </div>
 
@@ -78,7 +96,11 @@ export const MeasurementsStep: React.FC<MeasurementsStepProps> = ({
                 <button
                   key={p.id}
                   type="button"
-                  onClick={() => onSelectProfile(p.id)}
+                  onClick={() => {
+                    onSelectProfile(p.id);
+                    onApplyMeasurements(p.values);
+                    setSelectedSizeLabel(null);
+                  }}
                   className={`p-3.5 rounded-lg text-left border transition-all flex items-center justify-between ${
                     isSelected
                       ? 'bg-[#041329] border-[#C5B190] ring-1 ring-[#C5B190]'
@@ -103,10 +125,91 @@ export const MeasurementsStep: React.FC<MeasurementsStepProps> = ({
         </div>
       )}
 
+      {/* Mode toggle: mesures personnalisées / taille standard */}
+      <div className="mb-6">
+        <div className="inline-flex rounded-lg bg-[#041329] p-1 border border-[#C5B190]/20">
+          <button
+            type="button"
+            onClick={() => setMode('MANUAL')}
+            className={`px-4 py-1.5 rounded text-xs font-semibold transition-colors ${
+              mode === 'MANUAL' ? 'bg-[#C5B190] text-[#041329]' : 'text-[#D8D3C8] hover:text-white'
+            }`}
+          >
+            Mesures personnalisées
+          </button>
+          <button
+            type="button"
+            onClick={() => setMode('STANDARD_SIZE')}
+            className={`px-4 py-1.5 rounded text-xs font-semibold transition-colors flex items-center gap-1.5 ${
+              mode === 'STANDARD_SIZE' ? 'bg-[#C5B190] text-[#041329]' : 'text-[#D8D3C8] hover:text-white'
+            }`}
+          >
+            <Ruler className="w-3.5 h-3.5" /> Taille standard
+          </button>
+        </div>
+      </div>
+
+      {mode === 'STANDARD_SIZE' && (
+        <div className="mb-8 p-5 bg-[#0C2650]/80 rounded-xl border border-[#C5B190]/30">
+          <div className="flex items-center justify-between mb-4">
+            <h3 className="text-white font-medium text-sm">Choisir une taille standard</h3>
+            <div className="inline-flex rounded-lg bg-[#041329] p-1 border border-[#C5B190]/20">
+              <button
+                type="button"
+                onClick={() => setGender('FEMME')}
+                className={`px-3 py-1 rounded text-xs font-semibold transition-colors ${
+                  gender === 'FEMME' ? 'bg-[#C5B190] text-[#041329]' : 'text-[#D8D3C8] hover:text-white'
+                }`}
+              >
+                Femme
+              </button>
+              <button
+                type="button"
+                onClick={() => setGender('HOMME')}
+                className={`px-3 py-1 rounded text-xs font-semibold transition-colors ${
+                  gender === 'HOMME' ? 'bg-[#C5B190] text-[#041329]' : 'text-[#D8D3C8] hover:text-white'
+                }`}
+              >
+                Homme
+              </button>
+            </div>
+          </div>
+
+          {isSizeChartLoading ? (
+            <p className="text-xs text-[#D8D3C8]/70">Chargement des tailles…</p>
+          ) : (
+            <div className="grid grid-cols-3 sm:grid-cols-5 gap-2.5">
+              {sizeChart.map((entry) => {
+                const isSelected = selectedSizeLabel === entry.label;
+                return (
+                  <button
+                    key={entry.label}
+                    type="button"
+                    onClick={() => handleSelectSize(entry.label, entry.measurements)}
+                    className={`p-3 rounded-lg text-center border transition-all ${
+                      isSelected
+                        ? 'bg-[#041329] border-[#C5B190] ring-1 ring-[#C5B190]'
+                        : 'bg-[#041329]/60 border-[#C5B190]/20 hover:border-[#C5B190]/50'
+                    }`}
+                  >
+                    <p className="text-white text-sm font-semibold">{entry.label}</p>
+                    <p className="text-[#D8D3C8]/60 text-[10px] font-mono">FR {entry.frSize}</p>
+                  </button>
+                );
+              })}
+            </div>
+          )}
+          <p className="text-[11px] text-[#D8D3C8]/60 italic mt-3">
+            La taille sélectionnée pré-remplit vos mensurations ci-dessous — vous pouvez ensuite
+            les ajuster librement.
+          </p>
+        </div>
+      )}
+
       {/* Manual Measurements Fields */}
       <div className="space-y-4">
         <h3 className="text-white font-medium text-sm">
-          {profiles.length > 0 ? 'Ou ajustez vos mesures manuellement :' : 'Mensurations nécessaires :'}
+          {mode === 'STANDARD_SIZE' ? 'Ajustez si besoin :' : profiles.length > 0 ? 'Ou ajustez vos mesures manuellement :' : 'Mensurations nécessaires :'}
         </h3>
 
         <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">

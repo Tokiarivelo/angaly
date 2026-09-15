@@ -109,6 +109,9 @@ export const PatternStudioWizard: React.FC<PatternStudioWizardProps> = ({ projec
             <CutStep
               selectedCut={formData.cutType}
               onSelect={(cut) => updateField('cutType', cut)}
+              garmentType={formData.garmentType}
+              occasion={formData.occasion || null}
+              style={formData.style || null}
             />
           )}
 
@@ -142,6 +145,10 @@ export const PatternStudioWizard: React.FC<PatternStudioWizardProps> = ({ projec
               onUpdateMeasurement={(k, v) => {
                 const current = formData.measurements ?? {};
                 updateField('measurements', { ...current, [k]: v });
+              }}
+              onApplyMeasurements={(values) => {
+                const current = formData.measurements ?? {};
+                updateField('measurements', { ...current, ...values });
               }}
             />
           )}

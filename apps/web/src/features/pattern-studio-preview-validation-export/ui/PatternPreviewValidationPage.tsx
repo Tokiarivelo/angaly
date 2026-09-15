@@ -7,6 +7,7 @@ import { useRequestReview } from '../hooks/useRequestReview';
 import { ProjectStatusHeader } from './ProjectStatusHeader';
 import { ReviewStatusTimeline } from './ReviewStatusTimeline';
 import { CorrectionNoteCard } from './CorrectionNoteCard';
+import { EstimatedMeasurementsBanner } from './EstimatedMeasurementsBanner';
 import { PatternPiecesSidebar } from './PatternPiecesSidebar';
 import { PatternPieceCanvas } from './PatternPieceCanvas';
 import { PatternPieceDetailsPanel } from './PatternPieceDetailsPanel';
@@ -118,6 +119,11 @@ export const PatternPreviewValidationPage: React.FC<PatternPreviewValidationPage
   const activePieceId = selectedPieceId ?? pieces[0]?.id ?? null;
   const activePiece = pieces.find((p) => p.id === activePieceId) ?? pieces[0] ?? null;
 
+  const estimatedMeasurementKeys = useMemo(() => {
+    const raw = currentVersion?.parametersJson?.['estimatedMeasurementKeys'];
+    return Array.isArray(raw) ? (raw as string[]) : [];
+  }, [currentVersion]);
+
   const { mutate: requestReviewMutate, isPending: isRequestingReview } =
     useRequestReview(projectId);
 
@@ -147,6 +153,8 @@ export const PatternPreviewValidationPage: React.FC<PatternPreviewValidationPage
 
       <main className="flex-1 max-w-7xl w-full mx-auto p-4 sm:p-6 lg:p-8">
         <ReviewStatusTimeline status={status} />
+
+        <EstimatedMeasurementsBanner estimatedKeys={estimatedMeasurementKeys} />
 
         {status === PatternStatus.CORRECTION_REQUIRED && (
           <CorrectionNoteCard

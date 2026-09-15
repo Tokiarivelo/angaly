@@ -1,5 +1,5 @@
 import { apiClient } from '@/lib/api-client';
-import type { PatternProjectDto, PatternVersionDto } from '@angaly/types';
+import type { PatternAiSuggestionResponse, PatternProjectDto, PatternVersionDto } from '@angaly/types';
 
 export interface UpdatePatternProjectPayload {
   garmentType?: string | undefined;
@@ -62,6 +62,36 @@ export const uploadInspirationMedia = async (
     mediaId: data.id ?? data.mediaId ?? 'mock-media',
     url: data.url ?? URL.createObjectURL(file),
   };
+};
+
+export interface RequestPatternSuggestionPayload {
+  garmentType: string;
+  occasion: string | null;
+  style: string | null;
+  measurements?: Record<string, number>;
+}
+
+export const requestPatternSuggestion = async (
+  payload: RequestPatternSuggestionPayload,
+): Promise<{ suggestion: PatternAiSuggestionResponse; isIndicativeOnly: boolean }> => {
+  try {
+    return await apiClient.post<{ suggestion: PatternAiSuggestionResponse; isIndicativeOnly: boolean }>(
+      '/api/ai-inference/pattern-suggestions',
+      { ...payload, measurements: payload.measurements ?? {} },
+    );
+  } catch {
+    // Dégradation gracieuse : jamais bloquant, l'utilisateur garde la sélection manuelle.
+    return {
+      suggestion: {
+        suggestedCutType: 'DROITE',
+        suggestedDetails: {},
+        detectedInspirationFeatures: null,
+        confidence: 0,
+        modelVersion: 'fallback-0.0.0',
+      },
+      isIndicativeOnly: true,
+    };
+  }
 };
 
 export const analyzeInspirationPhoto = async (

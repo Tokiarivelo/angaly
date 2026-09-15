@@ -8,11 +8,13 @@ import { DuplicateMeasurementProfileUseCase } from './application/use-cases/dupl
 import { DeleteMeasurementProfileUseCase } from './application/use-cases/delete-measurement-profile.use-case';
 import { ListMeasurementProfilesUseCase } from './application/use-cases/list-measurement-profiles.use-case';
 import { GetMeasurementProfileUseCase } from './application/use-cases/get-measurement-profile.use-case';
+import { GetSizeChartsUseCase } from './application/use-cases/get-size-charts.use-case';
 import { MeasurementProfilesController } from './presentation/controllers/measurement-profiles.controller';
+import { SizeChartsController } from './presentation/controllers/size-charts.controller';
 
 @Module({
   imports: [PrismaModule, AuthModule],
-  controllers: [MeasurementProfilesController],
+  controllers: [MeasurementProfilesController, SizeChartsController],
   providers: [
     {
       provide: 'IMeasurementProfileRepository',
@@ -24,6 +26,7 @@ import { MeasurementProfilesController } from './presentation/controllers/measur
     DeleteMeasurementProfileUseCase,
     ListMeasurementProfilesUseCase,
     GetMeasurementProfileUseCase,
+    GetSizeChartsUseCase,
   ],
   exports: [GetMeasurementProfileUseCase],
 })

@@ -75,6 +75,12 @@ Aucune nouvelle page/route — enrichit `pattern-studio-wizard` (analyse réelle
 d'inspiration, spec §21) et ajoute un widget d'assistant IA global (spec §31-32), pas une
 page dédiée. Voir `docs/features/ai-inference.md` et `docs/phases/phase-5-ai-avancee.md`.
 
+**État réel (2026-09-14)** : le pipeline `ai-inference` → `apps/ai-service` est branché de bout
+en bout (analyse d'inspiration, assistant, estimation de mesures manquantes), mais reste un
+wrapper prompt-engineered sur Gemini — pas de modèle fine-tuné/entraîné (aucune infrastructure
+ML dans ce repo). `pattern-studio-wizard` a aussi reçu un sélecteur de taille standard
+(XS/S/M/L/XL…) à l'étape 7, non prévu dans la spec initiale mais ajouté sur demande explicite.
+
 ## PHASE 6 — Admin (back-office)
 
 | Page (slug)                | Fiche                                     | Prompt Stitch                                          | Écran Stitch (titre)                    | Section spéc | Statut |

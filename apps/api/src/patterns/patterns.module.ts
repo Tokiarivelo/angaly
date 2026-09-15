@@ -4,6 +4,8 @@ import { AuthModule } from '../auth/auth.module';
 import { CustomersModule } from '../customers/customers.module';
 import { PatternEngineModule } from '../pattern-engine/pattern-engine.module';
 import { MediaModule } from '../media/media.module';
+import { MeasurementsModule } from '../measurements/measurements.module';
+import { AiInferenceModule } from '../ai-inference/ai-inference.module';
 
 import { PATTERN_PROJECT_REPOSITORY } from './domain/repositories/pattern-project.repository';
 import { PATTERN_VERSION_REPOSITORY } from './domain/repositories/pattern-version.repository';
@@ -31,6 +33,8 @@ import { PatternVersionsController } from './presentation/controllers/pattern-ve
     CustomersModule,
     PatternEngineModule,
     MediaModule,
+    MeasurementsModule,
+    AiInferenceModule,
   ],
   controllers: [PatternProjectsController, PatternVersionsController],
   providers: [

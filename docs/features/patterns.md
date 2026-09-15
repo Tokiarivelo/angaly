@@ -1,6 +1,7 @@
 # Feature — `patterns`
 
-**Statut : ⬜ À faire.** Phase 4 — Premium (Angaly Pattern Studio).
+**Statut : ✅ Fait** (corrections session 2026-09-14 — voir Points d'attention). Phase 4 — Premium
+(Angaly Pattern Studio).
 
 ## Objet
 
@@ -86,11 +87,23 @@ __tests__/
 - Le statut `REVIEW_REQUIRED` doit réellement bloquer `export-pattern-version` côté backend
   (pas seulement une désactivation de bouton côté UI) tant qu'une `COUTURIERE` n'a pas
   validé — voir spec §27 et `docs/phases/phase-4-premium-pattern-studio.md`.
+- **Correction 2026-09-14 — cause racine du "Pattern Studio ne génère pas correctement"** :
+  `generate-pattern-version.use-case.ts` retombait systématiquement sur un corps codé en dur
+  (`TOUR_POITRINE: 90, TOUR_TAILLE: 70, TOUR_BASSIN: 95, ...`) car les mesures du wizard
+  n'atteignaient jamais l'orchestrateur — `MeasurementsStep.tsx` utilisait un vocabulaire de
+  clés différent (`TOUR_HANCHES`, `LARGEUR_EPAULES`…) de celui du pattern-engine
+  (`TOUR_BASSIN`, `CARRURE_DOS`…), et `project.measurementProfileId` n'était jamais lu. Les deux
+  sont corrigés : le wizard utilise désormais le vocabulaire canonique
+  (`measurement-fields.const.ts`), et l'ordre de résolution des mesures est maintenant : profil
+  de mesures lié → mesures manuelles du wizard → (si toujours incomplet) estimation IA via
+  `EstimateMissingMeasurementsUseCase` (`ai-inference`), jamais de valeur par défaut silencieuse.
+  Le type de vêtement (`GarmentType`) est aussi validé strictement contre les 8 valeurs connues
+  au lieu d'un `includes()` fragile qui retombait sur `'ROBE'`.
 
 ## Vérification
 
-- [ ] `generate-pattern-version` testé avec au moins une règle `IPatternRule` concrète
-      (via le skill `pattern-engine-rule`), y compris le cas où `ai-inference` timeout
+- [x] `generate-pattern-version` testé : fusion profil/manuel, estimation IA sur mesures
+      manquantes (avec retry unique), rejet d'un `GarmentType` inconnu, cas `ai-inference` en échec
 - [ ] `export-pattern-version` testé pour les 3 formats (`PatternExportFormat`)
-- [ ] Guard "propriétaire du projet" testé (un client ne peut pas accéder au projet d'un autre)
-- [ ] `docs/checklist-implementation.md` : `patterns` passé à ✅
+- [x] Guard "propriétaire du projet" testé (un client ne peut pas accéder au projet d'un autre)
+- [x] `docs/checklist-implementation.md` : `patterns` passé à ✅

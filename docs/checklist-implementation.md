@@ -155,20 +155,28 @@ phase n'a pas été traitée en session dédiée (voir `.cursor/rules/006-phase-
 - [x] ✅ **mes-mesures** — Profils de mesures
 
 ### Modules backend
-- [x] ✅ **measurements**
+- [x] ✅ **measurements** (+ tailles standard XS/S/M/L/XL…, session 2026-09-14)
 - [x] ✅ **patterns** · **pattern-engine** (le moteur géométrique
       lui-même a déjà une orchestration testée en Phase 0 — reste à écrire les règles par
-      type de vêtement, voir le skill `pattern-engine-rule`)
+      type de vêtement, voir le skill `pattern-engine-rule`). Session 2026-09-14 : corrigé le
+      bug de nommage de mesures qui faisait retomber toute génération sur un corps par défaut
+      codé en dur — voir `docs/features/patterns.md`.
 
 ---
 
 ## 🤖 PHASE 5 — IA avancée (0 nouvelle page, 1 module)
 
-- [x] ✅ **ai-inference** — Vrai modèle de suggestion (remplace le placeholder), analyse
-      réelle de photo d'inspiration, widget assistant IA global (spec §31-32)
+- [x] ✅ **ai-inference** — Pipeline réellement branché (suggestion de coupe/détails, analyse
+      de photo d'inspiration, estimation IA des mesures manquantes, assistant IA global) sur
+      `apps/ai-service` (session 2026-09-14 — auparavant du code mort non appelé). Session
+      2026-09-15 : ajout d'un **vrai modèle entraîné** (`sklearn.impute.IterativeImputer`,
+      données réelles ANSUR II) pour l'estimation de mesures, sélectionnable par un admin —
+      voir `docs/features/ai-model-settings.md`. La suggestion de coupe/détails reste Gemini
+      uniquement (aucune donnée publique disponible pour entraîner ce cas précis).
 
-`apps/ai-service` reste en mode placeholder (`modelVersion: "placeholder-0.0.0"`) tant que
-cette phase n'est pas traitée — voir `apps/ai-service/README.md`.
+`apps/ai-service` n'utilise plus de placeholder statique pour `suggest-parameters`/
+`estimate-measurements`/`chat/assistant` — voir `apps/ai-service/README.md`,
+`docs/features/ai-inference.md` et `docs/features/ai-model-settings.md`.
 
 ---
 
@@ -186,3 +194,10 @@ cette phase n'est pas traitée — voir `apps/ai-service/README.md`.
 > (`stitch-prompts/31-*.md`). Le reste du back-office listé au spec §60-66
 > (Réalisations/Produits/Collections/Rendez-vous/Clients/Patron Premium admin) n'a pas de
 > maquette dédiée à ce jour — à ajouter comme une Phase 7 si le besoin est confirmé.
+
+### Hors périmètre spec — ajouté le 2026-09-15
+- [x] ✅ **admin-ai-settings** — `/admin/dashboard` + `/admin/ai-settings`, choix du modèle
+      IA pour l'estimation de mesures (voir `docs/features/ai-model-settings.md`,
+      `docs/pages/admin-ai-settings.md`). Module backend `admin-ai-settings` distinct des
+      2 modules ci-dessus (`users`, `content`, toujours ⬜) — ce n'est **pas** une avancée
+      de la Phase 6 spec, seulement un shell admin minimal pour cette seule fonctionnalité.

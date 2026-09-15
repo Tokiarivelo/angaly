@@ -96,6 +96,15 @@ appels de hooks.
 - Statut `CORRECTION_REQUIRED` : le commentaire de la couturière vit dans
   `PatternVersion.reviewNote` — l'afficher tel quel, pas de nouvelle table de commentaires à ce
   stade.
+- **Ajout 2026-09-14 — `EstimatedMeasurementsBanner.tsx`** : bandeau affiché quand
+  `currentVersion.parametersJson.estimatedMeasurementKeys` (nouveau champ, voir
+  `docs/features/patterns.md`) est non vide, signalant que certaines mesures viennent d'une
+  estimation IA plutôt que d'une saisie réelle (règle absolue #18 — jamais présenté comme
+  définitif). Comme pour l'ajout du sélecteur de taille standard sur `pattern-studio-wizard`,
+  l'écran Stitch n'a pas pu être revérifié dans cet environnement (`agy --print` et les outils
+  MCP Stitch directs échouent tous deux, voir `docs/pages/pattern-studio-wizard.md`) — le
+  bandeau réutilise le style déjà établi de `CorrectionNoteCard.tsx` (carte colorée avec icône)
+  plutôt qu'une nouvelle mise en page inventée ; à confirmer contre l'écran réel.
 
 ## Checklist d'acceptation
 

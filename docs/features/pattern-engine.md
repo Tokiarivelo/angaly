@@ -78,7 +78,12 @@ exports NestJS (`PatternEngineModule`) et consommé en injection de dépendance 
   dans `packages/pattern-engine/src/rules/`, jamais un `switch` géant »).
 - **`patterns`** : seul consommateur autorisé, via `generate-pattern-version` (cross-référence
   `docs/features/patterns.md`, « Points d'intégration ») — reçoit des `PatternParameters` déjà
-  confirmés par l'utilisateur/la couturière, jamais une suggestion `ai-inference` brute.
+  confirmés par l'utilisateur/la couturière, jamais une suggestion `ai-inference` brute. Depuis
+  le 2026-09-14, `generate-pattern-version` ne fournit plus jamais de mesures par défaut codées
+  en dur : à la première `PatternEngineValidationError` (clés manquantes), il appelle
+  `EstimateMissingMeasurementsUseCase` (`ai-inference`) puis relance une seule fois — ce module
+  continue de rejeter explicitement si les clés manquent toujours, conformément à la règle
+  ci-dessous.
 - **`ai-inference`** : aucune dépendance, directe ou indirecte — ce module ne reçoit et ne
   connaît jamais de `PatternAiSuggestionResponse`. C'est `patterns` qui arbitre entre suggestion
   IA et confirmation utilisateur avant de transmettre des `PatternParameters` figés ici (ADR-005).

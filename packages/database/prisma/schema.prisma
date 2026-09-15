@@ -134,6 +134,14 @@ enum AIConversationRole {
   ASSISTANT
 }
 
+/// Which apps/ai-service backend handles measurement estimation — admin-controlled
+/// (docs/features/ai-model-settings.md). LOCAL_STATISTICAL falls back to GEMINI at
+/// the ai-service layer if its trained artifact isn't loaded.
+enum AiMeasurementModel {
+  GEMINI
+  LOCAL_STATISTICAL
+}
+
 enum FavoriteEntityType {
   CREATION
   PRODUCT
@@ -196,6 +204,7 @@ model User {
   notifications     Notification[]
   refreshTokens       RefreshToken[]
   passwordResetTokens PasswordResetToken[]
+  aiModelSettingEdits AiModelSetting[]
 
   @@index([email])
   @@index([role])
@@ -654,6 +663,22 @@ model AIConversation {
   @@index([customerId])
   @@index([patternProjectId])
   @@map("ai_conversations")
+}
+
+/// Singleton row (fixed id "singleton") — admin-controlled choice of AI backend
+/// for measurement estimation. Read by `ai-inference` on every generation that
+/// needs to estimate missing measurements; written only via the ADMIN-only
+/// `/admin/ai-settings` endpoint. See docs/features/ai-model-settings.md.
+model AiModelSetting {
+  id                String             @id @default("singleton")
+  measurementModel  AiMeasurementModel @default(GEMINI)
+  updatedById       String?
+  updatedAt         DateTime           @updatedAt
+  createdAt         DateTime           @default(now())
+
+  updatedBy User? @relation(fields: [updatedById], references: [id])
+
+  @@map("ai_model_settings")
 }
 
 // ============================================================

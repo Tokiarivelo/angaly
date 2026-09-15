@@ -32,12 +32,32 @@ infrastructure/
   mappers/measurement-profile.mapper.ts
 presentation/
   controllers/measurement-profiles.controller.ts
+  controllers/size-charts.controller.ts     → GET /measurements/size-charts (données statiques, pas de
+                                               guard — référence AFNOR/ISO 8559-1, pas une donnée client)
   guards/ (propriétaire du profil uniquement)
 __tests__/
   unit/create-measurement-profile.use-case.spec.ts
   unit/duplicate-measurement-profile.use-case.spec.ts
+  unit/get-size-charts.use-case.spec.ts
   integration/measurement-profiles.controller.spec.ts
+  integration/size-charts.controller.spec.ts
 ```
+
+### Tailles standard (session 2026-09-14)
+
+Le wizard `pattern-studio-wizard` (étape 7, `MeasurementsStep.tsx`) offre désormais un mode
+« Taille standard » (XS/S/M/L/XL…) en alternative à la saisie manuelle, adressant l'absence
+totale de sélecteur de taille relevée en diagnostic. Les données proviennent de
+`packages/types/src/size-charts.ts` (`STANDARD_SIZE_CHARTS`), une table AFNOR/ISO 8559-1
+(tailles FR 34-52 femme, 44-58 homme) portée depuis
+`apps/ai-service/ml/data/standard_measurements.json` (auparavant présente mais totalement
+inutilisée) — même vocabulaire de clés que `measurement-fields.const.ts`
+(`TOUR_POITRINE`, `TOUR_TAILLE`, `TOUR_BASSIN`, `LONGUEUR_DOS`, `CARRURE_DOS`, `TOUR_COU`).
+`GET /measurements/size-charts?gender=FEMME|HOMME` sert cette table ; c'est une donnée de
+référence statique, pas une donnée client — pas de guard d'authentification. Sélectionner une
+taille pré-remplit les champs de mesure côté client (`onApplyMeasurements`), qui restent
+éditables — aucune persistance serveur d'un « profil de taille standard » distinct d'un
+`MeasurementProfile`.
 
 ## Modèles Prisma
 
@@ -63,6 +83,7 @@ __tests__/
 | `PATCH` | `/api/measurement-profiles/:id` | `update-measurement-profile` | `CLIENT` (propriétaire) |
 | `POST` | `/api/measurement-profiles/:id/duplicate` | `duplicate-measurement-profile` | `CLIENT` (propriétaire) |
 | `DELETE` | `/api/measurement-profiles/:id` | `delete-measurement-profile` | `CLIENT` (propriétaire) |
+| `GET` | `/api/measurements/size-charts` | `get-size-charts` | Public (données statiques) |
 
 ## Points d'intégration
 
@@ -96,4 +117,5 @@ __tests__/
 - [x] `create-measurement-profile`/`update-measurement-profile` testés (validation des clés/valeurs)
 - [x] `duplicate-measurement-profile` testé (copie fidèle, nouveau `id`)
 - [x] Guard "propriétaire du profil" testé (un client ne peut pas accéder au profil d'un autre)
+- [x] `get-size-charts`/`size-charts.controller` testés (filtrage par genre, rejet d'un genre invalide)
 - [x] `docs/checklist-implementation.md` : `measurements` passé à ✅
