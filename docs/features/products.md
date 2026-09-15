@@ -47,6 +47,13 @@ __tests__/
 `color`, `material?`, `priceOverride?`), `Inventory` (`variantId` unique,
 `quantityAvailable`, `quantityReserved`).
 
+`ProductVariant` also carries an optional many-to-many `media Media[]` (migration
+`add_product_variant_media`, relation `ProductVariantMedia`, `MediaEntityType.PRODUCT_VARIANT`)
+— colorway-specific photos (e.g. the "Navy" swatch's own pictures). Empty for a variant that
+shares the product's `Media` instead; `GET /api/products/:slug` always returns both
+`Product.media` and each variant's own `media` so the client decides which to show (see
+`docs/pages/fiche-produit.md` "Couleurs de variante").
+
 ## Cas d'usage clés
 
 - Lister les produits avec filtres (`categoryId`, `size`, `color`, `material`, `status`,
@@ -82,6 +89,16 @@ __tests__/
 
 ## Points d'attention
 
+- **Données de démo** : `packages/database/prisma/seed.ts` seed désormais 6 produits
+  prêt-à-porter réels (`ANG-PAP-001` à `006`, catégorie `pret-a-porter`), chacun avec
+  variantes taille (FR 34-44, alignées sur `CATALOGUE_SIZES`) × couleur (palette
+  `CATALOGUE_COLOR_FILTERS` : Navy/White/Champagne/Black/Grey), `Inventory` par variante, une
+  photo produit partagée (`MediaEntityType.PRODUCT`) **et une photo par couleur**
+  (`MediaEntityType.PRODUCT_VARIANT`, une même photo connectée à toutes les tailles de cette
+  couleur via `attachVariantColorPhoto()`) et une courte description — les 5 valeurs de
+  `ProductAvailability` sont chacune couvertes par au moins un produit pour exercer le filtre
+  Disponibilité de `pret-a-porter-catalogue`. Toutes les photos vivent dans le bucket MinIO
+  `products`.
 - Le panier (`POST /api/cart/items` référencé par `docs/pages/fiche-produit.md`) est
   volontairement **hors périmètre** de ce module : le découpage exact (sous-module de
   `products` vs. module `orders` dédié) est renvoyé à la session d'implémentation de Phase 3
@@ -111,6 +128,9 @@ __tests__/
 - [x] `get-product-by-slug` testé (cas trouvé/non trouvé, variantes + inventaire inclus,
       variante sans ligne `Inventory`) — `get-product-by-slug.use-case.spec.ts`,
       `product.mapper.spec.ts`
+- [x] Media par variante testée : mapping vers un `ProductMediaSummary[]` vide par défaut,
+      repli `altText` sur `''`, et passage jusqu'au DTO de réponse —
+      `product-variant.entity.spec.ts`, `product.mapper.spec.ts`
 - [x] `check-variant-availability` testé (stock suffisant/insuffisant, quantité par défaut,
       variante inconnue) — `check-variant-availability.use-case.spec.ts`
 - [x] `products.controller.spec.ts` couvre 200/400/404, y compris le basculement vers le

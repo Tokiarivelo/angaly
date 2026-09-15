@@ -13,6 +13,7 @@ function variant(quantityAvailable: number, quantityReserved: number): ProductVa
     priceOverride: null,
     quantityAvailable,
     quantityReserved,
+    media: [],
   };
 }
 

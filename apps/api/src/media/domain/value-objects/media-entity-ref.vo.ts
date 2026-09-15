@@ -6,6 +6,7 @@
 export const MEDIA_ENTITY_TYPES = [
   'CREATION',
   'PRODUCT',
+  'PRODUCT_VARIANT',
   'COLLECTION',
   'ATELIER',
   'CUSTOMER_AVATAR',
@@ -22,14 +23,16 @@ export type MediaEntityType = (typeof MEDIA_ENTITY_TYPES)[number];
  * (packages/storage/src/buckets.ts). The backend always derives the bucket
  * from the entity type — the client never chooses it (docs/features/media.md).
  *
- * PAGE_SECTION falls back to the `customers` bucket: it is the only bucket
- * without a 1:1 name match once the other seven entity types are assigned,
- * and PAGE_SECTION media (admin CMS content, Phase 6) has no dedicated
- * bucket of its own in the spec. Revisit if Phase 6 introduces one.
+ * PAGE_SECTION falls back to the `customers` bucket: it has no dedicated
+ * bucket of its own in the spec (admin CMS content, Phase 6) — revisit if
+ * Phase 6 introduces one. PRODUCT_VARIANT deliberately shares PRODUCT's
+ * `products` bucket (colorway-specific photos live alongside the product's
+ * own, see docs/features/products.md).
  */
 const ENTITY_TYPE_TO_BUCKET: Record<MediaEntityType, string> = {
   CREATION: 'creations',
   PRODUCT: 'products',
+  PRODUCT_VARIANT: 'products',
   COLLECTION: 'collections',
   ATELIER: 'ateliers',
   CUSTOMER_AVATAR: 'avatars',

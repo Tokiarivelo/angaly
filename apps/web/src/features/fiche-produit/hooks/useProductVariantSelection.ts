@@ -26,7 +26,7 @@ function isVariantInStock(variant: ProductVariantDto): boolean {
  * non-existent pair falls back to the first variant sharing the newly
  * chosen dimension, rather than leaving the selection dangling.
  */
-export function useProductVariantSelection(variants: ProductVariantDto[]): {
+export interface UseProductVariantSelectionResult {
   sizes: string[];
   colors: string[];
   selectedSize: string | null;
@@ -35,7 +35,9 @@ export function useProductVariantSelection(variants: ProductVariantDto[]): {
   isSizeAvailable: (size: string) => boolean;
   selectSize: (size: string) => void;
   selectColor: (color: string) => void;
-} {
+}
+
+export function useProductVariantSelection(variants: ProductVariantDto[]): UseProductVariantSelectionResult {
   const firstVariant = variants[0] ?? null;
   const [selectedSize, setSelectedSize] = useState<string | null>(firstVariant?.size ?? null);
   const [selectedColor, setSelectedColor] = useState<string | null>(firstVariant?.color ?? null);

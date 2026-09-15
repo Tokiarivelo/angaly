@@ -21,6 +21,7 @@ export class ProductMapper {
         : null,
       quantityAvailable: record.inventory?.quantityAvailable ?? 0,
       quantityReserved: record.inventory?.quantityReserved ?? 0,
+      media: record.media.map((media) => ({ ...media, altText: media.altText ?? '' })),
     });
   }
 
@@ -53,6 +54,7 @@ export class ProductMapper {
     dto.priceOverride = entity.priceOverride;
     dto.quantityAvailable = entity.quantityAvailable;
     dto.quantityReserved = entity.quantityReserved;
+    dto.media = entity.media;
     return dto;
   }
 

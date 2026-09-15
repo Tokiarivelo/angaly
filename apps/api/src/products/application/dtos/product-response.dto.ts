@@ -4,24 +4,9 @@ import {
   ProductAvailability,
   ProductCategoryDto as SharedProductCategoryDto,
   ProductDto,
-  ProductMediaDto as SharedProductMediaDto,
 } from '@angaly/types';
 
-import { ProductPriceResponseDto, ProductVariantResponseDto } from './product-variant-response.dto';
-
-export class ProductMediaResponseDto implements SharedProductMediaDto {
-  @ApiProperty()
-  id!: string;
-
-  @ApiProperty()
-  url!: string;
-
-  @ApiProperty()
-  altText!: string;
-
-  @ApiProperty()
-  sortOrder!: number;
-}
+import { ProductMediaResponseDto, ProductPriceResponseDto, ProductVariantResponseDto } from './product-variant-response.dto';
 
 export class ProductCategoryResponseDto implements SharedProductCategoryDto {
   @ApiProperty()

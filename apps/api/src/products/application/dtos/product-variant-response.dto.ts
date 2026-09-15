@@ -1,5 +1,5 @@
 import { ApiProperty } from '@nestjs/swagger';
-import { ProductPriceDto, ProductVariantDto } from '@angaly/types';
+import { ProductMediaDto, ProductPriceDto, ProductVariantDto } from '@angaly/types';
 
 export class ProductPriceResponseDto implements ProductPriceDto {
   @ApiProperty()
@@ -7,6 +7,20 @@ export class ProductPriceResponseDto implements ProductPriceDto {
 
   @ApiProperty()
   currency!: string;
+}
+
+export class ProductMediaResponseDto implements ProductMediaDto {
+  @ApiProperty()
+  id!: string;
+
+  @ApiProperty()
+  url!: string;
+
+  @ApiProperty()
+  altText!: string;
+
+  @ApiProperty()
+  sortOrder!: number;
 }
 
 export class ProductVariantResponseDto implements ProductVariantDto {
@@ -33,4 +47,7 @@ export class ProductVariantResponseDto implements ProductVariantDto {
 
   @ApiProperty()
   quantityReserved!: number;
+
+  @ApiProperty({ type: [ProductMediaResponseDto] })
+  media!: ProductMediaResponseDto[];
 }

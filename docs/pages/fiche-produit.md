@@ -28,9 +28,9 @@ quantité).
 ```
 apps/web/src/features/fiche-produit/
   ui/
-    FicheProduitPage.tsx        → layout deux colonnes (galerie + panneau d'achat)
-    ProductGallery.tsx          → image principale + filmstrip + lightbox zoom
-    PurchasePanel.tsx           → titre, référence, prix, disponibilité, sélecteurs, actions (sticky desktop)
+    FicheProduitPage.tsx        → layout deux colonnes (galerie + panneau d'achat) ; possède useProductVariantSelection()
+    ProductGallery.tsx          → image principale + filmstrip + lightbox zoom ; reçoit `selectedVariant`, bascule sur ses photos si présentes
+    PurchasePanel.tsx           → titre, référence, prix, disponibilité, sélecteurs, actions (sticky desktop) ; reçoit `variantSelection` en prop
     SizeSelector.tsx            → chips de taille (état sélectionné rempli navy)
     ColorSelector.tsx           → swatches circulaires (anneau navy fin si sélectionné)
     QuantityStepper.tsx         → +/- minimal
@@ -39,7 +39,7 @@ apps/web/src/features/fiche-produit/
     SimilarProductsRow.tsx      → réutilise ProductCard de `pret-a-porter-catalogue`
   hooks/
     useProduct.ts                → charge le produit par `slug` (variantes incluses) via react-query
-    useProductVariantSelection.ts→ état taille/couleur sélectionnés → résout le `ProductVariant`/`Inventory`
+    useProductVariantSelection.ts→ état taille/couleur sélectionnés → résout le `ProductVariant`/`Inventory` (possédé par `FicheProduitPage`, partagé entre `ProductGallery` et `PurchasePanel`)
     useAddToCart.ts               → mutation d'ajout au panier (Zustand + sync serveur si connecté)
     useToggleFavorite.ts          → ajoute/retire des favoris
     useSimilarProducts.ts         → produits similaires (même catégorie)
@@ -72,7 +72,9 @@ et les autres composants `ui/` ne contiennent que du JSX + appels de hooks.
 
 `Product` (description, prix, statut), `ProductVariant` (taille, couleur, matière,
 `priceOverride`), `Inventory` (`quantityAvailable`/`quantityReserved` sous-jacents au badge
-de disponibilité), `Media` (galerie), `Favorite`.
+de disponibilité), `Media` (galerie du produit **et**, depuis cette session, galerie propre à
+une variante via la relation many-to-many `ProductVariant.media`/`Media.productVariantRefs` —
+voir "Couleurs de variante" ci-dessous), `Favorite`.
 
 ## Points d'attention
 
@@ -121,6 +123,16 @@ de disponibilité), `Media` (galerie), `Favorite`.
   ("Navy") — aucun champ hex n'existe côté Prisma. `@/lib/color-swatches.ts` (partagé avec
   `pret-a-porter-catalogue/ProductCard.tsx`) couvre les deux vocabulaires avec un repli
   neutre pour tout nom non reconnu.
+- **La galerie change de photos selon la couleur choisie** (`ProductGallery.tsx`) : le
+  sélecteur `ColorSelector`/`useProductVariantSelection` est désormais possédé par
+  `FicheProduitPage.tsx` (et non plus `PurchasePanel.tsx`) pour que `ProductGallery`, son
+  voisin, reçoive le même `selectedVariant` — `ProductVariantDto.media` remplace
+  entièrement `ProductDto.media` quand la variante sélectionnée a ses propres photos, et
+  n'affiche la galerie partagée du produit que pour une variante qui n'en a pas (cas par
+  défaut aujourd'hui : seul un sous-ensemble des produits seedés a des photos par couleur —
+  voir `packages/database/prisma/seed.ts`). `useGalleryLightbox.ts` recale `activeIndex` sur
+  0 s'il pointe au-delà du nombre de photos de la nouvelle couleur (ex. on regardait la 4ᵉ
+  photo, la nouvelle couleur n'en a que 2).
 
 ## Checklist d'acceptation
 
@@ -131,6 +143,9 @@ de disponibilité), `Media` (galerie), `Favorite`.
 - [x] "Ajouter aux favoris" fonctionnel pour un visiteur connecté (vrai appel API), invite à se connecter sinon
 - [x] Onglets Description / Matière & entretien / Livraison & retours accessibles au clavier (Radix Tabs)
 - [x] Tests : `useProduct.test.ts`, `useProductVariantSelection.test.ts`, `useAddToCart.test.ts`
-      (+ `resolveVariantStatus.test.ts`, `FicheProduitPage.test.tsx`)
+      (+ `resolveVariantStatus.test.ts`, `FicheProduitPage.test.tsx`, `ProductGallery.test.tsx`,
+      `useGalleryLightbox.test.ts`)
+- [x] Choisir une couleur ayant ses propres photos remplace la galerie ; une couleur sans
+      photo dédiée retombe sur la galerie partagée du produit (`ProductGallery.test.tsx`)
 - [x] `docs/checklist-implementation.md` et `docs/mockup-reference.md` mis à jour à ✅
 - [ ] `docs/checklist-implementation.md` et `docs/mockup-reference.md` mis à jour à ✅

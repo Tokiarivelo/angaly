@@ -12,6 +12,7 @@ function baseProps(): ProductVariantProps {
     priceOverride: null,
     quantityAvailable: 10,
     quantityReserved: 3,
+    media: [],
   };
 }
 
@@ -55,5 +56,14 @@ describe('ProductVariantEntity', () => {
     expect(() => ProductVariantEntity.create({ ...baseProps(), color: '' })).toThrow(
       'ProductVariant.color must not be empty',
     );
+  });
+
+  it('exposes its colorway-specific media, empty by default', () => {
+    const withoutMedia = ProductVariantEntity.create(baseProps());
+    expect(withoutMedia.media).toEqual([]);
+
+    const media = [{ id: 'media-1', url: 'https://minio.local/variant.jpg', altText: 'Bleu', sortOrder: 0 }];
+    const withMedia = ProductVariantEntity.create({ ...baseProps(), media });
+    expect(withMedia.media).toEqual(media);
   });
 });

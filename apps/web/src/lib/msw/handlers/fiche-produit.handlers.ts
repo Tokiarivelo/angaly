@@ -29,6 +29,11 @@ export function sampleProductDetail(overrides: Partial<ProductDto> = {}): Produc
         priceOverride: null,
         quantityAvailable: 3,
         quantityReserved: 0,
+        // Own photos — picking "Bleu Nuit" swaps the gallery to these.
+        media: [
+          { id: 'media-3', url: 'http://localhost:9000/products/robe-solene-bleu-nuit-1.jpg', altText: 'Robe Solène — Bleu Nuit', sortOrder: 0 },
+          { id: 'media-4', url: 'http://localhost:9000/products/robe-solene-bleu-nuit-2.jpg', altText: 'Robe Solène — Bleu Nuit, détail', sortOrder: 1 },
+        ],
       },
       {
         id: 'variant-2',
@@ -39,6 +44,8 @@ export function sampleProductDetail(overrides: Partial<ProductDto> = {}): Produc
         priceOverride: null,
         quantityAvailable: 0,
         quantityReserved: 0,
+        // No dedicated photos — picking "Champagne" falls back to the product's shared media above.
+        media: [],
       },
     ],
     createdAt: '2026-01-01T00:00:00.000Z',

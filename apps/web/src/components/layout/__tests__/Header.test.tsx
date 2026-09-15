@@ -35,7 +35,7 @@ describe('Header (mobile navigation triggers)', () => {
 });
 
 describe('Header (desktop navigation)', () => {
-  it('renders all primary desktop navigation links including Journal and Pattern Studio', () => {
+  it('renders all primary desktop navigation links including Prêt-à-porter, Journal and Pattern Studio', () => {
     render(<Header />);
 
     const nav = screen.getByRole('navigation', { name: 'Navigation principale' });
@@ -45,6 +45,7 @@ describe('Header (desktop navigation)', () => {
       { name: 'Accueil', href: '/' },
       { name: 'La Une', href: '/la-une' },
       { name: 'Nos Créations', href: '/creations' },
+      { name: 'Prêt-à-porter', href: '/pret-a-porter' },
       { name: 'Atelier', href: '/ateliers' },
       { name: 'Héritage', href: '/a-propos' },
       { name: 'Journal', href: '/journal' },

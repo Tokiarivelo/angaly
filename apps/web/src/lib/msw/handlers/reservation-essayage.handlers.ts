@@ -41,9 +41,9 @@ export const SAMPLE_PRODUCT: ProductDto = {
   category: { id: 'cat-robes', slug: 'robes', name: 'Robes' },
   media: [{ id: 'media-1', url: 'http://localhost:9000/products/robe-solene.jpg', altText: 'Robe Solène', sortOrder: 0 }],
   variants: [
-    { id: 'variant-1', sku: 'RS-24-FW-34', size: '34', color: 'Ivoire', material: null, priceOverride: null, quantityAvailable: 2, quantityReserved: 0 },
-    { id: 'variant-2', sku: 'RS-24-FW-36', size: '36', color: 'Ivoire', material: null, priceOverride: null, quantityAvailable: 2, quantityReserved: 0 },
-    { id: 'variant-3', sku: 'RS-24-FW-38', size: '38', color: 'Ivoire', material: null, priceOverride: null, quantityAvailable: 2, quantityReserved: 0 },
+    { id: 'variant-1', sku: 'RS-24-FW-34', size: '34', color: 'Ivoire', material: null, priceOverride: null, quantityAvailable: 2, quantityReserved: 0, media: [] },
+    { id: 'variant-2', sku: 'RS-24-FW-36', size: '36', color: 'Ivoire', material: null, priceOverride: null, quantityAvailable: 2, quantityReserved: 0, media: [] },
+    { id: 'variant-3', sku: 'RS-24-FW-38', size: '38', color: 'Ivoire', material: null, priceOverride: null, quantityAvailable: 2, quantityReserved: 0, media: [] },
   ],
   createdAt: '2026-01-01T00:00:00.000Z',
   updatedAt: '2026-01-01T00:00:00.000Z',

@@ -8,6 +8,7 @@ import {
   Locale,
   MediaEntityType,
   PrismaClient,
+  ProductAvailability,
   Role,
 } from '../generated/client';
 
@@ -617,6 +618,176 @@ async function main() {
     createdCreations.set(creation.slug, creation);
   }
   console.log(`✅ ${creations.length} créations créées`);
+
+  // --- Produits Prêt-à-porter (docs/pages/pret-a-porter-catalogue.md, docs/pages/fiche-produit.md) ---
+  // Distinct des créations pièce-unique ci-dessus : vêtements disponibles immédiatement,
+  // avec variantes taille (CATALOGUE_SIZES — tailles FR 34-44) et couleur (palette du filtre
+  // CATALOGUE_COLOR_FILTERS : Navy/White/Champagne/Black/Grey) pour que les filtres du
+  // catalogue et le sélecteur de couleur de la fiche produit aient de vraies données à filtrer.
+  const pretAPorterCategory = categoryBySlug.get('pret-a-porter')!;
+  const atelierAntananarivo = createdAteliers.get('antananarivo-centre');
+
+  const products = [
+    {
+      sku: 'ANG-PAP-001',
+      slug: 'chemise-lin-antsirabe',
+      name: 'Chemise Lin Antsirabe',
+      categoryId: pretAPorterCategory.id,
+      atelierId: atelierAntananarivo?.id ?? null,
+      description:
+        'Chemise fluide en lin naturel tissé à Madagascar, coupe droite et col mao discret — un essentiel intemporel pour toutes les saisons.',
+      price: 138000,
+      status: ProductAvailability.AVAILABLE,
+      material: 'Lin',
+      sizes: ['36', '38', '40', '42'],
+      // Each color has its own photo — picking a swatch on the product page
+      // swaps the gallery to that colorway's pictures (see ColorSelector.tsx).
+      colorPhotos: [
+        { color: 'White', photo: '1496747611176-843222e1e57c', photoAlt: 'Chemise Lin Antsirabe — White' },
+        { color: 'Champagne', photo: '1503342217505-b0a15ec3261c', photoAlt: 'Chemise Lin Antsirabe — Champagne' },
+      ],
+      photo: '1509631179647-0177331693ae',
+      photoAlt: 'Chemise Lin Antsirabe',
+    },
+    {
+      sku: 'ANG-PAP-002',
+      slug: 'robe-portefeuille-soiree',
+      name: 'Robe Portefeuille Soirée',
+      categoryId: pretAPorterCategory.id,
+      atelierId: atelierAntananarivo?.id ?? null,
+      description:
+        'Robe portefeuille en crêpe fluide, silhouette cintrée à la taille et jupe évasée pour une allure élégante en toute occasion.',
+      price: 245000,
+      status: ProductAvailability.LAST_PIECE,
+      material: 'Crêpe',
+      sizes: ['34', '36', '38'],
+      colorPhotos: [
+        { color: 'Black', photo: '1507003211169-0a1dd7228f2d', photoAlt: 'Robe Portefeuille Soirée — Black' },
+        { color: 'Champagne', photo: '1507679799987-c73779587ccf', photoAlt: 'Robe Portefeuille Soirée — Champagne' },
+      ],
+      photo: '1512436991641-6745cdb1723f',
+      photoAlt: 'Robe Portefeuille Soirée',
+    },
+    {
+      sku: 'ANG-PAP-003',
+      slug: 'blazer-structure-marine',
+      name: 'Blazer Structuré Marine',
+      categoryId: pretAPorterCategory.id,
+      atelierId: atelierAntananarivo?.id ?? null,
+      description:
+        "Blazer cintré à l'épaule structurée et doublure satinée — la pièce signature d'un vestiaire de bureau sophistiqué.",
+      price: 312000,
+      status: ProductAvailability.AVAILABLE,
+      material: 'Laine mélangée',
+      sizes: ['36', '38', '40', '42'],
+      colorPhotos: [
+        { color: 'Navy', photo: '1515886657613-9f3515b0c78f', photoAlt: 'Blazer Structuré Marine — Navy' },
+        { color: 'Black', photo: '1517841905240-472988babdf9', photoAlt: 'Blazer Structuré Marine — Black' },
+      ],
+      photo: '1534528741775-53994a69daeb',
+      photoAlt: 'Blazer Structuré Marine',
+    },
+    {
+      sku: 'ANG-PAP-004',
+      slug: 'pantalon-tailleur-ivoire',
+      name: 'Pantalon Tailleur Ivoire',
+      categoryId: pretAPorterCategory.id,
+      atelierId: atelierAntananarivo?.id ?? null,
+      description:
+        'Pantalon fluide à pinces, taille haute et coupe droite — le compagnon parfait du blazer structuré.',
+      price: 168000,
+      status: ProductAvailability.ON_ORDER,
+      material: 'Viscose',
+      sizes: ['34', '36', '38', '40'],
+      colorPhotos: [
+        { color: 'White', photo: '1519741497674-611481863552', photoAlt: 'Pantalon Tailleur Ivoire — White' },
+        { color: 'Black', photo: '1520006403909-838d6b92c22e', photoAlt: 'Pantalon Tailleur Ivoire — Black' },
+      ],
+      photo: '1544078751-58fee2d8a03b',
+      photoAlt: 'Pantalon Tailleur Ivoire',
+    },
+    {
+      sku: 'ANG-PAP-005',
+      slug: 'chemisier-soie-champagne',
+      name: 'Chemisier Soie Champagne',
+      categoryId: pretAPorterCategory.id,
+      atelierId: atelierAntananarivo?.id ?? null,
+      description:
+        'Chemisier en soie naturelle au tombé délicat et col lavallière discret — la touche précieuse du vestiaire quotidien.',
+      price: 198000,
+      status: ProductAvailability.RESERVED,
+      material: 'Soie',
+      sizes: ['34', '36', '38'],
+      colorPhotos: [
+        { color: 'Champagne', photo: '1520975916090-3105956dac38', photoAlt: 'Chemisier Soie Champagne — Champagne' },
+        { color: 'White', photo: '1528459801416-a9e53bbf4e17', photoAlt: 'Chemisier Soie Champagne — White' },
+      ],
+      photo: '1571908599407-cdb918ed83bf',
+      photoAlt: 'Chemisier Soie Champagne',
+    },
+    {
+      sku: 'ANG-PAP-006',
+      slug: 'jupe-plissee-grise',
+      name: 'Jupe Plissée Grise',
+      categoryId: pretAPorterCategory.id,
+      atelierId: atelierAntananarivo?.id ?? null,
+      description:
+        'Jupe plissée mi-longue en satin, mouvement fluide à chaque pas — pour une silhouette élégante du bureau au dîner.',
+      price: 132000,
+      status: ProductAvailability.OUT_OF_STOCK,
+      material: 'Satin',
+      sizes: ['36', '38', '40', '42'],
+      colorPhotos: [
+        { color: 'Grey', photo: '1539109136881-3be0616acf4b', photoAlt: 'Jupe Plissée Grise — Grey' },
+        { color: 'Black', photo: '1546804784-896d0dca3805', photoAlt: 'Jupe Plissée Grise — Black' },
+      ],
+      photo: '1593032465175-481ac7f401a0',
+      photoAlt: 'Jupe Plissée Grise',
+    },
+  ];
+
+  const createdProducts = new Map<string, { id: string }>();
+  // Variant ids sharing the same (productSlug, color) — every size of a color
+  // points at the same colorway photo below, keyed as "<slug>::<color>".
+  const variantIdsByProductColor = new Map<string, string[]>();
+
+  for (const { sizes, colorPhotos, material, photo: _photo, photoAlt: _photoAlt, ...productData } of products) {
+    const product = await prisma.product.upsert({
+      where: { slug: productData.slug },
+      update: productData,
+      create: productData,
+    });
+    createdProducts.set(product.slug, product);
+
+    const quantityAvailable =
+      productData.status === ProductAvailability.OUT_OF_STOCK
+        ? 0
+        : productData.status === ProductAvailability.LAST_PIECE
+          ? 1
+          : 6;
+    const quantityReserved = productData.status === ProductAvailability.RESERVED ? 1 : 0;
+
+    for (const size of sizes) {
+      for (const { color } of colorPhotos) {
+        const colorCode = color.slice(0, 3).toUpperCase();
+        const variantSku = `${productData.sku}-${size}-${colorCode}`;
+        const variant = await prisma.productVariant.upsert({
+          where: { sku: variantSku },
+          update: { productId: product.id, size, color, material },
+          create: { productId: product.id, sku: variantSku, size, color, material },
+        });
+        await prisma.inventory.upsert({
+          where: { variantId: variant.id },
+          update: {},
+          create: { variantId: variant.id, quantityAvailable, quantityReserved },
+        });
+
+        const key = `${product.slug}::${color}`;
+        variantIdsByProductColor.set(key, [...(variantIdsByProductColor.get(key) ?? []), variant.id]);
+      }
+    }
+  }
+  console.log(`✅ ${products.length} produits prêt-à-porter créés (avec variantes et stock)`);
 
   // journal-liste (docs/pages/journal-liste.md) needs real content to render against —
   // authorId is a required FK to User, seeded directly per docs/features/blog.md.
@@ -1468,6 +1639,33 @@ async function main() {
       }
     }
     console.log('✅ Avatars des témoignages vérifiés/hébergés sur MinIO');
+
+    for (const { slug, photo, photoAlt } of products) {
+      const product = createdProducts.get(slug);
+      if (!product) continue;
+      const exists = await prisma.media.findFirst({
+        where: { entityType: MediaEntityType.PRODUCT, entityId: product.id },
+      });
+      if (!exists) {
+        await attachPhoto(storage, 'products', photo, photoAlt, MediaEntityType.PRODUCT, product.id);
+      }
+    }
+    console.log('✅ Photos des produits prêt-à-porter vérifiées/hébergées sur MinIO');
+
+    for (const { slug, colorPhotos } of products) {
+      for (const { color, photo, photoAlt } of colorPhotos) {
+        const variantIds = variantIdsByProductColor.get(`${slug}::${color}`) ?? [];
+        if (variantIds.length === 0) continue;
+        const [ownerVariantId] = variantIds;
+        const exists = await prisma.media.findFirst({
+          where: { entityType: MediaEntityType.PRODUCT_VARIANT, entityId: ownerVariantId },
+        });
+        if (!exists) {
+          await attachVariantColorPhoto(storage, photo, photoAlt, ownerVariantId!, variantIds);
+        }
+      }
+    }
+    console.log('✅ Photos par couleur des variantes prêt-à-porter vérifiées/hébergées sur MinIO');
   } catch (error) {
     console.warn(
       '⚠️  Seed média ignoré (MinIO ou réseau indisponible) — les pages afficheront des dégradés de substitution.',
@@ -1522,7 +1720,9 @@ async function attachPhoto(
               ? 'pageSectionRefs'
               : entityType === MediaEntityType.CUSTOMER_AVATAR
                 ? 'testimonialRefs'
-                : null;
+                : entityType === MediaEntityType.PRODUCT
+                  ? 'productRefs'
+                  : null;
 
   await prisma.media.create({
     data: {
@@ -1536,6 +1736,43 @@ async function attachPhoto(
       entityId,
       sortOrder,
       ...(relationField ? { [relationField]: { connect: { id: entityId } } } : {}),
+    },
+  });
+}
+
+/**
+ * One photo per colorway, shared by every size of that color (the
+ * `_ProductVariantMedia` many-to-many) — tagged with `ownerVariantId` as its
+ * `entityId` only so the idempotency check in the caller has a single row to
+ * look up per color, not one per size.
+ */
+async function attachVariantColorPhoto(
+  storage: StorageClient,
+  photoSource: string,
+  altText: string,
+  ownerVariantId: string,
+  variantIds: string[],
+): Promise<void> {
+  const buffer = await downloadPhoto(photoSource);
+  const filename = photoSource.startsWith('http') ? `${ownerVariantId}-0.jpg` : `${photoSource}.jpg`;
+  const upload = await storage.uploadBuffer('products', buffer, {
+    originalFilename: filename,
+    mimeType: 'image/jpeg',
+    keyPrefix: ownerVariantId,
+  });
+
+  await prisma.media.create({
+    data: {
+      bucket: upload.bucket,
+      objectKey: upload.objectKey,
+      url: upload.url,
+      altText,
+      mimeType: 'image/jpeg',
+      sizeBytes: upload.sizeBytes,
+      entityType: MediaEntityType.PRODUCT_VARIANT,
+      entityId: ownerVariantId,
+      sortOrder: 0,
+      productVariantRefs: { connect: variantIds.map((id) => ({ id })) },
     },
   });
 }
