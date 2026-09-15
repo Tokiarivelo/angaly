@@ -33,7 +33,7 @@ pnpm dev
 
 - Web : http://localhost:3000
 - API : http://localhost:3003/api (Swagger : `/api/docs` en dev)
-- AI Service : http://localhost:8000/health
+- AI Service : http://localhost:8001/health
 - MinIO Console : http://localhost:9001
 
 Voir `docs/development.md` pour le détail complet (prérequis, variables d'environnement, commandes).

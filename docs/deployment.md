@@ -17,7 +17,7 @@ Internet
               │
       ┌───────┴────────┐
       ▼                ▼
-[PostgreSQL:5432]  [ai-service:8000]   ← Réseau interne Docker uniquement
+[PostgreSQL:5432]  [ai-service:8001]   ← Réseau interne Docker uniquement
 ```
 
 - `apps/ai-service` n'est **jamais** exposé publiquement — seul `apps/api` lui parle,
@@ -102,7 +102,7 @@ make prod.deploy
 ```bash
 make prod.health
 curl https://angaly.mg/api/health
-curl https://angaly.mg  # ou depuis le réseau interne : curl http://ai-service:8000/health
+curl https://angaly.mg  # ou depuis le réseau interne : curl http://ai-service:8001/health
 ```
 
 ## Variables d'environnement requises en production
@@ -117,7 +117,7 @@ NEXTAUTH_URL, NEXTAUTH_SECRET
 API_INTERNAL_URL (interne, ex. http://api:3003/api — voir "NextAuth et le reverse proxy" ci-dessous)
 NEXT_PUBLIC_API_URL, NEXT_PUBLIC_WS_URL, API_CORS_ORIGINS
 MINIO_ROOT_USER, MINIO_ROOT_PASSWORD, MINIO_PUBLIC_URL
-AI_SERVICE_URL (interne, ex. http://ai-service:8000)
+AI_SERVICE_URL (interne, ex. http://ai-service:8001)
 ```
 
 ### NextAuth et le reverse proxy

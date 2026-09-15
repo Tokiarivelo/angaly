@@ -15,8 +15,8 @@ export class AiServiceHttpClient {
   private readonly timeoutMs: number;
 
   constructor(private readonly config: ConfigService) {
-    this.baseUrl = this.config.get<string>('AI_SERVICE_URL') || 'http://localhost:8000';
-    this.timeoutMs = this.config.get<number>('AI_SERVICE_TIMEOUT_MS') || 5000;
+    this.baseUrl = this.config.get<string>('AI_SERVICE_URL') ?? 'http://localhost:8001';
+    this.timeoutMs = this.config.get<number>('AI_SERVICE_TIMEOUT_MS') ?? 5000;
   }
 
   async suggestPatternParameters(request: PatternAiSuggestionRequest): Promise<PatternAiSuggestionResponse> {

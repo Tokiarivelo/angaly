@@ -29,6 +29,7 @@ ENV_FILE            := .env
 ENV_EXAMPLE         := .env.example
 WEB_ENV_FILE        := apps/web/.env.local
 API_ENV_FILE        := apps/api/.env
+AI_SERVICE_PORT     ?= 8001
 
 # =============================================================================
 # ── HELP ─────────────────────────────────────────────────────────────────────
@@ -65,7 +66,7 @@ setup: ## 🚀 Complete first-time setup (install + env + infra + db)
 	@echo "  Then start the app with: $(BOLD)make dev$(RESET)"
 	@echo "  Web:         http://localhost:3000"
 	@echo "  API:         http://localhost:3003/docs"
-	@echo "  AI Service:  http://localhost:8000/health"
+	@echo "  AI Service:  http://localhost:$(AI_SERVICE_PORT)/health"
 	@echo "  MinIO:       http://localhost:9001"
 
 .PHONY: install
@@ -117,11 +118,19 @@ env.generate-secret: ## 🔑 Generate NEXTAUTH_SECRET for apps/web/.env.local
 # =============================================================================
 
 .PHONY: dev
-dev: ## 🔥 Start web + api in development mode
+dev: ## 🔥 Start web + api + ai-service together in development mode
 	@echo "$(CYAN)🔥 Starting development servers...$(RESET)"
-	@echo "  Web:  http://localhost:3000"
-	@echo "  API:  http://localhost:3003/docs"
-	$(PNPM) dev
+	@echo "  Web:         http://localhost:3000"
+	@echo "  API:         http://localhost:3003/docs"
+	@echo "  AI Service:  http://localhost:$(AI_SERVICE_PORT)/health"
+	@trap 'kill 0' EXIT INT TERM; \
+	$(PNPM) dev & \
+	if [ -x apps/ai-service/.venv/bin/uvicorn ]; then \
+	  (cd apps/ai-service && .venv/bin/uvicorn app.main:app --reload --port $(AI_SERVICE_PORT)) & \
+	else \
+	  echo "$(YELLOW)⚠️  apps/ai-service/.venv introuvable — AI Service non démarré ($(BOLD)make install.ai$(RESET)$(YELLOW) pour le créer)$(RESET)"; \
+	fi; \
+	wait
 
 .PHONY: dev.web
 dev.web: ## 🌐 Start only the Next.js frontend (port 3000)
@@ -132,8 +141,8 @@ dev.api: ## ⚙️  Start only the NestJS backend (port 3003)
 	$(PNPM) --filter @angaly/api dev
 
 .PHONY: dev.ai
-dev.ai: ## 🤖 Start only the AI service (port 8000) — requires make install.ai first
-	cd apps/ai-service && .venv/bin/uvicorn app.main:app --reload --port 8000
+dev.ai: ## 🤖 Start only the AI service (port 8001) — requires make install.ai first
+	cd apps/ai-service && .venv/bin/uvicorn app.main:app --reload --port $(AI_SERVICE_PORT)
 
 # =============================================================================
 # ── BUILD ────────────────────────────────────────────────────────────────────
