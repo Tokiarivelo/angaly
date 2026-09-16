@@ -1360,6 +1360,16 @@ async function main() {
       subtitleText: 'Chaque collection raconte une histoire, une saison, une inspiration.',
       status: ContentStatus.PUBLISHED,
     },
+    // --- Page Sections (Collection Detail) --------------------------------------
+    {
+      page: 'collection-detail',
+      sectionKey: 'closing-cta',
+      locale: Locale.FR,
+      titleText: 'Vous souhaitez porter une pièce de cette collection ?',
+      ctaPrimaryLabel: 'Prendre rendez-vous',
+      ctaSecondaryLabel: 'Voir toutes les collections',
+      status: ContentStatus.PUBLISHED,
+    },
   ];
 
   const createdPageSections = new Map<string, { id: string }>();

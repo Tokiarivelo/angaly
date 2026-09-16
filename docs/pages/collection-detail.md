@@ -31,15 +31,17 @@ apps/web/src/features/collection-detail/
     CollectionCover.tsx            → cover plein écran (next/image), dégradé navy en bas, label saison + titre + tagline italique
     CollectionStory.tsx             → deux colonnes photo (cadre décoratif) + récit
     CollectionCreationsGrid.tsx      → carte dédiée (pas de réutilisation directe de `CreationCard` — voir Points d'attention)
-    ClosingCtaBand.tsx
+    ClosingCtaBand.tsx                → headline + 2 CTA réels (contenu — voir hooks/useCollectionDetailContent.ts)
   hooks/
     useCollectionDetail.ts          → react-query sur GET /api/collections/:slug (créations + médias inclus)
+    useCollectionDetailContent.ts    → bande CTA réelle, GET /content/public/collection-detail, repli codé en dur
   api/
-    collection-detail.api.ts         → useCollectionDetailQuery
+    collection-detail.api.ts         → useCollectionDetailQuery, useCollectionDetailSectionsContentQuery
   utils/
     splitStory.ts                    → dérive les paragraphes depuis le champ texte unique `story`
   __tests__/
     useCollectionDetail.test.ts
+    useCollectionDetailContent.test.ts
     splitStory.test.ts
     CollectionDetailPage.test.tsx
   index.ts
@@ -53,6 +55,7 @@ contiennent que du JSX + appels de hooks. Pas de vidéo optionnelle (voir Points
 | Endpoint | Module | Usage |
 | --- | --- | --- |
 | `GET /api/collections/:slug` | `collections` | Histoire, médias et créations associées de la collection |
+| `GET /api/content/public/collection-detail` | `content` | Headline + libellés des 2 CTA de la bande de fermeture, `PUBLISHED`-only |
 
 `get-collection-by-slug` renvoie déjà les `Creation[]` associées (voir
 `docs/features/collections.md`) : pas d'appel séparé au module `creations` nécessaire pour
@@ -61,10 +64,21 @@ la Section 3.
 ## Modèles Prisma touchés
 
 `Collection` (`description`, `story`, `seasonYear`), `Creation` (via la relation, réutilise
-`category`/médias pour les cartes), `Media` (via `CollectionMedia` — cover + photo mood).
+`category`/médias pour les cartes), `Media` (via `CollectionMedia` — cover + photo mood),
+`PageSection` (`page="collection-detail"`, `sectionKey="closing-cta"` — headline + libellés
+des 2 CTA de la bande de fermeture).
 
 ## Points d'attention
 
+- **Bande CTA de fermeture migrée vers `PageSection` CMS** (session 2026-09-16, suite —
+  huitième tranche de `docs/phases/phase-6-admin-cms.md` item 4, après `home`/`a-propos`/
+  `la-une`/`nos-creations-galerie`/`creation-detail`/`contact`/`collections-liste`) :
+  `ClosingCtaBand` lit `GET /content/public/collection-detail` via
+  `useCollectionDetailContent` (headline + `ctaPrimaryLabel`/`ctaSecondaryLabel`), repli sur
+  les littéraux codés en dur si la section `closing-cta` est absente/`DRAFT` — voir
+  `docs/features/content.md`. Le reste de la page (cover, histoire, galerie) reste
+  entièrement dérivé de `Collection` réelle — pas de littéral éditorial statique à migrer
+  là, seule la bande de fermeture en avait un.
 - **Fidélité vérifiée via `agy`/StitchMCP `get_screen`** (écran réel
   `1e8767e997ed4e80996410630db2981c`), pas seulement `stitch-prompts/07-collection-detail.md`.
 - `Collection.story` est un champ texte unique (`String?`) — les 2 paragraphes réels sont
@@ -86,5 +100,5 @@ la Section 3.
 - [x] Cover cinématique + section histoire + galerie fidèles à l'écran Stitch réel
 - [x] Bande CTA de fermeture avec les deux boutons (Prendre rendez-vous / Voir toutes les collections)
 - [x] `<title>`/meta description dynamiques par collection (`generateMetadata` côté serveur)
-- [x] Tests : `useCollectionDetail.test.ts`, `splitStory.test.ts`, `CollectionDetailPage.test.tsx` — 10 tests, 98%+/90%+/99%+/98%+ de couverture (stmts/branches/fonctions/lignes) sur `apps/web`
+- [x] Tests : `useCollectionDetail.test.ts`, `useCollectionDetailContent.test.ts`, `splitStory.test.ts`, `CollectionDetailPage.test.tsx` — 13 tests
 - [x] `docs/checklist-implementation.md` et `docs/mockup-reference.md` mis à jour à ✅

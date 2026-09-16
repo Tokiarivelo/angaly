@@ -55,7 +55,10 @@ phase n'a pas été traitée en session dédiée (voir `.cursor/rules/006-phase-
 - [x] ✅ **collections-liste** — Index des collections. Texte du header (titre/sous-titre) lu
       depuis `PageSection` (`content`, Phase 6) depuis la session 2026-09-16 (suite), avec
       repli sur les littéraux codés en dur — voir `docs/features/content.md`
-- [x] ✅ **collection-detail** — Fiche détail d'une collection
+- [x] ✅ **collection-detail** — Fiche détail d'une collection. Headline + libellés des 2 CTA
+      de la bande de fermeture lus depuis `PageSection` (`content`, Phase 6) depuis la
+      session 2026-09-16 (suite), avec repli sur les littéraux codés en dur — voir
+      `docs/features/content.md`
 - [x] ✅ **a-propos** — Histoire de la maison. Texte des sections lu depuis `PageSection`
       (`content`, Phase 6) depuis la session 2026-09-16 (suite), avec repli sur les
       littéraux codés en dur — voir `docs/features/content.md`
@@ -238,7 +241,8 @@ phase n'a pas été traitée en session dédiée (voir `.cursor/rules/006-phase-
       (session 2026-09-16). Endpoint public `GET /content/public/:page` (`PUBLISHED`-only,
       sans auth) ajouté en session 2026-09-16 (suite), consommé par
       `home`/`a-propos`/`la-une`/`nos-creations-galerie`/`creation-detail`/`contact`/
-      `collections-liste` (7/14 pages Phase 1) — voir `docs/features/content.md`
+      `collections-liste`/`collection-detail` (8/14 pages Phase 1) — voir
+      `docs/features/content.md`
 
 > Périmètre volontairement limité aux 2 pages couvertes par une maquette Stitch
 > (`stitch-prompts/31-*.md`). Le reste du back-office listé au spec §60-66
@@ -253,8 +257,8 @@ phase n'a pas été traitée en session dédiée (voir `.cursor/rules/006-phase-
 > l'étape 4 de `docs/phases/phase-6-admin-cms.md` (migrer les pages publiques vers
 > `PageSection`) a démarré en session 2026-09-16 (suite) —
 > `home`/`a-propos`/`la-une`/`nos-creations-galerie`/`creation-detail`/`contact`/
-> `collections-liste` migrées (7 des 14 pages Phase 1), les 7 autres restent **non
-> traitées** ; le panneau "Utilisée dans" de
+> `collections-liste`/`collection-detail` migrées (8 des 14 pages Phase 1), les 6 autres
+> restent **non traitées** ; le panneau "Utilisée dans" de
 > `admin-mediatheque` est limité par un bug pré-existant non corrigé (relations `Media`
 > jamais connectées par `confirm-upload`, voir `docs/features/media.md`).
 
