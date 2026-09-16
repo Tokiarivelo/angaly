@@ -2,7 +2,8 @@ import { useMemo } from 'react';
 
 import { ROUTES } from '@/lib/routes';
 
-import { useHomeSectionsMediaQuery } from '../api/home.api';
+import type { PublicPageSectionDto } from '../api/home.api';
+import { useHomeSectionsContentQuery, useHomeSectionsMediaQuery } from '../api/home.api';
 
 export interface HomeContent {
   hero: { eyebrow: string; headline: string; subheading: string; imageUrl?: string | undefined; imageAlt?: string | undefined };
@@ -107,12 +108,84 @@ const DEFAULT_HOME_CONTENT: HomeContent = {
   newsletter: { headline: 'Restez informée des nouvelles collections' },
 };
 
+function sectionsByKey(sections: PublicPageSectionDto[] | undefined): Map<string, PublicPageSectionDto> {
+  const map = new Map<string, PublicPageSectionDto>();
+  for (const section of sections ?? []) {
+    map.set(section.sectionKey, section);
+  }
+  return map;
+}
+
+/** `dataJson.eyebrow` is the only `dataJson` field the home page reads today (see seed.ts `hero`). */
+function extractEyebrow(dataJson: unknown): string | undefined {
+  if (dataJson && typeof dataJson === 'object' && 'eyebrow' in dataJson) {
+    const value = (dataJson as { eyebrow?: unknown }).eyebrow;
+    return typeof value === 'string' ? value : undefined;
+  }
+  return undefined;
+}
+
+/**
+ * Merges PUBLISHED `PageSection` rows (`page="accueil"`) onto
+ * `DEFAULT_HOME_CONTENT`, by `sectionKey` — see docs/pages/home.md. A
+ * section absent from the CMS response (never edited yet, or its only row
+ * still `DRAFT` — the public endpoint never returns those) falls back
+ * entirely to the hardcoded default. Within a present section, an
+ * individual null/missing field also falls back to its own default field,
+ * so an admin leaving one field blank doesn't blank the whole section.
+ */
+function applyCmsSections(base: HomeContent, sections: PublicPageSectionDto[] | undefined): HomeContent {
+  const byKey = sectionsByKey(sections);
+  const hero = byKey.get('hero');
+  const maison = byKey.get('maison');
+  const patternStudio = byKey.get('pattern-studio');
+  const universMariage = byKey.get('univers-mariage');
+  const universCostumes = byKey.get('univers-costumes');
+  const universSoiree = byKey.get('univers-soiree');
+  const universSurMesure = byKey.get('univers-sur-mesure');
+
+  return {
+    ...base,
+    hero: {
+      ...base.hero,
+      eyebrow: extractEyebrow(hero?.dataJson) ?? base.hero.eyebrow,
+      headline: hero?.titleText ?? base.hero.headline,
+      subheading: hero?.subtitleText ?? base.hero.subheading,
+    },
+    maison: {
+      ...base.maison,
+      eyebrow: maison?.subtitleText ?? base.maison.eyebrow,
+      headline: maison?.titleText ?? base.maison.headline,
+      paragraph: maison?.bodyText ?? base.maison.paragraph,
+    },
+    categories: {
+      ...base.categories,
+      items: [
+        { ...base.categories.items[0]!, label: universMariage?.titleText ?? base.categories.items[0]!.label },
+        { ...base.categories.items[1]!, label: universCostumes?.titleText ?? base.categories.items[1]!.label },
+        { ...base.categories.items[2]!, label: universSoiree?.titleText ?? base.categories.items[2]!.label },
+        { ...base.categories.items[3]!, label: universSurMesure?.titleText ?? base.categories.items[3]!.label },
+      ],
+    },
+    patternStudio: {
+      ...base.patternStudio,
+      eyebrow: patternStudio?.subtitleText ?? base.patternStudio.eyebrow,
+      headline: patternStudio?.titleText ?? base.patternStudio.headline,
+      paragraph: patternStudio?.bodyText ?? base.patternStudio.paragraph,
+      cta: patternStudio?.ctaPrimaryLabel ?? base.patternStudio.cta,
+    },
+  };
+}
+
 export function useHomeContent(): { data: HomeContent; isLoading: boolean; error: Error | null } {
-  const { data: mediaResponse, isLoading, error } = useHomeSectionsMediaQuery();
+  const { data: mediaResponse, isLoading: isMediaLoading, error: mediaError } = useHomeSectionsMediaQuery();
+  const { data: sections, isLoading: isContentLoading, error: contentError } = useHomeSectionsContentQuery();
+
+  const cmsContent = useMemo(() => applyCmsSections(DEFAULT_HOME_CONTENT, sections), [sections]);
 
   const data = useMemo<HomeContent>(() => {
     if (!mediaResponse?.data || mediaResponse.data.length === 0) {
-      return DEFAULT_HOME_CONTENT;
+      return cmsContent;
     }
 
     const mediaList = mediaResponse.data;
@@ -146,53 +219,53 @@ export function useHomeContent(): { data: HomeContent; isLoading: boolean; error
     const patternStudioMedia = mediaList.find((m) => (m.altText?.toLowerCase() ?? '').includes('pattern studio'));
 
     return {
-      ...DEFAULT_HOME_CONTENT,
+      ...cmsContent,
       hero: {
-        ...DEFAULT_HOME_CONTENT.hero,
-        imageUrl: heroMedia?.url ?? DEFAULT_HOME_CONTENT.hero.imageUrl!,
-        imageAlt: heroMedia?.altText ?? DEFAULT_HOME_CONTENT.hero.imageAlt!,
+        ...cmsContent.hero,
+        imageUrl: heroMedia?.url ?? cmsContent.hero.imageUrl!,
+        imageAlt: heroMedia?.altText ?? cmsContent.hero.imageAlt!,
       },
       maison: {
-        ...DEFAULT_HOME_CONTENT.maison,
-        imageUrl: maisonMedia?.url ?? DEFAULT_HOME_CONTENT.maison.imageUrl!,
-        imageAlt: maisonMedia?.altText ?? DEFAULT_HOME_CONTENT.maison.imageAlt!,
+        ...cmsContent.maison,
+        imageUrl: maisonMedia?.url ?? cmsContent.maison.imageUrl!,
+        imageAlt: maisonMedia?.altText ?? cmsContent.maison.imageAlt!,
       },
       categories: {
-        ...DEFAULT_HOME_CONTENT.categories,
+        ...cmsContent.categories,
         items: [
           {
-            ...DEFAULT_HOME_CONTENT.categories.items[0]!,
-            imageUrl: mariageMedia?.url ?? DEFAULT_HOME_CONTENT.categories.items[0]!.imageUrl!,
-            imageAlt: mariageMedia?.altText ?? DEFAULT_HOME_CONTENT.categories.items[0]!.imageAlt!,
+            ...cmsContent.categories.items[0]!,
+            imageUrl: mariageMedia?.url ?? cmsContent.categories.items[0]!.imageUrl!,
+            imageAlt: mariageMedia?.altText ?? cmsContent.categories.items[0]!.imageAlt!,
           },
           {
-            ...DEFAULT_HOME_CONTENT.categories.items[1]!,
-            imageUrl: costumesMedia?.url ?? DEFAULT_HOME_CONTENT.categories.items[1]!.imageUrl!,
-            imageAlt: costumesMedia?.altText ?? DEFAULT_HOME_CONTENT.categories.items[1]!.imageAlt!,
+            ...cmsContent.categories.items[1]!,
+            imageUrl: costumesMedia?.url ?? cmsContent.categories.items[1]!.imageUrl!,
+            imageAlt: costumesMedia?.altText ?? cmsContent.categories.items[1]!.imageAlt!,
           },
           {
-            ...DEFAULT_HOME_CONTENT.categories.items[2]!,
-            imageUrl: soireeMedia?.url ?? DEFAULT_HOME_CONTENT.categories.items[2]!.imageUrl!,
-            imageAlt: soireeMedia?.altText ?? DEFAULT_HOME_CONTENT.categories.items[2]!.imageAlt!,
+            ...cmsContent.categories.items[2]!,
+            imageUrl: soireeMedia?.url ?? cmsContent.categories.items[2]!.imageUrl!,
+            imageAlt: soireeMedia?.altText ?? cmsContent.categories.items[2]!.imageAlt!,
           },
           {
-            ...DEFAULT_HOME_CONTENT.categories.items[3]!,
-            imageUrl: surMesureMedia?.url ?? DEFAULT_HOME_CONTENT.categories.items[3]!.imageUrl!,
-            imageAlt: surMesureMedia?.altText ?? DEFAULT_HOME_CONTENT.categories.items[3]!.imageAlt!,
+            ...cmsContent.categories.items[3]!,
+            imageUrl: surMesureMedia?.url ?? cmsContent.categories.items[3]!.imageUrl!,
+            imageAlt: surMesureMedia?.altText ?? cmsContent.categories.items[3]!.imageAlt!,
           },
         ],
       },
       patternStudio: {
-        ...DEFAULT_HOME_CONTENT.patternStudio,
-        imageUrl: patternStudioMedia?.url ?? DEFAULT_HOME_CONTENT.patternStudio.imageUrl!,
-        imageAlt: patternStudioMedia?.altText ?? DEFAULT_HOME_CONTENT.patternStudio.imageAlt!,
+        ...cmsContent.patternStudio,
+        imageUrl: patternStudioMedia?.url ?? cmsContent.patternStudio.imageUrl!,
+        imageAlt: patternStudioMedia?.altText ?? cmsContent.patternStudio.imageAlt!,
       },
     };
-  }, [mediaResponse]);
+  }, [mediaResponse, cmsContent]);
 
   return {
     data,
-    isLoading,
-    error,
+    isLoading: isMediaLoading || isContentLoading,
+    error: mediaError ?? contentError,
   };
 }

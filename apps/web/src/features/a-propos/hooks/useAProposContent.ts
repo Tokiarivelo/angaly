@@ -1,3 +1,8 @@
+import { useMemo } from 'react';
+
+import type { PublicPageSectionDto } from '../api/a-propos.api';
+import { useAProposSectionsContentQuery } from '../api/a-propos.api';
+
 export interface ChronologyItem {
   year: string;
   title: string;
@@ -29,15 +34,19 @@ export interface AProposContent {
 }
 
 /**
- * TODO(Phase 6): read from `GET /api/content/sections?page=a-propos` once the
- * `content` module exists — see docs/pages/a-propos.md "Points d'attention".
- * Copy mirrors the real Stitch "Notre Histoire (À propos)" screen
- * (`028e4d74f15f4ad2b2a16424bacb5448`), not stitch-prompts/21-a-propos.md alone
- * — that text prompt implies an 8th "Valeurs" section (Excellence/Authenticité/
- * Exclusivité/Proximité client) the real screen simply doesn't have; omitted
- * rather than invented.
+ * Default editorial copy for the ANGALY "À propos" page — the fallback for
+ * any section not yet present in the CMS (`GET /content/public/a-propos`,
+ * PUBLISHED-only, see docs/features/content.md), merged in by
+ * `useAProposContent` below. Copy mirrors the real Stitch "Notre Histoire (À
+ * propos)" screen (`028e4d74f15f4ad2b2a16424bacb5448`), not
+ * stitch-prompts/21-a-propos.md alone — that text prompt implies an 8th
+ * "Valeurs" section (Excellence/Authenticité/Exclusivité/Proximité client)
+ * the real screen simply doesn't have; omitted rather than invented. Image
+ * URLs stay hardcoded here — unlike `home`, this page has no
+ * media-by-alt-text query wired up yet, out of scope for this pass (see
+ * docs/pages/a-propos.md).
  */
-const A_PROPOS_CONTENT: AProposContent = {
+const DEFAULT_A_PROPOS_CONTENT: AProposContent = {
   hero: {
     title: 'Notre histoire',
     subtitle: 'Une maison de couture née à Madagascar, pensée pour durer.',
@@ -138,6 +147,132 @@ const A_PROPOS_CONTENT: AProposContent = {
   },
 };
 
-export function useAProposContent(): { data: AProposContent; isLoading: false; error: null } {
-  return { data: A_PROPOS_CONTENT, isLoading: false, error: null };
+function sectionsByKey(sections: PublicPageSectionDto[] | undefined): Map<string, PublicPageSectionDto> {
+  const map = new Map<string, PublicPageSectionDto>();
+  for (const section of sections ?? []) {
+    map.set(section.sectionKey, section);
+  }
+  return map;
+}
+
+function extractStringField(dataJson: unknown, key: string): string | undefined {
+  if (dataJson && typeof dataJson === 'object' && key in dataJson) {
+    const value = (dataJson as Record<string, unknown>)[key];
+    return typeof value === 'string' ? value : undefined;
+  }
+  return undefined;
+}
+
+function isChronologyItem(value: unknown): value is ChronologyItem {
+  if (!value || typeof value !== 'object') return false;
+  const item = value as Record<string, unknown>;
+  return typeof item['year'] === 'string' && typeof item['title'] === 'string' && typeof item['description'] === 'string';
+}
+
+function isSavoirFaireItem(value: unknown): value is SavoirFaireItem {
+  if (!value || typeof value !== 'object') return false;
+  const item = value as Record<string, unknown>;
+  return (
+    typeof item['title'] === 'string' &&
+    typeof item['description'] === 'string' &&
+    (item['imageUrl'] === null || typeof item['imageUrl'] === 'string') &&
+    (item['icon'] === null || item['icon'] === 'draw' || item['icon'] === 'cut')
+  );
+}
+
+function isAtelierGalleryItem(value: unknown): value is AtelierGalleryItem {
+  if (!value || typeof value !== 'object') return false;
+  const item = value as Record<string, unknown>;
+  return (
+    (item['imageUrl'] === null || typeof item['imageUrl'] === 'string') &&
+    (item['icon'] === null || typeof item['icon'] === 'string') &&
+    (item['label'] === null || typeof item['label'] === 'string') &&
+    (item['size'] === 'large' || item['size'] === 'default')
+  );
+}
+
+function extractArrayField<T>(dataJson: unknown, key: string, isItem: (value: unknown) => value is T): T[] | undefined {
+  if (!dataJson || typeof dataJson !== 'object' || !(key in dataJson)) return undefined;
+  const raw = (dataJson as Record<string, unknown>)[key];
+  if (!Array.isArray(raw) || raw.length === 0 || !raw.every(isItem)) return undefined;
+  return raw;
+}
+
+/** `bodyText` stores `histoire`'s paragraphs joined by a blank line — see seed.ts `page: 'a-propos', sectionKey: 'histoire'`. */
+function splitParagraphs(bodyText: string | null | undefined): string[] | undefined {
+  if (!bodyText) return undefined;
+  const paragraphs = bodyText.split(/\n\n+/).filter((paragraph) => paragraph.trim().length > 0);
+  return paragraphs.length > 0 ? paragraphs : undefined;
+}
+
+/**
+ * Merges PUBLISHED `PageSection` rows (`page="a-propos"`) onto
+ * `DEFAULT_A_PROPOS_CONTENT`, by `sectionKey` — see docs/pages/a-propos.md.
+ * A section absent from the CMS response (never edited yet, or its only row
+ * still `DRAFT` — the public endpoint never returns those) falls back
+ * entirely to the hardcoded default. Within a present section, an
+ * individual null/missing/malformed field also falls back to its own
+ * default field. Image URLs are never touched — see
+ * `DEFAULT_A_PROPOS_CONTENT`'s doc comment.
+ */
+function applyCmsSections(base: AProposContent, sections: PublicPageSectionDto[] | undefined): AProposContent {
+  const byKey = sectionsByKey(sections);
+  const hero = byKey.get('hero');
+  const histoire = byKey.get('histoire');
+  const fondatrice = byKey.get('fondatrice');
+  const savoirFaire = byKey.get('savoir-faire');
+  const philosophie = byKey.get('philosophie');
+  const atelier = byKey.get('atelier');
+  const vision = byKey.get('vision');
+
+  return {
+    ...base,
+    hero: {
+      ...base.hero,
+      title: hero?.titleText ?? base.hero.title,
+      subtitle: hero?.subtitleText ?? base.hero.subtitle,
+    },
+    histoire: {
+      ...base.histoire,
+      title: histoire?.titleText ?? base.histoire.title,
+      paragraphs: splitParagraphs(histoire?.bodyText) ?? base.histoire.paragraphs,
+      chronology: extractArrayField(histoire?.dataJson, 'chronology', isChronologyItem) ?? base.histoire.chronology,
+    },
+    fondatrice: {
+      ...base.fondatrice,
+      title: fondatrice?.titleText ?? base.fondatrice.title,
+      subtitle: fondatrice?.subtitleText ?? base.fondatrice.subtitle,
+      paragraph: fondatrice?.bodyText ?? base.fondatrice.paragraph,
+      quote: extractStringField(fondatrice?.dataJson, 'quote') ?? base.fondatrice.quote,
+    },
+    savoirFaire: {
+      ...base.savoirFaire,
+      title: savoirFaire?.titleText ?? base.savoirFaire.title,
+      subtitle: savoirFaire?.subtitleText ?? base.savoirFaire.subtitle,
+      items: extractArrayField(savoirFaire?.dataJson, 'items', isSavoirFaireItem) ?? base.savoirFaire.items,
+    },
+    philosophie: {
+      ...base.philosophie,
+      quote: philosophie?.bodyText ?? base.philosophie.quote,
+    },
+    atelier: {
+      ...base.atelier,
+      title: atelier?.titleText ?? base.atelier.title,
+      subtitle: atelier?.subtitleText ?? base.atelier.subtitle,
+      items: extractArrayField(atelier?.dataJson, 'items', isAtelierGalleryItem) ?? base.atelier.items,
+    },
+    vision: {
+      ...base.vision,
+      title: vision?.titleText ?? base.vision.title,
+      paragraph: vision?.bodyText ?? base.vision.paragraph,
+    },
+  };
+}
+
+export function useAProposContent(): { data: AProposContent; isLoading: boolean; error: Error | null } {
+  const { data: sections, isLoading, error } = useAProposSectionsContentQuery();
+
+  const data = useMemo(() => applyCmsSections(DEFAULT_A_PROPOS_CONTENT, sections), [sections]);
+
+  return { data, isLoading, error };
 }

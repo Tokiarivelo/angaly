@@ -1,11 +1,13 @@
 import { render, screen } from '@testing-library/react';
 import { describe, expect, it } from 'vitest';
 
+import { withQueryClient } from '@/lib/test-utils';
+
 import { AProposPage } from '../ui/AProposPage';
 
 describe('AProposPage', () => {
   it('renders all 7 sections of the real screen with no "Valeurs" section', () => {
-    render(<AProposPage />);
+    render(<AProposPage />, { wrapper: withQueryClient() });
 
     expect(screen.getByRole('heading', { level: 1, name: 'Notre histoire' })).toBeInTheDocument();
     expect(screen.getByRole('heading', { name: 'Comment tout a commencé' })).toBeInTheDocument();

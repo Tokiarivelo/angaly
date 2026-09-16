@@ -6,6 +6,7 @@ describe('ListSectionVersionsUseCase', () => {
     const repository: jest.Mocked<IPageSectionRepository> = {
       listAll: jest.fn(),
       findAllLocales: jest.fn(),
+      findPublished: jest.fn(),
       findById: jest.fn(),
       findByKey: jest.fn(),
       saveWithSnapshot: jest.fn(),

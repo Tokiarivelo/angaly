@@ -31,6 +31,12 @@ export interface IPageSectionRepository {
   /** Flat list of every section row (all pages/sectionKeys/locales) — the Application layer groups it by page. */
   listAll: () => Promise<PageSectionEntity[]>;
   findAllLocales: (page: string, sectionKey: string) => Promise<PageSectionEntity[]>;
+  /**
+   * PUBLISHED-only rows for a page, optionally scoped to one locale — the
+   * sole source for the public (unauthenticated) read endpoint. Must never
+   * be used to serve DRAFT content.
+   */
+  findPublished: (page: string, locale?: LocaleValue) => Promise<PageSectionEntity[]>;
   findById: (id: string) => Promise<PageSectionEntity | null>;
   findByKey: (page: string, sectionKey: string, locale: LocaleValue) => Promise<PageSectionEntity | null>;
   saveWithSnapshot: (input: SaveSectionDraftInput) => Promise<PageSectionEntity>;

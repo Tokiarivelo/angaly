@@ -11,10 +11,10 @@ atelier, valeurs, vision (spec §39-40). Construit la confiance, pas la conversi
 
 `apps/web/src/app/(public)/a-propos/page.tsx` → `/a-propos`
 
-**Vrai Server Component** — contrairement à `home`/`la-une`/`nos-creations-galerie`/
-`creation-detail`/`collections-liste`/`collection-detail`, `AProposPage` n'appelle aucun
-hook react-query (contenu 100 % statique en attendant `content`/Phase 6) et n'a donc pas
-besoin de `'use client'`. Aucun état interactif significatif requis par la maquette.
+**Client Component depuis la session 2026-09-16 (suite)** — `AProposPage` appelle désormais
+`useAProposContent()`, qui lit `GET /api/content/public/a-propos` via react-query ; `'use
+client'` ajouté en tête de `AProposPage.tsx` (même pattern que `home`). Avant cette session,
+c'était un vrai Server Component (contenu 100 % statique) — voir "Points d'attention".
 
 ## Référence maquette
 
@@ -36,27 +36,32 @@ apps/web/src/features/a-propos/
     AtelierGallerySection.tsx        → grille 4 colonnes, 1 tuile 2×2 + 3 tuiles simples dont une icône
     VisionClosingSection.tsx          → citation de fermeture + CTA (Découvrir nos créations / Prendre rendez-vous)
   hooks/
-    useAProposContent.ts             → contenu 100 % codé en dur (Phase 6/`content` en attente), voir Points d'attention
+    useAProposContent.ts             → lit les PageSection (page="a-propos") via react-query, fusionne
+                                        par sectionKey sur les littéraux par défaut, voir Points d'attention
+  api/
+    a-propos.api.ts                  → useAProposSectionsContentQuery
+  consts/
+    queryKeys.ts
   __tests__/
     useAProposContent.test.ts
     AProposPage.test.tsx
   index.ts
 ```
 
-**Pas de `ValeursSection.tsx`** — voir Points d'attention. Pas d'`api/`/`consts/` : sans
-`content` (Phase 6), il n'y a aucun appel réseau à faire pour cette page.
+**Pas de `ValeursSection.tsx`** — voir Points d'attention.
 
 Toute logique (contenu) vit dans `hooks/` — `AProposPage.tsx` et les sections ne
 contiennent que du JSX + appels de hooks.
 
 ## Endpoints API consommés
 
-Aucun — page 100 % statique en Phase 1 (voir Points d'attention). `AProposPage` ne fait
-aucun appel réseau.
+| Endpoint | Module | Usage |
+| --- | --- | --- |
+| `GET /api/content/public/a-propos` | `content` | **Réel** (câblé session 2026-09-16, suite) — `PUBLISHED`-only, sans auth ; `useAProposContent.ts` merge les sections reçues sur les littéraux par défaut par `sectionKey`, repli complet pour toute section absente/encore `DRAFT` |
 
 ## Modèles Prisma touchés
 
-`PageSection`, `Media` — 7 sections (`hero`, `histoire`, `fondatrice`, `savoir-faire`, `philosophie`, `atelier`, `vision`) sont seedées dans `packages/database/prisma/seed.ts` (`page = "a-propos"`) avec photos hébergées sur MinIO. En frontend, `useAProposContent.ts` fournit le contenu et les photos haute résolution vérifiées issues de la maquette Stitch.
+`PageSection`, `Media` — 7 sections (`hero`, `histoire`, `fondatrice`, `savoir-faire`, `philosophie`, `atelier`, `vision`) sont seedées dans `packages/database/prisma/seed.ts` (`page = "a-propos"`) avec photos hébergées sur MinIO. En frontend, `useAProposContent.ts` lit désormais le texte de ces `PageSection` en base (`GET /api/content/public/a-propos`, voir Points d'attention), et fournit les photos haute résolution vérifiées issues de la maquette Stitch (toujours codées en dur, pas encore lues depuis `Media`).
 
 ## Points d'attention
 
@@ -65,6 +70,19 @@ aucun appel réseau.
   **L'écran réel a 7 sections, pas 8** : pas de section « Valeurs » (Excellence/
   Authenticité/Exclusivité/Proximité client) — absente du design réel. `AProposPage.test.tsx` et
   le test E2E Playwright vérifient explicitement son absence.
+- **Contenu texte réellement piloté par `PageSection`** depuis la session 2026-09-16
+  (suite) : `useAProposContent.ts` lit `GET /api/content/public/a-propos` (voir
+  `docs/features/content.md` "Endpoint public") et fusionne les 7 sections `PUBLISHED`
+  reçues sur les littéraux par défaut, par `sectionKey` (`hero`, `histoire`, `fondatrice`,
+  `savoir-faire`, `philosophie`, `atelier`, `vision`). Une section absente du CMS (jamais
+  éditée, ou seulement `DRAFT`) retombe entièrement sur le littéral codé en dur ; à
+  l'intérieur d'une section présente, un champ individuel `null`/absent/malformé (ex. un
+  `dataJson.items` qui ne correspond pas à la forme attendue) retombe aussi sur son propre
+  champ par défaut plutôt que de casser le rendu. **Les images (`imageUrl` de `hero`,
+  `histoire`, `fondatrice`, `atelier`) restent codées en dur** — contrairement à `home`, cette
+  page n'a pas de requête `/media` par heuristique de texte alternatif ; câbler les images
+  reste hors périmètre de cette session (voir `docs/pages/home.md` pour le pattern existant
+  côté `home`, réutilisable telle quelle si une session future migre les images ici aussi).
 - **Photos et médias** : Toutes les photographies de la maquette Stitch et d'Unsplash sont
   intégrées :
   - Hero (70vh avec `mix-blend-overlay` sur fond navy)
@@ -83,7 +101,10 @@ aucun appel réseau.
 - [x] Galerie Atelier 4 colonnes responsive (1 tuile 2×2 + 3 tuiles dont « Matières Nobles »)
 - [x] `<title>`/meta description définis (spec §70)
 - [x] Seeds `PageSection` pour `page = "a-propos"` dans `packages/database/prisma/seed.ts` avec upload MinIO
-- [x] Tests unitaires : `useAProposContent.test.ts`, `AProposPage.test.tsx` (4 tests passants)
+- [x] `useAProposContent.ts` lit réellement `GET /api/content/public/a-propos` (react-query),
+      avec repli testé sur les littéraux codés en dur pour toute section absente/`DRAFT`, et
+      pour tout champ `dataJson` individuel malformé (chronology/quote/items)
+- [x] Tests unitaires : `useAProposContent.test.ts`, `AProposPage.test.tsx`
 - [x] Tests E2E Playwright : `apps/web/e2e/a-propos/heritage-a-propos.spec.ts` (desktop + mobile passants)
 - [x] Captures visuelles sauvegardées dans les artefacts (`heritage_a_propos_desktop.png`, `heritage_a_propos_mobile.png`)
 - [x] `docs/checklist-implementation.md` et `docs/mockup-reference.md` mis à jour à ✅

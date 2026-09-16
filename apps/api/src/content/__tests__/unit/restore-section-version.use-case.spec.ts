@@ -9,6 +9,7 @@ function buildRepository(overrides: Partial<jest.Mocked<IPageSectionRepository>>
   return {
     listAll: jest.fn(),
     findAllLocales: jest.fn(),
+      findPublished: jest.fn(),
     findById: jest.fn(),
     findByKey: jest.fn(),
     saveWithSnapshot: jest.fn(),

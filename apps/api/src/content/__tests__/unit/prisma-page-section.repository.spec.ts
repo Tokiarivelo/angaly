@@ -80,6 +80,31 @@ describe('PrismaPageSectionRepository', () => {
     );
   });
 
+  it('findPublished() filters by page and status PUBLISHED, with no locale filter when none is given', async () => {
+    const { prisma, pageSection } = buildPrismaServiceMock();
+    pageSection.findMany.mockResolvedValue([sampleRecord({ status: 'PUBLISHED' })]);
+    const repository = new PrismaPageSectionRepository(prisma);
+
+    const result = await repository.findPublished('accueil');
+
+    expect(pageSection.findMany).toHaveBeenCalledWith(
+      expect.objectContaining({ where: { page: 'accueil', status: 'PUBLISHED' } }),
+    );
+    expect(result).toHaveLength(1);
+  });
+
+  it('findPublished() also filters by locale when one is given', async () => {
+    const { prisma, pageSection } = buildPrismaServiceMock();
+    pageSection.findMany.mockResolvedValue([]);
+    const repository = new PrismaPageSectionRepository(prisma);
+
+    await repository.findPublished('accueil', 'FR');
+
+    expect(pageSection.findMany).toHaveBeenCalledWith(
+      expect.objectContaining({ where: { page: 'accueil', status: 'PUBLISHED', locale: 'FR' } }),
+    );
+  });
+
   it('findByKey() returns null when no row matches', async () => {
     const { prisma, pageSection } = buildPrismaServiceMock();
     pageSection.findUnique.mockResolvedValue(null);
