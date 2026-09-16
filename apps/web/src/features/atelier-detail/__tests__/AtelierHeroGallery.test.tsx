@@ -3,9 +3,15 @@ import { describe, expect, it } from 'vitest';
 
 import type { AtelierDto } from '@angaly/types';
 
+import type { AtelierDetailContent } from '../hooks/useAtelierDetailContent';
 import { AtelierHeroGallery } from '../ui/AtelierHeroGallery';
 
 const CLOSED = { isOpen: false, slots: [] };
+
+const CONTENT: AtelierDetailContent['hero'] = {
+  tagline: 'Le cœur de la création sur mesure',
+  precisionTileLabel: "L'art de la précision",
+};
 
 function makeAtelier(overrides: Partial<AtelierDto> = {}): AtelierDto {
   return {
@@ -36,7 +42,7 @@ function makeAtelier(overrides: Partial<AtelierDto> = {}): AtelierDto {
 
 describe('AtelierHeroGallery', () => {
   it('renders the atelier name as the h1 and the fixed decorative "précision" tile', () => {
-    render(<AtelierHeroGallery atelier={makeAtelier()} />);
+    render(<AtelierHeroGallery atelier={makeAtelier()} content={CONTENT} />);
     expect(screen.getByRole('heading', { level: 1, name: 'Atelier Antananarivo Centre' })).toBeInTheDocument();
     expect(screen.getByText("L'art de la précision")).toBeInTheDocument();
   });
@@ -50,6 +56,7 @@ describe('AtelierHeroGallery', () => {
             { id: 'm2', url: 'https://cdn.example/small.jpg', altText: 'Petite photo', sortOrder: 1 },
           ],
         })}
+        content={CONTENT}
       />,
     );
     expect(screen.getByRole('img', { name: 'Grande photo' })).toBeInTheDocument();
@@ -62,13 +69,14 @@ describe('AtelierHeroGallery', () => {
         atelier={makeAtelier({
           media: [{ id: 'm1', url: 'https://cdn.example/large.jpg', altText: 'Grande photo', sortOrder: 0 }],
         })}
+        content={CONTENT}
       />,
     );
     expect(screen.getAllByRole('img')).toHaveLength(1);
   });
 
   it('falls back to decorative tiles in both photo slots when there are no photos at all', () => {
-    render(<AtelierHeroGallery atelier={makeAtelier({ media: [] })} />);
+    render(<AtelierHeroGallery atelier={makeAtelier({ media: [] })} content={CONTENT} />);
     expect(screen.queryByRole('img')).not.toBeInTheDocument();
     expect(screen.getByText('Notre savoir-faire')).toBeInTheDocument();
   });

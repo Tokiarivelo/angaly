@@ -5,6 +5,7 @@ import Link from 'next/link';
 import { ROUTES } from '@/lib/routes';
 
 import { useCreationDetail } from '../hooks/useCreationDetail';
+import { useCreationDetailContent } from '../hooks/useCreationDetailContent';
 import { useRelatedCreations } from '../hooks/useRelatedCreations';
 import { AppointmentCtaBand } from './AppointmentCtaBand';
 import { CraftsmanshipStory } from './CraftsmanshipStory';
@@ -17,6 +18,7 @@ import { RelatedCreationsGrid } from './RelatedCreationsGrid';
 export function CreationDetailPage({ slug }: { slug: string }) {
   const { data: creation, isLoading, error } = useCreationDetail(slug);
   const { sameCollection, sameCategory } = useRelatedCreations(creation);
+  const { data: content } = useCreationDetailContent();
 
   if (isLoading) {
     return null;
@@ -66,7 +68,7 @@ export function CreationDetailPage({ slug }: { slug: string }) {
         </div>
       </section>
 
-      <CraftsmanshipStory />
+      <CraftsmanshipStory content={content.savoirFaire} />
 
       {creation.collection && (
         <RelatedCollectionRow

@@ -2,12 +2,22 @@
 
 **Statut : ✅ Fait pour les 3 premiers items de l'"Ordre suggéré" ci-dessous** (session
 2026-09-16) : `users` (backend), `content` + `admin-gestion-contenu`, `admin-mediatheque`.
-**L'item 4 a démarré** (session 2026-09-16, suite) : `GET /content/public/:page` (public,
-`PUBLISHED`-only) ajouté, et les pages `home`/`a-propos` — 2 pages sur les 14 de la Phase 1 —
-lisent désormais leur texte depuis `PageSection` avec repli sur les littéraux codés en dur
-pour toute section pas encore éditée dans le CMS. **Les 12 autres pages de la Phase 1 restent
-non migrées** (`la-une`, `nos-creations-galerie`, `contact`, etc.) — migration progressive,
-une session à la fois, comme annoncé dès l'origine de cet item.
+**L'item 4 est en cours** (démarré session 2026-09-16, suite) : `GET /content/public/:page`
+(public, `PUBLISHED`-only) ajouté, et les pages `home`/`a-propos`/`la-une`/
+`nos-creations-galerie`/`creation-detail`/`contact`/`collections-liste`/`collection-detail`/
+`nos-ateliers-liste`/`atelier-detail`/`journal-liste`/`journal-article` — 12 pages sur les
+14 de la Phase 1 — lisent désormais leur texte depuis `PageSection` avec repli sur les
+littéraux codés en dur pour toute section pas encore éditée dans le CMS (`la-une`,
+`nos-creations-galerie`, `creation-detail`, `contact`, `collections-liste`,
+`collection-detail`, `nos-ateliers-liste`, `atelier-detail`, `journal-liste` et
+`journal-article` ajoutées dans des sessions ultérieures, voir
+`docs/pages/la-une.md`/`docs/pages/nos-creations-galerie.md`/`docs/pages/creation-detail.md`/
+`docs/pages/contact.md`/`docs/pages/collections-liste.md`/`docs/pages/collection-detail.md`/
+`docs/pages/nos-ateliers-liste.md`/`docs/pages/atelier-detail.md`/`docs/pages/journal-liste.md`/
+`docs/pages/journal-article.md`).
+**Les 2 autres pages de la Phase 1 restent non migrées** (`page-404`,
+`navigation-mobile`) — migration progressive, une session à la fois, comme annoncé dès
+l'origine de cet item.
 Dépend de : Phase 1 (`creations`, `collections`, `ateliers`, `blog`, `media`) — le CMS édite
 du contenu qui doit déjà exister en base.
 
@@ -55,8 +65,35 @@ projet ("manage all texts and images in the website").
    `PageSection` au lieu de littéraux codés en dur — migration progressive, section par
    section, pas un big-bang sur toutes les pages en une fois. **Première tranche faite**
    (session 2026-09-16, suite) : `home` et `a-propos` (2/14 pages Phase 1) — voir
-   `docs/pages/home.md`, `docs/pages/a-propos.md`, `docs/features/content.md`. Les 12 autres
-   pages restent à migrer, une session à la fois.
+   `docs/pages/home.md`, `docs/pages/a-propos.md`, `docs/features/content.md`. **Deuxième
+   tranche faite** (session 2026-09-16, suite) : `la-une` (3/14 pages Phase 1) — voir
+   `docs/pages/la-une.md`. **Troisième tranche faite** (session 2026-09-16, suite) :
+   `nos-creations-galerie` (4/14 pages Phase 1) — voir `docs/pages/nos-creations-galerie.md`.
+   **Quatrième tranche faite** (session 2026-09-16, suite) : `creation-detail` (5/14 pages
+   Phase 1) — voir `docs/pages/creation-detail.md`. **Cinquième tranche faite** (session
+   2026-09-16, suite) : `contact` (6/14 pages Phase 1) — header (titre/sous-titre) uniquement,
+   les coordonnées de contact (`useContactChannels.ts`) restent codées en dur, voir
+   `docs/pages/contact.md`. **Sixième tranche faite** (session 2026-09-16, suite) :
+   `collections-liste` (7/14 pages Phase 1) — header (titre/sous-titre) uniquement, le fil
+   d'Ariane reste codé en dur, voir `docs/pages/collections-liste.md`. **Septième tranche
+   faite** (session 2026-09-16, suite) : `collection-detail` (8/14 pages Phase 1) — bande CTA
+   de fermeture (headline + 2 libellés de bouton) uniquement, le reste de la page reste
+   dérivé de `Collection` réelle (pas de littéral éditorial ailleurs sur cette page), voir
+   `docs/pages/collection-detail.md`. **Huitième tranche faite** (session 2026-09-16,
+   suite) : `nos-ateliers-liste` (9/14 pages Phase 1) — header (titre/sous-titre)
+   uniquement, voir `docs/pages/nos-ateliers-liste.md`. **Neuvième tranche faite** (session
+   2026-09-16, suite) : `atelier-detail` (10/14 pages Phase 1) — tagline du héro + libellé
+   de la tuile « L'art de la précision » uniquement, le `<h1>` reste `atelier.name` (donnée
+   réelle) et la galerie ambiance/le bloc SEO local restent codés en dur, voir
+   `docs/pages/atelier-detail.md`. **Dixième tranche faite** (session 2026-09-16, suite) :
+   `journal-liste` (11/14 pages Phase 1) — header (titre/sous-titre) uniquement, le reste
+   de la page (pilules, vedette, grille, widgets, newsletter) reste dérivé de données
+   réelles ou codé en dur, voir `docs/pages/journal-liste.md`. **Onzième tranche faite**
+   (session 2026-09-16, suite) : `journal-article` (12/14 pages Phase 1) — bande CTA de
+   fermeture (headline + corps + libellé de bouton) uniquement, le reste de la page (header,
+   corps, bloc auteur, articles liés) reste dérivé de `BlogPost` réel ou du lookup
+   `author-profiles.ts`, voir `docs/pages/journal-article.md`. Les 2 autres pages restent à
+   migrer, une session à la fois.
 
 ## Points d'attention
 
@@ -76,9 +113,20 @@ projet ("manage all texts and images in the website").
   suite) : `save-section-draft`/`publish-section` (déjà testés) plus le nouvel endpoint public
   `GET /content/public/accueil` (`PUBLISHED`-only) que `useHomeContent` consomme via
   react-query ; `a-propos` migré dans le même passage (`useAProposContent`,
-  `GET /content/public/a-propos`). **Seulement 2 pages sur les 14 de la Phase 1** — les 12
-  autres restent sur leurs littéraux codés en dur (item 4, migration progressive non finie,
-  voir statut en tête de fiche)
+  `GET /content/public/a-propos`) ; `la-une`, `nos-creations-galerie`, `creation-detail`,
+  `contact`, `collections-liste`, `collection-detail`, `nos-ateliers-liste`,
+  `atelier-detail`, `journal-liste` et `journal-article` migrées dans des sessions ultérieures
+  (`useLaUneContent`/
+  `GET /content/public/la-une`, `useGalleryContent`/`GET /content/public/nos-creations-galerie`,
+  `useCreationDetailContent`/`GET /content/public/creation-detail`, `useContactContent`/
+  `GET /content/public/contact`, `useCollectionsContent`/`GET /content/public/collections-liste`,
+  `useCollectionDetailContent`/`GET /content/public/collection-detail`,
+  `useAteliersListeContent`/`GET /content/public/nos-ateliers-liste`,
+  `useAtelierDetailContent`/`GET /content/public/atelier-detail`,
+  `useJournalListeContent`/`GET /content/public/journal-liste`,
+  `useJournalArticleContent`/`GET /content/public/journal-article`). **Seulement 12 pages sur
+  les 14 de la Phase 1** — les 2 autres restent sur leurs littéraux codés en dur (item 4,
+  migration progressive non finie, voir statut en tête de fiche)
 - ⚠️ Un compte `ADMIN` peut uploader une image dans la médiathèque et l'utiliser sur une fiche
   `creation` existante — l'upload et le lien direct (`entityType`/`entityId`) fonctionnent,
   mais le rattachement via la relation Prisma many-to-many que `creation.media` lit réellement
@@ -88,8 +136,10 @@ projet ("manage all texts and images in the website").
 - [x] `docs/checklist-implementation.md` : les 2 pages + 2 modules passés à ✅
 - ⬜ Toutes les phases (0 à 6) ne sont **pas encore** toutes à ✅ dans
   `docs/checklist-implementation.md` au sens strict de la phase — l'item 4 de l'"Ordre
-  suggéré" (migration des pages publiques) est **en cours** (2/14 pages Phase 1 migrées :
-  `home`, `a-propos`), pas terminé
+  suggéré" (migration des pages publiques) est **en cours** (12/14 pages Phase 1 migrées :
+  `home`, `a-propos`, `la-une`, `nos-creations-galerie`, `creation-detail`, `contact`,
+  `collections-liste`, `collection-detail`, `nos-ateliers-liste`, `atelier-detail`,
+  `journal-liste`, `journal-article`), pas terminé
 
 ## Phase suivante
 

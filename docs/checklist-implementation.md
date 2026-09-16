@@ -43,19 +43,42 @@ phase n'a pas été traitée en session dédiée (voir `.cursor/rules/006-phase-
       vedettes/ateliers/journal en direct, témoignages/newsletter mockés MSW (Phase 2). Texte
       des sections lu depuis `PageSection` (`content`, Phase 6) depuis la session 2026-09-16
       (suite), avec repli sur les littéraux codés en dur — voir `docs/features/content.md`
-- [x] ✅ **la-une** — Vitrine éditoriale
-- [x] ✅ **nos-creations-galerie** — Galerie complète des créations
-- [x] ✅ **creation-detail** — Fiche détail d'une création
-- [x] ✅ **collections-liste** — Index des collections
-- [x] ✅ **collection-detail** — Fiche détail d'une collection
+- [x] ✅ **la-une** — Vitrine éditoriale. Texte de l'en-tête lu depuis `PageSection`
+      (`content`, Phase 6) depuis la session 2026-09-16 (suite), avec repli sur les littéraux
+      codés en dur — voir `docs/features/content.md`
+- [x] ✅ **nos-creations-galerie** — Galerie complète des créations. Texte de l'en-tête
+      (titre/intro) lu depuis `PageSection` (`content`, Phase 6) depuis la session 2026-09-16
+      (suite), avec repli sur les littéraux codés en dur — voir `docs/features/content.md`
+- [x] ✅ **creation-detail** — Fiche détail d'une création. Texte du bandeau savoir-faire lu
+      depuis `PageSection` (`content`, Phase 6) depuis la session 2026-09-16 (suite), avec
+      repli sur le littéral codé en dur — voir `docs/features/content.md`
+- [x] ✅ **collections-liste** — Index des collections. Texte du header (titre/sous-titre) lu
+      depuis `PageSection` (`content`, Phase 6) depuis la session 2026-09-16 (suite), avec
+      repli sur les littéraux codés en dur — voir `docs/features/content.md`
+- [x] ✅ **collection-detail** — Fiche détail d'une collection. Headline + libellés des 2 CTA
+      de la bande de fermeture lus depuis `PageSection` (`content`, Phase 6) depuis la
+      session 2026-09-16 (suite), avec repli sur les littéraux codés en dur — voir
+      `docs/features/content.md`
 - [x] ✅ **a-propos** — Histoire de la maison. Texte des sections lu depuis `PageSection`
       (`content`, Phase 6) depuis la session 2026-09-16 (suite), avec repli sur les
       littéraux codés en dur — voir `docs/features/content.md`
-- [x] ✅ **nos-ateliers-liste** — Liste des ateliers + carte
-- [x] ✅ **atelier-detail** — Fiche détail d'un atelier
-- [x] ✅ **contact** — Page de contact
-- [x] ✅ **journal-liste** — Blog/Journal, liste
-- [x] ✅ **journal-article** — Article de blog
+- [x] ✅ **nos-ateliers-liste** — Liste des ateliers + carte. Texte du header (titre/sous-titre)
+      lu depuis `PageSection` (`content`, Phase 6) depuis la session 2026-09-16 (suite), avec
+      repli sur les littéraux codés en dur — voir `docs/features/content.md`
+- [x] ✅ **atelier-detail** — Fiche détail d'un atelier. Tagline du héro + libellé de la
+      tuile « L'art de la précision » lus depuis `PageSection` (`content`, Phase 6) depuis
+      la session 2026-09-16 (suite), avec repli sur les littéraux codés en dur — voir
+      `docs/features/content.md`
+- [x] ✅ **contact** — Page de contact. Texte du header (titre/sous-titre) lu depuis
+      `PageSection` (`content`, Phase 6) depuis la session 2026-09-16 (suite), avec repli sur
+      les littéraux codés en dur — voir `docs/features/content.md`
+- [x] ✅ **journal-liste** — Blog/Journal, liste. Texte du header (titre/sous-titre) lu
+      depuis `PageSection` (`content`, Phase 6) depuis la session 2026-09-16 (suite), avec
+      repli sur les littéraux codés en dur — voir `docs/features/content.md`
+- [x] ✅ **journal-article** — Article de blog. Bande CTA de fermeture (headline + corps +
+      libellé de bouton) lue depuis `PageSection` (`content`, Phase 6) depuis la session
+      2026-09-16 (suite), avec repli sur les littéraux codés en dur — voir
+      `docs/features/content.md`
 - [x] ✅ **page-404** — Page 404
 - [x] ✅ **navigation-mobile** — Drawer, bottom bar, recherche, WhatsApp FAB
 
@@ -226,8 +249,10 @@ phase n'a pas été traitée en session dédiée (voir `.cursor/rules/006-phase-
       `docs/features/users.md`
 - [x] ✅ **content** — `PageSection`/`PageSectionVersion`, sert `admin-gestion-contenu`
       (session 2026-09-16). Endpoint public `GET /content/public/:page` (`PUBLISHED`-only,
-      sans auth) ajouté en session 2026-09-16 (suite), consommé par `home`/`a-propos`
-      (2/14 pages Phase 1) — voir `docs/features/content.md`
+      sans auth) ajouté en session 2026-09-16 (suite), consommé par
+      `home`/`a-propos`/`la-une`/`nos-creations-galerie`/`creation-detail`/`contact`/
+      `collections-liste`/`collection-detail`/`nos-ateliers-liste`/`atelier-detail`/
+      `journal-liste`/`journal-article` (12/14 pages Phase 1) — voir `docs/features/content.md`
 
 > Périmètre volontairement limité aux 2 pages couvertes par une maquette Stitch
 > (`stitch-prompts/31-*.md`). Le reste du back-office listé au spec §60-66
@@ -240,10 +265,13 @@ phase n'a pas été traitée en session dédiée (voir `.cursor/rules/006-phase-
 > d'auth, `agy` absent) — structure/copy des 2 pages reconstruites depuis le texte de
 > `stitch-prompts/31-*.md` uniquement, à revalider contre l'écran réel dès que possible ;
 > l'étape 4 de `docs/phases/phase-6-admin-cms.md` (migrer les pages publiques vers
-> `PageSection`) a démarré en session 2026-09-16 (suite) — `home`/`a-propos` migrées
-> (2 des 14 pages Phase 1), les 12 autres restent **non traitées** ; le panneau "Utilisée dans" de
-> `admin-mediatheque` est limité par un bug pré-existant non corrigé (relations `Media`
-> jamais connectées par `confirm-upload`, voir `docs/features/media.md`).
+> `PageSection`) a démarré en session 2026-09-16 (suite) —
+> `home`/`a-propos`/`la-une`/`nos-creations-galerie`/`creation-detail`/`contact`/
+> `collections-liste`/`collection-detail`/`nos-ateliers-liste`/`atelier-detail`/
+> `journal-liste`/`journal-article` migrées
+> (12 des 14 pages Phase 1), les 2 autres restent **non traitées** ; le panneau "Utilisée
+> dans" de `admin-mediatheque` est limité par un bug pré-existant non corrigé (relations
+> `Media` jamais connectées par `confirm-upload`, voir `docs/features/media.md`).
 
 ### Hors périmètre spec — ajouté le 2026-09-15
 - [x] ✅ **admin-ai-settings** — `/admin/dashboard` + `/admin/ai-settings`, choix du modèle

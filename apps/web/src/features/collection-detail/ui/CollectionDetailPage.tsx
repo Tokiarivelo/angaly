@@ -5,6 +5,7 @@ import Link from 'next/link';
 import { ROUTES } from '@/lib/routes';
 
 import { useCollectionDetail } from '../hooks/useCollectionDetail';
+import { useCollectionDetailContent } from '../hooks/useCollectionDetailContent';
 import { ClosingCtaBand } from './ClosingCtaBand';
 import { CollectionCover } from './CollectionCover';
 import { CollectionCreationsGrid } from './CollectionCreationsGrid';
@@ -13,6 +14,7 @@ import { CollectionStory } from './CollectionStory';
 /** Orchestrates the real Stitch "Collection Éternelle (Detail Page)" screen — JSX + hooks only. */
 export function CollectionDetailPage({ slug }: { slug: string }) {
   const { data: collection, isLoading, error } = useCollectionDetail(slug);
+  const { data: content } = useCollectionDetailContent();
 
   if (isLoading) {
     return null;
@@ -34,7 +36,7 @@ export function CollectionDetailPage({ slug }: { slug: string }) {
       <CollectionCover collection={collection} />
       <CollectionStory collection={collection} />
       <CollectionCreationsGrid creations={collection.creations} />
-      <ClosingCtaBand />
+      <ClosingCtaBand content={content.closingCta} />
     </>
   );
 }

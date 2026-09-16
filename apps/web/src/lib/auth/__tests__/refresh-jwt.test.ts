@@ -55,7 +55,8 @@ describe('maybeRefreshToken', () => {
   });
 
   it('does nothing when there is no refresh token to use, even near expiry', async () => {
-    const token = makeToken({ accessTokenExpiresAt: 0, refreshToken: undefined });
+    const token = makeToken({ accessTokenExpiresAt: 0 });
+    delete token.refreshToken;
     const refresh = vi.fn();
 
     await maybeRefreshToken(token, false, refresh);

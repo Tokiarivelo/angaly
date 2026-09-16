@@ -34,20 +34,21 @@ apps/web/src/features/journal-article/
     SocialShareBar.tsx                  → 'use client', sticky desktop (Facebook/WhatsApp/copier le lien)
     AuthorBox.tsx                         → photo, nom, rôle, bio, lien « Voir tous ses articles »
     RelatedArticlesRow.tsx                 → réutilise `ArticleCard` de `journal-liste` (import cross-feature délibéré, voir Points d'attention)
-    AppointmentCtaBand.tsx                  → copie propre à cet écran (même motif que les autres pages)
+    AppointmentCtaBand.tsx                  → bande CTA de fermeture, contenu réel (voir hooks/useJournalArticleContent.ts)
   hooks/
     useJournalArticle.ts                    → react-query sur GET /api/blog-posts/:slug
     useRelatedArticles.ts                     → react-query sur GET /api/blog-posts/:slug/related
     useShareArticle.ts                         → 'use client', Facebook/WhatsApp/copier le lien (≠ Web Share API générique de creation-detail)
+    useJournalArticleContent.ts                 → bande CTA (headline + corps + libellé), GET /content/public/journal-article, repli codé en dur
   api/
-    journal-article.api.ts                       → useJournalArticleQuery, useRelatedArticlesQuery
+    journal-article.api.ts                       → useJournalArticleQuery, useRelatedArticlesQuery, useJournalArticleSectionsContentQuery
   utils/
     reading-time.util.ts                          → fonction pure (mots/minute), testée isolément
     formatArticleDate.ts                           → copie feature-locale (même implémentation que journal-liste, voir Points d'attention)
   __tests__/
     reading-time.test.ts, formatArticleDate.test.ts, useJournalArticle.test.ts,
-    useRelatedArticles.test.ts, useShareArticle.test.ts, ArticleHeader.test.tsx,
-    ArticleBody.test.tsx, AuthorBox.test.tsx, SocialShareBar.test.tsx,
+    useRelatedArticles.test.ts, useShareArticle.test.ts, useJournalArticleContent.test.ts,
+    ArticleHeader.test.tsx, ArticleBody.test.tsx, AuthorBox.test.tsx, SocialShareBar.test.tsx,
     RelatedArticlesRow.test.tsx, AppointmentCtaBand.test.tsx, JournalArticlePage.test.tsx
   index.ts
 ```
@@ -63,14 +64,26 @@ suffisent, même choix que `creation-detail`/`collection-detail`/`atelier-detail
 | --- | --- | --- |
 | `GET /api/blog-posts/:slug` | `blog` | Article complet (auteur, catégorie, médias, contenu) |
 | `GET /api/blog-posts/:slug/related` | `blog` | Articles similaires, même catégorie, article courant exclu côté serveur |
+| `GET /api/content/public/journal-article` | `content` | Headline + corps + libellé CTA de la bande de fermeture, `PUBLISHED`-only |
 
 ## Modèles Prisma touchés
 
 `BlogPost` (`title`, `content`, `excerpt`, `publishedAt`), `Category`, `User` (auteur),
-`Media` (via `BlogPostMedia`).
+`Media` (via `BlogPostMedia`), `PageSection` (`page="journal-article"`,
+`sectionKey="closing-cta"` — headline + corps + libellé du bouton).
 
 ## Points d'attention
 
+- **Bande CTA de fermeture (headline + corps + libellé du bouton) migrée vers
+  `PageSection` CMS** (session 2026-09-16, suite — douzième tranche de
+  `docs/phases/phase-6-admin-cms.md` item 4, après `home`/`a-propos`/`la-une`/
+  `nos-creations-galerie`/`creation-detail`/`contact`/`collections-liste`/
+  `collection-detail`/`nos-ateliers-liste`/`atelier-detail`/`journal-liste`) :
+  `AppointmentCtaBand` lit `GET /content/public/journal-article` via
+  `useJournalArticleContent`, repli sur les littéraux codés en dur si la section
+  `closing-cta` est absente/`DRAFT` — voir `docs/features/content.md`. Le reste de la
+  page (header, corps, bloc auteur, articles liés) reste dérivé de `BlogPost` réel ou du
+  lookup `author-profiles.ts`, hors périmètre de cette tranche.
 - **Fidélité vérifiée via `agy`/StitchMCP `get_screen`** (écran réel
   `f09fd43e402e4112a0e8dd7092298faa`), pas seulement `stitch-prompts/23-journal-article.md`.
 - **Byline auteur réel, pas générique** : contrairement à la première implémentation de
@@ -120,5 +133,5 @@ suffisent, même choix que `creation-detail`/`collection-detail`/`atelier-detail
 - [x] Bloc auteur (nommé, avec bio réelle) + articles liés (« À lire aussi ») + bande CTA rendez-vous rendus
 - [x] Partage social fonctionnel (Facebook, copier le lien, WhatsApp), barre sticky desktop
 - [x] `<title>`/meta description définis via `generateMetadata` (spec §70/§71)
-- [x] Tests : 12 fichiers, 68 tests au total avec `journal-liste` (100 % de couverture sur les deux features)
+- [x] Tests : 13 fichiers, 72 tests au total avec `journal-liste` (100 % de couverture sur les deux features)
 - [x] `docs/checklist-implementation.md` et `docs/mockup-reference.md` mis à jour à ✅

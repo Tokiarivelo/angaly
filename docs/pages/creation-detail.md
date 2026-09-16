@@ -39,7 +39,8 @@ apps/web/src/features/creation-detail/
     CreationInfoPanel.tsx          → sticky desktop : pill catégorie/collection, titre, description, specs, actions
     CreationActions.tsx             → 'use client' (Prendre RDV, Créer version personnalisée,
                                       favoris local, partage Web Share API + fallback presse-papiers)
-    CraftsmanshipStory.tsx          → bande ivoire, texte générique maison (pas de récit par création, voir Points d'attention)
+    CraftsmanshipStory.tsx          → bande ivoire, texte générique maison réel (`content` prop, pas de
+                                      récit par création, voir Points d'attention)
     RelatedCollectionRow.tsx        → scroll horizontal des créations de la même collection (masqué si aucune collection)
     RelatedCreationsGrid.tsx        → « Vous aimerez aussi » (même catégorie)
     AppointmentCtaBand.tsx
@@ -47,12 +48,18 @@ apps/web/src/features/creation-detail/
     useCreationDetail.ts            → react-query sur GET /api/creations/:slug
     useRelatedCreations.ts           → react-query (même collection / même catégorie, exclut la création courante)
     useGalleryLightbox.ts            → index de vignette actif uniquement
+    useCreationDetailContent.ts      → texte du bandeau savoir-faire (`page="creation-detail"`,
+                                        `sectionKey="savoir-faire"`) lu depuis `PageSection` (session
+                                        2026-09-16, suite — voir docs/features/content.md), repli sur les
+                                        littéraux codés en dur si la section n'existe pas/n'est pas publiée
   api/
-    creation-detail.api.ts           → useCreationDetailQuery, useCollectionCreationsQuery, useCategoryCreationsQuery
+    creation-detail.api.ts           → useCreationDetailQuery, useCollectionCreationsQuery,
+                                        useCategoryCreationsQuery, useCreationDetailSectionsContentQuery
   consts/
     availability-labels.const.ts     → libellés FR de `CreationAvailability`
   __tests__/
     useCreationDetail.test.ts
+    useCreationDetailContent.test.ts
     CreationDetailPage.test.tsx
   index.ts
 ```
@@ -72,6 +79,7 @@ et les sections ne contiennent que du JSX + appels de hooks.
 | `GET /api/creations?collectionId=&limit=5` | `creations` | Créations de la même collection, création courante filtrée côté hook |
 | `GET /api/creations?categoryId=&limit=5` | `creations` | Créations similaires « Vous aimerez aussi », création courante filtrée côté hook |
 | `POST /api/favorites` (`entityType=CREATION`) | `customers` (Phase 2) | Non câblé — favori local uniquement, voir Points d'attention |
+| `GET /api/content/public/creation-detail` | `content` | Texte du bandeau savoir-faire, `PUBLISHED`-only, sans auth (session 2026-09-16, suite) |
 
 ## Modèles Prisma touchés
 
@@ -98,7 +106,13 @@ et les sections ne contiennent que du JSX + appels de hooks.
 - La section « Le savoir-faire derrière cette création » utilise le texte général de la
   maison (pas de récit spécifique à la création) : aucun champ Prisma ne porte une
   narration par création, et le récit du texte réel Stitch ("nos brodeuses...") est
-  spécifique à Robe Éternelle, donc non généralisable sans invention de contenu.
+  spécifique à Robe Éternelle, donc non généralisable sans invention de contenu. Ce texte
+  générique est lu depuis `PageSection` (`page="creation-detail"`, `sectionKey="savoir-
+  faire"`) via `GET /content/public/creation-detail` depuis la session 2026-09-16 (suite) —
+  cinquième page migrée après `home`/`a-propos`/`la-une`/`nos-creations-galerie`, voir
+  `docs/features/content.md` et `docs/phases/phase-6-admin-cms.md` (item 4). Repli sur le
+  littéral codé en dur (`useCreationDetailContent.ts`) si la section est absente ou encore
+  `DRAFT`.
 - Aucune donnée de prix n'est affichée (`Creation` ne porte pas de champ `price`,
   contrairement à `Product`) — jamais présentée comme une fiche produit e-commerce.
 - **Lightbox/zoom plein écran ajouté dans une passe ultérieure**, fidélité revérifiée sur le
@@ -135,6 +149,6 @@ et les sections ne contiennent que du JSX + appels de hooks.
 - [x] Zoom/lightbox plein écran (image agrandie, flèches précédent/suivant, compteur, Échap, clic sur l'image) fidèle au bouton « Zoom » réel de l'écran Stitch
 - [x] Zoom accessible au tactile (icône toujours visible en dessous de `md:`, pas seulement au survol) — vérifié en direct en viewport mobile
 - [x] Barre d'actions sticky mobile : décision documentée (superseded par la barre basse globale de `navigation-mobile`, pas dupliquée)
-- [x] Tests : `useCreationDetail.test.ts`, `useGalleryLightbox.test.ts`, `GalleryLightbox.test.tsx`, `CreationDetailPage.test.tsx` — 24 tests, 95.79%/92.85%/100%/95.79% de couverture (stmts/branches/fonctions/lignes) sur `creation-detail/`
+- [x] Tests : `useCreationDetail.test.ts`, `useGalleryLightbox.test.ts`, `useCreationDetailContent.test.ts`, `GalleryLightbox.test.tsx`, `CreationDetailPage.test.tsx` — 27 tests, tous verts (session 2026-09-16, suite)
 - [ ] Persistance des favoris (reportée, Phase 2/`customers`)
 - [x] `docs/checklist-implementation.md` et `docs/mockup-reference.md` mis à jour à ✅

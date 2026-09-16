@@ -1313,6 +1313,101 @@ async function main() {
       ctaSecondaryLabel: 'Prendre rendez-vous',
       status: ContentStatus.PUBLISHED,
     },
+    // --- Page Sections (La Une / Editorial Showcase) --------------------------
+    {
+      page: 'la-une',
+      sectionKey: 'header',
+      locale: Locale.FR,
+      titleText: 'LA UNE',
+      subtitleText: "Les créations qui incarnent l'univers Angaly — sélectionnées et renouvelées par la maison.",
+      dataJson: { eyebrow: 'Éditorial' },
+      status: ContentStatus.PUBLISHED,
+    },
+    // --- Page Sections (Nos Créations / Gallery Portfolio) ---------------------
+    {
+      page: 'nos-creations-galerie',
+      sectionKey: 'header',
+      locale: Locale.FR,
+      titleText: 'Nos Créations',
+      subtitleText: "Explorez l'ensemble de notre savoir-faire, des robes de mariée aux costumes sur mesure.",
+      status: ContentStatus.PUBLISHED,
+    },
+    // --- Page Sections (Creation Detail) ---------------------------------------
+    {
+      page: 'creation-detail',
+      sectionKey: 'savoir-faire',
+      locale: Locale.FR,
+      titleText: 'Le savoir-faire derrière cette création',
+      bodyText:
+        "Chaque pièce Angaly naît d'un dialogue entre la vision d'une couturière et le geste d'un artisan. Nos ateliers malgaches perpétuent des techniques transmises de génération en génération, du choix des matières les plus nobles jusqu'à la dernière retouche.",
+      status: ContentStatus.PUBLISHED,
+    },
+    // --- Page Sections (Contact) ------------------------------------------------
+    {
+      page: 'contact',
+      sectionKey: 'header',
+      locale: Locale.FR,
+      titleText: 'Contactez-nous',
+      subtitleText: 'Une question, un projet ? Nous sommes à votre écoute.',
+      status: ContentStatus.PUBLISHED,
+    },
+    // --- Page Sections (Collections Liste) --------------------------------------
+    {
+      page: 'collections-liste',
+      sectionKey: 'header',
+      locale: Locale.FR,
+      titleText: 'Nos Collections',
+      subtitleText: 'Chaque collection raconte une histoire, une saison, une inspiration.',
+      status: ContentStatus.PUBLISHED,
+    },
+    // --- Page Sections (Collection Detail) --------------------------------------
+    {
+      page: 'collection-detail',
+      sectionKey: 'closing-cta',
+      locale: Locale.FR,
+      titleText: 'Vous souhaitez porter une pièce de cette collection ?',
+      ctaPrimaryLabel: 'Prendre rendez-vous',
+      ctaSecondaryLabel: 'Voir toutes les collections',
+      status: ContentStatus.PUBLISHED,
+    },
+    // --- Page Sections (Nos Ateliers Liste) -------------------------------------
+    {
+      page: 'nos-ateliers-liste',
+      sectionKey: 'header',
+      locale: Locale.FR,
+      titleText: 'Nos Ateliers',
+      subtitleText: "Venez découvrir notre savoir-faire dans l'un de nos ateliers.",
+      status: ContentStatus.PUBLISHED,
+    },
+    // --- Page Sections (Atelier Detail) ------------------------------------------
+    {
+      page: 'atelier-detail',
+      sectionKey: 'hero',
+      locale: Locale.FR,
+      subtitleText: 'Le cœur de la création sur mesure',
+      dataJson: { precisionTileLabel: "L'art de la précision" },
+      status: ContentStatus.PUBLISHED,
+    },
+    // --- Page Sections (Journal Liste) --------------------------------------------
+    {
+      page: 'journal-liste',
+      sectionKey: 'header',
+      locale: Locale.FR,
+      titleText: 'Le Journal Angaly',
+      subtitleText: "Mariage, mode, coulisses d'atelier et conseils d'entretien.",
+      status: ContentStatus.PUBLISHED,
+    },
+    // --- Page Sections (Journal Article) --------------------------------------------
+    {
+      page: 'journal-article',
+      sectionKey: 'closing-cta',
+      locale: Locale.FR,
+      titleText: 'Envie de concrétiser votre projet ?',
+      bodyText:
+        "Nos maîtres tailleurs vous reçoivent pour une consultation privée dans notre atelier d'Antananarivo.",
+      ctaPrimaryLabel: 'Prendre rendez-vous',
+      status: ContentStatus.PUBLISHED,
+    },
   ];
 
   const createdPageSections = new Map<string, { id: string }>();
@@ -1330,7 +1425,7 @@ async function main() {
     });
     createdPageSections.set(`${section.page}:${section.sectionKey}`, section);
   }
-  console.log(`✅ ${pageSections.length} sections de page (Accueil et À propos) créées`);
+  console.log(`✅ ${pageSections.length} sections de page (Accueil, À propos, La Une, Nos Créations et Creation Detail) créées`);
 
   // --- Testimonials ---------------------------------------------------------
   const testimonials = [
@@ -1628,7 +1723,7 @@ async function main() {
         await attachPhoto(storage, 'customers', photo, photoAlt, MediaEntityType.PAGE_SECTION, section.id);
       }
     }
-    console.log("✅ Photos des sections de page (Accueil et À propos) vérifiées/hébergées sur MinIO");
+    console.log("✅ Photos des sections de page (Accueil, À propos, La Une, Nos Créations et Creation Detail) vérifiées/hébergées sur MinIO");
 
     for (const t of createdTestimonials) {
       const exists = await prisma.media.findFirst({
