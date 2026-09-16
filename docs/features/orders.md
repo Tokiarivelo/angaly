@@ -76,11 +76,11 @@ __tests__/
   `refund-payment` (module `payments`) injectent `ORDER_REPOSITORY_TOKEN` depuis `OrdersModule`
   et transitionnent la commande via `Order.transitionTo()`, jamais une écriture de statut brute
   — voir `docs/features/payments.md`.
-- **`notifications`** : émettre un événement `ORDER_STATUS_CHANGED` à chaque transition de
-  statut, via le service exporté du module `notifications` (jamais une écriture directe dans la
-  table `Notification`) — **pas encore câblé, `notifications` reste ⬜** (module vide, seul un
-  `README.md` existe). `update-order-status.use-case.ts` documente ce point en attente dans son
-  propre commentaire.
+- **`notifications`** : `create-order-from-cart` et `update-order-status` émettent
+  `ORDER_STATUS_CHANGED` via `CreateNotificationUseCase` (jamais une écriture directe dans la
+  table `Notification`) — **câblé** (session 2026-09-15, voir `docs/features/notifications.md`).
+  Best-effort : un échec de notification ne fait jamais échouer la création/transition de la
+  commande elle-même.
 - **`customers`** : relation `Customer` propriétaire de la commande, résolue depuis le JWT via
   `resolveCustomerId()`.
 
@@ -117,6 +117,6 @@ __tests__/
 - [x] `orders.controller.spec.ts` couvre 200/201/400/401/403/404 sur les 5 routes
 - [x] `pnpm --filter @angaly/api typecheck`, `pnpm --filter @angaly/api exec eslint src/orders`
       (0 erreur) et `pnpm --filter @angaly/api exec jest src/orders` (68 tests) tous verts
-- [x] `docs/checklist-implementation.md` : module backend `orders` passé à ✅ (les 6 pages
-      consommatrices — `panier`, `checkout`, etc. — restent 🟡, non câblées à cette API dans
-      cette session)
+- [x] `docs/checklist-implementation.md` : module backend `orders` ✅, désormais consommé pour
+      de vrai par `checkout` (`POST /api/orders`), `suivi-commande` et `espace-client-dashboard`
+      (`GET /api/orders`) — voir session 2026-09-16, `docs/pages/checkout.md`

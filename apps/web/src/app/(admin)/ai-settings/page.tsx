@@ -16,7 +16,7 @@ export default async function Page() {
   const session = await auth();
 
   if (session?.user.role !== Role.ADMIN) {
-    redirect('/admin/dashboard');
+    redirect('/dashboard');
   }
 
   return <AiModelSettingsPage />;

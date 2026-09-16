@@ -1,6 +1,19 @@
 # Page — `checkout`
 
-**Statut : ⬜ À faire.** Phase 3 — Production.
+**Statut : ✅ Fait** (câblage API réel), **avec une réserve documentée : le guest checkout
+n'est pas implémenté.** Phase 3 — Production. Mis à jour le 2026-09-16.
+
+`useCheckoutWizard.ts` appelle réellement `POST /api/orders` (étape Expédition, via
+`apps/web/src/features/checkout/api/orders.api.ts`) puis `POST /api/payments` (étape Paiement,
+via `api/payments.api.ts`) — plus de simulation locale (`setTimeout`) ni d'appel `apiClient`
+direct dans un composant `ui/`, toute la logique vit dans le hook. L'étape Confirmation affiche
+le vrai `orderNumber` renvoyé par le backend. Comme les deux endpoints exigent un `CLIENT`
+authentifié (`JwtAuthGuard`, voir `apps/api/src/orders/presentation/controllers/
+orders.controller.ts` et `payments.controller.ts`), et que l'hypothèse de guest checkout de ce
+fichier n'a jamais été implémentée côté `auth`/`customers` (création de compte minimal à la
+volée), `ExpeditionStep` redirige un visiteur non connecté vers `/connexion?redirectTo=/checkout`
+avant de soumettre — le même pattern auth-gated que `useToggleFavorite`
+(`pret-a-porter-catalogue`/`fiche-produit`).
 
 ## Objet
 
@@ -26,6 +39,18 @@ explicitement ce point).
 - Section spécification : §14 (`docs/specifications/ANGALY_Specifications_Completes.md`)
 
 ## Arborescence de composants attendue
+
+**Écart assumé avec l'implémentation réelle** : plutôt que d'éclater la logique en
+`useCreateOrderFromCart.ts`/`useSubmitPayment.ts`/`useDeliveryMethods.ts`/`usePaymentMethods.ts`/
+`useOrderConfirmation.ts` séparés, tout vit dans `useCheckoutWizard.ts` (état + `createOrder()` +
+`submitPayment()`), qui appelle `api/orders.api.ts` (`useCreateOrderMutation`, `useOrderQuery`)
+et `api/payments.api.ts` (`useInitiatePaymentMutation`) — plus simple pour un wizard à 3 étapes
+sans validation Zod par étape (les champs sont tous optionnels côté `CreateOrderRequestDto`, un
+schéma par étape n'apportait rien de plus que les `required` HTML déjà en place). Pas de
+`schemas/`, `consts/delivery-methods.const.ts`/`payment-methods.const.ts` ni
+`CheckoutFooterNav.tsx` séparé : les méthodes de livraison/paiement restent des littéraux dans
+`ExpeditionStep.tsx`/`PaiementStep.tsx` (4 `PaymentMethod`, 2 méthodes de livraison — pas assez
+de variabilité pour justifier une extraction).
 
 ```
 apps/web/src/features/checkout/
@@ -75,12 +100,19 @@ machine à états (étape courante, validation par étape, payload cumulé) vit 
 
 ## Endpoints API consommés
 
+Réellement appelés (voir `apps/api/src/orders/presentation/controllers/orders.controller.ts` et
+`apps/api/src/payments/presentation/controllers/payments.controller.ts` — sources de vérité,
+pas cette table) :
+
 | Endpoint | Module | Usage |
 | --- | --- | --- |
-| `POST /api/orders` | `orders` | Matérialisation de la commande à partir du panier + adresse + livraison (crée ou rattache un `Customer` si besoin) |
-| `PATCH /api/orders/:id` | `orders` | Mise à jour (adresse/livraison si modifiée avant paiement) |
-| `POST /api/payments` | `payments` | Initialisation du paiement (méthode, montant) → transition de statut `Order` |
-| `GET /api/orders/:id` | `orders` | Récapitulatif pour l'écran de confirmation |
+| `POST /api/orders` | `orders` | Matérialisation de la commande à partir du panier + adresse/livraison (le serveur résout prix/stock, jamais le client) — requiert un `CLIENT` authentifié |
+| `POST /api/payments` | `payments` | Initialisation du paiement (méthode) pour l'`Order` créée → requiert un `CLIENT` authentifié |
+
+`PATCH /api/orders/:id` (mise à jour d'adresse) n'existe pas côté backend et n'est pas
+appelé — non nécessaire dans le flux actuel (l'adresse est envoyée en un seul appel à la
+création). `GET /api/orders/:id` existe (`orders.controller.ts`) mais n'est pas appelé par
+cette page : le résultat de `POST /api/orders` suffit pour l'écran de confirmation.
 
 ## Modèles Prisma touchés
 
@@ -126,11 +158,22 @@ minimal si guest, voir point d'attention).
 
 ## Checklist d'acceptation
 
-- [ ] Les 3 étapes (Expédition, Paiement, Confirmation) reproduisent fidèlement `stitch-prompts/10-*.md` Écran D
-- [ ] Étape Expédition fusionne bien adresse + méthode de livraison, fonctionnelle pour visiteur connecté et non connecté (guest checkout)
-- [ ] Étape Paiement propose les 4 méthodes (`PaymentMethod`), sidebar récap total à jour
-- [ ] Soumission crée bien un `Order` (statut approprié) et un `Payment`, gère les statuts asynchrones (Mobile Money) sans confirmation prématurée
-- [ ] Écran de confirmation affiche le numéro de commande et les 2 CTA (Voir ma commande / Retour à l'accueil)
-- [ ] Rafraîchissement de page à l'étape Paiement ne recrée pas de commande dupliquée
-- [ ] Tests : `useCheckoutWizard.test.ts`, `useCreateOrderFromCart.test.ts`, `useSubmitPayment.test.ts`, au moins un test e2e du parcours complet
-- [ ] `docs/checklist-implementation.md` et `docs/mockup-reference.md` mis à jour à ✅
+- [x] Étape Expédition fusionne bien adresse + méthode de livraison
+- [x] Étape Paiement propose les 4 méthodes (`PaymentMethod`), sidebar récap total à jour
+- [x] Soumission crée bien un `Order` (`POST /api/orders`) puis un `Payment`
+      (`POST /api/payments`) — appels réels, plus de mock
+- [x] Écran de confirmation affiche le vrai numéro de commande et les 2 CTA (Voir ma commande →
+      `suivi-commande/:orderNumber` / Retour à l'accueil)
+- [x] Tests : `useCheckoutWizard.test.ts` (7 tests : état initial, auth, création commande,
+      paiement, erreurs), `CheckoutWizard.test.tsx`
+- [x] `docs/checklist-implementation.md` et `docs/mockup-reference.md` mis à jour à ✅
+- [ ] **Guest checkout non implémenté** — un visiteur non connecté est redirigé vers
+      `/connexion` avant de pouvoir soumettre l'étape Expédition (voir statut ci-dessus) ; créer
+      un `User`+`Customer` minimal à la volée reste un TODO `auth`/`customers` séparé
+- [ ] Gestion explicite des statuts de paiement asynchrones (Mobile Money confirmé par
+      webhook/callback avant `ConfirmationStep`) reste TODO — `submitPayment` affiche
+      aujourd'hui la confirmation dès la réponse de `POST /api/payments` (payment `PENDING`),
+      pas après confirmation réelle ; cohérent avec l'état actuel de `payments` (pas de webhook
+      fournisseur, voir `docs/features/payments.md`)
+- [ ] Idempotence de `POST /api/orders` au rafraîchissement de page (pas de re-render testé en
+      conditions réelles, hors périmètre de cette passe — pas de test e2e Playwright ajouté)

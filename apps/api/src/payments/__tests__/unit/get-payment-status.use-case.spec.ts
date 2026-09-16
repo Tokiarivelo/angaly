@@ -18,7 +18,7 @@ function sampleOrder(customerId = 'customer-1'): Order {
 }
 
 function buildPaymentRepository(payment: Payment | null): jest.Mocked<IPaymentRepository> {
-  return { create: jest.fn(), findById: jest.fn().mockResolvedValue(payment), findByOrderId: jest.fn(), update: jest.fn() };
+  return { create: jest.fn(), findById: jest.fn().mockResolvedValue(payment), findByOrderId: jest.fn(), update: jest.fn(), findByCustomerId: jest.fn(), findAll: jest.fn() };
 }
 
 function buildOrderRepository(order: Order | null): jest.Mocked<IOrderRepository> {

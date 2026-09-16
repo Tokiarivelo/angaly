@@ -2,8 +2,14 @@ import React from 'react';
 import Link from 'next/link';
 import { Bell } from 'lucide-react';
 
+export interface NotificationsPreviewItem {
+  id: string;
+  title: string;
+  message: string;
+}
+
 interface NotificationsPreviewCardProps {
-  notifications?: any[];
+  notifications?: NotificationsPreviewItem[];
 }
 
 export const NotificationsPreviewCard: React.FC<NotificationsPreviewCardProps> = ({ notifications = [] }) => {
@@ -27,8 +33,8 @@ export const NotificationsPreviewCard: React.FC<NotificationsPreviewCardProps> =
         {notifications.length === 0 ? (
           <p className="text-sm text-slate text-center mt-4">Aucune nouvelle notification.</p>
         ) : (
-          notifications.map((notif, i) => (
-            <div key={i} className="flex gap-3 pb-4 border-b border-border last:border-0 last:pb-0">
+          notifications.map((notif) => (
+            <div key={notif.id} className="flex gap-3 pb-4 border-b border-border last:border-0 last:pb-0">
               <div className="w-2 h-2 mt-1.5 rounded-full bg-primary-deep-navy shrink-0" />
               <div>
                 <p className="text-sm font-medium text-primary-deep-navy">{notif.title}</p>

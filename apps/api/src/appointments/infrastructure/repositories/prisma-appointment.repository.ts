@@ -76,4 +76,21 @@ export class PrismaAppointmentRepository implements IAppointmentRepository {
     });
     return records.map((record) => AppointmentMapper.toDomain(record));
   }
+
+  async findByCustomerId(customerId: string): Promise<AppointmentEntity[]> {
+    const records = await this.prisma.appointment.findMany({
+      where: { customerId },
+      select: APPOINTMENT_SELECT,
+      orderBy: { scheduledAt: 'desc' },
+    });
+    return records.map((record) => AppointmentMapper.toDomain(record));
+  }
+
+  async findAll(): Promise<AppointmentEntity[]> {
+    const records = await this.prisma.appointment.findMany({
+      select: APPOINTMENT_SELECT,
+      orderBy: { scheduledAt: 'desc' },
+    });
+    return records.map((record) => AppointmentMapper.toDomain(record));
+  }
 }

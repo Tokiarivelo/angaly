@@ -2,13 +2,19 @@ import type { Server } from 'node:http';
 
 import type { INestApplication } from '@nestjs/common';
 import { ValidationPipe } from '@nestjs/common';
+import { Reflector } from '@nestjs/core';
 import { Test } from '@nestjs/testing';
 import request from 'supertest';
 
+import { ACCESS_TOKEN_SERVICE } from '../../../auth/domain/services/access-token.service';
+import { JwtAuthGuard } from '../../../auth/presentation/guards/jwt-auth.guard';
+import { RolesGuard } from '../../../auth/presentation/guards/roles.guard';
 import { ConfirmUploadUseCase } from '../../application/use-cases/confirm-upload.use-case';
 import { CreatePresignedUploadUseCase } from '../../application/use-cases/create-presigned-upload.use-case';
 import { DeleteMediaUseCase } from '../../application/use-cases/delete-media.use-case';
+import { GetMediaDetailUseCase } from '../../application/use-cases/get-media-detail.use-case';
 import { ListMediaUseCase } from '../../application/use-cases/list-media.use-case';
+import { UpdateMediaUseCase } from '../../application/use-cases/update-media.use-case';
 import { UploadMediaBufferUseCase } from '../../application/use-cases/upload-media-buffer.use-case';
 import { MediaEntity } from '../../domain/entities/media.entity';
 import { MediaEntityRef } from '../../domain/value-objects/media-entity-ref.vo';
@@ -39,6 +45,9 @@ describe('MediaController (integration)', () => {
   const uploadMediaBufferUseCase = { execute: jest.fn() };
   const listMediaUseCase = { execute: jest.fn() };
   const deleteMediaUseCase = { execute: jest.fn() };
+  const getMediaDetailUseCase = { execute: jest.fn() };
+  const updateMediaUseCase = { execute: jest.fn() };
+  const accessTokenService = { sign: jest.fn(), verify: jest.fn() };
 
   beforeAll(async () => {
     const moduleRef = await Test.createTestingModule({
@@ -49,6 +58,12 @@ describe('MediaController (integration)', () => {
         { provide: UploadMediaBufferUseCase, useValue: uploadMediaBufferUseCase },
         { provide: ListMediaUseCase, useValue: listMediaUseCase },
         { provide: DeleteMediaUseCase, useValue: deleteMediaUseCase },
+        { provide: GetMediaDetailUseCase, useValue: getMediaDetailUseCase },
+        { provide: UpdateMediaUseCase, useValue: updateMediaUseCase },
+        JwtAuthGuard,
+        RolesGuard,
+        Reflector,
+        { provide: ACCESS_TOKEN_SERVICE, useValue: accessTokenService },
       ],
     }).compile();
 
@@ -57,6 +72,7 @@ describe('MediaController (integration)', () => {
       new ValidationPipe({ whitelist: true, forbidNonWhitelisted: true, transform: true }),
     );
     await app.init();
+    accessTokenService.verify.mockReturnValue({ sub: 'admin-1', role: 'ADMIN' });
   });
 
   afterAll(async () => {
@@ -65,6 +81,7 @@ describe('MediaController (integration)', () => {
 
   afterEach(() => {
     jest.clearAllMocks();
+    accessTokenService.verify.mockReturnValue({ sub: 'admin-1', role: 'ADMIN' });
   });
 
   function server(): Server {
@@ -162,12 +179,74 @@ describe('MediaController (integration)', () => {
     });
   });
 
-  it('DELETE /media/:id returns 204 on success', async () => {
+  it('DELETE /media/:id returns 204 on success for a MANAGER', async () => {
+    accessTokenService.verify.mockReturnValue({ sub: 'manager-1', role: 'MANAGER' });
     deleteMediaUseCase.execute.mockResolvedValue(undefined);
 
-    await request(server()).delete('/media/media-1').expect(204);
+    await request(server())
+      .delete('/media/media-1')
+      .set('Authorization', 'Bearer valid-token')
+      .expect(204);
 
     expect(deleteMediaUseCase.execute).toHaveBeenCalledWith('media-1');
+  });
+
+  it('DELETE /media/:id returns 401 with no token', async () => {
+    await request(server()).delete('/media/media-1').expect(401);
+    expect(deleteMediaUseCase.execute).not.toHaveBeenCalled();
+  });
+
+  it('DELETE /media/:id returns 403 for a CLIENT', async () => {
+    accessTokenService.verify.mockReturnValue({ sub: 'client-1', role: 'CLIENT' });
+
+    await request(server())
+      .delete('/media/media-1')
+      .set('Authorization', 'Bearer valid-token')
+      .expect(403);
+
+    expect(deleteMediaUseCase.execute).not.toHaveBeenCalled();
+  });
+
+  it('GET /media/:id returns the media with its resolved usages for a MANAGER', async () => {
+    getMediaDetailUseCase.execute.mockResolvedValue({
+      media: sampleMedia(),
+      usedIn: [{ entityType: 'CREATION', entityId: 'creation-1', label: 'Robe Éternelle' }],
+    });
+
+    const response = await request(server())
+      .get('/media/media-1')
+      .set('Authorization', 'Bearer valid-token')
+      .expect(200);
+
+    expect(getMediaDetailUseCase.execute).toHaveBeenCalledWith('media-1');
+    expect(response.body).toMatchObject({
+      id: 'media-1',
+      usedIn: [{ entityType: 'CREATION', entityId: 'creation-1', label: 'Robe Éternelle' }],
+    });
+  });
+
+  it('GET /media/:id returns 403 for a COUTURIERE', async () => {
+    accessTokenService.verify.mockReturnValue({ sub: 'couturiere-1', role: 'COUTURIERE' });
+
+    await request(server()).get('/media/media-1').set('Authorization', 'Bearer valid-token').expect(403);
+  });
+
+  it('PATCH /media/:id updates the alt text', async () => {
+    updateMediaUseCase.execute.mockResolvedValue(sampleMedia());
+
+    const response = await request(server())
+      .patch('/media/media-1')
+      .set('Authorization', 'Bearer valid-token')
+      .send({ altText: 'Nouveau texte alternatif' })
+      .expect(200);
+
+    expect(updateMediaUseCase.execute).toHaveBeenCalledWith('media-1', { altText: 'Nouveau texte alternatif' });
+    expect(response.body).toMatchObject({ id: 'media-1' });
+  });
+
+  it('PATCH /media/:id returns 401 with no token', async () => {
+    await request(server()).patch('/media/media-1').send({ altText: 'x' }).expect(401);
+    expect(updateMediaUseCase.execute).not.toHaveBeenCalled();
   });
 
   it('POST /media/upload accepts multipart form data and returns the created media', async () => {

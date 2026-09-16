@@ -11,6 +11,7 @@ import { PaymentResponseDto } from '../../application/dtos/payment-response.dto'
 import { ConfirmPaymentUseCase } from '../../application/use-cases/confirm-payment.use-case';
 import { GetPaymentStatusUseCase } from '../../application/use-cases/get-payment-status.use-case';
 import { InitiatePaymentUseCase } from '../../application/use-cases/initiate-payment.use-case';
+import { ListCustomerPaymentsUseCase } from '../../application/use-cases/list-customer-payments.use-case';
 import { RefundPaymentUseCase } from '../../application/use-cases/refund-payment.use-case';
 import { PaymentMapper } from '../../infrastructure/mappers/payment.mapper';
 
@@ -30,6 +31,7 @@ export class PaymentsController {
     private readonly confirmPaymentUseCase: ConfirmPaymentUseCase,
     private readonly getPaymentStatusUseCase: GetPaymentStatusUseCase,
     private readonly refundPaymentUseCase: RefundPaymentUseCase,
+    private readonly listCustomerPaymentsUseCase: ListCustomerPaymentsUseCase,
   ) {}
 
   @Post()
@@ -42,6 +44,14 @@ export class PaymentsController {
       method: payload.method,
     });
     return PaymentMapper.toResponseDto(payment);
+  }
+
+  @Get()
+  @ApiOperation({ summary: "List payments — own (for the caller's orders) for CLIENT, every payment for MANAGER/ADMIN" })
+  @ApiResponse({ status: 200, type: [PaymentResponseDto] })
+  async listPayments(@CurrentUser() user: AccessTokenPayload): Promise<PaymentResponseDto[]> {
+    const payments = await this.listCustomerPaymentsUseCase.execute(user.sub, user.role);
+    return payments.map((payment) => PaymentMapper.toResponseDto(payment));
   }
 
   @Get(':id')

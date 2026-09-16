@@ -114,6 +114,30 @@ describe('PrismaAppointmentRepository', () => {
     );
   });
 
+  it('findByCustomerId() filters by customerId, most recent first', async () => {
+    const { prisma, appointment } = buildPrismaServiceMock();
+    appointment.findMany.mockResolvedValue([sampleRecord()]);
+    const repository = new PrismaAppointmentRepository(prisma);
+
+    const result = await repository.findByCustomerId('customer-1');
+
+    expect(appointment.findMany).toHaveBeenCalledWith(
+      expect.objectContaining({ where: { customerId: 'customer-1' }, orderBy: { scheduledAt: 'desc' } }),
+    );
+    expect(result).toHaveLength(1);
+  });
+
+  it('findAll() returns every appointment, most recent first', async () => {
+    const { prisma, appointment } = buildPrismaServiceMock();
+    appointment.findMany.mockResolvedValue([sampleRecord(), sampleRecord({ id: 'appointment-2' })]);
+    const repository = new PrismaAppointmentRepository(prisma);
+
+    const result = await repository.findAll();
+
+    expect(appointment.findMany).toHaveBeenCalledWith(expect.objectContaining({ orderBy: { scheduledAt: 'desc' } }));
+    expect(result).toHaveLength(2);
+  });
+
   it('listActiveByAtelierAndRange() filters by atelier, active statuses, and date range', async () => {
     const { prisma, appointment } = buildPrismaServiceMock();
     appointment.findMany.mockResolvedValue([sampleRecord()]);

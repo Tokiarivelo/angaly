@@ -747,6 +747,66 @@ export interface InitiatePaymentPayload {
 }
 
 // ============================================================
+// Notifications — GET /api/notifications
+// ============================================================
+
+/** Does NOT extend `Timestamps`: `Notification` (schema.prisma) has no `updatedAt` column. */
+export interface NotificationDto {
+  id: string;
+  userId: string;
+  type: NotificationType;
+  title: string;
+  body: string;
+  isRead: boolean;
+  relatedEntityType: string | null;
+  relatedEntityId: string | null;
+  createdAt: string;
+}
+
+// ============================================================
+// Messages — GET/POST /api/messages/conversations (client ↔ atelier)
+// ============================================================
+
+export enum MessageSenderRole {
+  CLIENT = 'CLIENT',
+  STAFF = 'STAFF',
+}
+
+/**
+ * One conversation with an atelier. `unreadCount` counts STAFF-authored
+ * messages the current client has not yet read (see docs/features/messages.md).
+ * Does NOT extend `Timestamps`: no `updatedAt` field is exposed to clients,
+ * `lastMessageAt` already tracks the one meaningful timestamp for the list view.
+ */
+export interface ConversationDto {
+  id: string;
+  customerId: string;
+  atelierId: string;
+  atelierName: string;
+  relatedEntityType: string | null;
+  relatedEntityId: string | null;
+  lastMessagePreview: string;
+  lastMessageAt: string;
+  unreadCount: number;
+  createdAt: string;
+}
+
+/** Does NOT extend `Timestamps`: `Message` (schema.prisma) has no `updatedAt` column. */
+export interface MessageDto {
+  id: string;
+  conversationId: string;
+  senderRole: MessageSenderRole;
+  senderUserId: string;
+  content: string;
+  isRead: boolean;
+  createdAt: string;
+}
+
+export interface SendMessagePayload {
+  content: string;
+}
+
+// ============================================================
 // Angaly Pattern Studio — tailles standard
 // ============================================================
 

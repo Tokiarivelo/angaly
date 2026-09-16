@@ -1,5 +1,6 @@
 import { OrderStatus } from '@angaly/types';
 import { TRACKING_STEPS } from '../consts/order-tracking-steps.const';
+import { useOrderByNumberQuery } from '../api/orders.api';
 
 export interface TrackingTimelineStep {
   key: string;
@@ -15,6 +16,11 @@ export interface OrderDetails {
   subtotal: number;
   shippingCost: number;
   total: number;
+  /**
+   * `Order` has no `assignedToId` field (unlike `Appointment`) — never resolvable
+   * from `GET /api/orders` alone (see docs/pages/suivi-commande.md "Points
+   * d'attention"). Always undefined until a real source is decided.
+   */
   atelierName?: string;
   items: {
     id: string;
@@ -23,47 +29,66 @@ export interface OrderDetails {
     price: number;
     imageUrl?: string;
   }[];
-  // Mock history for timestamps
-  history: Record<string, string>; 
+}
+
+/**
+ * `OrderStatus` (8 broad values) doesn't map 1-for-1 onto the mockup's 8 detailed
+ * steps (see docs/pages/suivi-commande.md "Écart schéma ↔ maquette"). Several UI
+ * steps share the same technical status (e.g. `IN_PRODUCTION` covers "Mesures
+ * prises"/"Patron créé"/"Confection") — this rank only distinguishes *groups* of
+ * steps, not the individual step reached within a group.
+ */
+const STATUS_RANK: Record<OrderStatus, number> = {
+  [OrderStatus.PENDING]: 0,
+  [OrderStatus.CONFIRMED]: 1,
+  [OrderStatus.PAID]: 1,
+  [OrderStatus.IN_PRODUCTION]: 2,
+  [OrderStatus.READY]: 3,
+  [OrderStatus.DELIVERED]: 4,
+  [OrderStatus.CANCELLED]: -1,
+  [OrderStatus.REFUNDED]: -1,
+};
+
+function stepRank(mappedStatuses: OrderStatus[]): number {
+  return Math.min(...mappedStatuses.map((status) => STATUS_RANK[status]));
 }
 
 export const useOrderTracking = (orderNumber: string) => {
-  // Mock data
-  const mockOrder: OrderDetails = {
-    orderNumber,
-    status: OrderStatus.IN_PRODUCTION,
-    subtotal: 150000,
-    shippingCost: 10000,
-    total: 160000,
-    atelierName: 'Atelier ANGALY Analakely',
-    items: [
-      {
-        id: '1',
-        productName: 'Robe de cocktail fluide',
-        quantity: 1,
-        price: 150000,
-      }
-    ],
-    history: {
-      'confirmed': '2026-09-20T10:00:00Z',
-      'measurements': '2026-09-21T14:30:00Z',
-      'pattern': '2026-09-22T09:15:00Z',
-      'confection': '2026-09-23T11:00:00Z',
-    }
-  };
+  const query = useOrderByNumberQuery(orderNumber);
+  const rawOrder = query.data ?? null;
 
-  const timelineSteps: TrackingTimelineStep[] = TRACKING_STEPS.map((step, index) => {
-    const hasTimestamp = Boolean(mockOrder.history[step.key]);
-    const nextStep = TRACKING_STEPS[index + 1];
-    const nextStepHasTimestamp = Boolean(nextStep && mockOrder.history[nextStep.key]);
-    
+  const isCancelled = rawOrder?.status === OrderStatus.CANCELLED || rawOrder?.status === OrderStatus.REFUNDED;
+  const currentRank = rawOrder ? STATUS_RANK[rawOrder.status] : -1;
+
+  const order: OrderDetails | null = rawOrder
+    ? {
+        orderNumber: rawOrder.orderNumber,
+        status: rawOrder.status,
+        subtotal: Number(rawOrder.subtotal),
+        shippingCost: Number(rawOrder.shippingCost),
+        total: Number(rawOrder.total),
+        items: rawOrder.items.map((item) => ({
+          id: item.id,
+          // No product/variant name is available from `OrderItemDto` (only
+          // `productVariantId`) — no `GET /api/products/variants/:id` endpoint
+          // exists yet to hydrate it (see docs/pages/suivi-commande.md).
+          productName: `Article ${item.productVariantId.slice(-6).toUpperCase()}`,
+          quantity: item.quantity,
+          price: Number(item.unitPrice),
+        })),
+      }
+    : null;
+
+  const timelineSteps: TrackingTimelineStep[] = TRACKING_STEPS.map((step) => {
+    const rank = stepRank(step.mappedStatuses);
+
     let state: 'completed' | 'current' | 'upcoming' = 'upcoming';
-    
-    if (hasTimestamp && nextStepHasTimestamp) {
-      state = 'completed';
-    } else if (hasTimestamp && !nextStepHasTimestamp) {
-      // The latest step with a timestamp is the 'current' one
-      state = 'current';
+    if (rawOrder && !isCancelled) {
+      if (rank < currentRank) {
+        state = 'completed';
+      } else if (rank === currentRank) {
+        state = 'current';
+      }
     }
 
     return {
@@ -71,12 +96,20 @@ export const useOrderTracking = (orderNumber: string) => {
       label: step.label,
       description: step.description,
       state,
-      timestamp: hasTimestamp ? mockOrder.history[step.key] : undefined,
+      timestamp:
+        state === 'completed'
+          ? rawOrder?.createdAt
+          : state === 'current'
+            ? rawOrder?.updatedAt
+            : undefined,
     };
   });
 
   return {
-    order: mockOrder,
+    order,
     timelineSteps,
+    isLoading: query.isLoading,
+    isError: query.isError,
+    isCancelled,
   };
 };

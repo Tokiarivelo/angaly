@@ -1,4 +1,9 @@
+'use client';
+
 import { useState } from 'react';
+
+import { useConversationsQuery } from '../api/messages.api';
+import { useOrdersQuery } from '../api/invoices.api';
 
 export interface ConversationThread {
   id: string;
@@ -9,30 +14,37 @@ export interface ConversationThread {
   unreadCount: number;
 }
 
-const MOCK_THREADS: ConversationThread[] = [
-  {
-    id: 'conv-1',
-    atelierName: 'Atelier ANGALY',
-    orderReference: 'ANG-2938',
-    lastMessage: 'Bonjour ! Votre pièce sera prête à l\'essayage jeudi prochain.',
-    timestamp: '2026-09-24T14:30:00Z',
-    unreadCount: 1,
-  },
-  {
-    id: 'conv-2',
-    atelierName: 'Service Client',
-    lastMessage: 'Merci pour votre confiance.',
-    timestamp: '2026-08-10T10:00:00Z',
-    unreadCount: 0,
-  }
-];
-
+/**
+ * Real endpoint — `GET /api/messages/conversations` (see docs/features/messages.md).
+ * `orderReference` is resolved locally by joining the (small) own-orders list
+ * when `relatedEntityType === 'Order'` — same join pattern as `useInvoices.ts`.
+ */
 export const useConversations = () => {
-  const [activeThreadId, setActiveThreadId] = useState<string | null>(MOCK_THREADS[0]?.id ?? null);
+  const conversationsQuery = useConversationsQuery();
+  const ordersQuery = useOrdersQuery();
+  const [activeThreadId, setActiveThreadId] = useState<string | null>(null);
+
+  const threads: ConversationThread[] = (conversationsQuery.data ?? []).map((conversation) => {
+    const order =
+      conversation.relatedEntityType === 'Order'
+        ? ordersQuery.data?.find((candidate) => candidate.id === conversation.relatedEntityId)
+        : undefined;
+
+    return {
+      id: conversation.id,
+      atelierName: conversation.atelierName,
+      ...(order?.orderNumber ? { orderReference: order.orderNumber } : {}),
+      lastMessage: conversation.lastMessagePreview,
+      timestamp: conversation.lastMessageAt,
+      unreadCount: conversation.unreadCount,
+    };
+  });
 
   return {
-    threads: MOCK_THREADS,
+    threads,
     activeThreadId,
     setActiveThreadId,
+    isLoading: conversationsQuery.isLoading,
+    isError: conversationsQuery.isError,
   };
 };

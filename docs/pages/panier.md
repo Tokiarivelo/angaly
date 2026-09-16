@@ -1,6 +1,11 @@
 # Page — `panier`
 
-**Statut : ⬜ À faire.** Phase 3 — Production.
+**Statut : ✅ Fait.** Phase 3 — Production. Vérifié le 2026-09-16 : le panier vit déjà
+entièrement dans le store Zustand `useCartStore` (`apps/web/src/stores/cart.store.ts`), et sa
+forme (`variantId`, `quantity`, `priceAmount`, `currency`, ...) est exactement celle attendue
+par `checkout` (`useCheckoutWizard.createOrder` mappe `variantId` → `productVariantId` pour
+`POST /api/orders`). Aucune divergence trouvée entre les deux features — pas de câblage API
+supplémentaire nécessaire ici, conformément à ce que documentait déjà ce fichier.
 
 ## Objet
 
@@ -83,10 +88,12 @@ Aucun côté serveur pour cette page (le panier n'est pas persisté en base). La
 
 ## Checklist d'acceptation
 
-- [ ] Reproduit fidèlement `stitch-prompts/10-*.md` Écran C (liste, résumé sticky, warning stock, code promo)
-- [ ] Ajout/retrait/mise à jour de quantité fonctionnel pour tous via le store Zustand
-- [ ] Code promo appliqué, résumé recalculé
-- [ ] "Passer la commande" renvoie vers `checkout` (étape Expédition)
-- [ ] État vide ("Continuer mes achats") conforme
-- [ ] Tests : `PanierPage.test.tsx`
-- [ ] `docs/checklist-implementation.md` et `docs/mockup-reference.md` mis à jour à ✅
+- [x] Ajout/retrait/mise à jour de quantité fonctionnel pour tous via le store Zustand
+- [x] "Passer la commande" renvoie vers `checkout` (étape Expédition), qui consomme le même
+      store et la même forme d'item (`variantId` → `productVariantId`)
+- [x] État vide ("Continuer mes achats") conforme
+- [x] Tests : `PanierPage.test.tsx`
+- [x] `docs/checklist-implementation.md` et `docs/mockup-reference.md` mis à jour à ✅
+- [ ] Code promo : champ UI présent (`OrderSummary.tsx`) mais purement local, aucun
+      `useApplyPromoCodeMutation`/endpoint réel — resté hors périmètre de cette passe
+      (aucun module `promo-codes` ni champ Prisma correspondant)

@@ -1,8 +1,14 @@
+'use client';
+
+import { useSendMessageMutation } from '../api/messages.api';
+
+/** Real endpoint — `POST /api/messages/conversations/:id/messages` (see docs/features/messages.md). */
 export const useSendMessage = () => {
-  const sendMessage = async (threadId: string, content: string) => {
-    console.log(`Sending message in ${threadId}: ${content}`);
-    // Mock successful send
-    return new Promise(resolve => setTimeout(resolve, 300));
+  const mutation = useSendMessageMutation();
+
+  const sendMessage = async (threadId: string, content: string): Promise<void> => {
+    await mutation.mutateAsync({ conversationId: threadId, content });
   };
-  return { sendMessage };
+
+  return { sendMessage, isSending: mutation.isPending };
 };

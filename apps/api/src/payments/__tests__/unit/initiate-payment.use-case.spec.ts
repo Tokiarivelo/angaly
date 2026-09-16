@@ -17,7 +17,7 @@ function buildCustomerRepository(customer: CustomerEntity | null = sampleCustome
 }
 
 function buildPaymentRepository(): jest.Mocked<IPaymentRepository> {
-  return { create: jest.fn(), findById: jest.fn(), findByOrderId: jest.fn(), update: jest.fn() };
+  return { create: jest.fn(), findById: jest.fn(), findByOrderId: jest.fn(), update: jest.fn(), findByCustomerId: jest.fn(), findAll: jest.fn() };
 }
 
 function buildProvider(): jest.Mocked<IPaymentProviderPort> {

@@ -1,5 +1,5 @@
 import { Body, Controller, Get, HttpCode, HttpStatus, Inject, Param, Post, Query, Req, UseGuards } from '@nestjs/common';
-import { ApiOperation, ApiResponse, ApiTags } from '@nestjs/swagger';
+import { ApiBearerAuth, ApiOperation, ApiResponse, ApiTags } from '@nestjs/swagger';
 import type { Request } from 'express';
 
 import { CurrentUser } from '../../../auth/presentation/decorators/current-user.decorator';
@@ -18,6 +18,7 @@ import { CreateAppointmentUseCase } from '../../application/use-cases/create-app
 import { GetAppointmentByReferenceUseCase } from '../../application/use-cases/get-appointment-by-reference.use-case';
 import { GetDaySlotsUseCase } from '../../application/use-cases/get-day-slots.use-case';
 import { GetMonthAvailabilityUseCase } from '../../application/use-cases/get-month-availability.use-case';
+import { ListMyAppointmentsUseCase } from '../../application/use-cases/list-my-appointments.use-case';
 import { AppointmentMapper } from '../../infrastructure/mappers/appointment.mapper';
 
 /** No guard on this route (must work for a signed-out visitor) — the Bearer token, if any, is read best-effort so a connected CLIENT's Customer still gets linked (see docs/features/appointments.md). */
@@ -40,8 +41,19 @@ export class AppointmentsController {
     private readonly getAppointmentByReferenceUseCase: GetAppointmentByReferenceUseCase,
     private readonly cancelAppointmentUseCase: CancelAppointmentUseCase,
     private readonly confirmAppointmentUseCase: ConfirmAppointmentUseCase,
+    private readonly listMyAppointmentsUseCase: ListMyAppointmentsUseCase,
     @Inject(ACCESS_TOKEN_SERVICE) private readonly accessTokenService: IAccessTokenService,
   ) {}
+
+  @Get()
+  @UseGuards(JwtAuthGuard)
+  @ApiBearerAuth('access-token')
+  @ApiOperation({ summary: "List the current user's appointments — own for CLIENT, every appointment for MANAGER/ADMIN" })
+  @ApiResponse({ status: 200, type: [AppointmentResponseDto] })
+  async listMine(@CurrentUser() user: AccessTokenPayload): Promise<AppointmentResponseDto[]> {
+    const appointments = await this.listMyAppointmentsUseCase.execute(user.sub, user.role);
+    return appointments.map((appointment) => AppointmentMapper.toResponseDto(appointment));
+  }
 
   @Get('availability')
   @ApiOperation({ summary: 'Days available/full/closed for an atelier in a given month' })

@@ -130,21 +130,47 @@ phase n'a pas été traitée en session dédiée (voir `.cursor/rules/006-phase-
 
 ---
 
-## 📦 PHASE 3 — Production (6 pages, 3 modules)
+## 📦 PHASE 3 — Production (6 pages, 4 modules) — ✅ 6/6 pages câblées
 
 ### Pages
-- [ ] 🟡 **panier** — Panier d'achat (UI + local store créés)
-- [ ] 🟡 **checkout** — Adresse / Livraison / Paiement / Confirmation (Interface UI créée)
-- [ ] 🟡 **espace-client-dashboard** — Tableau de bord client (Frontend UI créé)
-- [ ] 🟡 **mes-rendez-vous** — Liste des rendez-vous client (Frontend UI créé)
-- [ ] 🟡 **suivi-commande** — Timeline de suivi commande/création (Frontend UI créé)
-- [ ] 🟡 **messages-factures-notifications** — Messagerie, factures, notifications (Frontend UI créé)
+- [x] ✅ **panier** — Panier d'achat (store Zustand réel, cohérent avec le payload attendu par
+      `checkout` — voir `docs/pages/panier.md`)
+- [x] ✅ **checkout** — Adresse / Livraison / Paiement / Confirmation câblés pour de vrai
+      (`POST /api/orders` puis `POST /api/payments`, guard d'authentification côté frontend
+      avant soumission) — guest checkout non implémenté (compte requis), voir
+      `docs/pages/checkout.md` "Points d'attention"
+- [x] ✅ **espace-client-dashboard** — Agrégation réelle (rendez-vous/commandes/pattern-projects/
+      notifications) via plusieurs requêtes react-query, pas d'endpoint agrégé dédié — voir
+      `docs/pages/espace-client-dashboard.md`
+- [x] ✅ **mes-rendez-vous** — Câblé sur `GET /api/appointments` (nouvel endpoint "mes
+      rendez-vous", voir module `appointments` ci-dessous) + annulation réelle — voir
+      `docs/pages/mes-rendez-vous.md`
+- [x] ✅ **suivi-commande** — Résolution de la commande par `orderNumber` depuis
+      `GET /api/orders` (pas d'endpoint dédié par numéro), timeline dérivée de `OrderStatus`
+      — voir `docs/pages/suivi-commande.md` "Points d'attention" (écart de granularité assumé)
+- [x] ✅ **messages-factures-notifications** — Trois onglets câblés pour de vrai : Factures
+      (`GET /api/payments`, voir module `payments` ci-dessous), Notifications, et désormais
+      Messages (nouveau module `messages` — `Conversation`/`Message`, voir ci-dessous et
+      `docs/features/messages.md`) — voir `docs/pages/messages-factures-notifications.md`
 
 ### Modules backend
-- [x] ✅ **orders** (module backend seul — les pages consommatrices ci-dessus restent 🟡, non
-      câblées à cette API ; voir `docs/features/orders.md`) ·
-      ✅ **payments** (repris : guards d'authentification, transitions via `orders`, module
-      testé — voir `docs/features/payments.md`) · ⬜ **notifications**
+- [x] ✅ **orders** (câblé pour de vrai dans `checkout`/`suivi-commande`/
+      `espace-client-dashboard` ; voir `docs/features/orders.md`) ·
+      ✅ **payments** (guards d'authentification, transitions via `orders`, + nouvel endpoint
+      `GET /api/payments` (liste par client, `ListCustomerPaymentsUseCase`) câblé dans
+      `messages-factures-notifications` — voir `docs/features/payments.md`) ·
+      ✅ **appointments** (+ nouvel endpoint `GET /api/appointments` (liste par client,
+      `ListMyAppointmentsUseCase`, mirroir du pattern `orders`) câblé dans `mes-rendez-vous`/
+      `espace-client-dashboard` — voir `docs/features/appointments.md`) ·
+      ✅ **notifications** (session 2026-09-15 : email SMTP générique + in-app, câblé dans
+      `orders`/`payments` (`ORDER_STATUS_CHANGED`) et `appointments` (`APPOINTMENT_CONFIRMED`,
+      visiteurs anonymes exclus) — `quotes`/`patterns`/`create-appointment`/`cancel-appointment`/
+      `refund-payment` restent à câbler ; WhatsApp non branché (aucun prestataire confirmé) ;
+      frontend câblé pour de vrai dans `messages-factures-notifications` (liste, lu individuel,
+      tout marquer lu) — voir `docs/features/notifications.md`) ·
+      ✅ **messages** (nouveau module — `Conversation`/`Message`, find-or-create staff-only pour
+      démarrer un fil, `MESSAGE_RECEIVED` câblé vers `notifications` côté staff — pas de boîte
+      de réception staff dans cette phase — voir `docs/features/messages.md`)
 
 ---
 
@@ -183,20 +209,34 @@ phase n'a pas été traitée en session dédiée (voir `.cursor/rules/006-phase-
 
 ---
 
-## 🗂️ PHASE 6 — Admin (back-office) (2 pages, 2 modules)
+## 🗂️ PHASE 6 — Admin (back-office) (2 pages, 2 modules) — ✅ 2/2 pages, 2/2 modules
 
 ### Pages
-- [ ] ⬜ **admin-gestion-contenu** — Éditeur de contenu par page/section
-- [ ] ⬜ **admin-mediatheque** — Médiathèque (MinIO)
+- [x] ✅ **admin-gestion-contenu** — Éditeur de contenu par page/section (session 2026-09-16)
+- [x] ✅ **admin-mediatheque** — Médiathèque (MinIO) (session 2026-09-16)
 
 ### Modules backend
-- [ ] ⬜ **users** — Gestion des comptes staff (Couturière/Manager/Admin), RBAC (spec §68/§83)
-- [ ] ⬜ **content** — `PageSection`/`PageSectionVersion`, sert `admin-gestion-contenu`
+- [x] ✅ **users** — Gestion des comptes staff (Couturière/Manager/Admin), RBAC (spec §68/§83)
+      (session 2026-09-16) — **backend uniquement**, pas de page dédiée (aucune maquette
+      Stitch ne couvre un écran de gestion des comptes dans le périmètre actuel), voir
+      `docs/features/users.md`
+- [x] ✅ **content** — `PageSection`/`PageSectionVersion`, sert `admin-gestion-contenu`
+      (session 2026-09-16)
 
 > Périmètre volontairement limité aux 2 pages couvertes par une maquette Stitch
 > (`stitch-prompts/31-*.md`). Le reste du back-office listé au spec §60-66
 > (Réalisations/Produits/Collections/Rendez-vous/Clients/Patron Premium admin) n'a pas de
-> maquette dédiée à ce jour — à ajouter comme une Phase 7 si le besoin est confirmé.
+> maquette dédiée à ce jour — à ajouter comme une Phase 7 si le besoin est confirmé, de même
+> qu'un futur écran de gestion des comptes staff pour `users`.
+>
+> **Réserves de la session 2026-09-16** (voir `docs/features/*.md`/`docs/pages/*.md` pour le
+> détail) : vérification Stitch impossible dans cet environnement (`mcp__stitch__*` en échec
+> d'auth, `agy` absent) — structure/copy des 2 pages reconstruites depuis le texte de
+> `stitch-prompts/31-*.md` uniquement, à revalider contre l'écran réel dès que possible ;
+> l'étape 4 de `docs/phases/phase-6-admin-cms.md` (migrer les pages publiques vers
+> `PageSection`) reste explicitement **non traitée** ; le panneau "Utilisée dans" de
+> `admin-mediatheque` est limité par un bug pré-existant non corrigé (relations `Media`
+> jamais connectées par `confirm-upload`, voir `docs/features/media.md`).
 
 ### Hors périmètre spec — ajouté le 2026-09-15
 - [x] ✅ **admin-ai-settings** — `/admin/dashboard` + `/admin/ai-settings`, choix du modèle

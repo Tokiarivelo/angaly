@@ -4,24 +4,25 @@ import React, { useState } from 'react';
 import type { CheckoutState } from '../../hooks/useCheckoutWizard';
 import { CheckoutOrderSummarySidebar } from '../CheckoutOrderSummarySidebar';
 import { CreditCard, Smartphone, Building2, PackageOpen } from 'lucide-react';
-import { useCartStore } from '@/stores/cart.store';
+import { PaymentMethod } from '@angaly/types';
+
+type PaymentMethodOption = 'mobile' | 'card' | 'wire' | 'cash';
+
+const PAYMENT_METHOD_MAP: Record<PaymentMethodOption, PaymentMethod> = {
+  mobile: PaymentMethod.MOBILE_MONEY,
+  card: PaymentMethod.CARD,
+  wire: PaymentMethod.BANK_TRANSFER,
+  cash: PaymentMethod.CASH_ON_DELIVERY,
+};
 
 export const PaiementStep: React.FC<{ wizard: CheckoutState }> = ({ wizard }) => {
-  const { clear } = useCartStore();
-  const [paymentMethod, setPaymentMethod] = useState<'mobile' | 'card' | 'wire' | 'cash'>('mobile');
-  const [isSubmitting, setIsSubmitting] = useState(false);
+  const [paymentMethod, setPaymentMethod] = useState<PaymentMethodOption>('mobile');
 
   const handlePayment = async () => {
-    setIsSubmitting(true);
     try {
-      // For now, simulate payment delay and success
-      await new Promise(r => setTimeout(r, 1500));
-      clear(); // clear cart upon successful payment
-      wizard.setStep('confirmation');
-    } catch (e) {
-      console.error(e);
-    } finally {
-      setIsSubmitting(false);
+      await wizard.submitPayment(PAYMENT_METHOD_MAP[paymentMethod]);
+    } catch {
+      // Surfaced to the user via `wizard.submitPaymentError` below.
     }
   };
 
@@ -55,6 +56,12 @@ export const PaiementStep: React.FC<{ wizard: CheckoutState }> = ({ wizard }) =>
           </div>
         </section>
 
+        {wizard.submitPaymentError && (
+          <p role="alert" className="rounded-md bg-red-50 border border-red-200 px-4 py-3 text-sm text-red-700">
+            {wizard.submitPaymentError}
+          </p>
+        )}
+
         <div className="flex justify-between items-center pt-4">
           <button
             type="button"
@@ -65,11 +72,11 @@ export const PaiementStep: React.FC<{ wizard: CheckoutState }> = ({ wizard }) =>
           </button>
           <button
             type="button"
-            onClick={handlePayment}
-            disabled={isSubmitting}
+            onClick={() => void handlePayment()}
+            disabled={wizard.isSubmittingPayment}
             className="px-8 py-3 bg-primary-deep-navy text-white font-medium rounded-full hover:bg-primary-dark transition-colors disabled:opacity-50"
           >
-            {isSubmitting ? 'Traitement en cours...' : 'Confirmer et payer'}
+            {wizard.isSubmittingPayment ? 'Traitement en cours...' : 'Confirmer et payer'}
           </button>
         </div>
       </div>

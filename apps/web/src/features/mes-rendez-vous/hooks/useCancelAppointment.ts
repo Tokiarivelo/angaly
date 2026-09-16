@@ -1,9 +1,11 @@
+import { useCancelAppointmentMutation } from '../api/appointments.api';
+
 export const useCancelAppointment = () => {
+  const mutation = useCancelAppointmentMutation();
+
   const cancel = async (reference: string) => {
-    // Mock API call
-    console.log(`Cancelling appointment ${reference}`);
-    return new Promise((resolve) => setTimeout(resolve, 500));
+    await mutation.mutateAsync(reference);
   };
 
-  return { cancel };
+  return { cancel, isCancelling: mutation.isPending, error: mutation.error?.message ?? null };
 };

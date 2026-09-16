@@ -4,8 +4,8 @@ export const useContactSupport = (orderNumber: string) => {
   const router = useRouter();
 
   const handleContact = () => {
-    // Redirect to messages with pre-filled context
-    router.push(`/messages?context=order&ref=${orderNumber}`);
+    // Redirect to messages-factures-notifications with pre-filled context.
+    router.push(`/mes-messages?context=order&ref=${encodeURIComponent(orderNumber)}`);
   };
 
   return { handleContact };

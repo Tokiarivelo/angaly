@@ -87,6 +87,8 @@ function buildUseCase(overrides: {
     create: jest.fn().mockResolvedValue(sampleAppointment(new Date('2026-09-01T09:00:00.000Z'))),
     updateStatus: jest.fn(),
     listActiveByAtelierAndRange: jest.fn().mockResolvedValue(overrides.conflicting ?? []),
+    findByCustomerId: jest.fn(),
+    findAll: jest.fn(),
   };
 
   return { useCase: new CreateAppointmentUseCase(atelierRepository, customerRepository, appointmentRepository), appointmentRepository };

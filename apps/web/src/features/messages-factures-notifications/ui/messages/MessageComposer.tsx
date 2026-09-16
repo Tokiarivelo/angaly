@@ -26,7 +26,7 @@ export const MessageComposer: React.FC<Props> = ({ activeThreadId }) => {
 
   return (
     <div className="p-4 bg-white border-t border-border">
-      <form onSubmit={handleSend} className="flex gap-2">
+      <form onSubmit={(e) => void handleSend(e)} className="flex gap-2">
         <input
           type="text"
           value={content}

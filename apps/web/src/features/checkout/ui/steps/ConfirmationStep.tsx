@@ -13,13 +13,13 @@ export const ConfirmationStep: React.FC<{ wizard: CheckoutState }> = ({ wizard }
         Merci pour votre commande
       </h1>
       <p className="text-slate mb-8">
-        Votre commande <strong className="text-primary-deep-navy">#{wizard.orderId || 'ANG-2026-9481'}</strong> a bien été enregistrée.
+        Votre commande <strong className="text-primary-deep-navy">#{wizard.order?.orderNumber ?? ''}</strong> a bien été enregistrée.
         Un email de confirmation vous a été envoyé.
       </p>
       
       <div className="flex flex-col sm:flex-row gap-4 w-full sm:w-auto">
         <Link
-          href="/dashboard"
+          href={wizard.order ? `/suivi-commande/${wizard.order.orderNumber}` : '/espace-client'}
           className="px-8 py-3 bg-primary-deep-navy text-white font-medium rounded-full hover:bg-primary-dark transition-colors"
         >
           Voir ma commande

@@ -1,9 +1,18 @@
 import React from 'react';
 import Link from 'next/link';
+import { format } from 'date-fns';
+import { fr } from 'date-fns/locale';
 import { Calendar, Clock, MapPin } from 'lucide-react';
 
+export interface NextAppointmentCardData {
+  id: string;
+  scheduledAt: string;
+  atelierName: string;
+  atelierAddress: string;
+}
+
 interface NextAppointmentCardProps {
-  appointment?: any;
+  appointment?: NextAppointmentCardData | null;
 }
 
 export const NextAppointmentCard: React.FC<NextAppointmentCardProps> = ({ appointment }) => {
@@ -33,14 +42,14 @@ export const NextAppointmentCard: React.FC<NextAppointmentCardProps> = ({ appoin
           <p className="text-sm text-slate mb-1">Date & Heure</p>
           <div className="flex items-center gap-2 text-primary-deep-navy font-medium">
             <Clock size={16} className="text-slate" />
-            24 Septembre 2026, 14:30
+            {format(new Date(appointment.scheduledAt), "d MMMM yyyy, HH:mm", { locale: fr })}
           </div>
         </div>
         <div>
           <p className="text-sm text-slate mb-1">Lieu</p>
           <div className="flex items-start gap-2 text-primary-deep-navy font-medium">
             <MapPin size={16} className="text-slate shrink-0 mt-0.5" />
-            <span>Atelier ANGALY<br/><span className="text-sm font-normal text-slate">Analakely, Antananarivo</span></span>
+            <span>{appointment.atelierName}<br/><span className="text-sm font-normal text-slate">{appointment.atelierAddress}</span></span>
           </div>
         </div>
       </div>

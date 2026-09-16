@@ -6,17 +6,23 @@ import {
   HttpCode,
   HttpStatus,
   Param,
+  Patch,
   Post,
   Query,
   UploadedFile,
+  UseGuards,
   UseInterceptors,
 } from '@nestjs/common';
 import { FileInterceptor } from '@nestjs/platform-express';
-import { ApiBody, ApiConsumes, ApiOperation, ApiResponse, ApiTags } from '@nestjs/swagger';
-import { PaginatedResponse } from '@angaly/types';
+import { ApiBearerAuth, ApiBody, ApiConsumes, ApiOperation, ApiResponse, ApiTags } from '@nestjs/swagger';
+import { PaginatedResponse, Role } from '@angaly/types';
 
+import { Roles } from '../../../auth/presentation/decorators/roles.decorator';
+import { JwtAuthGuard } from '../../../auth/presentation/guards/jwt-auth.guard';
+import { RolesGuard } from '../../../auth/presentation/guards/roles.guard';
 import { ConfirmUploadRequestDto } from '../../application/dtos/confirm-upload-request.dto';
 import { ListMediaQueryDto } from '../../application/dtos/list-media-query.dto';
+import { MediaDetailResponseDto } from '../../application/dtos/media-detail-response.dto';
 import {
   MediaResponseDto,
   PaginatedMediaResponseDto,
@@ -25,11 +31,14 @@ import {
   CreatePresignedUploadRequestDto,
   PresignedUploadResponseDto,
 } from '../../application/dtos/presigned-upload-request.dto';
+import { UpdateMediaRequestDto } from '../../application/dtos/update-media-request.dto';
 import { UploadMediaBufferRequestDto } from '../../application/dtos/upload-media-buffer-request.dto';
 import { ConfirmUploadUseCase } from '../../application/use-cases/confirm-upload.use-case';
 import { CreatePresignedUploadUseCase } from '../../application/use-cases/create-presigned-upload.use-case';
 import { DeleteMediaUseCase } from '../../application/use-cases/delete-media.use-case';
+import { GetMediaDetailUseCase } from '../../application/use-cases/get-media-detail.use-case';
 import { ListMediaUseCase } from '../../application/use-cases/list-media.use-case';
+import { UpdateMediaUseCase } from '../../application/use-cases/update-media.use-case';
 import { UploadMediaBufferUseCase } from '../../application/use-cases/upload-media-buffer.use-case';
 import { MediaMapper } from '../../infrastructure/mappers/media.mapper';
 
@@ -48,6 +57,8 @@ export class MediaController {
     private readonly uploadMediaBufferUseCase: UploadMediaBufferUseCase,
     private readonly listMediaUseCase: ListMediaUseCase,
     private readonly deleteMediaUseCase: DeleteMediaUseCase,
+    private readonly getMediaDetailUseCase: GetMediaDetailUseCase,
+    private readonly updateMediaUseCase: UpdateMediaUseCase,
   ) {}
 
   @Post('presigned-upload')
@@ -122,7 +133,40 @@ export class MediaController {
     };
   }
 
+  /**
+   * `MANAGER`/`ADMIN`-only from here on: these three endpoints exist for
+   * `admin-mediatheque` only (docs/pages/admin-mediatheque.md) — every route
+   * above stays open because it is also used by unauthenticated/CLIENT
+   * upload flows (`demande-sur-mesure`, `personnalisation-creation`) and by
+   * the public `home` page's read of `PAGE_SECTION` media, see
+   * docs/features/media.md "Points d'attention".
+   */
+  @Get(':id')
+  @UseGuards(JwtAuthGuard, RolesGuard)
+  @Roles(Role.MANAGER, Role.ADMIN)
+  @ApiBearerAuth('access-token')
+  @ApiOperation({ summary: 'Get one media with its resolved "Utilisée dans" references' })
+  @ApiResponse({ status: 200, type: MediaDetailResponseDto })
+  async getById(@Param('id') id: string): Promise<MediaDetailResponseDto> {
+    const { media, usedIn } = await this.getMediaDetailUseCase.execute(id);
+    return { ...MediaMapper.toResponseDto(media), usedIn };
+  }
+
+  @Patch(':id')
+  @UseGuards(JwtAuthGuard, RolesGuard)
+  @Roles(Role.MANAGER, Role.ADMIN)
+  @ApiBearerAuth('access-token')
+  @ApiOperation({ summary: 'Edit alt text and/or replace the binary — always the same Media id' })
+  @ApiResponse({ status: 200, type: MediaResponseDto })
+  async update(@Param('id') id: string, @Body() dto: UpdateMediaRequestDto): Promise<MediaResponseDto> {
+    const media = await this.updateMediaUseCase.execute(id, dto);
+    return MediaMapper.toResponseDto(media);
+  }
+
   @Delete(':id')
+  @UseGuards(JwtAuthGuard, RolesGuard)
+  @Roles(Role.MANAGER, Role.ADMIN)
+  @ApiBearerAuth('access-token')
   @HttpCode(HttpStatus.NO_CONTENT)
   @ApiOperation({ summary: 'Delete a media — refused while any polymorphic relation still points to it' })
   @ApiResponse({ status: 204 })

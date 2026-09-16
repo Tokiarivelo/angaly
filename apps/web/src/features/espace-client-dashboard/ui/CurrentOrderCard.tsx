@@ -1,10 +1,26 @@
 import React from 'react';
 import Link from 'next/link';
+import { format } from 'date-fns';
+import { fr } from 'date-fns/locale';
 import { ShoppingBag, CheckCircle2, PackageOpen, Truck } from 'lucide-react';
+import { OrderStatus } from '@angaly/types';
+
+export interface CurrentOrderCardData {
+  id: string; // orderNumber
+  status: OrderStatus;
+  createdAt: string;
+}
 
 interface CurrentOrderCardProps {
-  order?: any;
+  order?: CurrentOrderCardData | null;
 }
+
+const ORDER_STATUS_LABELS: Partial<Record<OrderStatus, string>> = {
+  [OrderStatus.CONFIRMED]: 'Confirmée',
+  [OrderStatus.PAID]: 'Payée',
+  [OrderStatus.IN_PRODUCTION]: 'En préparation',
+  [OrderStatus.READY]: 'Prête',
+};
 
 export const CurrentOrderCard: React.FC<CurrentOrderCardProps> = ({ order }) => {
   if (!order) {
@@ -28,12 +44,12 @@ export const CurrentOrderCard: React.FC<CurrentOrderCardProps> = ({ order }) => 
             <ShoppingBag size={20} />
           </div>
           <div>
-            <h2 className="font-serif text-lg text-primary-deep-navy">Commande #{order.id || 'ANG-1234'}</h2>
-            <p className="text-xs text-slate">Passée le 20 Sept 2026</p>
+            <h2 className="font-serif text-lg text-primary-deep-navy">Commande #{order.id}</h2>
+            <p className="text-xs text-slate">Passée le {format(new Date(order.createdAt), 'd MMM yyyy', { locale: fr })}</p>
           </div>
         </div>
         <span className="px-3 py-1 bg-ivory-warm text-primary-deep-navy text-xs font-medium rounded-full">
-          En cours
+          {ORDER_STATUS_LABELS[order.status] ?? 'En cours'}
         </span>
       </div>
 
@@ -46,18 +62,18 @@ export const CurrentOrderCard: React.FC<CurrentOrderCardProps> = ({ order }) => 
               <span className="text-xs font-medium mt-2 text-primary-deep-navy">Validée</span>
             </div>
             <div className="flex flex-col items-center">
-              <div className="w-6 h-6 rounded-full bg-primary-deep-navy text-white flex items-center justify-center z-10"><PackageOpen size={14}/></div>
+              <div className={`w-6 h-6 rounded-full flex items-center justify-center z-10 ${order.status === OrderStatus.IN_PRODUCTION || order.status === OrderStatus.READY ? 'bg-primary-deep-navy text-white' : 'bg-ivory-warm border-2 border-border text-slate'}`}><PackageOpen size={14}/></div>
               <span className="text-xs font-medium mt-2 text-primary-deep-navy">Préparation</span>
             </div>
-            <div className="flex flex-col items-center opacity-40">
-              <div className="w-6 h-6 rounded-full bg-ivory-warm border-2 border-border text-slate flex items-center justify-center z-10"><Truck size={14}/></div>
+            <div className={`flex flex-col items-center ${order.status === OrderStatus.READY ? '' : 'opacity-40'}`}>
+              <div className={`w-6 h-6 rounded-full flex items-center justify-center z-10 ${order.status === OrderStatus.READY ? 'bg-primary-deep-navy text-white' : 'bg-ivory-warm border-2 border-border text-slate'}`}><Truck size={14}/></div>
               <span className="text-xs font-medium mt-2 text-slate">Expédiée</span>
             </div>
           </div>
         </div>
       </div>
 
-      <Link href="/mes-commandes" className="mt-6 text-sm font-medium text-primary-deep-navy hover:underline underline-offset-4">
+      <Link href={`/suivi-commande/${order.id}`} className="mt-6 text-sm font-medium text-primary-deep-navy hover:underline underline-offset-4">
         Suivre ma commande &rarr;
       </Link>
     </div>

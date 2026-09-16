@@ -1,3 +1,8 @@
+'use client';
+
+import { MessageSenderRole } from '@angaly/types';
+
+import { useConversationThreadQuery } from '../api/messages.api';
 
 export interface Message {
   id: string;
@@ -6,17 +11,20 @@ export interface Message {
   timestamp: string;
 }
 
-const MOCK_MESSAGES: Record<string, Message[]> = {
-  'conv-1': [
-    { id: 'm1', sender: 'client', content: 'Bonjour, où en est ma robe ?', timestamp: '2026-09-24T10:00:00Z' },
-    { id: 'm2', sender: 'atelier', content: 'Bonjour ! Votre pièce sera prête à l\'essayage jeudi prochain.', timestamp: '2026-09-24T14:30:00Z' },
-  ],
-  'conv-2': [
-    { id: 'm3', sender: 'atelier', content: 'Merci pour votre confiance.', timestamp: '2026-08-10T10:00:00Z' },
-  ]
-};
-
+/**
+ * Real endpoint — `GET /api/messages/conversations/:id/messages` (see
+ * docs/features/messages.md). Fetching this also marks unread STAFF-authored
+ * messages as read server-side (the read receipt on opening a thread).
+ */
 export const useConversationThread = (threadId: string | null) => {
-  const messages = threadId ? MOCK_MESSAGES[threadId] || [] : [];
-  return { messages };
+  const query = useConversationThreadQuery(threadId);
+
+  const messages: Message[] = (query.data ?? []).map((message) => ({
+    id: message.id,
+    sender: message.senderRole === MessageSenderRole.STAFF ? 'atelier' : 'client',
+    content: message.content,
+    timestamp: message.createdAt,
+  }));
+
+  return { messages, isLoading: query.isLoading, isError: query.isError };
 };

@@ -1,10 +1,24 @@
 import React from 'react';
 import Link from 'next/link';
 import { Sparkles, Layers } from 'lucide-react';
+import { PatternStatus } from '@angaly/types';
+
+export interface PremiumProjectCardData {
+  id: string;
+  name: string;
+  status: PatternStatus;
+}
 
 interface PremiumProjectCardProps {
-  project?: any;
+  project?: PremiumProjectCardData | null;
 }
+
+const PATTERN_STATUS_LABELS: Partial<Record<PatternStatus, string>> = {
+  [PatternStatus.GENERATING]: 'Génération en cours',
+  [PatternStatus.GENERATED]: 'Patron généré — à valider',
+  [PatternStatus.REVIEW_REQUIRED]: 'En attente de votre validation',
+  [PatternStatus.CORRECTION_REQUIRED]: 'Correction requise',
+};
 
 export const PremiumProjectCard: React.FC<PremiumProjectCardProps> = ({ project }) => {
   if (!project) return null;
@@ -27,15 +41,10 @@ export const PremiumProjectCard: React.FC<PremiumProjectCardProps> = ({ project 
       </div>
 
       <div className="flex-1 relative z-10">
-        <h3 className="font-medium text-primary-deep-navy text-lg mb-2">{project.name || 'Robe de soirée asymétrique'}</h3>
+        <h3 className="font-medium text-primary-deep-navy text-lg mb-2">{project.name}</h3>
         <p className="text-sm text-slate mb-4">
-          Votre projet est en cours de modélisation 3D par notre moteur AI.
+          {PATTERN_STATUS_LABELS[project.status] ?? 'Votre projet est en cours de modélisation par notre moteur AI.'}
         </p>
-        
-        <div className="w-full bg-white rounded-full h-2 mb-2">
-          <div className="bg-[#C5B190] h-2 rounded-full" style={{ width: '60%' }}></div>
-        </div>
-        <p className="text-xs text-slate text-right">Étape 3/5 : Génération</p>
       </div>
 
       <Link href="/pattern-studio" className="mt-6 text-sm font-medium text-primary-deep-navy hover:underline underline-offset-4 relative z-10">

@@ -2,6 +2,7 @@ import { Module } from '@nestjs/common';
 
 import { AuthModule } from '../auth/auth.module';
 import { CustomersModule } from '../customers/customers.module';
+import { NotificationsModule } from '../notifications/notifications.module';
 import { PrismaModule } from '../prisma/prisma.module';
 import { CancelOrderUseCase } from './application/use-cases/cancel-order.use-case';
 import { CreateOrderFromCartUseCase } from './application/use-cases/create-order-from-cart.use-case';
@@ -14,8 +15,9 @@ import { OrdersController } from './presentation/controllers/orders.controller';
 
 // AuthModule: JwtAuthGuard/RolesGuard on every route.
 // CustomersModule: CUSTOMER_REPOSITORY (resolves the caller's Customer.id from the JWT userId).
+// NotificationsModule: CreateNotificationUseCase (emits ORDER_STATUS_CHANGED on create/transition).
 @Module({
-  imports: [PrismaModule, AuthModule, CustomersModule],
+  imports: [PrismaModule, AuthModule, CustomersModule, NotificationsModule],
   controllers: [OrdersController],
   providers: [
     CreateOrderFromCartUseCase,

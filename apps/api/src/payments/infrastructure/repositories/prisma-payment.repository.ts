@@ -53,6 +53,21 @@ export class PrismaPaymentRepository implements IPaymentRepository {
     return records.map(r => this.mapToDomain(r));
   }
 
+  async findByCustomerId(customerId: string): Promise<Payment[]> {
+    const records = await this.prisma.payment.findMany({
+      where: { order: { customerId } },
+      orderBy: { createdAt: 'desc' },
+    });
+    return records.map((r) => this.mapToDomain(r));
+  }
+
+  async findAll(): Promise<Payment[]> {
+    const records = await this.prisma.payment.findMany({
+      orderBy: { createdAt: 'desc' },
+    });
+    return records.map((r) => this.mapToDomain(r));
+  }
+
   async update(payment: Payment): Promise<void> {
     await this.prisma.payment.update({
       where: { id: payment.id },

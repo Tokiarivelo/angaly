@@ -2,6 +2,7 @@ import { ApiProperty } from '@nestjs/swagger';
 import { Type } from 'class-transformer';
 import { IsIn, IsInt, IsOptional, IsString, Max, Min } from 'class-validator';
 
+import { MEDIA_SORT_OPTIONS, MediaSortOption } from '../../domain/repositories/media.repository';
 import { MEDIA_ENTITY_TYPES, MediaEntityType } from '../../domain/value-objects/media-entity-ref.vo';
 
 export class ListMediaQueryDto {
@@ -19,6 +20,16 @@ export class ListMediaQueryDto {
   @IsOptional()
   @IsString()
   entityId?: string;
+
+  @ApiProperty({ required: false, description: 'Matches against objectKey/altText (admin-mediatheque search bar).' })
+  @IsOptional()
+  @IsString()
+  search?: string;
+
+  @ApiProperty({ required: false, enum: MEDIA_SORT_OPTIONS, default: 'recent' })
+  @IsOptional()
+  @IsIn(MEDIA_SORT_OPTIONS)
+  sortBy?: MediaSortOption;
 
   @ApiProperty({ required: false, default: 1, minimum: 1 })
   @IsOptional()

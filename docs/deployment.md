@@ -118,6 +118,10 @@ API_INTERNAL_URL (interne, ex. http://api:3003/api — voir "NextAuth et le reve
 NEXT_PUBLIC_API_URL, NEXT_PUBLIC_WS_URL, API_CORS_ORIGINS
 MINIO_ROOT_USER, MINIO_ROOT_PASSWORD, MINIO_PUBLIC_URL
 AI_SERVICE_URL (interne, ex. http://ai-service:8001)
+SMTP_HOST, SMTP_PORT, SMTP_SECURE, SMTP_USER, SMTP_PASSWORD, SMTP_FROM
+  (canal email du module `notifications` — vide = notifications in-app seules,
+  aucun email envoyé ; voir docs/environment-variables.md §7 et
+  docs/features/notifications.md)
 ```
 
 ### NextAuth et le reverse proxy
