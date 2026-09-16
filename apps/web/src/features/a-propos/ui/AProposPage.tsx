@@ -1,3 +1,5 @@
+'use client';
+
 import { useAProposContent } from '../hooks/useAProposContent';
 import { AtelierGallerySection } from './AtelierGallerySection';
 import { FondatriceSection } from './FondatriceSection';

@@ -1,5 +1,6 @@
 import { setupServer } from 'msw/node';
 
+import { aProposHandlers } from './handlers/a-propos.handlers';
 import { authentificationHandlers } from './handlers/authentification.handlers';
 import { categoriesHandlers } from './handlers/categories.handlers';
 import { collectionDetailHandlers } from './handlers/collection-detail.handlers';
@@ -17,6 +18,7 @@ import { pretAPorterCatalogueHandlers } from './handlers/pret-a-porter-catalogue
 /** Registered here per feature as each one starts calling a real/mocked API — see docs/testing.md. */
 export const server = setupServer(
   ...homeHandlers,
+  ...aProposHandlers,
   ...laUneHandlers,
   ...creationDetailHandlers,
   ...collectionDetailHandlers,

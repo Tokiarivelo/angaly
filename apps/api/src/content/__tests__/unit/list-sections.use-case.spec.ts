@@ -6,6 +6,7 @@ function buildRepository(rows: PageSectionEntity[]): jest.Mocked<IPageSectionRep
   return {
     listAll: jest.fn().mockResolvedValue(rows),
     findAllLocales: jest.fn(),
+      findPublished: jest.fn(),
     findById: jest.fn(),
     findByKey: jest.fn(),
     saveWithSnapshot: jest.fn(),

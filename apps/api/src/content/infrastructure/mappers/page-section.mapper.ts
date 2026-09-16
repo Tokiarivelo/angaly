@@ -3,6 +3,7 @@ import type { ContentStatus as SharedContentStatus, Locale as SharedLocale } fro
 
 import { PageSectionVersionResponseDto } from '../../application/dtos/page-section-version-response.dto';
 import { PageSectionResponseDto } from '../../application/dtos/page-section-response.dto';
+import { PublicPageSectionResponseDto } from '../../application/dtos/public-page-section-response.dto';
 import { PageSectionVersionEntity } from '../../domain/entities/page-section-version.entity';
 import { PageSectionEntity } from '../../domain/entities/page-section.entity';
 
@@ -43,6 +44,23 @@ export class PageSectionMapper {
     dto.status = entity.status as SharedContentStatus;
     dto.updatedById = entity.updatedById;
     dto.createdAt = entity.createdAt.toISOString();
+    dto.updatedAt = entity.updatedAt.toISOString();
+    return dto;
+  }
+
+  /** Public (unauthenticated) shape — no `status`/`updatedById`, see PublicPageSectionResponseDto. */
+  static toPublicResponseDto(entity: PageSectionEntity): PublicPageSectionResponseDto {
+    const dto = new PublicPageSectionResponseDto();
+    dto.page = entity.page;
+    dto.sectionKey = entity.sectionKey;
+    dto.locale = entity.locale as SharedLocale;
+    dto.titleText = entity.titleText;
+    dto.subtitleText = entity.subtitleText;
+    dto.bodyText = entity.bodyText;
+    dto.ctaPrimaryLabel = entity.ctaPrimaryLabel;
+    dto.ctaSecondaryLabel = entity.ctaSecondaryLabel;
+    dto.dataJson = entity.dataJson;
+    dto.mediaId = entity.mediaId;
     dto.updatedAt = entity.updatedAt.toISOString();
     return dto;
   }

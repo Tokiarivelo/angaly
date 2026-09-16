@@ -40,7 +40,7 @@ apps/web/src/features/home/
     useHomeContent.ts         → lit les PageSection (page="accueil") via react-query
     useTestimonials.ts        → état du carrousel (index courant, autoplay) + données
   api/
-    home.api.ts                → useHomeContentQuery, useTestimonialsQuery
+    home.api.ts                → useHomeSectionsContentQuery, useHomeSectionsMediaQuery, useTestimonialsQuery, ...
   consts/
     queryKeys.ts
   __tests__/
@@ -64,7 +64,7 @@ propre à sa bande navy pleine largeur), seule la logique est partagée.
 
 | Endpoint | Module | Usage |
 | --- | --- | --- |
-| `GET /api/content/sections?page=accueil` | `content` | **Non implémenté (Phase 6)** — copie codée en dur dans `useHomeContent.ts` en attendant |
+| `GET /api/content/public/accueil` | `content` | **Réel** (câblé session 2026-09-16, suite) — `PUBLISHED`-only, sans auth ; `useHomeContent.ts` merge les sections reçues sur `DEFAULT_HOME_CONTENT` par `sectionKey`, avec repli sur le littéral codé en dur pour toute section absente/encore `DRAFT` |
 | `GET /api/testimonials?featured=true` | `reviews` | **Non implémenté (Phase 2)** — mocké via MSW (`src/lib/msw/handlers/home.handlers.ts`) |
 | `GET /api/creations?isFeatured=true&limit=6` | `creations` | Réel — alimente la section "La Une" (le nom du paramètre est `isFeatured`, pas `featured` comme initialement supposé ici avant l'implémentation du module) |
 | `GET /api/ateliers` | `ateliers` | Réel — alimente "Nos Ateliers" (3 premiers), **ajouté à l'implémentation** : non listé ici à l'origine (fiche écrite avant le module `ateliers`), câblé en vrai plutôt que de laisser un teaser statique |
@@ -78,10 +78,18 @@ relation), `Category`.
 
 ## Points d'attention
 
-- Le contenu de cette page est piloté par `PageSection`/Phase 6 — en Phase 1, avant que le
-  module `content` existe, utiliser des valeurs par défaut codées en dur dans le hook
-  `useHomeContent.ts` avec un TODO explicite pointant vers cette fiche, puis migrer vers
-  l'API `content` une fois la Phase 6 traitée (voir `docs/phases/phase-6-admin-cms.md`).
+- **Le contenu de cette page est réellement piloté par `PageSection`** depuis la session
+  2026-09-16 (suite) : `useHomeContent.ts` lit `GET /api/content/public/accueil` (voir
+  `docs/features/content.md` "Endpoint public") et fusionne les sections `PUBLISHED` reçues
+  sur `DEFAULT_HOME_CONTENT`, par `sectionKey` — `hero`, `maison`, `univers-mariage`,
+  `univers-costumes`, `univers-soiree`, `univers-sur-mesure`, `pattern-studio`. Une section
+  absente du CMS (jamais éditée, ou seulement `DRAFT`) retombe entièrement sur le littéral
+  codé en dur ; à l'intérieur d'une section présente, un champ individuel `null`/absent
+  retombe aussi sur son propre champ par défaut. Ce que le hook ne lit **pas** encore depuis
+  le CMS : les images (`mediaId`) — elles restent résolues par la requête `/media` existante
+  (heuristique par texte alternatif) — et les sections `surMesure`/`ateliersTeaser`/
+  `journalTeaser`/`newsletter`, qui n'ont pas de ligne `PageSection` seedée pour l'instant et
+  restent donc des littéraux codés en dur purs (pas de régression, juste hors seed actuel).
 - Image hero en LCP : utiliser `next/image` avec `priority`, format servi depuis MinIO.
 - CTA "Prendre rendez-vous" du header doit renvoyer vers `prendre-rendez-vous` (Phase 2) —
   lien câblé dès Phase 1 même si la page cible n'existe pas encore (feature flag ou route
@@ -102,11 +110,12 @@ relation), `Category`.
 - [x] `<title>`/meta description définis (spec §70)
 - [x] Sélecteur de langue FR/MG fonctionnel dans le footer (Zustand persisté — ne traduit pas
       encore le contenu, voir `docs/pages/navigation-mobile.md`)
-- [x] Tests : `useHomeContent.test.ts`, `NewsletterForm.test.tsx` (home), `useNewsletterForm.test.ts`
+- [x] Tests : `useHomeContent.test.ts` (couvre désormais aussi le merge CMS : section publiée
+      utilisée, section absente/`DRAFT` en repli sur le défaut, mapping des `univers-*` vers
+      `categories.items`), `NewsletterForm.test.tsx` (home), `useNewsletterForm.test.ts`
       (now in `apps/web/src/components/newsletter/__tests__/`, shared with `journal-liste`),
       `TestimonialsCarousel.test.tsx`, `useFeaturedCreations.test.ts`, `useAteliersTeaser.test.ts`,
-      `useJournalTeaser.test.ts`, `useTestimonials.test.ts`, `HomePage.test.tsx` — 24 tests,
-      99.8%/90%/100%/99.8% de couverture (stmts/branches/fonctions/lignes)
+      `useJournalTeaser.test.ts`, `useTestimonials.test.ts`, `HomePage.test.tsx`
 - [x] `docs/checklist-implementation.md` et `docs/mockup-reference.md` mis à jour à ✅
 
 ## Notes d'implémentation

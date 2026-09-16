@@ -1,6 +1,7 @@
 # Feature — `content`
 
-**Statut : ✅ Fait** (session 2026-09-16). Phase 6 — Admin (back-office).
+**Statut : ✅ Fait** (session 2026-09-16, complétée le même jour avec l'endpoint public).
+Phase 6 — Admin (back-office).
 
 ## Objet
 
@@ -11,13 +12,13 @@ images est portée par `media`).
 
 ## Écarts assumés par rapport au plan initial de cette fiche
 
-- **Pas d'endpoint public de lecture dans cette passe** : la fiche prévoyait à terme un
-  `GET /api/content/public/:page` pour que les pages Phase 1 lisent leur contenu publié.
-  L'étape 4 de `docs/phases/phase-6-admin-cms.md` ("brancher les pages publiques") est
-  explicitement hors périmètre de cette session ("migration progressive, pas un big-bang") —
-  toutes les routes de ce module sont donc `MANAGER`/`ADMIN`-only, y compris les lectures.
-  L'endpoint public reste à ajouter par une session future qui migrera réellement une
-  première page.
+- **Endpoint public de lecture ajouté dans une session suivante** (2026-09-16, suite) : la
+  fiche prévoyait à terme un `GET /api/content/public/:page`. Il existe désormais —
+  `GET /content/public/:page` (voir "Endpoint public" ci-dessous) — et `home`/`a-propos` (2
+  des 14 pages Phase 1) le consomment. Les 12 autres pages de la Phase 1 restent sur leurs
+  littéraux codés en dur ; l'étape 4 de `docs/phases/phase-6-admin-cms.md` ("brancher les
+  pages publiques") reste donc en cours, pas terminée — "migration progressive, pas un
+  big-bang", une page à la fois.
 - **Statut à 2 valeurs, pas 3** : `stitch-prompts/31-*.md` décrit trois pastilles (Publié /
   Brouillon / Modifications non publiées) mais `PageSection.status` (schema.prisma) est un
   simple `ContentStatus` (`DRAFT`/`PUBLISHED`) par ligne locale — pas de copie séparée
@@ -46,7 +47,8 @@ domain/
 application/
   dtos/
     page-section-response.dto.ts, page-section-group-response.dto.ts,
-    page-section-version-response.dto.ts, save-section-draft.dto.ts, publish-section.dto.ts
+    page-section-version-response.dto.ts, save-section-draft.dto.ts, publish-section.dto.ts,
+    public-page-section-response.dto.ts, list-published-sections-query.dto.ts
   use-cases/
     list-sections.use-case.ts        → groupe par page puis par sectionKey (toutes locales confondues)
     get-section.use-case.ts          → toutes locales existantes d'une section
@@ -54,18 +56,23 @@ application/
     publish-section.use-case.ts      → status → PUBLISHED sans toucher au contenu, 404 si aucun brouillon n'existe encore
     list-section-versions.use-case.ts
     restore-section-version.use-case.ts → 404 si la version n'appartient pas à la section
+    list-published-sections.use-case.ts → PUBLISHED-only, seul use-case public (pas de guard)
 infrastructure/
-  repositories/prisma-page-section.repository.ts → saveWithSnapshot()/restoreVersion() en Prisma $transaction
-  mappers/page-section.mapper.ts
+  repositories/prisma-page-section.repository.ts → saveWithSnapshot()/restoreVersion() en Prisma $transaction,
+                                                     findPublished() (status: PUBLISHED, +locale optionnel)
+  mappers/page-section.mapper.ts → toPublicResponseDto() : pas de status/updatedById dans la réponse publique
 presentation/
-  controllers/page-sections.controller.ts    → @Controller('content/sections'), JwtAuthGuard+RolesGuard+@Roles(MANAGER, ADMIN)
+  controllers/page-sections.controller.ts        → @Controller('content/sections'), JwtAuthGuard+RolesGuard+@Roles(MANAGER, ADMIN)
+  controllers/public-page-sections.controller.ts → @Controller('content/public'), AUCUN guard — voir "Endpoint public"
 content.module.ts                             → importe AuthModule (guards), PrismaModule
 __tests__/
   unit/page-section.entity.spec.ts, page-section.mapper.spec.ts, list-sections.use-case.spec.ts,
        get-section.use-case.spec.ts, save-section-draft.use-case.spec.ts, publish-section.use-case.spec.ts,
        list-section-versions.use-case.spec.ts, restore-section-version.use-case.spec.ts,
-       prisma-page-section.repository.spec.ts
-  integration/page-sections.controller.spec.ts  → 200/401/403/400/201, snapshot-before-write couvert au niveau repository
+       list-published-sections.use-case.spec.ts, prisma-page-section.repository.spec.ts
+  integration/page-sections.controller.spec.ts         → 200/401/403/400/201, snapshot-before-write couvert au niveau repository
+  integration/public-page-sections.controller.spec.ts  → 200 sans Authorization, filtre ?locale=, 400 sur locale invalide,
+                                                           réponse ne contient jamais status/updatedById
 ```
 
 ## Modèles Prisma
@@ -104,6 +111,37 @@ __tests__/
 > matcherait `GET /content/sections/{id}/versions` avec le handler `get-section`
 > (`page={id}`, `sectionKey="versions"`) au lieu du bon.
 
+## Endpoint public
+
+| Méthode | Route | Use-case | Auth |
+| --- | --- | --- | --- |
+| `GET` | `/api/content/public/:page` | `list-published-sections` | **aucune** (public) |
+
+- **Contrôleur dédié et séparé** (`PublicPageSectionsController`, `content/public`) — jamais
+  ajouté à `PageSectionsController` (`content/sections`), qui reste entièrement
+  `MANAGER`/`ADMIN`-only au niveau classe. Séparer les deux contrôleurs rend impossible
+  d'oublier un `@Roles()` sur une route censée rester privée.
+- **`PUBLISHED`-only, garanti au niveau repository** : `list-published-sections.use-case.ts`
+  délègue à `IPageSectionRepository.findPublished(page, locale?)`, une méthode dédiée
+  (`where: { page, status: 'PUBLISHED', ...locale }`) — jamais `listAll`/`findAllLocales`
+  (utilisées par `list-sections`/`get-section`, qui renvoient aussi les `DRAFT`). C'est le
+  point de sécurité critique de cet endpoint, couvert par des tests dédiés à 3 niveaux
+  (repository, use-case, controller integration) qui vérifient explicitement qu'aucune ligne
+  `DRAFT` ne peut en sortir.
+- **Filtrage par locale** : `?locale=FR|MG` optionnel (`ListPublishedSectionsQueryDto`,
+  validé par `class-validator`, 400 si invalide — même pattern que
+  `PublishSectionDto`/`SaveSectionDraftDto`). Sans le paramètre, l'endpoint renvoie **toutes**
+  les locales publiées pour la page (comportement par défaut) ; avec, il filtre à une seule
+  locale. Pas de résolution automatique via `@CurrentLocale()`/`i18n` (qui retomberait
+  toujours sur `FR` par défaut et masquerait silencieusement les lignes `MG`) — le choix de
+  filtrer ou non reste explicite côté appelant. Les deux pages consommatrices actuelles
+  (`home`, `a-propos`) appellent sans `?locale=` et sélectionnent `FR` côté hook, le site
+  n'ayant pour l'instant aucune bascule de langue (voir `docs/pages/home.md`).
+- **Réponse volontairement plus étroite que `PageSectionResponseDto`** :
+  `PublicPageSectionResponseDto` omet `status` (toujours `PUBLISHED` par construction ici) et
+  `updatedById` (identifiant interne d'un compte staff, aucune raison de le rendre public) —
+  voir `PageSectionMapper.toPublicResponseDto()`.
+
 ## Points d'intégration
 
 - **`media`** : `PageSection.mediaId` référence un objet déjà uploadé via la médiathèque
@@ -112,8 +150,10 @@ __tests__/
 - **`users`**/**`auth`** : réutilise directement `JwtAuthGuard`/`RolesGuard`/`@Roles()` depuis
   `auth/presentation/...` (voir docs/features/users.md pour pourquoi il n'y a pas de nouvelle
   indirection `shared/`).
-- **Pages consommatrices** : `admin-gestion-contenu` (édition). Aucune page publique ne migre
-  encore vers ce module (voir écarts ci-dessus).
+- **Pages consommatrices** : `admin-gestion-contenu` (édition, endpoints `content/sections`).
+  `home` et `a-propos` (lecture publique, endpoint `content/public/:page`) — 2 pages sur les
+  14 de la Phase 1, voir `docs/pages/home.md`/`docs/pages/a-propos.md` et l'écart ci-dessus.
+  Les 12 autres pages publiques restent à migrer.
 
 ## Points d'attention
 
@@ -133,3 +173,8 @@ __tests__/
 - [x] Guard RBAC testé : 403 pour `CLIENT`/`COUTURIERE`, 401 sans token, 200 pour `MANAGER`
 - [x] `pnpm --filter @angaly/api test` et `typecheck` verts pour ce module
 - [x] `docs/checklist-implementation.md` : `content` passé à ✅
+- [x] `GET /content/public/:page` testé pour ne jamais renvoyer de section `DRAFT` (repository,
+      use-case, controller integration) et pour n'exiger aucune `Authorization`
+- [x] `home`/`a-propos` lisent réellement `PageSection` côté public (react-query,
+      `useHomeContent`/`useAProposContent`), avec repli testé sur les littéraux codés en dur
+      pour toute section absente/`DRAFT`
