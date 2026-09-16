@@ -38,8 +38,9 @@ apps/web/src/features/journal-liste/
   hooks/
     useJournalArticles.ts                → dérive vedette/populaires/grille filtrée+paginée depuis un seul fetch
     useCategoryFilter.ts                  → état de la pilule active (slug | null)
+    useJournalListeContent.ts              → header réel (titre + sous-titre), GET /content/public/journal-liste, repli codé en dur
   api/
-    journal-liste.api.ts                   → useJournalArticlesQuery (GET /api/blog-posts?limit=50)
+    journal-liste.api.ts                   → useJournalArticlesQuery (GET /api/blog-posts?limit=50), useJournalListeSectionsContentQuery
   consts/
     journal-categories.const.ts             → 7 pilules + ARTICLES_PAGE_SIZE
     queryKeys.ts
@@ -47,9 +48,9 @@ apps/web/src/features/journal-liste/
     formatArticleDate.ts                     → date française longue (fonction pure)
   __tests__/
     formatArticleDate.test.ts, useCategoryFilter.test.ts, useJournalArticles.test.ts,
-    CategoryFilterPills.test.tsx, FeaturedArticleCard.test.tsx, ArticleCard.test.tsx,
-    ArticlesGrid.test.tsx, PopularArticlesWidget.test.tsx, NewsletterSignupCard.test.tsx,
-    LoadMoreButton.test.tsx, JournalListePage.test.tsx
+    useJournalListeContent.test.ts, CategoryFilterPills.test.tsx, FeaturedArticleCard.test.tsx,
+    ArticleCard.test.tsx, ArticlesGrid.test.tsx, PopularArticlesWidget.test.tsx,
+    NewsletterSignupCard.test.tsx, LoadMoreButton.test.tsx, JournalListePage.test.tsx
   index.ts
 ```
 
@@ -69,17 +70,28 @@ initial de cette fiche (« ne pas dupliquer la logique de validation/mutation »
 | Endpoint | Module | Usage |
 | --- | --- | --- |
 | `GET /api/blog-posts?limit=50` | `blog` | Tous les articles publiés (triés `publishedAt desc` côté serveur), un seul fetch |
+| `GET /api/content/public/journal-liste` | `content` | Titre + sous-titre du header, `PUBLISHED`-only |
 
 ## Modèles Prisma touchés
 
 `BlogPost`, `Category` (`kind = BLOG`), `Media` (via `BlogPostMedia`), `User` (auteur —
-email seulement, voir Points d'attention). Le seed a été enrichi de 6 nouvelles catégories
+email seulement, voir Points d'attention), `PageSection` (`page="journal-liste"`,
+`sectionKey="header"` — titre + sous-titre). Le seed a été enrichi de 6 nouvelles catégories
 BLOG (`mariage-a-madagascar`, `conseils-costume`, `tendances`, `coulisses-atelier`,
 `entretien-vetements`, `haute-couture`) et de 5 vrais articles avec photo, pour que la page
 ait du contenu réel à afficher (`GET /api/blog-posts` renvoyait 0 résultat avant ce seed).
 
 ## Points d'attention
 
+- **Header (titre + sous-titre) migré vers `PageSection` CMS** (session 2026-09-16,
+  suite — onzième tranche de `docs/phases/phase-6-admin-cms.md` item 4, après
+  `home`/`a-propos`/`la-une`/`nos-creations-galerie`/`creation-detail`/`contact`/
+  `collections-liste`/`collection-detail`/`nos-ateliers-liste`/`atelier-detail`) :
+  `JournalHeader` lit `GET /content/public/journal-liste` via `useJournalListeContent`,
+  repli sur les littéraux codés en dur si la section `header` est absente/`DRAFT` — voir
+  `docs/features/content.md`. Le reste de la page (pilules, vedette, grille, widgets,
+  newsletter) reste dérivé de données réelles ou codé en dur hors périmètre de cette
+  tranche.
 - **Fidélité vérifiée via `agy`/StitchMCP `get_screen`** (écran réel
   `203057aedfaf46e8a086ba9b0c954c79`), pas seulement `stitch-prompts/22-journal-liste.md`.
 - **Filtrage catégorie 100 % client-side** : `GET /api/blog-posts` filtre par `categoryId`
@@ -119,5 +131,5 @@ ait du contenu réel à afficher (`GET /api/blog-posts` renvoyait 0 résultat av
 - [x] Widget « Populaires » + carte newsletter rendus (données dérivées acceptables en Phase 1, voir Points d'attention)
 - [x] Chargement progressif (« Voir plus d'articles ») sans rechargement de page
 - [x] `<title>`/meta description définis (spec §70)
-- [x] Tests : 11 fichiers, 35 tests (100 % de couverture sur la feature)
+- [x] Tests : 12 fichiers, 38 tests (100 % de couverture sur la feature)
 - [x] `docs/checklist-implementation.md` et `docs/mockup-reference.md` mis à jour à ✅

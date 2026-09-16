@@ -1388,6 +1388,15 @@ async function main() {
       dataJson: { precisionTileLabel: "L'art de la précision" },
       status: ContentStatus.PUBLISHED,
     },
+    // --- Page Sections (Journal Liste) --------------------------------------------
+    {
+      page: 'journal-liste',
+      sectionKey: 'header',
+      locale: Locale.FR,
+      titleText: 'Le Journal Angaly',
+      subtitleText: "Mariage, mode, coulisses d'atelier et conseils d'entretien.",
+      status: ContentStatus.PUBLISHED,
+    },
   ];
 
   const createdPageSections = new Map<string, { id: string }>();

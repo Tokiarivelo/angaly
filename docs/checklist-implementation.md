@@ -72,7 +72,9 @@ phase n'a pas été traitée en session dédiée (voir `.cursor/rules/006-phase-
 - [x] ✅ **contact** — Page de contact. Texte du header (titre/sous-titre) lu depuis
       `PageSection` (`content`, Phase 6) depuis la session 2026-09-16 (suite), avec repli sur
       les littéraux codés en dur — voir `docs/features/content.md`
-- [x] ✅ **journal-liste** — Blog/Journal, liste
+- [x] ✅ **journal-liste** — Blog/Journal, liste. Texte du header (titre/sous-titre) lu
+      depuis `PageSection` (`content`, Phase 6) depuis la session 2026-09-16 (suite), avec
+      repli sur les littéraux codés en dur — voir `docs/features/content.md`
 - [x] ✅ **journal-article** — Article de blog
 - [x] ✅ **page-404** — Page 404
 - [x] ✅ **navigation-mobile** — Drawer, bottom bar, recherche, WhatsApp FAB
@@ -246,8 +248,8 @@ phase n'a pas été traitée en session dédiée (voir `.cursor/rules/006-phase-
       (session 2026-09-16). Endpoint public `GET /content/public/:page` (`PUBLISHED`-only,
       sans auth) ajouté en session 2026-09-16 (suite), consommé par
       `home`/`a-propos`/`la-une`/`nos-creations-galerie`/`creation-detail`/`contact`/
-      `collections-liste`/`collection-detail`/`nos-ateliers-liste`/`atelier-detail`
-      (10/14 pages Phase 1) — voir `docs/features/content.md`
+      `collections-liste`/`collection-detail`/`nos-ateliers-liste`/`atelier-detail`/
+      `journal-liste` (11/14 pages Phase 1) — voir `docs/features/content.md`
 
 > Périmètre volontairement limité aux 2 pages couvertes par une maquette Stitch
 > (`stitch-prompts/31-*.md`). Le reste du back-office listé au spec §60-66
@@ -262,8 +264,9 @@ phase n'a pas été traitée en session dédiée (voir `.cursor/rules/006-phase-
 > l'étape 4 de `docs/phases/phase-6-admin-cms.md` (migrer les pages publiques vers
 > `PageSection`) a démarré en session 2026-09-16 (suite) —
 > `home`/`a-propos`/`la-une`/`nos-creations-galerie`/`creation-detail`/`contact`/
-> `collections-liste`/`collection-detail`/`nos-ateliers-liste`/`atelier-detail` migrées
-> (10 des 14 pages Phase 1), les 4 autres restent **non traitées** ; le panneau "Utilisée
+> `collections-liste`/`collection-detail`/`nos-ateliers-liste`/`atelier-detail`/
+> `journal-liste` migrées
+> (11 des 14 pages Phase 1), les 3 autres restent **non traitées** ; le panneau "Utilisée
 > dans" de `admin-mediatheque` est limité par un bug pré-existant non corrigé (relations
 > `Media` jamais connectées par `confirm-upload`, voir `docs/features/media.md`).
 

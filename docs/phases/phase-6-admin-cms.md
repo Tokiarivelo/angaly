@@ -5,15 +5,15 @@
 **L'item 4 est en cours** (démarré session 2026-09-16, suite) : `GET /content/public/:page`
 (public, `PUBLISHED`-only) ajouté, et les pages `home`/`a-propos`/`la-une`/
 `nos-creations-galerie`/`creation-detail`/`contact`/`collections-liste`/`collection-detail`/
-`nos-ateliers-liste`/`atelier-detail` — 10 pages sur les 14 de la Phase 1 — lisent désormais
-leur texte depuis `PageSection` avec repli sur les littéraux codés en dur pour toute section
-pas encore éditée dans le CMS (`la-une`, `nos-creations-galerie`, `creation-detail`,
-`contact`, `collections-liste`, `collection-detail`, `nos-ateliers-liste` et `atelier-detail`
-ajoutées dans des sessions ultérieures, voir
+`nos-ateliers-liste`/`atelier-detail`/`journal-liste` — 11 pages sur les 14 de la Phase 1 —
+lisent désormais leur texte depuis `PageSection` avec repli sur les littéraux codés en dur
+pour toute section pas encore éditée dans le CMS (`la-une`, `nos-creations-galerie`,
+`creation-detail`, `contact`, `collections-liste`, `collection-detail`, `nos-ateliers-liste`,
+`atelier-detail` et `journal-liste` ajoutées dans des sessions ultérieures, voir
 `docs/pages/la-une.md`/`docs/pages/nos-creations-galerie.md`/`docs/pages/creation-detail.md`/
 `docs/pages/contact.md`/`docs/pages/collections-liste.md`/`docs/pages/collection-detail.md`/
-`docs/pages/nos-ateliers-liste.md`/`docs/pages/atelier-detail.md`). **Les 4 autres pages de
-la Phase 1 restent non migrées** (`journal-liste`, `journal-article`, `page-404`,
+`docs/pages/nos-ateliers-liste.md`/`docs/pages/atelier-detail.md`/`docs/pages/journal-liste.md`).
+**Les 3 autres pages de la Phase 1 restent non migrées** (`journal-article`, `page-404`,
 `navigation-mobile`) — migration progressive, une session à la fois, comme annoncé dès
 l'origine de cet item.
 Dépend de : Phase 1 (`creations`, `collections`, `ateliers`, `blog`, `media`) — le CMS édite
@@ -83,8 +83,11 @@ projet ("manage all texts and images in the website").
    2026-09-16, suite) : `atelier-detail` (10/14 pages Phase 1) — tagline du héro + libellé
    de la tuile « L'art de la précision » uniquement, le `<h1>` reste `atelier.name` (donnée
    réelle) et la galerie ambiance/le bloc SEO local restent codés en dur, voir
-   `docs/pages/atelier-detail.md`. Les 4 autres pages restent à migrer, une session à la
-   fois.
+   `docs/pages/atelier-detail.md`. **Dixième tranche faite** (session 2026-09-16, suite) :
+   `journal-liste` (11/14 pages Phase 1) — header (titre/sous-titre) uniquement, le reste
+   de la page (pilules, vedette, grille, widgets, newsletter) reste dérivé de données
+   réelles ou codé en dur, voir `docs/pages/journal-liste.md`. Les 3 autres pages restent à
+   migrer, une session à la fois.
 
 ## Points d'attention
 
@@ -105,15 +108,16 @@ projet ("manage all texts and images in the website").
   `GET /content/public/accueil` (`PUBLISHED`-only) que `useHomeContent` consomme via
   react-query ; `a-propos` migré dans le même passage (`useAProposContent`,
   `GET /content/public/a-propos`) ; `la-une`, `nos-creations-galerie`, `creation-detail`,
-  `contact`, `collections-liste`, `collection-detail`, `nos-ateliers-liste` et
-  `atelier-detail` migrées dans des sessions ultérieures (`useLaUneContent`/
+  `contact`, `collections-liste`, `collection-detail`, `nos-ateliers-liste`,
+  `atelier-detail` et `journal-liste` migrées dans des sessions ultérieures (`useLaUneContent`/
   `GET /content/public/la-une`, `useGalleryContent`/`GET /content/public/nos-creations-galerie`,
   `useCreationDetailContent`/`GET /content/public/creation-detail`, `useContactContent`/
   `GET /content/public/contact`, `useCollectionsContent`/`GET /content/public/collections-liste`,
   `useCollectionDetailContent`/`GET /content/public/collection-detail`,
   `useAteliersListeContent`/`GET /content/public/nos-ateliers-liste`,
-  `useAtelierDetailContent`/`GET /content/public/atelier-detail`). **Seulement 10 pages sur
-  les 14 de la Phase 1** — les 4 autres restent sur leurs littéraux codés en dur (item 4,
+  `useAtelierDetailContent`/`GET /content/public/atelier-detail`,
+  `useJournalListeContent`/`GET /content/public/journal-liste`). **Seulement 11 pages sur
+  les 14 de la Phase 1** — les 3 autres restent sur leurs littéraux codés en dur (item 4,
   migration progressive non finie, voir statut en tête de fiche)
 - ⚠️ Un compte `ADMIN` peut uploader une image dans la médiathèque et l'utiliser sur une fiche
   `creation` existante — l'upload et le lien direct (`entityType`/`entityId`) fonctionnent,
@@ -124,10 +128,10 @@ projet ("manage all texts and images in the website").
 - [x] `docs/checklist-implementation.md` : les 2 pages + 2 modules passés à ✅
 - ⬜ Toutes les phases (0 à 6) ne sont **pas encore** toutes à ✅ dans
   `docs/checklist-implementation.md` au sens strict de la phase — l'item 4 de l'"Ordre
-  suggéré" (migration des pages publiques) est **en cours** (10/14 pages Phase 1 migrées :
+  suggéré" (migration des pages publiques) est **en cours** (11/14 pages Phase 1 migrées :
   `home`, `a-propos`, `la-une`, `nos-creations-galerie`, `creation-detail`, `contact`,
-  `collections-liste`, `collection-detail`, `nos-ateliers-liste`, `atelier-detail`), pas
-  terminé
+  `collections-liste`, `collection-detail`, `nos-ateliers-liste`, `atelier-detail`,
+  `journal-liste`), pas terminé
 
 ## Phase suivante
 
