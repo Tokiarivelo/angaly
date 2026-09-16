@@ -1,19 +1,26 @@
 # Phase 3 — Production
 
-**Statut : 🟡 Presque complète (5/6 pages câblées).** Dépend de : Phase 2 (`auth`, `customers`,
-`products`, `appointments`, `quotes`). Modules backend `orders`/`payments`/`notifications` : ✅.
-**Mise à jour 2026-09-16** : l'étape 4 de l'"Ordre suggéré" (câblage des 6 pages aux API réelles)
-est traitée — `panier`, `checkout`, `espace-client-dashboard`, `mes-rendez-vous`,
+**Statut : ✅ Complète (6/6 pages câblées).** Dépend de : Phase 2 (`auth`, `customers`,
+`products`, `appointments`, `quotes`). Modules backend `orders`/`payments`/`notifications`/
+`messages` : ✅.
+**Mise à jour 2026-09-16 (session 1)** : l'étape 4 de l'"Ordre suggéré" (câblage des 6 pages aux
+API réelles) est traitée — `panier`, `checkout`, `espace-client-dashboard`, `mes-rendez-vous`,
 `suivi-commande` sont désormais ✅ (câblage API réel, tests passants). Deux nouveaux endpoints
 ont été ajoutés au passage (`GET /api/appointments` liste-mine, `GET /api/payments`
-liste-par-client), tous deux testés (unit + integration).
-`messages-factures-notifications` reste 🟡 : ses onglets Notifications et Factures sont
-câblés pour de vrai, mais son onglet Messages reste **intentionnellement non connecté** —
-aucun modèle `Message`/`Conversation` n'existe dans `packages/database/prisma/schema.prisma`,
-et créer ce module/cette migration est un chantier à part entière, hors périmètre de cette
-passe (voir `docs/pages/messages-factures-notifications.md` "Points d'attention").
-Phase 3 ne peut donc pas être déclarée complète tant que `docs/features/messages.md` +
-la migration Prisma correspondante n'existent pas et que l'onglet Messages n'est pas câblé.
+liste-par-client), tous deux testés (unit + integration). `messages-factures-notifications`
+restait 🟡 : ses onglets Notifications et Factures étaient câblés pour de vrai, mais son onglet
+Messages restait intentionnellement non connecté (aucun modèle `Message`/`Conversation`).
+**Mise à jour 2026-09-16 (session 2)** : le gap Messages est fermé. Nouveau module
+`apps/api/src/messages/` (`Conversation`/`Message`, migration
+`20260916035657_add_conversation_message`) + câblage frontend réel de l'onglet Messages —
+voir `docs/features/messages.md`. Les trois onglets de `messages-factures-notifications` sont
+désormais câblés pour de vrai ; **Phase 3 est donc entièrement ✅** au sens de sa "Vérification
+de sortie de phase" ci-dessous. Écarts documentés qui restent hors périmètre de cette
+vérification (déjà acceptés comme tels avant cette session, non spécifiques à
+`messages-factures-notifications`) : WhatsApp non branché, `MESSAGE_RECEIVED` désormais câblé
+mais `quotes`/`patterns`/`create-appointment`/`cancel-appointment`/`refund-payment` toujours
+sans notification (voir `docs/features/notifications.md`), pas de boîte de réception staff
+pour `messages` (voir `docs/features/messages.md`), pas de génération de PDF de facture.
 
 ## Objectif (spec §101, Phase 3)
 
@@ -33,7 +40,7 @@ phase qui rend le parcours d'achat/production réellement transactionnel de bout
 
 ## Modules backend en scope
 
-`orders`, `payments`, `notifications`.
+`orders`, `payments`, `notifications`, `messages`.
 
 ## Ordre suggéré
 
@@ -48,10 +55,13 @@ phase qui rend le parcours d'achat/production réellement transactionnel de bout
    `orders`/`payments`/`appointments` fait ; `quotes`/`patterns`/`create-appointment`/
    `cancel-appointment`/`refund-payment` restent TODO (voir `docs/features/notifications.md`
    "Points d'intégration").
-4. 🟡 `espace-client-dashboard` ✅, `mes-rendez-vous` ✅ (complète Phase 2's
-   `prendre-rendez-vous` avec une vue liste/gestion), `suivi-commande` ✅ (timeline spec §54-55),
-   `messages-factures-notifications` 🟡 (Notifications/Factures ✅, Messages non modélisé — cf
-   "Points d'attention") — `panier`/`checkout` câblés aux API `orders`/`payments` ✅
+4. ✅ `espace-client-dashboard`, `mes-rendez-vous` (complète Phase 2's `prendre-rendez-vous`
+   avec une vue liste/gestion), `suivi-commande` (timeline spec §54-55),
+   `messages-factures-notifications` (Notifications/Factures/Messages câblés pour de vrai —
+   nouveau module `messages`, voir `docs/features/messages.md`) — `panier`/`checkout` câblés
+   aux API `orders`/`payments` ✅
+5. ✅ `messages` (`Conversation`/`Message`, find-or-create staff-only pour démarrer un fil,
+   `MESSAGE_RECEIVED` câblé côté staff — voir `docs/features/messages.md`)
 
 ## Points d'attention
 
@@ -68,14 +78,20 @@ phase qui rend le parcours d'achat/production réellement transactionnel de bout
       /api/orders` → `POST /api/payments` → confirmation) et suivre sa commande depuis son
       espace client — câblage API réel vérifié par tests (pas de test e2e Playwright ajouté
       cette session)
-- [ ] `docs/checklist-implementation.md` : 5/6 pages + 3 modules passés à ✅ ;
-      `messages-factures-notifications` reste 🟡 (onglet Messages, gap documenté)
+- [x] `docs/checklist-implementation.md` : 6/6 pages + 4 modules passés à ✅
 - [x] Notifications déclenchées sur au moins : rendez-vous confirmé, commande créée, statut de
-      commande changé (déjà acquis avant cette session, voir `docs/features/notifications.md`)
+      commande changé (déjà acquis avant cette session, voir `docs/features/notifications.md`),
+      message reçu d'un membre de l'atelier (`MESSAGE_RECEIVED`, nouveau cette session — voir
+      `docs/features/messages.md`)
+- [x] Un client peut échanger avec l'atelier depuis son espace client (liste des fils, lecture,
+      envoi de message) — câblage API réel vérifié par tests ; démarrer un nouveau fil reste
+      staff-only et sans UI dédiée dans cette phase (voir `docs/features/messages.md`)
 
-**Phase 3 n'est donc pas fermée** : il manque le traitement du gap Messages
-(`docs/features/messages.md` + migration Prisma + module NestJS + câblage frontend réel) pour
-passer la phase entière à ✅.
+**Phase 3 est donc fermée** pour le périmètre de sa "Vérification de sortie de phase" — les
+écarts encore ouverts (WhatsApp, notifications `quotes`/`patterns`/`create-appointment`/
+`cancel-appointment`/`refund-payment`, PDF de facture, boîte de réception staff `messages`)
+sont chacun documentés dans leur fiche `docs/features/*.md` respective et n'étaient déjà pas
+couverts par cette vérification avant cette session.
 
 ## Phase suivante
 

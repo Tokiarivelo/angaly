@@ -16,7 +16,7 @@ vi.mock('@/lib/api-client', () => ({
 }));
 
 describe('MessagesFacturesNotificationsPage', () => {
-  it('renders the tab bar and a permanent empty state for the messages tab', () => {
+  it('renders the tab bar and the real (empty) conversation list for the messages tab', async () => {
     const queryClient = createTestQueryClient();
     render(
       <QueryClientProvider client={queryClient}>
@@ -26,6 +26,6 @@ describe('MessagesFacturesNotificationsPage', () => {
     expect(screen.getByText('Messages')).toBeInTheDocument();
     expect(screen.getByText('Factures')).toBeInTheDocument();
     expect(screen.getByText('Notifications')).toBeInTheDocument();
-    expect(screen.getByText('Messagerie à venir')).toBeInTheDocument();
+    expect(await screen.findByText('Aucune conversation')).toBeInTheDocument();
   });
 });

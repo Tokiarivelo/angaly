@@ -57,7 +57,7 @@
 | espace-client-dashboard                   | `docs/pages/espace-client-dashboard.md`       | `stitch-prompts/25-espace-client-dashboard.md`                   | ANGALY — Espace Client (Tableau de bord)               | §51-52        | ✅     |
 | mes-rendez-vous                             | `docs/pages/mes-rendez-vous.md`               | `stitch-prompts/26-espace-client-rendezvous-suivi.md`             | ANGALY — Mes rendez-vous                                | §51           | ✅     |
 | suivi-commande                               | `docs/pages/suivi-commande.md`                | `stitch-prompts/26-espace-client-rendezvous-suivi.md`             | ANGALY — Suivi de commande                              | §54-55        | ✅     |
-| messages-factures-notifications                | `docs/pages/messages-factures-notifications.md` | `stitch-prompts/28-espace-client-favoris-messages.md`            | ANGALY — Messages, Factures & Notifications             | §51           | 🟡     |
+| messages-factures-notifications                | `docs/pages/messages-factures-notifications.md` | `stitch-prompts/28-espace-client-favoris-messages.md`            | ANGALY — Messages, Factures & Notifications             | §51           | ✅     |
 
 ## PHASE 4 — Premium (Angaly Pattern Studio)
 

@@ -1,12 +1,14 @@
-/**
- * Messaging is not connected to a backend yet (no `Message`/`Conversation`
- * model, no `messages` module — see useConversations.ts). This never hits a
- * fake endpoint; it rejects so the composer surfaces the "à venir" state
- * rather than pretending to have sent anything.
- */
+'use client';
+
+import { useSendMessageMutation } from '../api/messages.api';
+
+/** Real endpoint — `POST /api/messages/conversations/:id/messages` (see docs/features/messages.md). */
 export const useSendMessage = () => {
-  const sendMessage = (_threadId: string, _content: string): Promise<void> => {
-    return Promise.reject(new Error('La messagerie ANGALY arrive bientôt.'));
+  const mutation = useSendMessageMutation();
+
+  const sendMessage = async (threadId: string, content: string): Promise<void> => {
+    await mutation.mutateAsync({ conversationId: threadId, content });
   };
-  return { sendMessage };
+
+  return { sendMessage, isSending: mutation.isPending };
 };

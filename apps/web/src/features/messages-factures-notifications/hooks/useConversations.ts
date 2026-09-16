@@ -1,10 +1,10 @@
-/**
- * Messaging has no backend: no `Message`/`Conversation` Prisma model and no
- * `messages` NestJS module exist (see docs/pages/messages-factures-notifications.md
- * "Points d'attention" — a known, documented gap, not something to fix here).
- * Always returns an empty conversation list rather than fake/demo threads
- * presented as real.
- */
+'use client';
+
+import { useState } from 'react';
+
+import { useConversationsQuery } from '../api/messages.api';
+import { useOrdersQuery } from '../api/invoices.api';
+
 export interface ConversationThread {
   id: string;
   atelierName: string;
@@ -14,12 +14,37 @@ export interface ConversationThread {
   unreadCount: number;
 }
 
+/**
+ * Real endpoint — `GET /api/messages/conversations` (see docs/features/messages.md).
+ * `orderReference` is resolved locally by joining the (small) own-orders list
+ * when `relatedEntityType === 'Order'` — same join pattern as `useInvoices.ts`.
+ */
 export const useConversations = () => {
+  const conversationsQuery = useConversationsQuery();
+  const ordersQuery = useOrdersQuery();
+  const [activeThreadId, setActiveThreadId] = useState<string | null>(null);
+
+  const threads: ConversationThread[] = (conversationsQuery.data ?? []).map((conversation) => {
+    const order =
+      conversation.relatedEntityType === 'Order'
+        ? ordersQuery.data?.find((candidate) => candidate.id === conversation.relatedEntityId)
+        : undefined;
+
+    return {
+      id: conversation.id,
+      atelierName: conversation.atelierName,
+      ...(order?.orderNumber ? { orderReference: order.orderNumber } : {}),
+      lastMessage: conversation.lastMessagePreview,
+      timestamp: conversation.lastMessageAt,
+      unreadCount: conversation.unreadCount,
+    };
+  });
+
   return {
-    threads: [] as ConversationThread[],
-    activeThreadId: null as string | null,
-    setActiveThreadId: (_id: string | null) => {
-      // No-op: messaging is not connected to a backend yet.
-    },
+    threads,
+    activeThreadId,
+    setActiveThreadId,
+    isLoading: conversationsQuery.isLoading,
+    isError: conversationsQuery.isError,
   };
 };

@@ -11,6 +11,7 @@ import { CreationsModule } from './creations/creations.module';
 import { CustomersModule } from './customers/customers.module';
 import { I18nModule } from './i18n/i18n.module';
 import { MediaModule } from './media/media.module';
+import { MessagesModule } from './messages/messages.module';
 import { PrismaModule } from './prisma/prisma.module';
 import { ProductsModule } from './products/products.module';
 import { QuotesModule } from './quotes/quotes.module';
@@ -63,6 +64,7 @@ import { HealthController } from './shared/health/health.controller';
     PaymentsModule,
     NotificationsModule,
     PatternsModule,
+    MessagesModule,
     AdminAiSettingsModule,
   ],
   controllers: [HealthController],

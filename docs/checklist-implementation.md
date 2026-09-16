@@ -130,7 +130,7 @@ phase n'a pas été traitée en session dédiée (voir `.cursor/rules/006-phase-
 
 ---
 
-## 📦 PHASE 3 — Production (6 pages, 3 modules) — 🟡 5/6 pages câblées (Messages non modélisé)
+## 📦 PHASE 3 — Production (6 pages, 4 modules) — ✅ 6/6 pages câblées
 
 ### Pages
 - [x] ✅ **panier** — Panier d'achat (store Zustand réel, cohérent avec le payload attendu par
@@ -148,10 +148,10 @@ phase n'a pas été traitée en session dédiée (voir `.cursor/rules/006-phase-
 - [x] ✅ **suivi-commande** — Résolution de la commande par `orderNumber` depuis
       `GET /api/orders` (pas d'endpoint dédié par numéro), timeline dérivée de `OrderStatus`
       — voir `docs/pages/suivi-commande.md` "Points d'attention" (écart de granularité assumé)
-- [ ] 🟡 **messages-factures-notifications** — Onglets Factures et Notifications câblés pour de
-      vrai (nouvel endpoint `GET /api/payments`, voir module `payments` ci-dessous) ; onglet
-      Messages **intentionnellement non connecté** (aucun modèle `Message`/`Conversation`,
-      état vide permanent) — voir `docs/pages/messages-factures-notifications.md`
+- [x] ✅ **messages-factures-notifications** — Trois onglets câblés pour de vrai : Factures
+      (`GET /api/payments`, voir module `payments` ci-dessous), Notifications, et désormais
+      Messages (nouveau module `messages` — `Conversation`/`Message`, voir ci-dessous et
+      `docs/features/messages.md`) — voir `docs/pages/messages-factures-notifications.md`
 
 ### Modules backend
 - [x] ✅ **orders** (câblé pour de vrai dans `checkout`/`suivi-commande`/
@@ -167,7 +167,10 @@ phase n'a pas été traitée en session dédiée (voir `.cursor/rules/006-phase-
       visiteurs anonymes exclus) — `quotes`/`patterns`/`create-appointment`/`cancel-appointment`/
       `refund-payment` restent à câbler ; WhatsApp non branché (aucun prestataire confirmé) ;
       frontend câblé pour de vrai dans `messages-factures-notifications` (liste, lu individuel,
-      tout marquer lu) — voir `docs/features/notifications.md`)
+      tout marquer lu) — voir `docs/features/notifications.md`) ·
+      ✅ **messages** (nouveau module — `Conversation`/`Message`, find-or-create staff-only pour
+      démarrer un fil, `MESSAGE_RECEIVED` câblé vers `notifications` côté staff — pas de boîte
+      de réception staff dans cette phase — voir `docs/features/messages.md`)
 
 ---
 
