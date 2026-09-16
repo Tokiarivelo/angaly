@@ -24,14 +24,13 @@ import { PaymentsModule } from './payments/payments.module';
 import { NotificationsModule } from './notifications/notifications.module';
 import { PatternsModule } from './patterns/patterns.module';
 import { AdminAiSettingsModule } from './admin-ai-settings/admin-ai-settings.module';
+import { UsersModule } from './users/users.module';
+import { ContentModule } from './content/content.module';
 import { HealthController } from './shared/health/health.controller';
 
-// Remaining domain modules (users, measurements, patterns, pattern-engine,
-// ai-inference, reviews) are scaffolded as empty directories under src/ —
-// see each module's docs/features/<slug>.md and
-// .cursor/rules/006-phase-workflow.mdc. They are wired into this module's
-// `imports` array as each is implemented, one phase at a time
-// (docs/phases/). `Customer` row creation at registration still goes
+// All Phase 0-6 domain modules from the initial plan are now implemented and
+// wired below — see each module's docs/features/<slug>.md and
+// .cursor/rules/006-phase-workflow.mdc. `Customer` row creation at registration still goes
 // through AuthModule/PrismaUserRepository.createWithCustomer (a single
 // Prisma transaction with `User` — see docs/features/auth.md "Points
 // d'attention"); `customers` below covers everything else (profile reads/
@@ -66,6 +65,8 @@ import { HealthController } from './shared/health/health.controller';
     PatternsModule,
     MessagesModule,
     AdminAiSettingsModule,
+    UsersModule,
+    ContentModule,
   ],
   controllers: [HealthController],
 })

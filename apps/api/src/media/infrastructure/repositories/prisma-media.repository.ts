@@ -7,6 +7,8 @@ import {
   IMediaRepository,
   MediaListFilter,
   MediaListResult,
+  MediaUpdateInput,
+  MediaUsageRef,
 } from '../../domain/repositories/media.repository';
 import { MediaMapper } from '../mappers/media.mapper';
 
@@ -25,6 +27,31 @@ const REFERENCE_COUNT_SELECT = {
     },
   },
 } satisfies Prisma.MediaSelect;
+
+/** One label field per relation, used only to build a human-readable "Utilisée dans" entry — see docs/pages/admin-mediatheque.md. */
+const USAGE_SELECT = {
+  creationRefs: { select: { id: true, name: true } },
+  productRefs: { select: { id: true, name: true } },
+  collectionRefs: { select: { id: true, name: true } },
+  atelierRefs: { select: { id: true, name: true } },
+  blogPostRefs: { select: { id: true, title: true } },
+  testimonialRefs: { select: { id: true, customerName: true } },
+  patternInspirationOf: { select: { id: true, projectRef: true } },
+  patternExportOf: { select: { id: true, format: true } },
+  pageSectionRefs: { select: { id: true, page: true, sectionKey: true } },
+} satisfies Prisma.MediaSelect;
+
+function buildOrderBy(sortBy: MediaListFilter['sortBy']): Prisma.MediaOrderByWithRelationInput[] {
+  switch (sortBy) {
+    case 'name':
+      return [{ objectKey: 'asc' }];
+    case 'size':
+      return [{ sizeBytes: 'desc' }];
+    case 'recent':
+    default:
+      return [{ createdAt: 'desc' }];
+  }
+}
 
 @Injectable()
 export class PrismaMediaRepository implements IMediaRepository {
@@ -61,12 +88,20 @@ export class PrismaMediaRepository implements IMediaRepository {
       ...(filter.bucket ? { bucket: filter.bucket } : {}),
       ...(filter.entityType ? { entityType: filter.entityType } : {}),
       ...(filter.entityId ? { entityId: filter.entityId } : {}),
+      ...(filter.search
+        ? {
+            OR: [
+              { objectKey: { contains: filter.search, mode: 'insensitive' } },
+              { altText: { contains: filter.search, mode: 'insensitive' } },
+            ],
+          }
+        : {}),
     };
 
     const [records, total] = await Promise.all([
       this.prisma.media.findMany({
         where,
-        orderBy: [{ sortOrder: 'asc' }, { createdAt: 'desc' }],
+        orderBy: buildOrderBy(filter.sortBy),
         skip: (filter.page - 1) * filter.limit,
         take: filter.limit,
       }),
@@ -74,6 +109,11 @@ export class PrismaMediaRepository implements IMediaRepository {
     ]);
 
     return { items: records.map((record) => MediaMapper.toDomain(record)), total };
+  }
+
+  async update(id: string, patch: MediaUpdateInput): Promise<MediaEntity> {
+    const record = await this.prisma.media.update({ where: { id }, data: patch });
+    return MediaMapper.toDomain(record);
   }
 
   async delete(id: string): Promise<void> {
@@ -89,5 +129,51 @@ export class PrismaMediaRepository implements IMediaRepository {
       return 0;
     }
     return Object.values(record._count).reduce((sum, count) => sum + count, 0);
+  }
+
+  async findUsages(id: string): Promise<MediaUsageRef[]> {
+    const record = await this.prisma.media.findUnique({ where: { id }, select: USAGE_SELECT });
+    if (!record) {
+      return [];
+    }
+
+    const usages: MediaUsageRef[] = [];
+    for (const creation of record.creationRefs) {
+      usages.push({ entityType: 'CREATION', entityId: creation.id, label: creation.name });
+    }
+    for (const product of record.productRefs) {
+      usages.push({ entityType: 'PRODUCT', entityId: product.id, label: product.name });
+    }
+    for (const collection of record.collectionRefs) {
+      usages.push({ entityType: 'COLLECTION', entityId: collection.id, label: collection.name });
+    }
+    for (const atelier of record.atelierRefs) {
+      usages.push({ entityType: 'ATELIER', entityId: atelier.id, label: atelier.name });
+    }
+    for (const blogPost of record.blogPostRefs) {
+      usages.push({ entityType: 'BLOG_POST', entityId: blogPost.id, label: blogPost.title });
+    }
+    for (const testimonial of record.testimonialRefs) {
+      usages.push({ entityType: 'TESTIMONIAL', entityId: testimonial.id, label: testimonial.customerName });
+    }
+    for (const patternProject of record.patternInspirationOf) {
+      usages.push({ entityType: 'PATTERN_PROJECT', entityId: patternProject.id, label: patternProject.projectRef });
+    }
+    for (const patternExport of record.patternExportOf) {
+      usages.push({
+        entityType: 'PATTERN_EXPORT',
+        entityId: patternExport.id,
+        label: `Export ${patternExport.format}`,
+      });
+    }
+    for (const pageSection of record.pageSectionRefs) {
+      usages.push({
+        entityType: 'PAGE_SECTION',
+        entityId: pageSection.id,
+        label: `${pageSection.page} — ${pageSection.sectionKey}`,
+      });
+    }
+
+    return usages;
   }
 }

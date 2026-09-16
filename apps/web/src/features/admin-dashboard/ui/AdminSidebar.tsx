@@ -3,12 +3,23 @@
 import React from 'react';
 import Link from 'next/link';
 import { usePathname } from 'next/navigation';
-import { LayoutDashboard, Sparkles, LogOut } from 'lucide-react';
+import { LayoutDashboard, Sparkles, FileEdit, Image as ImageIcon, LogOut } from 'lucide-react';
 import { signOut } from 'next-auth/react';
 
+// NB: `(admin)` is a Next.js route group — it adds no URL segment, so these
+// pages' real URLs have no `/admin` prefix (`/dashboard`, `/ai-settings`,
+// ...) even though docs/pages/*.md describe them as `/admin/...` — see the
+// routing note in docs/pages/admin-gestion-contenu.md "Points d'attention".
+// Fixed here (this file) since all 4 links live together; the matching
+// internal `redirect('/admin/dashboard')` inside
+// admin-ai-settings/.../ai-settings/page.tsx (Phase 5, not touched by this
+// session) still has the stale prefix and should be corrected the next time
+// that file is edited.
 const navItems = [
-  { label: 'Tableau de bord', href: '/admin/dashboard', icon: LayoutDashboard },
-  { label: 'Paramètres IA', href: '/admin/ai-settings', icon: Sparkles },
+  { label: 'Tableau de bord', href: '/dashboard', icon: LayoutDashboard },
+  { label: 'Gestion de contenu', href: '/gestion-contenu', icon: FileEdit },
+  { label: 'Médiathèque', href: '/mediatheque', icon: ImageIcon },
+  { label: 'Paramètres IA', href: '/ai-settings', icon: Sparkles },
 ];
 
 export const AdminSidebar: React.FC = () => {

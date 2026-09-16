@@ -8,6 +8,7 @@ interface MockMediaDelegate {
   findUnique: jest.Mock;
   findMany: jest.Mock;
   count: jest.Mock;
+  update: jest.Mock;
   delete: jest.Mock;
 }
 
@@ -17,6 +18,7 @@ function buildPrismaServiceMock(): { prisma: PrismaService; media: MockMediaDele
     findUnique: jest.fn(),
     findMany: jest.fn(),
     count: jest.fn(),
+    update: jest.fn(),
     delete: jest.fn(),
   };
   const prisma = { media } as unknown as PrismaService;
@@ -165,5 +167,90 @@ describe('PrismaMediaRepository', () => {
     const repository = new PrismaMediaRepository(prisma);
 
     expect(await repository.countActiveReferences('missing')).toBe(0);
+  });
+
+  it('list() applies the search filter across objectKey/altText', async () => {
+    const { prisma, media } = buildPrismaServiceMock();
+    media.findMany.mockResolvedValue([]);
+    media.count.mockResolvedValue(0);
+    const repository = new PrismaMediaRepository(prisma);
+
+    await repository.list({ search: 'robe', page: 1, limit: 20 });
+
+    expect(media.findMany).toHaveBeenCalledWith(
+      expect.objectContaining({
+        where: {
+          OR: [
+            { objectKey: { contains: 'robe', mode: 'insensitive' } },
+            { altText: { contains: 'robe', mode: 'insensitive' } },
+          ],
+        },
+      }),
+    );
+  });
+
+  it.each([
+    ['recent', [{ createdAt: 'desc' }]],
+    ['name', [{ objectKey: 'asc' }]],
+    ['size', [{ sizeBytes: 'desc' }]],
+    [undefined, [{ createdAt: 'desc' }]],
+  ] as const)('list() orders by %s', async (sortBy, expectedOrderBy) => {
+    const { prisma, media } = buildPrismaServiceMock();
+    media.findMany.mockResolvedValue([]);
+    media.count.mockResolvedValue(0);
+    const repository = new PrismaMediaRepository(prisma);
+
+    await repository.list({ sortBy, page: 1, limit: 20 });
+
+    expect(media.findMany).toHaveBeenCalledWith(expect.objectContaining({ orderBy: expectedOrderBy }));
+  });
+
+  it('update() forwards the patch to prisma.media.update and remaps the row', async () => {
+    const { prisma, media } = buildPrismaServiceMock();
+    media.update.mockResolvedValue(samplePrismaRecord());
+    const repository = new PrismaMediaRepository(prisma);
+
+    const result = await repository.update('media-1', { altText: 'Nouveau texte' });
+
+    expect(media.update).toHaveBeenCalledWith({ where: { id: 'media-1' }, data: { altText: 'Nouveau texte' } });
+    expect(result.id).toBe('media-1');
+  });
+
+  it('findUsages() returns an empty array when the media does not exist', async () => {
+    const { prisma, media } = buildPrismaServiceMock();
+    media.findUnique.mockResolvedValue(null);
+    const repository = new PrismaMediaRepository(prisma);
+
+    expect(await repository.findUsages('missing')).toEqual([]);
+  });
+
+  it('findUsages() maps every polymorphic relation to a labeled usage ref', async () => {
+    const { prisma, media } = buildPrismaServiceMock();
+    media.findUnique.mockResolvedValue({
+      creationRefs: [{ id: 'creation-1', name: 'Robe Éternelle' }],
+      productRefs: [{ id: 'product-1', name: 'Chemise Lin' }],
+      collectionRefs: [{ id: 'collection-1', name: 'Collection Été' }],
+      atelierRefs: [{ id: 'atelier-1', name: 'Atelier Tana' }],
+      blogPostRefs: [{ id: 'post-1', title: 'Article de blog' }],
+      testimonialRefs: [{ id: 'testimonial-1', customerName: 'Jeanne D.' }],
+      patternInspirationOf: [{ id: 'project-1', projectRef: 'ANG-PAT-2026-00001' }],
+      patternExportOf: [{ id: 'export-1', format: 'PDF' }],
+      pageSectionRefs: [{ id: 'section-1', page: 'accueil', sectionKey: 'hero' }],
+    });
+    const repository = new PrismaMediaRepository(prisma);
+
+    const result = await repository.findUsages('media-1');
+
+    expect(result).toEqual([
+      { entityType: 'CREATION', entityId: 'creation-1', label: 'Robe Éternelle' },
+      { entityType: 'PRODUCT', entityId: 'product-1', label: 'Chemise Lin' },
+      { entityType: 'COLLECTION', entityId: 'collection-1', label: 'Collection Été' },
+      { entityType: 'ATELIER', entityId: 'atelier-1', label: 'Atelier Tana' },
+      { entityType: 'BLOG_POST', entityId: 'post-1', label: 'Article de blog' },
+      { entityType: 'TESTIMONIAL', entityId: 'testimonial-1', label: 'Jeanne D.' },
+      { entityType: 'PATTERN_PROJECT', entityId: 'project-1', label: 'ANG-PAT-2026-00001' },
+      { entityType: 'PATTERN_EXPORT', entityId: 'export-1', label: 'Export PDF' },
+      { entityType: 'PAGE_SECTION', entityId: 'section-1', label: 'accueil — hero' },
+    ]);
   });
 });

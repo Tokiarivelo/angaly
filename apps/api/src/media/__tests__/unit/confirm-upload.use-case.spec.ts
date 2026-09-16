@@ -10,6 +10,8 @@ function buildRepository(): jest.Mocked<IMediaRepository> {
     list: jest.fn(),
     delete: jest.fn(),
     countActiveReferences: jest.fn(),
+    update: jest.fn(),
+    findUsages: jest.fn(),
   };
 }
 

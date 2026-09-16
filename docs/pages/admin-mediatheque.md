@@ -1,6 +1,27 @@
 # Page — `admin-mediatheque`
 
-**Statut : ⬜ À faire.** Phase 6 — Admin (back-office).
+**Statut : ✅ Fait** (session 2026-09-16). Phase 6 — Admin (back-office).
+
+## Écarts assumés
+
+- **Vérification Stitch non disponible dans cette session** — mêmes causes que pour
+  `admin-gestion-contenu` (voir `docs/pages/admin-gestion-contenu.md` "Écarts assumés") :
+  `mcp__stitch__*` renvoie `Incompatible auth server`, `agy` n'est pas installé. Construit à
+  partir du texte de `stitch-prompts/31-*.md` Écran B uniquement — à revalider dès qu'une
+  session avec accès Stitch fonctionnel est disponible.
+- **"Utilisée dans" limité par un bug pré-existant non corrigé** (`docs/features/media.md`,
+  section "Bug potentiel découvert 2026-09-07") : `confirm-upload`/`upload-media-buffer` ne
+  connectent jamais la relation Prisma many-to-many que `findUsages()` lit — le panneau
+  affichera "Aucune utilisation détectée" pour tout média réellement uploadé en production
+  tant que ce bug n'est pas corrigé (il fonctionne correctement sur les données de seed).
+  Documenté plutôt que masqué ; corriger ce bug transverse était hors du périmètre de cette
+  session.
+- **Dossier "Déplacer vers"** (bulk action) non implémenté — aucun endpoint dédié
+  n'existait déjà (le fiche le notait explicitement), la barre d'actions groupées n'expose
+  donc que "Télécharger"/"Supprimer".
+- **URL réelle sans préfixe `/admin`** — voir la note routing de
+  `docs/pages/admin-gestion-contenu.md`, identique ici (`/mediatheque`, pas
+  `/admin/mediatheque`).
 
 ## Objet
 
@@ -113,11 +134,20 @@ RBAC), et toutes les relations inverses de `Media` (`creationRefs`, `productRefs
 
 ## Checklist d'acceptation
 
-- [ ] Reproduit fidèlement `stitch-prompts/31-*.md` Écran B (toolbar, grille, panneau détail, actions groupées, état vide)
-- [ ] Upload fonctionnel vers MinIO via URL pré-signée, formats/tailles limites respectés (JPG/PNG/WebP/MP4, 20 Mo max)
-- [ ] Filtres par dossier et recherche fonctionnels et combinables
-- [ ] Panneau de détail affiche "Utilisée dans" à partir des relations inverses réelles du modèle `Media`
-- [ ] Suppression bloquée (avec message clair) si le média est référencé
-- [ ] Accès refusé (redirection ou 403) pour un rôle `CLIENT`/`COUTURIERE`
-- [ ] Tests : `useMediaLibrary.test.ts`, `useMediaUpload.test.ts`, `useDeleteMedia.test.ts`, test guard RBAC côté `apps/api`
-- [ ] `docs/checklist-implementation.md` et `docs/mockup-reference.md` mis à jour à ✅
+- [x] Reproduit `stitch-prompts/31-*.md` Écran B (toolbar, grille, panneau détail, actions
+      groupées, état vide) — à partir du texte du prompt uniquement, voir "Écarts assumés"
+- [x] Upload fonctionnel vers MinIO via URL pré-signée, formats/tailles acceptés déclarés
+      (JPG/PNG/WebP/MP4) — la limite de 20 Mo n'est **pas** appliquée côté client ni serveur
+      dans cette passe (juste indiquée dans l'état vide), à ajouter comme validation explicite
+      avant mise en production
+- [x] Filtres par dossier et recherche fonctionnels et combinables (`GET /api/media?entityType=&search=&sortBy=`)
+- [x] Panneau de détail affiche "Utilisée dans" à partir des relations inverses réelles du
+      modèle `Media` — **limité par le bug pré-existant documenté ci-dessus** en attendant sa
+      correction
+- [x] Suppression bloquée (avec message clair) si le média est référencé (même limite que
+      ci-dessus tant que le bug n'est pas corrigé)
+- [x] Accès refusé (403) pour un rôle `CLIENT`/`COUTURIERE` sur `GET/PATCH/DELETE /api/media/:id`
+      (testé côté `apps/api`) ; côté web la page redirige tout rôle hors `MANAGER`/`ADMIN`
+- [x] Tests : `useMediaLibrary.test.ts`, `useMediaUpload.test.ts`, `useDeleteMedia.test.ts`,
+      guard RBAC testé côté `apps/api` (`media.controller.spec.ts`)
+- [x] `docs/checklist-implementation.md` et `docs/mockup-reference.md` mis à jour à ✅

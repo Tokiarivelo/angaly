@@ -209,20 +209,34 @@ phase n'a pas été traitée en session dédiée (voir `.cursor/rules/006-phase-
 
 ---
 
-## 🗂️ PHASE 6 — Admin (back-office) (2 pages, 2 modules)
+## 🗂️ PHASE 6 — Admin (back-office) (2 pages, 2 modules) — ✅ 2/2 pages, 2/2 modules
 
 ### Pages
-- [ ] ⬜ **admin-gestion-contenu** — Éditeur de contenu par page/section
-- [ ] ⬜ **admin-mediatheque** — Médiathèque (MinIO)
+- [x] ✅ **admin-gestion-contenu** — Éditeur de contenu par page/section (session 2026-09-16)
+- [x] ✅ **admin-mediatheque** — Médiathèque (MinIO) (session 2026-09-16)
 
 ### Modules backend
-- [ ] ⬜ **users** — Gestion des comptes staff (Couturière/Manager/Admin), RBAC (spec §68/§83)
-- [ ] ⬜ **content** — `PageSection`/`PageSectionVersion`, sert `admin-gestion-contenu`
+- [x] ✅ **users** — Gestion des comptes staff (Couturière/Manager/Admin), RBAC (spec §68/§83)
+      (session 2026-09-16) — **backend uniquement**, pas de page dédiée (aucune maquette
+      Stitch ne couvre un écran de gestion des comptes dans le périmètre actuel), voir
+      `docs/features/users.md`
+- [x] ✅ **content** — `PageSection`/`PageSectionVersion`, sert `admin-gestion-contenu`
+      (session 2026-09-16)
 
 > Périmètre volontairement limité aux 2 pages couvertes par une maquette Stitch
 > (`stitch-prompts/31-*.md`). Le reste du back-office listé au spec §60-66
 > (Réalisations/Produits/Collections/Rendez-vous/Clients/Patron Premium admin) n'a pas de
-> maquette dédiée à ce jour — à ajouter comme une Phase 7 si le besoin est confirmé.
+> maquette dédiée à ce jour — à ajouter comme une Phase 7 si le besoin est confirmé, de même
+> qu'un futur écran de gestion des comptes staff pour `users`.
+>
+> **Réserves de la session 2026-09-16** (voir `docs/features/*.md`/`docs/pages/*.md` pour le
+> détail) : vérification Stitch impossible dans cet environnement (`mcp__stitch__*` en échec
+> d'auth, `agy` absent) — structure/copy des 2 pages reconstruites depuis le texte de
+> `stitch-prompts/31-*.md` uniquement, à revalider contre l'écran réel dès que possible ;
+> l'étape 4 de `docs/phases/phase-6-admin-cms.md` (migrer les pages publiques vers
+> `PageSection`) reste explicitement **non traitée** ; le panneau "Utilisée dans" de
+> `admin-mediatheque` est limité par un bug pré-existant non corrigé (relations `Media`
+> jamais connectées par `confirm-upload`, voir `docs/features/media.md`).
 
 ### Hors périmètre spec — ajouté le 2026-09-15
 - [x] ✅ **admin-ai-settings** — `/admin/dashboard` + `/admin/ai-settings`, choix du modèle

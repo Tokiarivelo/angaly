@@ -62,6 +62,9 @@ function decodeBase64Key(base64Value: string): string {
     { provide: ACCESS_TOKEN_SERVICE, useClass: JwtAccessTokenService },
     { provide: TOKEN_EXPIRY_POLICY, useClass: EnvTokenExpiryPolicy },
   ],
-  exports: [JwtAuthGuard, RolesGuard, ACCESS_TOKEN_SERVICE],
+  // PASSWORD_HASHER is exported so `users` can reuse the same hashing port
+  // when creating a staff account, instead of re-implementing hashing
+  // (docs/features/users.md).
+  exports: [JwtAuthGuard, RolesGuard, ACCESS_TOKEN_SERVICE, PASSWORD_HASHER],
 })
 export class AuthModule {}
