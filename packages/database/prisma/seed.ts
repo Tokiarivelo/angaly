@@ -1323,6 +1323,15 @@ async function main() {
       dataJson: { eyebrow: 'Éditorial' },
       status: ContentStatus.PUBLISHED,
     },
+    // --- Page Sections (Nos Créations / Gallery Portfolio) ---------------------
+    {
+      page: 'nos-creations-galerie',
+      sectionKey: 'header',
+      locale: Locale.FR,
+      titleText: 'Nos Créations',
+      subtitleText: "Explorez l'ensemble de notre savoir-faire, des robes de mariée aux costumes sur mesure.",
+      status: ContentStatus.PUBLISHED,
+    },
   ];
 
   const createdPageSections = new Map<string, { id: string }>();
@@ -1340,7 +1349,7 @@ async function main() {
     });
     createdPageSections.set(`${section.page}:${section.sectionKey}`, section);
   }
-  console.log(`✅ ${pageSections.length} sections de page (Accueil, À propos et La Une) créées`);
+  console.log(`✅ ${pageSections.length} sections de page (Accueil, À propos, La Une et Nos Créations) créées`);
 
   // --- Testimonials ---------------------------------------------------------
   const testimonials = [
@@ -1638,7 +1647,7 @@ async function main() {
         await attachPhoto(storage, 'customers', photo, photoAlt, MediaEntityType.PAGE_SECTION, section.id);
       }
     }
-    console.log("✅ Photos des sections de page (Accueil, À propos et La Une) vérifiées/hébergées sur MinIO");
+    console.log("✅ Photos des sections de page (Accueil, À propos, La Une et Nos Créations) vérifiées/hébergées sur MinIO");
 
     for (const t of createdTestimonials) {
       const exists = await prisma.media.findFirst({

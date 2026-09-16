@@ -46,7 +46,9 @@ phase n'a pas été traitée en session dédiée (voir `.cursor/rules/006-phase-
 - [x] ✅ **la-une** — Vitrine éditoriale. Texte de l'en-tête lu depuis `PageSection`
       (`content`, Phase 6) depuis la session 2026-09-16 (suite), avec repli sur les littéraux
       codés en dur — voir `docs/features/content.md`
-- [x] ✅ **nos-creations-galerie** — Galerie complète des créations
+- [x] ✅ **nos-creations-galerie** — Galerie complète des créations. Texte de l'en-tête
+      (titre/intro) lu depuis `PageSection` (`content`, Phase 6) depuis la session 2026-09-16
+      (suite), avec repli sur les littéraux codés en dur — voir `docs/features/content.md`
 - [x] ✅ **creation-detail** — Fiche détail d'une création
 - [x] ✅ **collections-liste** — Index des collections
 - [x] ✅ **collection-detail** — Fiche détail d'une collection
@@ -228,8 +230,9 @@ phase n'a pas été traitée en session dédiée (voir `.cursor/rules/006-phase-
       `docs/features/users.md`
 - [x] ✅ **content** — `PageSection`/`PageSectionVersion`, sert `admin-gestion-contenu`
       (session 2026-09-16). Endpoint public `GET /content/public/:page` (`PUBLISHED`-only,
-      sans auth) ajouté en session 2026-09-16 (suite), consommé par `home`/`a-propos`/`la-une`
-      (3/14 pages Phase 1) — voir `docs/features/content.md`
+      sans auth) ajouté en session 2026-09-16 (suite), consommé par
+      `home`/`a-propos`/`la-une`/`nos-creations-galerie` (4/14 pages Phase 1) — voir
+      `docs/features/content.md`
 
 > Périmètre volontairement limité aux 2 pages couvertes par une maquette Stitch
 > (`stitch-prompts/31-*.md`). Le reste du back-office listé au spec §60-66
@@ -242,8 +245,9 @@ phase n'a pas été traitée en session dédiée (voir `.cursor/rules/006-phase-
 > d'auth, `agy` absent) — structure/copy des 2 pages reconstruites depuis le texte de
 > `stitch-prompts/31-*.md` uniquement, à revalider contre l'écran réel dès que possible ;
 > l'étape 4 de `docs/phases/phase-6-admin-cms.md` (migrer les pages publiques vers
-> `PageSection`) a démarré en session 2026-09-16 (suite) — `home`/`a-propos`/`la-une` migrées
-> (3 des 14 pages Phase 1), les 11 autres restent **non traitées** ; le panneau "Utilisée dans" de
+> `PageSection`) a démarré en session 2026-09-16 (suite) —
+> `home`/`a-propos`/`la-une`/`nos-creations-galerie` migrées (4 des 14 pages Phase 1), les 10
+> autres restent **non traitées** ; le panneau "Utilisée dans" de
 > `admin-mediatheque` est limité par un bug pré-existant non corrigé (relations `Media`
 > jamais connectées par `confirm-upload`, voir `docs/features/media.md`).
 

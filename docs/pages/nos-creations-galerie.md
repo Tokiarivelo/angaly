@@ -32,7 +32,8 @@ arbitrage assumé que `home`/`la-une`, voir leurs fiches respectives "Notes d'im
 apps/web/src/features/nos-creations-galerie/
   ui/
     NosCreationsGaleriePage.tsx   → orchestre header + barre de filtres + chips + grille + load-more
-    GalleryHeader.tsx              → titre serif + intro + breadcrumb (Accueil / Nos Créations)
+    GalleryHeader.tsx              → titre serif + intro + breadcrumb (Accueil / Nos Créations),
+                                      titre/intro réels (`content` prop) — breadcrumb reste codé en dur
     FilterBar.tsx                  → 'use client' — Genre/Type/Couleur/Style décoratifs + Catégorie
                                       réelle (`<select>` peuplé par `GET /api/categories`) + tri réel
                                       + toggle vue grille/liste
@@ -60,20 +61,27 @@ apps/web/src/features/nos-creations-galerie/
                                        de store — contrairement à navigation-mobile, rien d'autre
                                        n'a besoin de lire cet état)
     useCategoryFilter.ts             → liste des vraies catégories CREATION (GET /api/categories?kind=CREATION)
+    useGalleryContent.ts             → texte de l'en-tête (`page="nos-creations-galerie"`,
+                                        `sectionKey="header"`) lu depuis `PageSection` (session
+                                        2026-09-16, suite — voir docs/features/content.md), repli sur les
+                                        littéraux codés en dur si la section n'existe pas/n'est pas publiée
   api/
-    nos-creations-galerie.api.ts   → useCreationsPageQuery(page, sort, categoryId), useCategoriesQuery
+    nos-creations-galerie.api.ts   → useCreationsPageQuery(page, sort, categoryId), useCategoriesQuery,
+                                      useGallerySectionsContentQuery
   consts/
     gallery-filters.const.ts       → libellés décoratifs (Genre/Type/Couleur/Style) + options de tri réelles
   types/
     gallery.types.ts
   __tests__/
     useCreationsGallery.test.ts, useGalleryFilters.test.ts, useCategoryFilter.test.ts
-    useQuickView.test.ts, useMobileFilterSheet.test.ts
+    useQuickView.test.ts, useMobileFilterSheet.test.ts, useGalleryContent.test.ts
     QuickViewModal.test.tsx, MobileFilterSheet.test.tsx, ActiveFilterChips.test.tsx, EmptyState.test.tsx
     NosCreationsGaleriePage.test.tsx
   index.ts
 apps/web/src/lib/msw/handlers/categories.handlers.ts  → défaut GET /categories (2 catégories CREATION)
                                                           pour tous les tests, voir docs/testing.md
+apps/web/src/lib/msw/handlers/nos-creations-galerie.handlers.ts → défaut GET /content/public/
+                                                          nos-creations-galerie (session 2026-09-16, suite)
 ```
 
 Toute logique (fetch, tri, pagination, filtre) vit dans `hooks/` — `NosCreationsGaleriePage.tsx`
@@ -85,6 +93,7 @@ et les sections ne contiennent que du JSX + appels de hooks.
 | --- | --- | --- |
 | `GET /api/creations?page=&limit=&sort=&categoryId=` | `creations` | Liste paginée des créations (tri newest/featured, filtre Catégorie), accumulée progressivement |
 | `GET /api/categories?kind=CREATION` | `categories` (nouveau — `docs/features/categories.md`) | Peuple le `<select>` « Catégorie » avec de vraies catégories |
+| `GET /api/content/public/nos-creations-galerie` | `content` | Texte de l'en-tête (titre/intro), `PUBLISHED`-only, sans auth (session 2026-09-16, suite) |
 
 ## Modèles Prisma touchés
 
@@ -150,6 +159,13 @@ dépend de Phase 2/`customers`).
   jugé utile de les synchroniser pour un état de démonstration).
 - « Voir plus de créations » reste du chargement progressif (page/limit accumulés côté
   client), jamais une pagination lourde ni un rechargement de page.
+- Titre/intro de l'en-tête (`GalleryHeader.tsx`) lus depuis `PageSection`
+  (`page="nos-creations-galerie"`, `sectionKey="header"`) via `GET /content/public/nos-
+  creations-galerie` depuis la session 2026-09-16 (suite) — quatrième page migrée après
+  `home`/`a-propos`/`la-une`, voir `docs/features/content.md` et
+  `docs/phases/phase-6-admin-cms.md` (item 4). Le fil d'Ariane (breadcrumb) reste codé en
+  dur : navigation structurelle, pas du contenu éditorial. Repli sur les littéraux codés en
+  dur (`useGalleryContent.ts`) si la section est absente ou encore `DRAFT`.
 
 ## Checklist d'acceptation
 
@@ -163,5 +179,5 @@ dépend de Phase 2/`customers`).
 - [x] Filtre Catégorie réellement fonctionnel (nouveau module `categories`, `GET /api/categories?kind=CREATION` + `GET /api/creations?categoryId=`), sur desktop ET mobile
 - [x] Chips de filtres actifs (Catégorie) + « Réinitialiser les filtres » (chip, lien, et bouton de l'état vide — les 3 partagent `resetFilters()`)
 - [x] Vérifié en direct via Playwright contre l'API/Postgres/MinIO réels : 19 créations réelles couvrant 6 catégories (`Robes de mariée`, `Costumes homme`, `Robes de soirée`, `Sur Mesure`, `Coulisses`, `Création du mois`), pagination progressive (12 initiales → 19 au clic sur « Voir plus de créations »), filtrage dynamique par catégorie avec chip actif et reset, ouverture de la modale « Aperçu rapide », bascule vue grille/liste, et panneau mobile plein écran
-- [x] Tests : `useCreationsGallery.test.ts`, `useGalleryFilters.test.ts`, `useCategoryFilter.test.ts`, `useQuickView.test.ts`, `useMobileFilterSheet.test.ts`, `QuickViewModal.test.tsx`, `MobileFilterSheet.test.tsx`, `ActiveFilterChips.test.tsx`, `EmptyState.test.tsx`, `NosCreationsGaleriePage.test.tsx` (40 tests unitaires, >95% de couverture) + `apps/web/e2e/creations/nos-creations-galerie.spec.ts` (parcours critique Playwright e2e)
+- [x] Tests : `useCreationsGallery.test.ts`, `useGalleryFilters.test.ts`, `useCategoryFilter.test.ts`, `useQuickView.test.ts`, `useMobileFilterSheet.test.ts`, `useGalleryContent.test.ts`, `QuickViewModal.test.tsx`, `MobileFilterSheet.test.tsx`, `ActiveFilterChips.test.tsx`, `EmptyState.test.tsx`, `NosCreationsGaleriePage.test.tsx` (44 tests unitaires, tous verts) + `apps/web/e2e/creations/nos-creations-galerie.spec.ts` (parcours critique Playwright e2e)
 - [x] `docs/checklist-implementation.md` et `docs/mockup-reference.md` mis à jour à ✅

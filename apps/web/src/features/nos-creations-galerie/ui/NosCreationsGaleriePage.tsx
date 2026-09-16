@@ -2,6 +2,7 @@
 
 import { useCategoryFilter } from '../hooks/useCategoryFilter';
 import { useCreationsGallery } from '../hooks/useCreationsGallery';
+import { useGalleryContent } from '../hooks/useGalleryContent';
 import { useGalleryFilters } from '../hooks/useGalleryFilters';
 import { useQuickView } from '../hooks/useQuickView';
 import { ActiveFilterChips } from './ActiveFilterChips';
@@ -14,6 +15,7 @@ import { ResultsCount } from './ResultsCount';
 
 /** Orchestrates the real Stitch "Nos Créations (Gallery Portfolio)" screen — JSX + hooks only. */
 export function NosCreationsGaleriePage() {
+  const { data: content } = useGalleryContent();
   const {
     sort,
     setSort,
@@ -46,7 +48,7 @@ export function NosCreationsGaleriePage() {
 
   return (
     <>
-      <GalleryHeader />
+      <GalleryHeader content={content.header} />
       <FilterBar
         sort={sort}
         onSortChange={setSort}
