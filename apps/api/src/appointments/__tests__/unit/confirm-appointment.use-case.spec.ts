@@ -35,6 +35,8 @@ function buildRepository(appointment: AppointmentEntity | null, confirmed: Appoi
     create: jest.fn(),
     updateStatus: jest.fn().mockResolvedValue(confirmed),
     listActiveByAtelierAndRange: jest.fn(),
+    findByCustomerId: jest.fn(),
+    findAll: jest.fn(),
   };
 }
 

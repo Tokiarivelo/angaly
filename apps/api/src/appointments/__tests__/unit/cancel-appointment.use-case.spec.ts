@@ -32,6 +32,8 @@ function buildRepository(appointment: AppointmentEntity | null): jest.Mocked<IAp
     create: jest.fn(),
     updateStatus: jest.fn().mockResolvedValue(sampleAppointment('CANCELLED')),
     listActiveByAtelierAndRange: jest.fn(),
+    findByCustomerId: jest.fn(),
+    findAll: jest.fn(),
   };
 }
 

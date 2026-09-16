@@ -66,6 +66,8 @@ function buildUseCase(overrides: { atelier?: AtelierEntity | null; appointments?
     create: jest.fn(),
     updateStatus: jest.fn(),
     listActiveByAtelierAndRange: jest.fn().mockResolvedValue(overrides.appointments ?? []),
+    findByCustomerId: jest.fn(),
+    findAll: jest.fn(),
   };
 
   return new GetMonthAvailabilityUseCase(atelierRepository, appointmentRepository);
