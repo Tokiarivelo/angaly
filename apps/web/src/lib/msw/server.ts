@@ -4,6 +4,7 @@ import { aProposHandlers } from './handlers/a-propos.handlers';
 import { authentificationHandlers } from './handlers/authentification.handlers';
 import { categoriesHandlers } from './handlers/categories.handlers';
 import { collectionDetailHandlers } from './handlers/collection-detail.handlers';
+import { collectionsListeHandlers } from './handlers/collections-liste.handlers';
 import { confirmationRendezVousHandlers } from './handlers/confirmation-rendez-vous.handlers';
 import { contactHandlers } from './handlers/contact.handlers';
 import { creationDetailHandlers } from './handlers/creation-detail.handlers';
@@ -24,6 +25,7 @@ export const server = setupServer(
   ...nosCreationsGalerieHandlers,
   ...creationDetailHandlers,
   ...collectionDetailHandlers,
+  ...collectionsListeHandlers,
   ...contactHandlers,
   ...categoriesHandlers,
   ...authentificationHandlers,

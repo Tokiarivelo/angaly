@@ -28,19 +28,21 @@ d'implémentation" respectives. Aucun état interactif complexe n'est requis par
 apps/web/src/features/collections-liste/
   ui/
     CollectionsListePage.tsx      → orchestre header + bannière « Collection du moment » + grille
-    CollectionsHeader.tsx
+    CollectionsHeader.tsx          → titre/sous-titre réels (contenu — voir hooks/useCollectionsContent.ts)
     FeaturedCollectionBanner.tsx  → photo + titre + histoire courte + stat (« 12 créations ») + CTA
     CollectionCoverCard.tsx        → carte pleine hauteur (cover + overlay dégradé navy + année/titre/description + lien)
     CollectionsGrid.tsx
   hooks/
     useCollectionsList.ts          → react-query sur GET /api/collections
     useFeaturedCollection.ts        → react-query, dérive la « Collection du moment »
+    useCollectionsContent.ts        → header réel, GET /content/public/collections-liste, repli codé en dur
   api/
-    collections-liste.api.ts        → useCollectionsListQuery, useFeaturedCollectionQuery
+    collections-liste.api.ts        → useCollectionsListQuery, useFeaturedCollectionQuery, useCollectionsSectionsContentQuery
   consts/
     queryKeys.ts
   __tests__/
     useCollectionsList.test.ts
+    useCollectionsContent.test.ts
     CollectionsListePage.test.tsx
   index.ts
 ```
@@ -54,14 +56,22 @@ Toute logique (fetch, dérivation de la collection du moment) vit dans `hooks/` 
 | -------------------------------------------------------- | ------------- | ------------------------------------------------------------------- |
 | `GET /api/collections?sort=seasonYear:desc&page=&limit=` | `collections` | Grille de toutes les collections publiées                           |
 | `GET /api/collections?sort=publishedAt:desc&limit=1`     | `collections` | « Collection du moment » pour la bannière (voir Points d'attention) |
+| `GET /api/content/public/collections-liste`               | `content`     | Texte du header (titre/sous-titre), `PUBLISHED`-only                |
 
 ## Modèles Prisma touchés
 
 `Collection` (`slug`, `name`, `description`, `story`, `seasonYear`, `publishedAt`),
-`Creation[]` (compte de créations pour la bannière), `Media` (via `CollectionMedia`).
+`Creation[]` (compte de créations pour la bannière), `Media` (via `CollectionMedia`),
+`PageSection` (`page="collections-liste"`, `sectionKey="header"` — texte du header).
 
 ## Points d'attention
 
+- **Header (titre + sous-titre) migré vers `PageSection` CMS** (session 2026-09-16, suite —
+  septième tranche de `docs/phases/phase-6-admin-cms.md` item 4, après `home`/`a-propos`/
+  `la-une`/`nos-creations-galerie`/`creation-detail`/`contact`) : `CollectionsHeader` lit
+  `GET /content/public/collections-liste` via `useCollectionsContent`, repli sur le littéral
+  codé en dur si la section `header` est absente/`DRAFT` — voir `docs/features/content.md`.
+  Le fil d'Ariane reste codé en dur — navigation structurelle, pas du contenu éditorial.
 - **Fidélité vérifiée via `agy`/StitchMCP `get_screen`** (écran réel
   `f7e85096ba6f4dd8afb29fb1290363c0`), pas seulement `stitch-prompts/06-collections-liste.md`.
   La grille réelle est strictement 2 colonnes (`md:grid-cols-2`, jamais 3/4 même en très

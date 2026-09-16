@@ -1351,6 +1351,15 @@ async function main() {
       subtitleText: 'Une question, un projet ? Nous sommes à votre écoute.',
       status: ContentStatus.PUBLISHED,
     },
+    // --- Page Sections (Collections Liste) --------------------------------------
+    {
+      page: 'collections-liste',
+      sectionKey: 'header',
+      locale: Locale.FR,
+      titleText: 'Nos Collections',
+      subtitleText: 'Chaque collection raconte une histoire, une saison, une inspiration.',
+      status: ContentStatus.PUBLISHED,
+    },
   ];
 
   const createdPageSections = new Map<string, { id: string }>();
