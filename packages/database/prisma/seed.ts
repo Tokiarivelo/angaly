@@ -1332,6 +1332,16 @@ async function main() {
       subtitleText: "Explorez l'ensemble de notre savoir-faire, des robes de mariée aux costumes sur mesure.",
       status: ContentStatus.PUBLISHED,
     },
+    // --- Page Sections (Creation Detail) ---------------------------------------
+    {
+      page: 'creation-detail',
+      sectionKey: 'savoir-faire',
+      locale: Locale.FR,
+      titleText: 'Le savoir-faire derrière cette création',
+      bodyText:
+        "Chaque pièce Angaly naît d'un dialogue entre la vision d'une couturière et le geste d'un artisan. Nos ateliers malgaches perpétuent des techniques transmises de génération en génération, du choix des matières les plus nobles jusqu'à la dernière retouche.",
+      status: ContentStatus.PUBLISHED,
+    },
   ];
 
   const createdPageSections = new Map<string, { id: string }>();
@@ -1349,7 +1359,7 @@ async function main() {
     });
     createdPageSections.set(`${section.page}:${section.sectionKey}`, section);
   }
-  console.log(`✅ ${pageSections.length} sections de page (Accueil, À propos, La Une et Nos Créations) créées`);
+  console.log(`✅ ${pageSections.length} sections de page (Accueil, À propos, La Une, Nos Créations et Creation Detail) créées`);
 
   // --- Testimonials ---------------------------------------------------------
   const testimonials = [
@@ -1647,7 +1657,7 @@ async function main() {
         await attachPhoto(storage, 'customers', photo, photoAlt, MediaEntityType.PAGE_SECTION, section.id);
       }
     }
-    console.log("✅ Photos des sections de page (Accueil, À propos, La Une et Nos Créations) vérifiées/hébergées sur MinIO");
+    console.log("✅ Photos des sections de page (Accueil, À propos, La Une, Nos Créations et Creation Detail) vérifiées/hébergées sur MinIO");
 
     for (const t of createdTestimonials) {
       const exists = await prisma.media.findFirst({

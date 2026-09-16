@@ -27,4 +27,15 @@ export const creationDetailHandlers = [
       },
     });
   }),
+
+  /**
+   * Real endpoint — see docs/features/content.md ("Endpoint public"). Empty
+   * by default (no CMS rows in this hermetic test environment) so
+   * `useCreationDetailContent` falls back to its hardcoded defaults — tests
+   * that need CMS-present/draft-only scenarios override this with
+   * `server.use(...)`.
+   */
+  http.get(`${API_BASE_URL}/content/public/creation-detail`, () => {
+    return HttpResponse.json({ success: true, data: [] });
+  }),
 ];
