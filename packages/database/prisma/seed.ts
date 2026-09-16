@@ -1313,6 +1313,16 @@ async function main() {
       ctaSecondaryLabel: 'Prendre rendez-vous',
       status: ContentStatus.PUBLISHED,
     },
+    // --- Page Sections (La Une / Editorial Showcase) --------------------------
+    {
+      page: 'la-une',
+      sectionKey: 'header',
+      locale: Locale.FR,
+      titleText: 'LA UNE',
+      subtitleText: "Les créations qui incarnent l'univers Angaly — sélectionnées et renouvelées par la maison.",
+      dataJson: { eyebrow: 'Éditorial' },
+      status: ContentStatus.PUBLISHED,
+    },
   ];
 
   const createdPageSections = new Map<string, { id: string }>();
@@ -1330,7 +1340,7 @@ async function main() {
     });
     createdPageSections.set(`${section.page}:${section.sectionKey}`, section);
   }
-  console.log(`✅ ${pageSections.length} sections de page (Accueil et À propos) créées`);
+  console.log(`✅ ${pageSections.length} sections de page (Accueil, À propos et La Une) créées`);
 
   // --- Testimonials ---------------------------------------------------------
   const testimonials = [
@@ -1628,7 +1638,7 @@ async function main() {
         await attachPhoto(storage, 'customers', photo, photoAlt, MediaEntityType.PAGE_SECTION, section.id);
       }
     }
-    console.log("✅ Photos des sections de page (Accueil et À propos) vérifiées/hébergées sur MinIO");
+    console.log("✅ Photos des sections de page (Accueil, À propos et La Une) vérifiées/hébergées sur MinIO");
 
     for (const t of createdTestimonials) {
       const exists = await prisma.media.findFirst({

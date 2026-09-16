@@ -27,7 +27,7 @@ de filtre par pilules (état de la pilule active) reste un Client Component isol
 apps/web/src/features/la-une/
   ui/
     LaUnePage.tsx              → orchestre header + filtre + hero + grille + CTA, JSX + hooks uniquement
-    LaUneHeader.tsx             → eyebrow « Éditorial » + titre serif + sous-titre italique
+    LaUneHeader.tsx             → eyebrow « Éditorial » + titre serif + sous-titre italique, contenu réel (`content` prop)
     FeaturedHeroItem.tsx        → item dominant plein cadre 70vh/85vh (Création du mois / Collection du moment)
     EditorialGrid.tsx           → grille masonry 12-col (rythme large 7col / small 5col décalé / full 12col)
     EditorialGridItem.tsx       → carte item, légende SOUS l'image (photo, catégorie, titre, description, date, lien)
@@ -36,8 +36,11 @@ apps/web/src/features/la-une/
   hooks/
     useLaUneItems.ts            → react-query sur les créations `isFeatured=true`, tri par featuredFrom
     useContentTypeFilter.ts     → état de la pilule active (filtrage client, pas de refetch serveur)
+    useLaUneContent.ts          → texte de l'en-tête (`page="la-une"`, `sectionKey="header"`) lu depuis `PageSection`
+                                   (session 2026-09-16, suite — voir docs/features/content.md), repli sur les
+                                   littéraux codés en dur si la section n'existe pas/n'est pas publiée
   api/
-    la-une.api.ts                → useFeaturedCreationsQuery / useFeaturedCollectionQuery
+    la-une.api.ts                → useFeaturedCreationsQuery / useFeaturedCollectionQuery / useLaUneSectionsContentQuery
   consts/
     content-type-filters.const.ts → pilules réelles (Tout, Création du mois, Collection du moment, Sur Mesure, Coulisses)
   utils/
@@ -48,6 +51,7 @@ apps/web/src/features/la-une/
     buildLaUneItems.test.ts
     useContentTypeFilter.test.ts
     useLaUneItems.test.ts
+    useLaUneContent.test.ts
     ContentTypeFilterBar.test.tsx
     LaUnePage.test.tsx
   index.ts
@@ -62,6 +66,7 @@ contiennent que du JSX + appels de hooks.
 | --- | --- | --- |
 | `GET /api/creations?isFeatured=true&sort=featuredFrom:desc` | `creations` | Créations à la une, triées par date de mise en avant |
 | `GET /api/collections?featured=true&limit=1` | `collections` | Collection du moment éventuelle pour l'item héros |
+| `GET /api/content/public/la-une` | `content` | Texte de l'en-tête (eyebrow/titre/sous-titre), `PUBLISHED`-only, sans auth (session 2026-09-16, suite) |
 
 ## Modèles Prisma touchés
 
@@ -91,9 +96,11 @@ contiennent que du JSX + appels de hooks.
 - Image de l'item héros en LCP : `next/image` avec `priority` sera branché quand la vraie
   photographie existera (Phase 6/contenu) — un dégradé de substitution tient sa place pour
   l'instant, comme sur `home`.
-- Contenu de l'en-tête (« Éditorial », titre, sous-titre) suit le même sort que `home` :
-  valeurs par défaut codées en dur dans `LaUneHeader.tsx` en attendant `content` (Phase 6),
-  TODO explicite pointant vers cette fiche.
+- Contenu de l'en-tête (« Éditorial », titre, sous-titre) lu depuis `PageSection`
+  (`page="la-une"`, `sectionKey="header"`) via `GET /content/public/la-une` depuis la session
+  2026-09-16 (suite) — troisième page migrée après `home`/`a-propos`, voir
+  `docs/features/content.md` et `docs/phases/phase-6-admin-cms.md` (item 4). Repli sur les
+  littéraux codés en dur (`useLaUneContent.ts`) si la section est absente ou encore `DRAFT`.
 - Le bandeau CTA de fermeture réel (`ClosingCtaBand.tsx`) porte les boutons « Prendre
   rendez-vous » et « Découvrir l'E-boutique » (pas « Voir toutes nos créations », qui vient
   du prompt texte seul) — le second pointe vers `/pret-a-porter`, route boutique la plus
@@ -106,6 +113,6 @@ contiennent que du JSX + appels de hooks.
 - [x] Bande CTA de fermeture avec les deux boutons (Prendre rendez-vous / Découvrir l'E-boutique)
 - [x] `<title>`/meta description définis (spec §70)
 - [x] Tests : `buildLaUneItems.test.ts`, `useContentTypeFilter.test.ts`, `useLaUneItems.test.ts`,
-      `ContentTypeFilterBar.test.tsx`, `LaUnePage.test.tsx` — 13 tests, 98%+/89%+/100%/98%+ de
-      couverture (stmts/branches/fonctions/lignes) sur `la-une/`
+      `useLaUneContent.test.ts`, `ContentTypeFilterBar.test.tsx`, `LaUnePage.test.tsx` — 25 tests
+      sur `la-une/`, tous verts (session 2026-09-16, suite)
 - [x] `docs/checklist-implementation.md` et `docs/mockup-reference.md` mis à jour à ✅
