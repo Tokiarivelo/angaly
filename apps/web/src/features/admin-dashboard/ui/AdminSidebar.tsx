@@ -27,7 +27,7 @@ export const AdminSidebar: React.FC = () => {
 
   return (
     <aside className="w-64 flex-shrink-0 hidden lg:block border-r border-border min-h-[calc(100vh-4rem)] p-6 bg-white">
-      <p className="px-4 mb-4 text-xs uppercase tracking-wider text-slate font-semibold">
+      <p className="px-4 mb-4 text-xs uppercase tracking-wider text-angaly-slate font-semibold">
         Administration
       </p>
       <nav className="space-y-1">
@@ -40,8 +40,8 @@ export const AdminSidebar: React.FC = () => {
               href={item.href}
               className={`flex items-center gap-3 px-4 py-3 rounded-xl text-sm font-medium transition-colors ${
                 isActive
-                  ? 'bg-primary-deep-navy text-white'
-                  : 'text-slate hover:bg-ivory-warm hover:text-primary-deep-navy'
+                  ? 'bg-angaly-navy text-white'
+                  : 'text-angaly-slate hover:bg-angaly-warm-ivory hover:text-angaly-navy'
               }`}
             >
               <Icon size={18} />

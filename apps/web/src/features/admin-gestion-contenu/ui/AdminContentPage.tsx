@@ -1,6 +1,6 @@
 'use client';
 
-import React, { useState } from 'react';
+import React, { useEffect, useState } from 'react';
 import { Locale } from '@angaly/types';
 
 import { useSectionEditor } from '../hooks/useSectionEditor';
@@ -16,6 +16,9 @@ interface AdminContentPageProps {
   initialSectionKey?: string | undefined;
 }
 
+const UNSAVED_CHANGES_WARNING =
+  'Des modifications non enregistrées seront perdues. Continuer ?';
+
 export const AdminContentPage: React.FC<AdminContentPageProps> = ({ initialPage, initialSectionKey }) => {
   const { data: groups, isLoading: isLoadingGroups } = useSectionsList();
   const [selected, setSelected] = useState<{ page: string; sectionKey: string } | null>(
@@ -23,18 +26,43 @@ export const AdminContentPage: React.FC<AdminContentPageProps> = ({ initialPage,
   );
   const [activeLocale, setActiveLocale] = useState<Locale>(Locale.FR);
   const [historyOpen, setHistoryOpen] = useState(false);
+  const [isFormDirty, setIsFormDirty] = useState(false);
 
   const editor = useSectionEditor(selected?.page ?? '', selected?.sectionKey ?? '', activeLocale);
   const history = useSectionVersionHistory(editor.activeSection?.id ?? null);
 
-  const availableLocales = (editor.data ?? []).map((section) => section.locale);
+  // Warn on a hard reload/tab close while a draft edit hasn't been saved —
+  // useSectionEditor's data would otherwise be silently discarded.
+  useEffect(() => {
+    if (!isFormDirty) return;
+    function handleBeforeUnload(event: BeforeUnloadEvent) {
+      event.preventDefault();
+    }
+    window.addEventListener('beforeunload', handleBeforeUnload);
+    return () => window.removeEventListener('beforeunload', handleBeforeUnload);
+  }, [isFormDirty]);
+
+  function confirmDiscardIfDirty(): boolean {
+    return !isFormDirty || window.confirm(UNSAVED_CHANGES_WARNING);
+  }
+
+  function selectSection(page: string, sectionKey: string) {
+    if (!confirmDiscardIfDirty()) return;
+    setSelected({ page, sectionKey });
+    setActiveLocale(Locale.FR);
+  }
+
+  function changeLocale(locale: Locale) {
+    if (!confirmDiscardIfDirty()) return;
+    setActiveLocale(locale);
+  }
 
   return (
     <div>
-      <h1 className="font-serif text-2xl sm:text-3xl text-primary-deep-navy font-light mb-2">
+      <h1 className="font-serif text-2xl sm:text-3xl text-angaly-navy font-light mb-2">
         Gestion de contenu
       </h1>
-      <p className="text-slate text-sm mb-8">
+      <p className="text-angaly-slate text-sm mb-8">
         Modifiez les textes et images affichés sur le site public.
       </p>
 
@@ -44,10 +72,7 @@ export const AdminContentPage: React.FC<AdminContentPageProps> = ({ initialPage,
             groups={groups ?? []}
             isLoading={isLoadingGroups}
             selected={selected}
-            onSelect={(page, sectionKey) => {
-              setSelected({ page, sectionKey });
-              setActiveLocale(Locale.FR);
-            }}
+            onSelect={selectSection}
           />
         </div>
 
@@ -57,8 +82,8 @@ export const AdminContentPage: React.FC<AdminContentPageProps> = ({ initialPage,
               page={selected.page}
               sectionKey={selected.sectionKey}
               activeLocale={activeLocale}
-              onLocaleChange={setActiveLocale}
-              availableLocales={availableLocales}
+              onLocaleChange={changeLocale}
+              availableLocales={editor.availableLocales}
               section={editor.activeSection}
               isLoading={editor.isLoading}
               onSaveDraft={(values) =>
@@ -75,9 +100,10 @@ export const AdminContentPage: React.FC<AdminContentPageProps> = ({ initialPage,
               onPublish={() => editor.publish.mutate()}
               isPublishing={editor.publish.isPending}
               onShowHistory={() => setHistoryOpen(true)}
+              onDirtyChange={setIsFormDirty}
             />
           ) : (
-            <p className="text-sm text-slate">Sélectionnez une section à gauche pour commencer.</p>
+            <p className="text-sm text-angaly-slate">Sélectionnez une section à gauche pour commencer.</p>
           )}
         </div>
       </div>

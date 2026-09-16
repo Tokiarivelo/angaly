@@ -33,3 +33,10 @@ export function truncate(str: string, maxLength: number): string {
   if (str.length <= maxLength) return str;
   return `${str.slice(0, maxLength - 3)}...`;
 }
+
+/** Human-readable file size (o/Ko/Mo) — shared by admin-mediatheque's grid card and detail panel. */
+export function formatFileSize(bytes: number): string {
+  if (bytes < 1024) return `${bytes} o`;
+  if (bytes < 1024 * 1024) return `${Math.round(bytes / 1024)} Ko`;
+  return `${(bytes / (1024 * 1024)).toFixed(1)} Mo`;
+}

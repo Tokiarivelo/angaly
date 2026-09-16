@@ -19,6 +19,7 @@ import { UploadMediaBufferUseCase } from '../../application/use-cases/upload-med
 import { MediaEntity } from '../../domain/entities/media.entity';
 import { MediaEntityRef } from '../../domain/value-objects/media-entity-ref.vo';
 import { MediaController } from '../../presentation/controllers/media.controller';
+import { MAX_MEDIA_UPLOAD_SIZE_BYTES } from '@angaly/types';
 
 function sampleMedia(): MediaEntity {
   return MediaEntity.create({
@@ -135,6 +136,22 @@ describe('MediaController (integration)', () => {
       .expect(201);
 
     expect(response.body).toMatchObject({ id: 'media-1', url: 'http://localhost:9000/creations/abc.jpg' });
+  });
+
+  it('POST /media/confirm rejects a sizeBytes over the 20 Mo limit with 400', async () => {
+    await request(server())
+      .post('/media/confirm')
+      .send({
+        bucket: 'creations',
+        objectKey: 'abc.jpg',
+        entityType: 'CREATION',
+        altText: 'Robe éternelle',
+        mimeType: 'image/jpeg',
+        sizeBytes: MAX_MEDIA_UPLOAD_SIZE_BYTES + 1,
+      })
+      .expect(400);
+
+    expect(confirmUploadUseCase.execute).not.toHaveBeenCalled();
   });
 
   it('GET /media returns a paginated response using default pagination', async () => {

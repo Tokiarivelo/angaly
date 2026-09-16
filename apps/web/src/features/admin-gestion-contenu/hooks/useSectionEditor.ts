@@ -30,6 +30,8 @@ export const useSectionEditor = (page: string, sectionKeyValue: string, activeLo
     [query.data, activeLocale],
   );
 
+  const availableLocales = useMemo(() => (query.data ?? []).map((section) => section.locale), [query.data]);
+
   const invalidate = () => {
     void queryClient.invalidateQueries({ queryKey: sectionKey(page, sectionKeyValue) });
     void queryClient.invalidateQueries({ queryKey: SECTION_GROUPS_KEY });
@@ -52,6 +54,7 @@ export const useSectionEditor = (page: string, sectionKeyValue: string, activeLo
   return {
     ...query,
     activeSection,
+    availableLocales,
     saveDraft,
     publish,
   };

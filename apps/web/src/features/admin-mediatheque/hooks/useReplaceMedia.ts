@@ -4,7 +4,7 @@ import { useMutation, useQueryClient } from '@tanstack/react-query';
 import type { MediaEntityType } from '@angaly/types';
 
 import { createPresignedUpload, updateMedia } from '../api/media.api';
-import { mediaDetailKey } from '../consts/queryKeys';
+import { mediaBaseKey, mediaDetailKey } from '../consts/queryKeys';
 
 /** Replaces the binary in place: new bucket/objectKey uploaded, then PATCHed onto the SAME Media id — every existing reference stays valid (docs/pages/admin-mediatheque.md). */
 export const useReplaceMedia = (id: string, entityType: MediaEntityType) => {
@@ -23,7 +23,7 @@ export const useReplaceMedia = (id: string, entityType: MediaEntityType) => {
     },
     onSuccess: () => {
       void queryClient.invalidateQueries({ queryKey: mediaDetailKey(id) });
-      void queryClient.invalidateQueries({ queryKey: ['admin', 'media', 'list'] });
+      void queryClient.invalidateQueries({ queryKey: mediaBaseKey });
     },
   });
 };

@@ -1,6 +1,8 @@
 # Page — `admin-gestion-contenu`
 
-**Statut : ✅ Fait** (session 2026-09-16). Phase 6 — Admin (back-office).
+**Statut : ✅ Fait** (session 2026-09-16). Phase 6 — Admin (back-office). **Passe
+optimisation/UX** (session 2026-09-16, suite — audit complet du CMS admin) : voir
+"Points d'attention" pour le détail des correctifs perf/UX/qualité de code appliqués.
 
 ## Écarts assumés
 
@@ -52,16 +54,16 @@ Protégée par middleware + guard NestJS : rôle `MANAGER` ou `ADMIN` uniquement
 ```
 apps/web/src/features/admin-gestion-contenu/
   ui/
-    AdminContentPage.tsx        → layout 2 colonnes (liste + éditeur)
-    SectionsList.tsx            → colonne gauche : pages/sections + statut (pill)
-    SectionEditorForm.tsx       → colonne droite : formulaire par section
+    AdminContentPage.tsx        → layout 2 colonnes (liste + éditeur), avertit avant de perdre des modifications non enregistrées (voir Points d'attention)
+    SectionsList.tsx            → colonne gauche : pages/sections + statut (pill), squelette de chargement
+    SectionEditorForm.tsx       → colonne droite : formulaire par section, aperçu scopé (useWatch), signale son état "modifié" au parent
     LocaleTabs.tsx               → onglets Français / Malagasy
-    VersionHistoryDrawer.tsx     → tiroir d'historique des versions
+    VersionHistoryDrawer.tsx     → tiroir d'historique des versions — Radix Dialog (focus-trap + Échap, voir Points d'attention)
     PreviewToggle.tsx
   hooks/
-    useSectionsList.ts           → liste des PageSection groupées par page
+    useSectionsList.ts           → liste des PageSection groupées par page, `staleTime` 30s
     useSectionEditor.ts          → charge une section, gère le formulaire (react-hook-form),
-                                    bascule brouillon/publié, appelle save/publish
+                                    bascule brouillon/publié, appelle save/publish, expose `availableLocales`
     useSectionVersionHistory.ts  → liste + action "Restaurer"
   api/
     page-sections.api.ts         → useSectionsQuery, useSectionQuery, useSaveDraftMutation,
@@ -71,13 +73,15 @@ apps/web/src/features/admin-gestion-contenu/
   consts/
     queryKeys.ts
   __tests__/
-    useSectionEditor.test.ts
-    useSectionsList.test.ts
+    useSectionEditor.test.ts, useSectionsList.test.ts, SectionEditorForm.test.tsx,
+    AdminContentPage.test.tsx, VersionHistoryDrawer.test.tsx
   index.ts
 ```
 
 `AdminContentPage.tsx` et les composants `ui/` restent purement présentationnels ; toute la
-logique de chargement/sauvegarde/versioning vit dans `hooks/`.
+logique de chargement/sauvegarde/versioning vit dans `hooks/` — `availableLocales` (dérivé
+depuis `useSectionEditor.ts`, session 2026-09-16 suite) a été déplacé hors de
+`AdminContentPage.tsx` pour rester cohérent avec cette règle.
 
 ## Endpoints API consommés
 
@@ -97,6 +101,28 @@ logique de chargement/sauvegarde/versioning vit dans `hooks/`.
 
 ## Points d'attention
 
+- **Audit optimisation/UX complet** (session 2026-09-16, suite — à la demande explicite de
+  vérifier "le CMS admin complet" et d'y apporter optimisation et facilité d'usage), voir
+  aussi `docs/pages/admin-mediatheque.md` pour le détail du bug de couleurs (commun aux deux
+  features + au shell admin) :
+  - **Bug de couleurs corrigé** : `text-slate`/`bg-primary-deep-navy`/`bg-ivory`/
+    `text-warning` (classes Tailwind jamais définies) remplacées par les vrais tokens
+    ANGALY (`angaly-slate`/`angaly-navy`/`angaly-ivory`/`angaly-warning`) dans les 6
+    composants `ui/` de cette feature.
+  - **Performance** : `availableLocales` déplacé dans `useSectionEditor.ts` (`useMemo`,
+    au lieu d'un `.map()` recalculé à chaque rendu de `AdminContentPage.tsx`) ; `staleTime`
+    de 30 s sur `useSectionsList` ; `SectionEditorForm.tsx` scope son abonnement au formulaire
+    avec `useWatch({ name: ['titleText', 'subtitleText'] })` au lieu d'un `watch()` global qui
+    re-rendait tous les champs à chaque frappe pour ne nourrir que `PreviewToggle`.
+  - **UX** : avertissement (avant perte de données) si l'utilisateur change de section ou de
+    langue avec un brouillon non enregistré (`formState.isDirty`, confirmation + garde
+    `beforeunload`) — silencieusement perdu auparavant ; `VersionHistoryDrawer` reconstruit
+    sur `@radix-ui/react-dialog` (même primitive que `MobileDrawer`/`MobileSearchOverlay` côté
+    site public) pour un vrai piège de focus et une fermeture à l'Échap, au lieu d'un `div`
+    sans aucune gestion clavier ; squelettes de chargement à la place du texte "Chargement…" ;
+    l'explication du bouton "Publier" désactivé est désormais un texte visible relié par
+    `aria-describedby` plutôt qu'un `title` (infobulle survol uniquement, invisible au
+    clavier/lecteur d'écran).
 - **RBAC obligatoire côté NestJS** (guard `@Roles('MANAGER', 'ADMIN')`), le masquage du menu
   côté client n'est qu'un confort UX — voir `docs/phases/phase-6-admin-cms.md`.
 - Toute sauvegarde crée une `PageSectionVersion` (snapshot JSON complet) avant d'écraser
@@ -114,12 +140,14 @@ logique de chargement/sauvegarde/versioning vit dans `hooks/`.
       partir du texte du prompt uniquement**, pas de l'écran Stitch rendu (voir "Écarts
       assumés" : accès `mcp__stitch__*`/`agy` indisponible dans cette session)
 - [x] Sélection d'une section charge son formulaire, sauvegarde brouillon fonctionnelle
-- [x] Publication fonctionnelle (bascule `DRAFT`→`PUBLISHED` en base) — pas encore "visible
-      immédiatement côté public" : aucune page publique ne lit encore `PageSection` (étape 4
-      de `docs/phases/phase-6-admin-cms.md`, explicitement hors périmètre de cette session)
+- [x] Publication fonctionnelle (bascule `DRAFT`→`PUBLISHED` en base) — **visible
+      immédiatement côté public** depuis que l'étape 4 de `docs/phases/phase-6-admin-cms.md`
+      a été terminée (sessions ultérieures) : les 14 pages Phase 1 lisent désormais
+      `PageSection` via `GET /content/public/:page`
 - [x] Historique des versions consultable et "Restaurer" opérationnel
 - [x] Accès refusé (403) pour un rôle `CLIENT`/`COUTURIERE` (testé côté `apps/api`) ; côté web,
       la page redirige tout rôle hors `MANAGER`/`ADMIN` vers `/dashboard`
-- [x] Tests : `useSectionEditor.test.ts`, `useSectionsList.test.ts`, guard RBAC testé côté
-      `apps/api` (`page-sections.controller.spec.ts`)
+- [x] Tests : 5 fichiers de tests (`useSectionEditor`, `useSectionsList`, `SectionEditorForm`,
+      `AdminContentPage`, `VersionHistoryDrawer`), guard RBAC testé côté `apps/api`
+      (`page-sections.controller.spec.ts`)
 - [x] `docs/checklist-implementation.md` et `docs/mockup-reference.md` mis à jour à ✅

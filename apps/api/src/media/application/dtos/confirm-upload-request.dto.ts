@@ -1,5 +1,6 @@
 import { ApiProperty } from '@nestjs/swagger';
-import { IsIn, IsInt, IsOptional, IsPositive, IsString, Min, MinLength } from 'class-validator';
+import { IsIn, IsInt, IsOptional, IsPositive, IsString, Max, Min, MinLength } from 'class-validator';
+import { MAX_MEDIA_UPLOAD_SIZE_BYTES } from '@angaly/types';
 
 import { MEDIA_ENTITY_TYPES, MediaEntityType } from '../../domain/value-objects/media-entity-ref.vo';
 
@@ -39,9 +40,10 @@ export class ConfirmUploadRequestDto {
   @MinLength(1)
   mimeType!: string;
 
-  @ApiProperty({ example: 245_760 })
+  @ApiProperty({ example: 245_760, maximum: MAX_MEDIA_UPLOAD_SIZE_BYTES })
   @IsInt()
   @IsPositive()
+  @Max(MAX_MEDIA_UPLOAD_SIZE_BYTES)
   sizeBytes!: number;
 
   @ApiProperty({ required: false, example: 1200 })

@@ -16,15 +16,15 @@ export const PreviewToggle: React.FC<PreviewToggleProps> = ({ isOpen, onToggle, 
       <button
         type="button"
         onClick={onToggle}
-        className="flex items-center gap-2 text-sm text-slate hover:text-primary-deep-navy"
+        className="flex items-center gap-2 text-sm text-angaly-slate hover:text-angaly-navy"
       >
         {isOpen ? <EyeOff size={16} /> : <Eye size={16} />}
         Aperçu
       </button>
       {isOpen && (
-        <div className="mt-3 p-6 bg-ivory border border-border rounded-xl text-center">
-          <p className="font-serif text-xl text-primary-deep-navy">{titleText ?? 'Titre de la section'}</p>
-          {subtitleText && <p className="text-sm text-slate mt-2">{subtitleText}</p>}
+        <div className="mt-3 p-6 bg-angaly-ivory border border-border rounded-xl text-center">
+          <p className="font-serif text-xl text-angaly-navy">{titleText ?? 'Titre de la section'}</p>
+          {subtitleText && <p className="text-sm text-angaly-slate mt-2">{subtitleText}</p>}
         </div>
       )}
     </div>

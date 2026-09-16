@@ -23,8 +23,8 @@ export const MediaFolderFilterChips: React.FC<MediaFolderFilterChipsProps> = ({ 
             onClick={() => onChange(folder.id)}
             className={`px-3 py-1.5 rounded-full text-xs font-medium border transition-colors ${
               isActive
-                ? 'bg-primary-deep-navy text-white border-primary-deep-navy'
-                : 'bg-white text-slate border-border hover:border-primary-deep-navy/50'
+                ? 'bg-angaly-navy text-white border-angaly-navy'
+                : 'bg-white text-angaly-slate border-border hover:border-angaly-navy/50'
             }`}
           >
             {folder.label}

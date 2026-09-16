@@ -1,3 +1,5 @@
+import { MAX_MEDIA_UPLOAD_SIZE_BYTES } from '@angaly/types';
+
 import type { MediaEntityRef } from '../value-objects/media-entity-ref.vo';
 
 export interface MediaProps {
@@ -32,6 +34,9 @@ export class MediaEntity {
     }
     if (props.sizeBytes < 0) {
       throw new Error('Media.sizeBytes must not be negative');
+    }
+    if (props.sizeBytes > MAX_MEDIA_UPLOAD_SIZE_BYTES) {
+      throw new Error(`Media.sizeBytes must not exceed ${MAX_MEDIA_UPLOAD_SIZE_BYTES} bytes (20 Mo)`);
     }
     return new MediaEntity(props);
   }
