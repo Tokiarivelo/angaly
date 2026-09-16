@@ -10,6 +10,7 @@ import { CreateAppointmentUseCase } from './application/use-cases/create-appoint
 import { GetAppointmentByReferenceUseCase } from './application/use-cases/get-appointment-by-reference.use-case';
 import { GetDaySlotsUseCase } from './application/use-cases/get-day-slots.use-case';
 import { GetMonthAvailabilityUseCase } from './application/use-cases/get-month-availability.use-case';
+import { ListMyAppointmentsUseCase } from './application/use-cases/list-my-appointments.use-case';
 import { APPOINTMENT_REPOSITORY } from './domain/repositories/appointment.repository';
 import { PrismaAppointmentRepository } from './infrastructure/repositories/prisma-appointment.repository';
 import { AppointmentsController } from './presentation/controllers/appointments.controller';
@@ -28,6 +29,7 @@ import { AppointmentsController } from './presentation/controllers/appointments.
     GetAppointmentByReferenceUseCase,
     CancelAppointmentUseCase,
     ConfirmAppointmentUseCase,
+    ListMyAppointmentsUseCase,
     { provide: APPOINTMENT_REPOSITORY, useClass: PrismaAppointmentRepository },
   ],
 })

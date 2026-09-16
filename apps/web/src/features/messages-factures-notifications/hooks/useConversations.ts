@@ -1,5 +1,10 @@
-import { useState } from 'react';
-
+/**
+ * Messaging has no backend: no `Message`/`Conversation` Prisma model and no
+ * `messages` NestJS module exist (see docs/pages/messages-factures-notifications.md
+ * "Points d'attention" — a known, documented gap, not something to fix here).
+ * Always returns an empty conversation list rather than fake/demo threads
+ * presented as real.
+ */
 export interface ConversationThread {
   id: string;
   atelierName: string;
@@ -9,30 +14,12 @@ export interface ConversationThread {
   unreadCount: number;
 }
 
-const MOCK_THREADS: ConversationThread[] = [
-  {
-    id: 'conv-1',
-    atelierName: 'Atelier ANGALY',
-    orderReference: 'ANG-2938',
-    lastMessage: 'Bonjour ! Votre pièce sera prête à l\'essayage jeudi prochain.',
-    timestamp: '2026-09-24T14:30:00Z',
-    unreadCount: 1,
-  },
-  {
-    id: 'conv-2',
-    atelierName: 'Service Client',
-    lastMessage: 'Merci pour votre confiance.',
-    timestamp: '2026-08-10T10:00:00Z',
-    unreadCount: 0,
-  }
-];
-
 export const useConversations = () => {
-  const [activeThreadId, setActiveThreadId] = useState<string | null>(MOCK_THREADS[0]?.id ?? null);
-
   return {
-    threads: MOCK_THREADS,
-    activeThreadId,
-    setActiveThreadId,
+    threads: [] as ConversationThread[],
+    activeThreadId: null as string | null,
+    setActiveThreadId: (_id: string | null) => {
+      // No-op: messaging is not connected to a backend yet.
+    },
   };
 };

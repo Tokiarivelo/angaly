@@ -1,14 +1,16 @@
 'use client';
 
 import React, { useState } from 'react';
+import { useRouter } from 'next/navigation';
 import type { CheckoutState } from '../../hooks/useCheckoutWizard';
 import { CheckoutOrderSummarySidebar } from '../CheckoutOrderSummarySidebar';
 import { useCartStore } from '@/stores/cart.store';
-import { apiClient } from '@/lib/api-client';
+import { REDIRECT_TO_PARAM } from '@/features/authentification/consts/queryKeys';
+import { ROUTES } from '@/lib/routes';
 
 export const ExpeditionStep: React.FC<{ wizard: CheckoutState }> = ({ wizard }) => {
   const { items } = useCartStore();
-  const [isSubmitting, setIsSubmitting] = useState(false);
+  const router = useRouter();
   const [deliveryMethod, setDeliveryMethod] = useState<'domicile' | 'atelier'>('domicile');
   const [formData, setFormData] = useState({
     prenom: '',
@@ -27,41 +29,48 @@ export const ExpeditionStep: React.FC<{ wizard: CheckoutState }> = ({ wizard }) 
 
   const handleContinue = async (e: React.FormEvent) => {
     e.preventDefault();
-    setIsSubmitting(true);
-    try {
-      const payload = {
-        items: items.map(i => ({
-          productVariantId: i.variantId,
-          quantity: i.quantity,
-        })),
-        shippingAddressJson: { ...formData, method: deliveryMethod },
-      };
 
-      const res = await apiClient.post('/api/orders', payload) as { id: string };
-      wizard.setOrderId(res.id);
-      wizard.setStep('paiement');
-    } catch (error) {
-      console.error('Failed to create order', error);
-      // fallback to offline flow or error boundary
-    } finally {
-      setIsSubmitting(false);
+    // `POST /api/orders` requires an authenticated CLIENT — guest checkout
+    // isn't implemented server-side (see docs/pages/checkout.md).
+    if (!wizard.isAuthenticated) {
+      router.push(`${ROUTES.connexion}?${REDIRECT_TO_PARAM}=${encodeURIComponent('/checkout')}`);
+      return;
+    }
+
+    try {
+      await wizard.createOrder({ ...formData, method: deliveryMethod });
+    } catch {
+      // Surfaced to the user via `wizard.createOrderError` below.
     }
   };
 
   return (
     <div className="flex flex-col lg:flex-row gap-8 lg:gap-12">
       <div className="flex-1">
-        <form onSubmit={handleContinue} className="space-y-8">
+        <form onSubmit={(e) => void handleContinue(e)} className="space-y-8">
           <section className="bg-white p-6 md:p-8 rounded-xl border border-border">
             <div className="flex justify-between items-center mb-6">
               <h2 className="font-serif text-2xl text-primary-deep-navy">Coordonnées</h2>
               <span className="text-sm text-slate">
                 Déjà client ?{' '}
-                <a href="/login" className="text-primary-deep-navy font-medium underline underline-offset-2">
+                <a href={ROUTES.connexion} className="text-primary-deep-navy font-medium underline underline-offset-2">
                   Connectez-vous
                 </a>
               </span>
             </div>
+
+            {!wizard.isAuthenticated && (
+              <p className="mb-6 rounded-md bg-ivory-warm border border-border px-4 py-3 text-sm text-slate">
+                Une connexion est nécessaire pour finaliser votre commande. Vous serez invité(e) à
+                vous connecter en cliquant sur « Continuer vers le paiement ».
+              </p>
+            )}
+
+            {wizard.createOrderError && (
+              <p role="alert" className="mb-6 rounded-md bg-red-50 border border-red-200 px-4 py-3 text-sm text-red-700">
+                {wizard.createOrderError}
+              </p>
+            )}
 
             <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
               <div className="space-y-2">
@@ -119,10 +128,10 @@ export const ExpeditionStep: React.FC<{ wizard: CheckoutState }> = ({ wizard }) 
             </a>
             <button
               type="submit"
-              disabled={isSubmitting || items.length === 0}
+              disabled={wizard.isCreatingOrder || items.length === 0}
               className="px-8 py-3 bg-primary-deep-navy text-white font-medium rounded-full hover:bg-primary-dark transition-colors disabled:opacity-50"
             >
-              {isSubmitting ? 'Validation...' : 'Continuer vers le paiement'}
+              {wizard.isCreatingOrder ? 'Validation...' : 'Continuer vers le paiement'}
             </button>
           </div>
         </form>

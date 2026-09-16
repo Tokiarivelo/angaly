@@ -15,6 +15,7 @@ import { CreateAppointmentUseCase } from '../../application/use-cases/create-app
 import { GetAppointmentByReferenceUseCase } from '../../application/use-cases/get-appointment-by-reference.use-case';
 import { GetDaySlotsUseCase } from '../../application/use-cases/get-day-slots.use-case';
 import { GetMonthAvailabilityUseCase } from '../../application/use-cases/get-month-availability.use-case';
+import { ListMyAppointmentsUseCase } from '../../application/use-cases/list-my-appointments.use-case';
 import { AppointmentsController } from '../../presentation/controllers/appointments.controller';
 
 function sampleAppointment(status: AppointmentEntity['status'] = 'PENDING'): AppointmentEntity {
@@ -46,6 +47,7 @@ describe('AppointmentsController (integration)', () => {
   const getAppointmentByReferenceUseCase = { execute: jest.fn() };
   const cancelAppointmentUseCase = { execute: jest.fn() };
   const confirmAppointmentUseCase = { execute: jest.fn() };
+  const listMyAppointmentsUseCase = { execute: jest.fn() };
   const accessTokenService = { sign: jest.fn(), verify: jest.fn() };
 
   beforeAll(async () => {
@@ -58,6 +60,7 @@ describe('AppointmentsController (integration)', () => {
         { provide: GetAppointmentByReferenceUseCase, useValue: getAppointmentByReferenceUseCase },
         { provide: CancelAppointmentUseCase, useValue: cancelAppointmentUseCase },
         { provide: ConfirmAppointmentUseCase, useValue: confirmAppointmentUseCase },
+        { provide: ListMyAppointmentsUseCase, useValue: listMyAppointmentsUseCase },
         JwtAuthGuard,
         RolesGuard,
         { provide: ACCESS_TOKEN_SERVICE, useValue: accessTokenService },
@@ -80,6 +83,26 @@ describe('AppointmentsController (integration)', () => {
   function server(): Server {
     return app.getHttpServer() as Server;
   }
+
+  describe('GET /appointments', () => {
+    it('returns 401 without a bearer token', async () => {
+      await request(server()).get('/appointments').expect(401);
+    });
+
+    it("returns the caller's own appointments for a CLIENT", async () => {
+      accessTokenService.verify.mockReturnValue({ sub: 'user-1', role: 'CLIENT' });
+      listMyAppointmentsUseCase.execute.mockResolvedValue([sampleAppointment()]);
+
+      const response = await request(server())
+        .get('/appointments')
+        .set('Authorization', 'Bearer valid-token')
+        .expect(200);
+
+      const body = response.body as Array<{ reference: string }>;
+      expect(body).toHaveLength(1);
+      expect(listMyAppointmentsUseCase.execute).toHaveBeenCalledWith('user-1', 'CLIENT');
+    });
+  });
 
   describe('GET /appointments/availability', () => {
     it('returns the month availability', async () => {

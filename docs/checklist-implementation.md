@@ -130,26 +130,44 @@ phase n'a pas été traitée en session dédiée (voir `.cursor/rules/006-phase-
 
 ---
 
-## 📦 PHASE 3 — Production (6 pages, 3 modules)
+## 📦 PHASE 3 — Production (6 pages, 3 modules) — 🟡 5/6 pages câblées (Messages non modélisé)
 
 ### Pages
-- [ ] 🟡 **panier** — Panier d'achat (UI + local store créés)
-- [ ] 🟡 **checkout** — Adresse / Livraison / Paiement / Confirmation (Interface UI créée)
-- [ ] 🟡 **espace-client-dashboard** — Tableau de bord client (Frontend UI créé)
-- [ ] 🟡 **mes-rendez-vous** — Liste des rendez-vous client (Frontend UI créé)
-- [ ] 🟡 **suivi-commande** — Timeline de suivi commande/création (Frontend UI créé)
-- [ ] 🟡 **messages-factures-notifications** — Messagerie, factures, notifications (Frontend UI créé)
+- [x] ✅ **panier** — Panier d'achat (store Zustand réel, cohérent avec le payload attendu par
+      `checkout` — voir `docs/pages/panier.md`)
+- [x] ✅ **checkout** — Adresse / Livraison / Paiement / Confirmation câblés pour de vrai
+      (`POST /api/orders` puis `POST /api/payments`, guard d'authentification côté frontend
+      avant soumission) — guest checkout non implémenté (compte requis), voir
+      `docs/pages/checkout.md` "Points d'attention"
+- [x] ✅ **espace-client-dashboard** — Agrégation réelle (rendez-vous/commandes/pattern-projects/
+      notifications) via plusieurs requêtes react-query, pas d'endpoint agrégé dédié — voir
+      `docs/pages/espace-client-dashboard.md`
+- [x] ✅ **mes-rendez-vous** — Câblé sur `GET /api/appointments` (nouvel endpoint "mes
+      rendez-vous", voir module `appointments` ci-dessous) + annulation réelle — voir
+      `docs/pages/mes-rendez-vous.md`
+- [x] ✅ **suivi-commande** — Résolution de la commande par `orderNumber` depuis
+      `GET /api/orders` (pas d'endpoint dédié par numéro), timeline dérivée de `OrderStatus`
+      — voir `docs/pages/suivi-commande.md` "Points d'attention" (écart de granularité assumé)
+- [ ] 🟡 **messages-factures-notifications** — Onglets Factures et Notifications câblés pour de
+      vrai (nouvel endpoint `GET /api/payments`, voir module `payments` ci-dessous) ; onglet
+      Messages **intentionnellement non connecté** (aucun modèle `Message`/`Conversation`,
+      état vide permanent) — voir `docs/pages/messages-factures-notifications.md`
 
 ### Modules backend
-- [x] ✅ **orders** (module backend seul — les pages consommatrices ci-dessus restent 🟡, non
-      câblées à cette API ; voir `docs/features/orders.md`) ·
-      ✅ **payments** (repris : guards d'authentification, transitions via `orders`, module
-      testé — voir `docs/features/payments.md`) ·
+- [x] ✅ **orders** (câblé pour de vrai dans `checkout`/`suivi-commande`/
+      `espace-client-dashboard` ; voir `docs/features/orders.md`) ·
+      ✅ **payments** (guards d'authentification, transitions via `orders`, + nouvel endpoint
+      `GET /api/payments` (liste par client, `ListCustomerPaymentsUseCase`) câblé dans
+      `messages-factures-notifications` — voir `docs/features/payments.md`) ·
+      ✅ **appointments** (+ nouvel endpoint `GET /api/appointments` (liste par client,
+      `ListMyAppointmentsUseCase`, mirroir du pattern `orders`) câblé dans `mes-rendez-vous`/
+      `espace-client-dashboard` — voir `docs/features/appointments.md`) ·
       ✅ **notifications** (session 2026-09-15 : email SMTP générique + in-app, câblé dans
       `orders`/`payments` (`ORDER_STATUS_CHANGED`) et `appointments` (`APPOINTMENT_CONFIRMED`,
       visiteurs anonymes exclus) — `quotes`/`patterns`/`create-appointment`/`cancel-appointment`/
-      `refund-payment` restent à câbler ; WhatsApp non branché (aucun prestataire confirmé) —
-      voir `docs/features/notifications.md`)
+      `refund-payment` restent à câbler ; WhatsApp non branché (aucun prestataire confirmé) ;
+      frontend câblé pour de vrai dans `messages-factures-notifications` (liste, lu individuel,
+      tout marquer lu) — voir `docs/features/notifications.md`)
 
 ---
 

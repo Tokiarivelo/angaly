@@ -117,6 +117,6 @@ __tests__/
 - [x] `orders.controller.spec.ts` couvre 200/201/400/401/403/404 sur les 5 routes
 - [x] `pnpm --filter @angaly/api typecheck`, `pnpm --filter @angaly/api exec eslint src/orders`
       (0 erreur) et `pnpm --filter @angaly/api exec jest src/orders` (68 tests) tous verts
-- [x] `docs/checklist-implementation.md` : module backend `orders` passé à ✅ (les 6 pages
-      consommatrices — `panier`, `checkout`, etc. — restent 🟡, non câblées à cette API dans
-      cette session)
+- [x] `docs/checklist-implementation.md` : module backend `orders` ✅, désormais consommé pour
+      de vrai par `checkout` (`POST /api/orders`), `suivi-commande` et `espace-client-dashboard`
+      (`GET /api/orders`) — voir session 2026-09-16, `docs/pages/checkout.md`

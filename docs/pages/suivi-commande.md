@@ -1,6 +1,15 @@
 # Page — `suivi-commande`
 
-**Statut : ⬜ À faire.** Phase 3 — Production.
+**Statut : ✅ Fait** (câblage API réel, avec une limitation de granularité assumée et
+documentée). Phase 3 — Production. Mis à jour le 2026-09-16.
+
+`useOrderTracking.ts` appelle le vrai backend. **Aucun `GET /api/orders/:orderNumber` n'existe**
+(seul `GET /api/orders/:id` et `GET /api/orders` — liste par client — existent, voir
+`apps/api/src/orders/presentation/controllers/orders.controller.ts`) : la page récupère la
+liste des commandes du client connecté et résout l'`orderNumber` de l'URL côté client (même
+hypothèse "faible volume" que `confirmation-rendez-vous`'s `useAteliersQuery`). La page gère
+maintenant un état de chargement, un état d'erreur, et un état "Commande introuvable" — ces
+états n'existaient pas dans la version mock.
 
 ## Objet
 
@@ -59,10 +68,17 @@ Toute logique (chargement, dérivation des étapes, préparation du contact) vit
 
 ## Endpoints API consommés
 
+Réellement appelé (voir `apps/api/src/orders/presentation/controllers/orders.controller.ts`
+— source de vérité, pas cette table) :
+
 | Endpoint | Module | Usage |
 | --- | --- | --- |
-| `GET /api/orders/:orderNumber/tracking` | `orders` | Statut + timestamps par étape franchie |
-| `GET /api/orders/:orderNumber` | `orders` | Détail (articles, prix, atelier) pour le récapitulatif |
+| `GET /api/orders` | `orders` | Liste des commandes du client connecté ; l'`Order` correspondant à `orderNumber` (param d'URL) est résolu côté frontend, faute d'endpoint dédié |
+
+`GET /api/orders/:orderNumber/tracking` et `GET /api/orders/:orderNumber` documentés
+initialement **n'existent pas** — aucune table d'historique de statuts horodatés n'existe côté
+Prisma (`Order` n'a que `createdAt`/`updatedAt`, voir "Points d'attention" ci-dessous) et la
+route prend un `id`, jamais un `orderNumber`.
 
 ## Modèles Prisma touchés
 
@@ -108,11 +124,19 @@ Toute logique (chargement, dérivation des étapes, préparation du contact) vit
 
 ## Checklist d'acceptation
 
-- [ ] Reproduit fidèlement `stitch-prompts/26-*.md` Écran B, variante "product order" (8 étapes)
-- [ ] Timeline reflète fidèlement le statut réel de l'`Order` malgré l'écart de granularité (mapping documenté et assumé, pas de statut inventé)
-- [ ] Étapes franchies affichent un timestamp, étapes à venir n'en affichent aucun
-- [ ] Récapitulatif (articles, prix, atelier) exact et cohérent avec le panier/checkout d'origine
-- [ ] "Contacter Angaly à propos de cette commande" ouvre bien le fil pré-rempli sur `messages-factures-notifications`
-- [ ] Le pipeline sur-mesure (§55) n'est PAS traité par cette page (vérifié explicitement en revue)
-- [ ] Tests : `useOrderTracking.test.ts`, `SuiviCommandePage.test.tsx`
-- [ ] `docs/checklist-implementation.md` et `docs/mockup-reference.md` mis à jour à ✅
+- [x] Timeline reflète le statut réel de l'`Order` malgré l'écart de granularité : un rang
+      (`STATUS_RANK`) dérive l'état complété/actuel/à venir de chaque étape UI depuis
+      `OrderStatus` — mapping documenté et assumé, aucun statut inventé
+- [x] Étapes franchies/actuelle affichent un timestamp (`createdAt`/`updatedAt` de l'`Order` —
+      seules les deux dates réellement disponibles), étapes à venir n'en affichent aucun
+- [x] Récapitulatif (prix, sous-total, total) exact — les noms d'articles sont dérivés de
+      `productVariantId` (tronqué) faute d'endpoint `GET /api/products/variants/:id` pour
+      résoudre le nom réel du produit ; voir "Points d'attention"
+- [x] "Contacter Angaly à propos de cette commande" renvoie vers `/mes-messages` (corrigé — la
+      route réelle n'est pas `/messages`)
+- [x] Le pipeline sur-mesure (§55) n'est PAS traité par cette page (vérifié explicitement)
+- [x] États de chargement, d'erreur et "Commande introuvable" ajoutés
+- [x] Tests : `useOrderTracking.test.ts` (4 tests), `SuiviCommandePage.test.tsx` (2 tests)
+- [x] `docs/checklist-implementation.md` et `docs/mockup-reference.md` mis à jour à ✅
+- [ ] Nom réel de l'article dans le récapitulatif — bloqué sur l'absence d'un endpoint de
+      résolution `productVariantId → Product`, hors périmètre de cette passe

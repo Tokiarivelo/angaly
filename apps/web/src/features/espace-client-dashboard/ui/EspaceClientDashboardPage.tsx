@@ -1,6 +1,8 @@
 'use client';
 
 import React from 'react';
+import { useDashboardSummary } from '../hooks/useDashboardSummary';
+import { useRecentActivity } from '../hooks/useRecentActivity';
 import { WelcomeHeader } from './WelcomeHeader';
 import { NextAppointmentCard } from './NextAppointmentCard';
 import { CurrentOrderCard } from './CurrentOrderCard';
@@ -9,31 +11,14 @@ import { NotificationsPreviewCard } from './NotificationsPreviewCard';
 import { QuickAccessTilesGrid } from './QuickAccessTilesGrid';
 import { RecentActivityTimeline } from './RecentActivityTimeline';
 
-// Mock hook since backend isn't ready
-const useDashboardSummary = () => {
-  return {
-    firstName: 'Toki',
-    nextAppointment: { id: 1 },
-    currentOrder: { id: 'ANG-2938' },
-    premiumProject: null,
-    notifications: [
-      { title: 'Commande expédiée', message: 'Votre commande #ANG-2938 est en route.' },
-      { title: 'Nouveau message', message: 'La couturière a répondu à votre question.' }
-    ],
-    recentActivities: [
-      { date: 'Hier à 14:30', title: 'Rendez-vous confirmé', description: 'Atelier ANGALY Analakely' },
-      { date: 'Le 20 Septembre', title: 'Commande #ANG-2938 passée', description: 'Pour un montant de 150 000 MGA' },
-    ],
-  };
-};
-
 export const EspaceClientDashboardPage = () => {
   const data = useDashboardSummary();
+  const { activities } = useRecentActivity();
 
   return (
     <div className="space-y-8 max-w-5xl mx-auto pb-12">
       <WelcomeHeader firstName={data.firstName} />
-      
+
       <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-4 md:gap-6">
         <div className="lg:col-span-1">
           <NextAppointmentCard appointment={data.nextAppointment} />
@@ -63,7 +48,7 @@ export const EspaceClientDashboardPage = () => {
           </div>
         </div>
         <div className="lg:col-span-1">
-          <RecentActivityTimeline activities={data.recentActivities} />
+          <RecentActivityTimeline activities={activities} />
         </div>
       </div>
     </div>

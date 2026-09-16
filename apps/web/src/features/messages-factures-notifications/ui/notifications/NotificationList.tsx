@@ -3,9 +3,29 @@ import { formatDistanceToNow } from 'date-fns';
 import { fr } from 'date-fns/locale';
 import { Package, MessageSquare, Bell, Calendar } from 'lucide-react';
 import { useNotifications } from '../../hooks/useNotifications';
+import { useMarkNotificationsRead } from '../../hooks/useMarkNotificationsRead';
 
 export const NotificationList: React.FC = () => {
-  const { notifications } = useNotifications();
+  const { notifications, isLoading, isError } = useNotifications();
+  const { markOneRead } = useMarkNotificationsRead();
+
+  if (isLoading) {
+    return (
+      <div className="bg-white border border-border rounded-2xl p-6 space-y-4 animate-pulse">
+        {Array.from({ length: 3 }).map((_, i) => (
+          <div key={i} className="h-12 bg-ivory-warm rounded-lg" />
+        ))}
+      </div>
+    );
+  }
+
+  if (isError) {
+    return (
+      <div className="p-12 text-center text-slate bg-white rounded-2xl border border-border">
+        Une erreur est survenue lors du chargement de vos notifications.
+      </div>
+    );
+  }
 
   if (notifications.length === 0) {
     return (
@@ -28,9 +48,13 @@ export const NotificationList: React.FC = () => {
   return (
     <div className="bg-white border border-border rounded-2xl overflow-hidden divide-y divide-border">
       {notifications.map((notif) => (
-        <div 
-          key={notif.id} 
-          className={`flex gap-4 p-6 transition-colors ${notif.isRead ? 'opacity-70 hover:opacity-100 bg-white' : 'bg-ivory-warm/30'}`}
+        <button
+          key={notif.id}
+          type="button"
+          onClick={() => {
+            if (!notif.isRead) void markOneRead(notif.id);
+          }}
+          className={`w-full text-left flex gap-4 p-6 transition-colors ${notif.isRead ? 'opacity-70 hover:opacity-100 bg-white cursor-default' : 'bg-ivory-warm/30 hover:bg-ivory-warm/50 cursor-pointer'}`}
         >
           <div className="relative shrink-0 mt-1">
             <div className={`w-10 h-10 rounded-full flex items-center justify-center ${
@@ -54,7 +78,7 @@ export const NotificationList: React.FC = () => {
             </div>
             <p className="text-sm text-slate mt-1">{notif.body}</p>
           </div>
-        </div>
+        </button>
       ))}
     </div>
   );

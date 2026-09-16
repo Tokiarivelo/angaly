@@ -8,7 +8,7 @@ import { EmptyAppointmentsState } from './EmptyAppointmentsState';
 import { NewAppointmentButton } from './NewAppointmentButton';
 
 export const MesRendezVousPage = () => {
-  const { appointments, filter, setFilter } = useMyAppointments();
+  const { appointments, filter, setFilter, isLoading, isError } = useMyAppointments();
 
   return (
     <div className="max-w-4xl mx-auto space-y-8 pb-12">
@@ -27,7 +27,17 @@ export const MesRendezVousPage = () => {
       <AppointmentStatusFilterTabs currentFilter={filter} onFilterChange={setFilter} />
 
       <div className="space-y-4">
-        {appointments.length === 0 ? (
+        {isLoading ? (
+          <div className="space-y-4 animate-pulse">
+            {Array.from({ length: 2 }).map((_, i) => (
+              <div key={i} className="h-32 bg-ivory-warm rounded-2xl" />
+            ))}
+          </div>
+        ) : isError ? (
+          <div className="bg-white border border-border rounded-2xl p-12 text-center text-slate">
+            Une erreur est survenue lors du chargement de vos rendez-vous.
+          </div>
+        ) : appointments.length === 0 ? (
           <EmptyAppointmentsState filter={filter} />
         ) : (
           appointments.map((apt) => (

@@ -1,6 +1,29 @@
 # Page — `messages-factures-notifications`
 
-**Statut : ⬜ À faire.** Phase 3 — Production.
+**Statut : 🟡 Partiel — Notifications et Factures câblées pour de vrai ; Messages
+intentionnellement non connecté (gap documenté, pas un TODO).** Phase 3 — Production. Mis à
+jour le 2026-09-16.
+
+- **Onglet Notifications** : `useNotifications.ts`/`useMarkNotificationsRead.ts` appellent
+  réellement `GET /api/notifications`, `PATCH /api/notifications/:id/read` (au clic sur une
+  notification non lue) et `PATCH /api/notifications/read-all` — ce sont les **vraies** routes
+  (voir `apps/api/src/notifications/presentation/controllers/notifications.controller.ts`),
+  différentes de celles que documentait initialement ce fichier (`POST /api/notifications/
+  mark-all-read`, `?customerId=me` — corrigées ci-dessous).
+- **Onglet Factures** : dérivé de `Payment` comme prévu. `GET /api/payments` (liste par client)
+  **n'existait pas** — ajouté cette session (`ListCustomerPaymentsUseCase`, mirroir exact du
+  pattern `orders`, voir `docs/features/payments.md`). `useInvoices.ts` joint ce résultat avec
+  `GET /api/orders` pour résoudre un `orderReference` (`orderNumber`) lisible. Le téléchargement
+  de PDF reste un état "Bientôt disponible" **désactivé explicite** — aucune génération de PDF
+  ni `MediaEntityType` pour un justificatif n'existe, conformément au point d'attention déjà
+  documenté ci-dessous ; `useDownloadInvoice.ts` ne simule plus un téléchargement.
+- **Onglet Messages** : **non connecté, par choix documenté.** Aucun modèle `Message`/
+  `Conversation` n'existe, et aucune migration Prisma n'a été ajoutée dans cette passe. L'onglet
+  affiche désormais un état vide permanent (`MessagingComingSoonPanel`) au lieu de la fausse
+  messagerie précédente (fils/messages mockés localement présentés comme fonctionnels) —
+  conforme à l'instruction "jamais de faux endpoint". `useConversations`/`useConversationThread`/
+  `useSendMessage` renvoient désormais explicitement des données vides/une erreur plutôt que des
+  données de démonstration.
 
 ## Objet
 
@@ -75,13 +98,21 @@ composants `ui/` restent purement présentationnels.
 
 ## Endpoints API consommés
 
+**Corrigé le 2026-09-16** : les routes ci-dessous sont les vraies routes implémentées (voir
+`apps/api/src/notifications/presentation/controllers/notifications.controller.ts` et
+`apps/api/src/payments/presentation/controllers/payments.controller.ts` — sources de vérité,
+pas cette table). La version précédente de ce tableau documentait des noms/verbes de route
+obsolètes, écrits avant que le backend n'existe.
+
 | Endpoint | Module | Usage |
 | --- | --- | --- |
-| `GET /api/notifications?customerId=me` | `notifications` | Liste des notifications |
-| `PATCH /api/notifications/:id/read` / `POST /api/notifications/mark-all-read` | `notifications` | Marquage lu |
-| `GET /api/payments?customerId=me` | `payments` | Liste des "factures" dérivées des `Payment` |
-| `GET /api/payments/:id/invoice-pdf` | `payments` | Téléchargement du justificatif (à spécifier, cf point d'attention) |
-| — (aucun endpoint) | — | Onglet Messages non connectable en Phase 3 — cf point d'attention majeur |
+| `GET /api/notifications` | `notifications` | Liste des notifications du client connecté (identifié via le JWT, pas un `?customerId=me`) |
+| `PATCH /api/notifications/:id/read` | `notifications` | Marquage lu d'une notification (au clic) |
+| `PATCH /api/notifications/read-all` | `notifications` | "Tout marquer comme lu" (204, pas `POST /mark-all-read`) |
+| `GET /api/payments` | `payments` | Liste des "factures" dérivées des `Payment` du client connecté — **ajouté cette session** (`ListCustomerPaymentsUseCase`) |
+| `GET /api/orders` | `orders` | Jointe côté frontend pour résoudre l'`orderReference` (`orderNumber`) de chaque facture |
+| — (aucun endpoint) | — | Téléchargement PDF : pas de `GET /api/payments/:id/invoice-pdf`, bouton désactivé "Bientôt disponible" (cf point d'attention) |
+| — (aucun endpoint) | — | Onglet Messages non connectable — cf point d'attention majeur (inchangé) |
 
 ## Modèles Prisma touchés
 
@@ -122,10 +153,18 @@ facture). **Aucun modèle** pour la messagerie (voir point d'attention).
 
 ## Checklist d'acceptation
 
-- [ ] Reproduit fidèlement `stitch-prompts/28-*.md` Écran B (barre d'onglets, messagerie deux volets, liste factures, liste notifications)
-- [ ] Onglet actif synchronisé avec `?tab=` et les liens de la sidebar client
-- [ ] Onglet Notifications : liste réelle via l'API `notifications`, "Tout marquer comme lu" fonctionnel
-- [ ] Onglet Factures : liste réelle dérivée de `Payment`, badges de statut corrects, téléchargement PDF (ou état "à venir" explicite si le backend PDF n'est pas encore traité)
-- [ ] Onglet Messages : explicitement non connecté à un backend réel tant que `docs/features/messages.md` n'est pas traité (état vide ou feature flag documenté, jamais de faux endpoint)
-- [ ] Tests : `useNotifications.test.ts`, `useInvoices.test.ts`, `useMarkNotificationsRead.test.ts`
-- [ ] `docs/checklist-implementation.md` et `docs/mockup-reference.md` mis à jour à ✅
+- [x] Onglet actif synchronisé avec `?tab=` et les liens de la sidebar client (inchangé, déjà
+      fonctionnel avant cette passe)
+- [x] Onglet Notifications : liste réelle via l'API `notifications`, "Tout marquer comme lu"
+      fonctionnel, marquage individuel au clic ajouté
+- [x] Onglet Factures : liste réelle dérivée de `Payment` (nouvel endpoint `GET /api/payments`),
+      badges de statut corrects (`FAILED`/`AUTHORIZED` fusionnés dans `PENDING`, documenté),
+      téléchargement PDF explicitement désactivé ("Bientôt disponible") — pas de PDF simulé
+- [x] Onglet Messages : explicitement non connecté à un backend réel — état vide permanent
+      (`MessagingComingSoonPanel`), jamais de faux endpoint ni de données mockées présentées
+      comme réelles ; `docs/features/messages.md` reste à créer avant toute implémentation
+- [x] Tests : `useNotifications.test.ts` (2), `useInvoices.test.ts` (2),
+      `useMarkNotificationsRead.test.ts` (2), `MessagesFacturesNotificationsPage.test.tsx` (1) —
+      plus, côté backend, `list-customer-payments.use-case.spec.ts` et les ajouts à
+      `prisma-payment.repository.spec.ts`/`payments.controller.spec.ts`
+- [x] `docs/checklist-implementation.md` et `docs/mockup-reference.md` mis à jour

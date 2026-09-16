@@ -17,7 +17,7 @@ export const MarkAllReadLink: React.FC = () => {
 
   return (
     <button
-      onClick={handleMarkAll}
+      onClick={() => void handleMarkAll()}
       disabled={isMarking}
       className="flex items-center gap-2 text-sm font-medium text-primary-deep-navy hover:underline disabled:opacity-50"
     >

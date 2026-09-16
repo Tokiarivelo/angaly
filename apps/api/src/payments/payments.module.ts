@@ -12,6 +12,7 @@ import { PrismaPaymentRepository } from './infrastructure/repositories/prisma-pa
 import { ConfirmPaymentUseCase } from './application/use-cases/confirm-payment.use-case';
 import { GetPaymentStatusUseCase } from './application/use-cases/get-payment-status.use-case';
 import { InitiatePaymentUseCase } from './application/use-cases/initiate-payment.use-case';
+import { ListCustomerPaymentsUseCase } from './application/use-cases/list-customer-payments.use-case';
 import { RefundPaymentUseCase } from './application/use-cases/refund-payment.use-case';
 import { PaymentsController } from './presentation/controllers/payments.controller';
 
@@ -27,6 +28,7 @@ import { PaymentsController } from './presentation/controllers/payments.controll
     ConfirmPaymentUseCase,
     GetPaymentStatusUseCase,
     RefundPaymentUseCase,
+    ListCustomerPaymentsUseCase,
     {
       provide: PAYMENT_REPOSITORY_TOKEN,
       useClass: PrismaPaymentRepository,

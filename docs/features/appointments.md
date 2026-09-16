@@ -1,6 +1,8 @@
 # Feature — `appointments`
 
-**Statut : ✅ Fait.** Phase 2 — Conversion.
+**Statut : ✅ Fait.** Phase 2 — Conversion. **Mis à jour Phase 3 (2026-09-16)** : ajout de
+`GET /api/appointments` (liste "mes rendez-vous", `ListMyAppointmentsUseCase`), câblé par la
+page `mes-rendez-vous` — voir ci-dessous.
 
 ## Objet
 
@@ -27,11 +29,13 @@ application/
     get-appointment-by-reference.use-case.ts
     cancel-appointment.use-case.ts        → transition → CANCELLED
     confirm-appointment.use-case.ts       → transition PENDING → CONFIRMED + assignation à un User (staff)
+    list-my-appointments.use-case.ts      → CLIENT (ses propres rendez-vous) ou MANAGER/ADMIN (tous) — mirroir exact d'orders' ListCustomerOrdersUseCase, ajouté Phase 3 pour mes-rendez-vous
+  lib/resolve-customer-id.ts              → copie locale (même pattern qu'orders/payments/quotes), utilisée par list-my-appointments
   dtos/
     appointment-response.dto.ts
     availability-response.dto.ts
 infrastructure/
-  repositories/prisma-appointment.repository.ts → implémente IAppointmentRepository via PrismaService
+  repositories/prisma-appointment.repository.ts → implémente IAppointmentRepository via PrismaService, + findByCustomerId()/findAll()
   services/availability-calculator.service.ts   → croise Atelier.openingHoursJson (via `@angaly/types` AtelierOpeningHours) et les Appointment existants
   mappers/appointment.mapper.ts
 presentation/
@@ -40,6 +44,7 @@ __tests__/
   unit/get-month-availability.use-case.spec.ts
   unit/create-appointment.use-case.spec.ts
   unit/cancel-appointment.use-case.spec.ts
+  unit/list-my-appointments.use-case.spec.ts
   integration/appointments.controller.spec.ts
 ```
 
@@ -68,6 +73,7 @@ __tests__/
 
 | Méthode | Route | Use-case | Auth |
 | --- | --- | --- | --- |
+| `GET` | `/api/appointments` | `list-my-appointments` | `CLIENT` (JwtAuthGuard) — ses rendez-vous, ou `MANAGER`/`ADMIN` (tous). **Ajouté Phase 3** |
 | `GET` | `/api/appointments/availability?atelierId=&month=` | `get-month-availability` | Public |
 | `GET` | `/api/appointments/availability/slots?atelierId=&date=` | `get-day-slots` | Public |
 | `POST` | `/api/appointments` | `create-appointment` | Public (enrichi si `CLIENT` connecté) |

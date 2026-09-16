@@ -25,10 +25,11 @@ application/
     confirm-payment.use-case.ts          → confirmation manuelle (mock/CASH_ON_DELIVERY), transitionne la commande via Order.transitionTo(PAID)
     refund-payment.use-case.ts           → rembourse un Payment PAID, transitionne la commande via Order.transitionTo(REFUNDED)
     get-payment-status.use-case.ts       → CLIENT (propriétaire de la commande) ou MANAGER/ADMIN
+    list-customer-payments.use-case.ts   → CLIENT (ses propres paiements) ou MANAGER/ADMIN (tous) — mirroir exact d'orders' ListCustomerOrdersUseCase, ajouté pour messages-factures-notifications
   dtos/
     initiate-payment-request.dto.ts, payment-response.dto.ts
 infrastructure/
-  repositories/prisma-payment.repository.ts
+  repositories/prisma-payment.repository.ts → + findByCustomerId() (jointure via order.customerId)/findAll()
   mappers/payment.mapper.ts              → toResponseDto() (number ↔ "xx.xx" string, Date ↔ ISO string)
   services/
     mock-payment-provider.adapter.ts     → implémente IPaymentProviderPort — seul adapter existant, voir Points d'attention
@@ -40,7 +41,8 @@ __tests__/
   unit/initiate-payment.use-case.spec.ts, confirm-payment.use-case.spec.ts,
   unit/get-payment-status.use-case.spec.ts, refund-payment.use-case.spec.ts,
   unit/prisma-payment.repository.spec.ts, payment.mapper.spec.ts,
-  unit/mock-payment-provider.adapter.spec.ts, payment-provider.factory.spec.ts
+  unit/mock-payment-provider.adapter.spec.ts, payment-provider.factory.spec.ts,
+  unit/list-customer-payments.use-case.spec.ts
   integration/payments.controller.spec.ts
 ```
 
@@ -64,6 +66,7 @@ de colonne `updatedAt` (seulement `createdAt` + `paidAt`) — `PaymentDto` (`@an
 | Méthode | Route | Use-case | Auth |
 | --- | --- | --- | --- |
 | `POST` | `/api/payments` | `initiate-payment` | `CLIENT` (propriétaire de la commande) |
+| `GET` | `/api/payments` | `list-customer-payments` | `CLIENT` (ses paiements) ou `MANAGER`/`ADMIN` (tous) — **ajouté cette session**, câblé dans `messages-factures-notifications` (onglet Factures) |
 | `GET` | `/api/payments/:id` | `get-payment-status` | `CLIENT` (propriétaire) ou `MANAGER`/`ADMIN` |
 | `PATCH` | `/api/payments/:id/confirm` | `confirm-payment` | `MANAGER`/`ADMIN` (confirmation manuelle) |
 | `POST` | `/api/payments/:id/refund` | `refund-payment` | `MANAGER`/`ADMIN` |

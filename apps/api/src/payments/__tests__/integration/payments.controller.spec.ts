@@ -13,6 +13,7 @@ import { Payment } from '../../domain/entities/payment.entity';
 import { ConfirmPaymentUseCase } from '../../application/use-cases/confirm-payment.use-case';
 import { GetPaymentStatusUseCase } from '../../application/use-cases/get-payment-status.use-case';
 import { InitiatePaymentUseCase } from '../../application/use-cases/initiate-payment.use-case';
+import { ListCustomerPaymentsUseCase } from '../../application/use-cases/list-customer-payments.use-case';
 import { RefundPaymentUseCase } from '../../application/use-cases/refund-payment.use-case';
 import { PaymentsController } from '../../presentation/controllers/payments.controller';
 
@@ -26,6 +27,7 @@ describe('PaymentsController (integration)', () => {
   const confirmPaymentUseCase = { execute: jest.fn() };
   const getPaymentStatusUseCase = { execute: jest.fn() };
   const refundPaymentUseCase = { execute: jest.fn() };
+  const listCustomerPaymentsUseCase = { execute: jest.fn() };
   const accessTokenService = { sign: jest.fn(), verify: jest.fn() };
 
   beforeAll(async () => {
@@ -36,6 +38,7 @@ describe('PaymentsController (integration)', () => {
         { provide: ConfirmPaymentUseCase, useValue: confirmPaymentUseCase },
         { provide: GetPaymentStatusUseCase, useValue: getPaymentStatusUseCase },
         { provide: RefundPaymentUseCase, useValue: refundPaymentUseCase },
+        { provide: ListCustomerPaymentsUseCase, useValue: listCustomerPaymentsUseCase },
         JwtAuthGuard,
         RolesGuard,
         { provide: ACCESS_TOKEN_SERVICE, useValue: accessTokenService },
@@ -89,6 +92,23 @@ describe('PaymentsController (integration)', () => {
 
       const [header, value] = bearerFor('CLIENT');
       await request(server()).post('/payments').set(header, value).send({ orderId: 'order-1', method: PaymentMethod.CARD }).expect(403);
+    });
+  });
+
+  describe('GET /payments', () => {
+    it('rejects without a bearer token (401)', async () => {
+      await request(server()).get('/payments').expect(401);
+    });
+
+    it("returns the caller's own payments for a CLIENT", async () => {
+      listCustomerPaymentsUseCase.execute.mockResolvedValue([samplePayment()]);
+
+      const [header, value] = bearerFor('CLIENT');
+      const response = await request(server()).get('/payments').set(header, value).expect(200);
+
+      const body = response.body as Array<{ id: string }>;
+      expect(body).toHaveLength(1);
+      expect(listCustomerPaymentsUseCase.execute).toHaveBeenCalledWith('user-1', 'CLIENT');
     });
   });
 

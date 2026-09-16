@@ -1,6 +1,16 @@
 # Page — `espace-client-dashboard`
 
-**Statut : ⬜ À faire.** Phase 3 — Production.
+**Statut : ✅ Fait** (agrégation multi-requêtes réelle, pas d'endpoint agrégé dédié — décision
+documentée ci-dessous). Phase 3 — Production. Mis à jour le 2026-09-16.
+
+`useDashboardSummary.ts` (nouveau) compose `GET /customers/me`, `GET /api/appointments`,
+`GET /api/ateliers`, `GET /api/orders`, `GET /api/pattern-projects?mine=true` et
+`GET /api/notifications` via react-query — pas de `GET /api/customers/me/dashboard-summary`
+dédié (l'intention documentée plus bas reste une intention, pas un engagement de cette passe).
+`useRecentActivity.ts` (nouveau) dérive un flux chronologique à partir des mêmes données (pas
+de table d'activité dédiée). Les cartes `NextAppointmentCard`/`CurrentOrderCard`/
+`PremiumProjectCard` affichaient auparavant des dates/statuts codés en dur malgré des props
+réelles ; elles affichent maintenant les vraies valeurs.
 
 ## Objet
 
@@ -58,12 +68,18 @@ cliente n'appartient pas à cette feature (voir point d'attention).
 
 ## Endpoints API consommés
 
+Réellement appelés (aucun des paramètres `?limit=`/`?status=in_progress` ci-dessous n'existe
+côté backend — chaque liste complète est filtrée/triée côté frontend dans
+`useDashboardSummary.ts`/`useRecentActivity.ts`) :
+
 | Endpoint | Module | Usage |
 | --- | --- | --- |
-| `GET /api/appointments?customerId=me&upcoming=true&limit=1` | `appointments` | Prochain rendez-vous |
-| `GET /api/orders?customerId=me&status=in_progress&limit=1` | `orders` | Commande en cours |
-| `GET /api/pattern-projects?customerId=me&status=in_progress&limit=1` | `patterns` | Projet Pattern Studio en cours |
-| `GET /api/notifications?limit=3` | `notifications` | Aperçu des dernières notifications |
+| `GET /customers/me` | `customers` | Prénom pour "Bonjour, {prénom}" |
+| `GET /api/appointments` | `appointments` | Liste complète → le prochain rendez-vous à venir est dérivé côté frontend |
+| `GET /api/ateliers` | `ateliers` | Résolution du nom/adresse de l'atelier du prochain rendez-vous |
+| `GET /api/orders` | `orders` | Liste complète → la commande "en cours" la plus récente est dérivée côté frontend |
+| `GET /api/pattern-projects?mine=true` | `patterns` | Liste complète → le projet actif est dérivé côté frontend |
+| `GET /api/notifications` | `notifications` | Liste complète → les 3 plus récentes sont gardées côté frontend |
 
 ## Modèles Prisma touchés
 
@@ -103,10 +119,15 @@ cours), `Notification`, `Customer`.
 
 ## Checklist d'acceptation
 
-- [ ] Reproduit fidèlement `stitch-prompts/25-*.md` (header de bienvenue, 4 cartes résumé, tuiles d'accès rapide, timeline d'activité)
-- [ ] Les 4 cartes résumé (rendez-vous, commande, projet Premium, notifications) affichent des données réelles ou un état vide cohérent si absentes
-- [ ] Carte "Projet Premium en cours" visuellement distincte (accent champagne) uniquement si un `PatternProject` est actif
-- [ ] Tuiles d'accès rapide et liens de la sidebar fonctionnels vers les pages existantes ou prévues
-- [ ] Timeline d'activité récente à jour, ordonnée chronologiquement
-- [ ] Tests : `useDashboardSummary.test.ts`, `EspaceClientDashboardPage.test.tsx`
-- [ ] `docs/checklist-implementation.md` et `docs/mockup-reference.md` mis à jour à ✅
+- [x] Les 4 cartes résumé (rendez-vous, commande, projet Premium, notifications) affichent des
+      données réelles ou un état vide cohérent si absentes
+- [x] Carte "Projet Premium en cours" visuellement distincte (accent champagne) uniquement si un
+      `PatternProject` actif (`GENERATING`/`GENERATED`/`REVIEW_REQUIRED`/`CORRECTION_REQUIRED`)
+      existe
+- [x] Tuiles d'accès rapide et liens de la sidebar fonctionnels vers les pages existantes ou prévues
+- [x] Timeline d'activité récente à jour, ordonnée chronologiquement (dérivée des
+      rendez-vous/commandes/notifications réels)
+- [x] Tests : `useDashboardSummary.test.ts` (5 tests), `EspaceClientDashboardPage.test.tsx`
+- [x] `docs/checklist-implementation.md` et `docs/mockup-reference.md` mis à jour à ✅
+- [ ] `useRecentActivity.test.ts` dédié non ajouté (couvert indirectement par
+      `useDashboardSummary.test.ts`/`EspaceClientDashboardPage.test.tsx`) — amélioration possible

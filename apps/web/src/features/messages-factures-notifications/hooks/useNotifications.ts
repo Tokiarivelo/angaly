@@ -1,3 +1,5 @@
+import { useNotificationsQuery } from '../api/notifications.api';
+
 export interface AppNotification {
   id: string;
   type: string; // From NotificationType enum
@@ -7,25 +9,18 @@ export interface AppNotification {
   createdAt: string;
 }
 
-const MOCK_NOTIFICATIONS: AppNotification[] = [
-  {
-    id: 'n1',
-    type: 'ORDER_STATUS_CHANGED',
-    title: 'Commande expédiée',
-    body: 'Votre commande #ANG-2938 est en route pour la livraison.',
-    isRead: false,
-    createdAt: '2026-09-24T15:00:00Z',
-  },
-  {
-    id: 'n2',
-    type: 'MESSAGE_RECEIVED',
-    title: 'Nouveau message',
-    body: 'L\'atelier a répondu à votre demande.',
-    isRead: true,
-    createdAt: '2026-09-24T14:30:00Z',
-  }
-];
-
+/** Real endpoint — `GET /api/notifications` (see docs/features/notifications.md). */
 export const useNotifications = () => {
-  return { notifications: MOCK_NOTIFICATIONS };
+  const query = useNotificationsQuery();
+
+  const notifications: AppNotification[] = (query.data ?? []).map((n) => ({
+    id: n.id,
+    type: n.type,
+    title: n.title,
+    body: n.body,
+    isRead: n.isRead,
+    createdAt: n.createdAt,
+  }));
+
+  return { notifications, isLoading: query.isLoading, isError: query.isError };
 };

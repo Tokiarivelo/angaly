@@ -7,7 +7,25 @@ import { DownloadInvoiceButton } from './DownloadInvoiceButton';
 import { formatCurrency } from '@/features/_shared/utils/formatCurrency';
 
 export const InvoiceList: React.FC = () => {
-  const { invoices } = useInvoices();
+  const { invoices, isLoading, isError } = useInvoices();
+
+  if (isLoading) {
+    return (
+      <div className="bg-white border border-border rounded-2xl p-6 space-y-4 animate-pulse">
+        {Array.from({ length: 3 }).map((_, i) => (
+          <div key={i} className="h-12 bg-ivory-warm rounded-lg" />
+        ))}
+      </div>
+    );
+  }
+
+  if (isError) {
+    return (
+      <div className="p-12 text-center text-slate bg-white rounded-2xl border border-border">
+        Une erreur est survenue lors du chargement de vos factures.
+      </div>
+    );
+  }
 
   if (invoices.length === 0) {
     return (

@@ -1,6 +1,7 @@
 import React, { useState } from 'react';
 import Link from 'next/link';
 import { MoreVertical, CalendarPlus, Edit2, XCircle } from 'lucide-react';
+import { AppointmentStatus } from '@angaly/types';
 import type { Appointment } from '../hooks/useMyAppointments';
 import { useCancelAppointment } from '../hooks/useCancelAppointment';
 import { useAddToCalendar } from '../hooks/useAddToCalendar';
@@ -14,7 +15,7 @@ export const AppointmentActionsMenu: React.FC<Props> = ({ appointment }) => {
   const { cancel } = useCancelAppointment();
   const { generateICS } = useAddToCalendar();
 
-  const isUpcoming = appointment.status === 'CONFIRMED' || appointment.status === 'PENDING';
+  const isUpcoming = appointment.status === AppointmentStatus.CONFIRMED || appointment.status === AppointmentStatus.PENDING;
 
   return (
     <div className="relative">
@@ -48,10 +49,9 @@ export const AppointmentActionsMenu: React.FC<Props> = ({ appointment }) => {
                 Modifier le rendez-vous
               </Link>
               <button
-                onClick={async () => {
+                onClick={() => {
                   if (confirm('Voulez-vous vraiment annuler ce rendez-vous ?')) {
-                    await cancel(appointment.reference);
-                    setIsOpen(false);
+                    void cancel(appointment.reference).then(() => setIsOpen(false));
                   }
                 }}
                 className="w-full text-left px-4 py-2 text-sm text-red-600 hover:bg-red-50 flex items-center gap-2"

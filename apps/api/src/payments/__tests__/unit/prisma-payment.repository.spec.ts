@@ -65,6 +65,28 @@ describe('PrismaPaymentRepository', () => {
     expect(payment.findMany).toHaveBeenCalledWith(expect.objectContaining({ where: { orderId: 'order-1' } }));
   });
 
+  it('findByCustomerId() filters by the order owner, most recent first', async () => {
+    const { prisma, payment } = buildPrismaServiceMock();
+    payment.findMany.mockResolvedValue([paymentRecord()]);
+
+    const result = await new PrismaPaymentRepository(prisma).findByCustomerId('customer-1');
+
+    expect(payment.findMany).toHaveBeenCalledWith(
+      expect.objectContaining({ where: { order: { customerId: 'customer-1' } }, orderBy: { createdAt: 'desc' } }),
+    );
+    expect(result).toHaveLength(1);
+  });
+
+  it('findAll() returns every payment, most recent first', async () => {
+    const { prisma, payment } = buildPrismaServiceMock();
+    payment.findMany.mockResolvedValue([paymentRecord(), paymentRecord()]);
+
+    const result = await new PrismaPaymentRepository(prisma).findAll();
+
+    expect(payment.findMany).toHaveBeenCalledWith(expect.objectContaining({ orderBy: { createdAt: 'desc' } }));
+    expect(result).toHaveLength(2);
+  });
+
   it('update() persists status/transactionRef/paidAt', async () => {
     const { prisma, payment } = buildPrismaServiceMock();
     const domainPayment = new Payment('payment-1', 'order-1', PaymentMethod.CARD, PaymentStatus.PAID, 1000, 'txn-1', new Date('2026-01-02T00:00:00.000Z'), new Date());
