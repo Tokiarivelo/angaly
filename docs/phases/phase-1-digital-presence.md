@@ -1,6 +1,8 @@
 # Phase 1 — Présence digitale
 
-**Statut : ⬜ À faire.** Dépend de : Phase 0 (fondation).
+**Statut : ✅ Complète (14 pages, 8 modules).** Dépend de : Phase 0 (fondation). Les 14
+pages lisent désormais leur texte éditorial depuis `PageSection` (Phase 6, item 4) plutôt
+que des littéraux codés en dur — voir `docs/phases/phase-6-admin-cms.md`.
 
 ## Objectif (spec §101, Phase 1)
 

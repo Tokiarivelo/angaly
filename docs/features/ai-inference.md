@@ -1,6 +1,10 @@
 # Feature — `ai-inference`
 
-**Statut : 🟡 Branché, sans vrai modèle entraîné.** Phase 4/5.
+**Statut : ✅ Fait.** Phase 4/5. Pipeline réellement branché depuis la session 2026-09-14 ;
+un second backend réel entraîné localement pour l'estimation de mesures a été ajouté en
+session 2026-09-15 (voir ci-dessous et `docs/features/ai-model-settings.md`). La suggestion
+de coupe/détails reste un wrapper Gemini prompt-engineered, décision documentée (aucune
+donnée publique disponible pour entraîner ce cas précis), pas un manque.
 
 Session du 2026-09-14 : le pipeline était présent en code mais déconnecté du flux réel
 (`AiInspirationController` renvoyait un stub statique, `sendMessageToAssistant` un texte codé

@@ -1,7 +1,11 @@
 # Phase 5 — IA avancée
 
-**Statut : ⬜ À faire.** Dépend de : Phase 4 (`measurements`, `patterns`, `pattern-engine`
-opérationnels avec au moins une règle concrète).
+**Statut : ✅ Complète.** Dépend de : Phase 4 (`measurements`, `patterns`, `pattern-engine`
+opérationnels avec au moins une règle concrète). `ai-inference` est réellement branché sur
+`apps/ai-service` (session 2026-09-14), avec un second backend réel entraîné localement
+pour l'estimation de mesures ajouté en session 2026-09-15 — voir `docs/features/ai-inference.md`.
+La suggestion de coupe/détails reste un wrapper Gemini (pas de "vrai modèle" — aucune donnée
+publique disponible pour ce cas précis), décision documentée, pas un gap.
 
 ## Objectif (spec §101 Phase 5, §105)
 
