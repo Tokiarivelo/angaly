@@ -811,3 +811,9 @@ export interface SendMessagePayload {
 // ============================================================
 
 export * from './size-charts';
+
+// ============================================================
+// Media — contraintes d'upload partagées (admin-mediatheque ↔ media)
+// ============================================================
+
+export * from './media';

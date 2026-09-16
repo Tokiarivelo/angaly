@@ -44,6 +44,18 @@ describe('useSectionEditor', () => {
     expect(result.current.activeSection?.titleText).toBe('Bienvenue');
   });
 
+  it('derives availableLocales from every existing locale row', async () => {
+    vi.mocked(apiClient.get).mockResolvedValueOnce([SECTION_FR]);
+
+    const { result } = renderHook(() => useSectionEditor('accueil', 'hero', Locale.FR), {
+      wrapper: withQueryClient(),
+    });
+
+    await waitFor(() => expect(result.current.isSuccess).toBe(true));
+
+    expect(result.current.availableLocales).toEqual([Locale.FR]);
+  });
+
   it('returns null activeSection when the active locale has no row yet', async () => {
     vi.mocked(apiClient.get).mockResolvedValueOnce([SECTION_FR]);
 

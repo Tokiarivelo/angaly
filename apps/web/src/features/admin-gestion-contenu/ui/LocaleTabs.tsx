@@ -29,12 +29,12 @@ export const LocaleTabs: React.FC<LocaleTabsProps> = ({ activeLocale, onChange, 
             onClick={() => onChange(locale)}
             className={`px-4 py-2 text-sm font-medium border-b-2 -mb-px transition-colors ${
               isActive
-                ? 'border-primary-deep-navy text-primary-deep-navy'
-                : 'border-transparent text-slate hover:text-primary-deep-navy'
+                ? 'border-angaly-navy text-angaly-navy'
+                : 'border-transparent text-angaly-slate hover:text-angaly-navy'
             }`}
           >
             {LOCALE_LABELS[locale]}
-            {!hasContent && <span className="ml-1 text-warning">•</span>}
+            {!hasContent && <span className="ml-1 text-angaly-warning">•</span>}
           </button>
         );
       })}

@@ -19,14 +19,14 @@ interface MediaSortControlProps {
 export const MediaSortControl: React.FC<MediaSortControlProps> = ({ sortBy, onSortChange, view, onViewChange }) => {
   return (
     <div className="flex items-center gap-3">
-      <label className="text-xs text-slate" htmlFor="media-sort">
+      <label className="text-xs text-angaly-slate" htmlFor="media-sort">
         Trier par
       </label>
       <select
         id="media-sort"
         value={sortBy}
         onChange={(e) => onSortChange(e.target.value as 'recent' | 'name' | 'size')}
-        className="text-sm border border-border rounded-lg px-2 py-1.5 focus:outline-none focus:border-primary-deep-navy"
+        className="text-sm border border-border rounded-lg px-2 py-1.5 focus:outline-none focus:border-angaly-navy"
       >
         {SORT_OPTIONS.map((option) => (
           <option key={option.id} value={option.id}>
@@ -41,7 +41,7 @@ export const MediaSortControl: React.FC<MediaSortControlProps> = ({ sortBy, onSo
           aria-label="Vue grille"
           aria-pressed={view === 'grid'}
           onClick={() => onViewChange('grid')}
-          className={`p-1.5 ${view === 'grid' ? 'bg-primary-deep-navy text-white' : 'text-slate'}`}
+          className={`p-1.5 ${view === 'grid' ? 'bg-angaly-navy text-white' : 'text-angaly-slate'}`}
         >
           <LayoutGrid size={16} />
         </button>
@@ -50,7 +50,7 @@ export const MediaSortControl: React.FC<MediaSortControlProps> = ({ sortBy, onSo
           aria-label="Vue liste"
           aria-pressed={view === 'list'}
           onClick={() => onViewChange('list')}
-          className={`p-1.5 ${view === 'list' ? 'bg-primary-deep-navy text-white' : 'text-slate'}`}
+          className={`p-1.5 ${view === 'list' ? 'bg-angaly-navy text-white' : 'text-angaly-slate'}`}
         >
           <List size={16} />
         </button>

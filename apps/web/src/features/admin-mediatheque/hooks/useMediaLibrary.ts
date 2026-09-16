@@ -8,6 +8,8 @@ import { mediaLibraryKey } from '../consts/queryKeys';
 import type { MediaLibraryFilters } from '../consts/queryKeys';
 
 const PAGE_SIZE = 40;
+/** The library rarely changes second-to-second — avoids a refetch on every folder/tab revisit within this window. */
+const STALE_TIME_MS = 30_000;
 
 /** Paginated/filtered media list (folder/search/sort) for the main grid — see docs/pages/admin-mediatheque.md. */
 export const useMediaLibrary = (
@@ -24,5 +26,6 @@ export const useMediaLibrary = (
         page: filters.page,
         limit: PAGE_SIZE,
       }),
+    staleTime: STALE_TIME_MS,
   });
 };

@@ -1,3 +1,5 @@
+import { MAX_MEDIA_UPLOAD_SIZE_BYTES } from '@angaly/types';
+
 import { MediaEntity } from '../../domain/entities/media.entity';
 import { MediaEntityRef } from '../../domain/value-objects/media-entity-ref.vo';
 
@@ -60,5 +62,15 @@ describe('MediaEntity', () => {
     expect(() => MediaEntity.create({ ...baseProps(), sizeBytes: -1 })).toThrow(
       'Media.sizeBytes must not be negative',
     );
+  });
+
+  it('rejects a sizeBytes over the 20 Mo upload limit', () => {
+    expect(() =>
+      MediaEntity.create({ ...baseProps(), sizeBytes: MAX_MEDIA_UPLOAD_SIZE_BYTES + 1 }),
+    ).toThrow(`Media.sizeBytes must not exceed ${MAX_MEDIA_UPLOAD_SIZE_BYTES} bytes (20 Mo)`);
+  });
+
+  it('accepts a sizeBytes exactly at the 20 Mo upload limit', () => {
+    expect(() => MediaEntity.create({ ...baseProps(), sizeBytes: MAX_MEDIA_UPLOAD_SIZE_BYTES })).not.toThrow();
   });
 });

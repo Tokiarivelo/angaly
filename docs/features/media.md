@@ -126,6 +126,14 @@ Relations inverses polymorphiques : `CreationMedia`, `ProductMedia`, `Collection
 
 - `Media.altText` est obligatoire à la création (accessibilité/SEO, spec §74/§71) : validé
   côté DTO (`class-validator`), pas seulement côté formulaire web.
+- **Limite de 20 Mo par upload désormais appliquée des deux côtés** (session 2026-09-16,
+  audit UX/perf de `admin-mediatheque`) : `MAX_MEDIA_UPLOAD_SIZE_BYTES`
+  (`@angaly/types/src/media.ts`, partagée front/back) est vérifiée côté client avant tout
+  appel réseau (`useMediaUpload.ts`, rejet immédiat avec message clair) et côté serveur en
+  deux points — `ConfirmUploadRequestDto.sizeBytes` (`@Max`, DTO `class-validator`, rejet
+  `400`) et `MediaEntity.create()` (invariant domaine, défense en profondeur). Auparavant
+  seulement indiquée dans la copie de l'état vide (« 20 Mo max »), jamais réellement
+  vérifiée — voir `docs/pages/admin-mediatheque.md`.
 - `delete-media` doit interroger toutes les relations polymorphiques (`entityType` +
   `entityId`, et les tables de jonction `*Media`) avant suppression physique — voir la
   contrainte "Utilisée dans" attendue par `docs/pages/admin-mediatheque.md`.
