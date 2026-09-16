@@ -1,12 +1,17 @@
+'use client';
+
 import Link from 'next/link';
 
 import { ROUTES } from '@/lib/routes';
 
+import { usePage404Content } from '../hooks/usePage404Content';
 import { NotFoundIllustration } from './NotFoundIllustration';
 import { QuickLinksRow } from './QuickLinksRow';
 
-/** Orchestrates the real Stitch "Page non trouvée (404)" screen — fully static, no hooks. */
+/** Orchestrates the real Stitch "Page non trouvée (404)" screen (title/subtitle — real content, see hooks/usePage404Content.ts). */
 export function Page404() {
+  const { data: content } = usePage404Content();
+
   return (
     <div className="relative flex min-h-screen flex-col items-center justify-center overflow-hidden bg-angaly-ivory">
       <header className="absolute top-0 z-10 flex w-full items-center justify-center py-8">
@@ -18,11 +23,9 @@ export function Page404() {
 
         <div className="mx-auto mb-12 max-w-2xl space-y-6">
           <h1 className="font-heading text-4xl leading-tight tracking-wide text-angaly-navy md:text-5xl lg:text-6xl">
-            Cette création semble avoir disparu de l&apos;atelier...
+            {content.main.title}
           </h1>
-          <p className="text-lg font-light text-angaly-slate md:text-xl">
-            La page que vous cherchez n&apos;existe plus ou a été déplacée.
-          </p>
+          <p className="text-lg font-light text-angaly-slate md:text-xl">{content.main.subtitle}</p>
         </div>
 
         <div className="mx-auto mb-16 flex w-full max-w-md flex-col items-center justify-center gap-6 sm:flex-row">

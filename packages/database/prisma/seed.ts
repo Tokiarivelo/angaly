@@ -1408,6 +1408,15 @@ async function main() {
       ctaPrimaryLabel: 'Prendre rendez-vous',
       status: ContentStatus.PUBLISHED,
     },
+    // --- Page Sections (Page 404) --------------------------------------------
+    {
+      page: 'page-404',
+      sectionKey: 'main',
+      locale: Locale.FR,
+      titleText: "Cette création semble avoir disparu de l'atelier...",
+      subtitleText: "La page que vous cherchez n'existe plus ou a été déplacée.",
+      status: ContentStatus.PUBLISHED,
+    },
   ];
 
   const createdPageSections = new Map<string, { id: string }>();

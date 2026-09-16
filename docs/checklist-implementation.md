@@ -79,7 +79,9 @@ phase n'a pas été traitée en session dédiée (voir `.cursor/rules/006-phase-
       libellé de bouton) lue depuis `PageSection` (`content`, Phase 6) depuis la session
       2026-09-16 (suite), avec repli sur les littéraux codés en dur — voir
       `docs/features/content.md`
-- [x] ✅ **page-404** — Page 404
+- [x] ✅ **page-404** — Page 404. Titre + sous-texte lus depuis `PageSection` (`content`,
+      Phase 6) depuis la session 2026-09-16 (suite), avec repli sur les littéraux codés en
+      dur — voir `docs/features/content.md`
 - [x] ✅ **navigation-mobile** — Drawer, bottom bar, recherche, WhatsApp FAB
 
 ### Modules backend
@@ -252,7 +254,7 @@ phase n'a pas été traitée en session dédiée (voir `.cursor/rules/006-phase-
       sans auth) ajouté en session 2026-09-16 (suite), consommé par
       `home`/`a-propos`/`la-une`/`nos-creations-galerie`/`creation-detail`/`contact`/
       `collections-liste`/`collection-detail`/`nos-ateliers-liste`/`atelier-detail`/
-      `journal-liste`/`journal-article` (12/14 pages Phase 1) — voir `docs/features/content.md`
+      `journal-liste`/`journal-article`/`page-404` (13/14 pages Phase 1) — voir `docs/features/content.md`
 
 > Périmètre volontairement limité aux 2 pages couvertes par une maquette Stitch
 > (`stitch-prompts/31-*.md`). Le reste du back-office listé au spec §60-66
@@ -268,8 +270,8 @@ phase n'a pas été traitée en session dédiée (voir `.cursor/rules/006-phase-
 > `PageSection`) a démarré en session 2026-09-16 (suite) —
 > `home`/`a-propos`/`la-une`/`nos-creations-galerie`/`creation-detail`/`contact`/
 > `collections-liste`/`collection-detail`/`nos-ateliers-liste`/`atelier-detail`/
-> `journal-liste`/`journal-article` migrées
-> (12 des 14 pages Phase 1), les 2 autres restent **non traitées** ; le panneau "Utilisée
+> `journal-liste`/`journal-article`/`page-404` migrées
+> (13 des 14 pages Phase 1), la dernière reste **non traitée** ; le panneau "Utilisée
 > dans" de `admin-mediatheque` est limité par un bug pré-existant non corrigé (relations
 > `Media` jamais connectées par `confirm-upload`, voir `docs/features/media.md`).
 

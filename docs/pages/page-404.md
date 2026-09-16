@@ -11,8 +11,10 @@ rebond soigné qui garde l'identité éditoriale ANGALY même dans un moment uti
 ## Route(s)
 
 `apps/web/src/app/not-found.tsx` — convention Next.js App Router (déclenchée pour toute
-route non résolue). Server Component pur — aucune donnée dynamique, aucun état interactif
-hormis la navigation des boutons/liens.
+route non résolue). Server Component pur au niveau de la route (export `metadata`) — même
+pattern que `creations/[slug]`/`ateliers/[slug]` : `Page404` (le composant feature) est
+`'use client'` depuis la migration CMS de cette tranche (`usePage404Content`, react-query),
+mais `not-found.tsx` lui-même n'importe que ce composant, sans logique propre.
 
 ## Référence maquette
 
@@ -26,27 +28,46 @@ hormis la navigation des boutons/liens.
 apps/web/src/app/not-found.tsx     → page racine Next.js, importe uniquement <Page404 />
 apps/web/src/features/page-404/
   ui/
-    Page404.tsx                    → orchestre header minimal + illustration + titre + sous-texte + boutons + liens rapides
+    Page404.tsx                    → orchestre header minimal + illustration + titre + sous-texte + boutons + liens rapides, titre/sous-texte réels (voir hooks/usePage404Content.ts)
     NotFoundIllustration.tsx        → icône décorative (voir Points d'attention), pas un graphisme d'erreur cartoonesque
     QuickLinksRow.tsx                 → « Vous cherchiez peut-être : » (Nos Créations, Le Journal, Prendre rendez-vous)
+  hooks/
+    usePage404Content.ts             → titre + sous-texte, GET /content/public/page-404, repli codé en dur
+  api/
+    page-404.api.ts                   → usePage404SectionsContentQuery
   __tests__/
-    Page404.test.tsx, NotFoundIllustration.test.tsx, QuickLinksRow.test.tsx
+    Page404.test.tsx, NotFoundIllustration.test.tsx, QuickLinksRow.test.tsx,
+    usePage404Content.test.ts
   index.ts
 ```
 
-Pas de `hooks/`/`api/`/`schemas/` : page entièrement statique, aucun dossier vide committé
-« pour la forme ».
+Pas de `schemas/` : page sans formulaire. Pas de dossier vide committé « pour la forme ».
 
 ## Endpoints API consommés
 
-Aucun.
+| Endpoint | Module | Usage |
+| --- | --- | --- |
+| `GET /api/content/public/page-404` | `content` | Titre + sous-texte du message d'erreur, `PUBLISHED`-only |
 
 ## Modèles Prisma touchés
 
-Aucun.
+`PageSection` (`page="page-404"`, `sectionKey="main"` — titre + sous-texte).
 
 ## Points d'attention
 
+- **Titre + sous-texte migrés vers `PageSection` CMS** (session 2026-09-16, suite —
+  treizième tranche de `docs/phases/phase-6-admin-cms.md` item 4, après `home`/`a-propos`/
+  `la-une`/`nos-creations-galerie`/`creation-detail`/`contact`/`collections-liste`/
+  `collection-detail`/`nos-ateliers-liste`/`atelier-detail`/`journal-liste`/
+  `journal-article`) : `Page404` lit `GET /content/public/page-404` via
+  `usePage404Content`, repli sur les littéraux codés en dur si la section `main` est
+  absente/`DRAFT` — voir `docs/features/content.md`. **Écart par rapport au reste de la
+  fiche** : cette page était jusqu'ici décrite comme « entièrement statique, aucun hook »
+  (§94, point de rebond soigné) ; `Page404.tsx` devient `'use client'` pour consommer
+  react-query, même changement que toutes les autres pages Phase 1 migrées cette session —
+  `not-found.tsx` (la route Next.js elle-même) reste un Server Component pur qui se
+  contente d'importer `<Page404 />` et de porter `export const metadata`, donc le SEO/
+  statut HTTP 404 réel n'est pas affecté par ce changement.
 - **Fidélité vérifiée via `agy`/StitchMCP `get_screen`** (écran réel
   `ac341165bad04bb69186cad7bdc0b814`), pas seulement `stitch-prompts/30-*.md`.
 - **Les 3 liens rapides réels diffèrent du plan initial** : l'écran réel montre « Nos
@@ -82,5 +103,6 @@ Aucun.
 - [x] Rangée « Vous cherchiez peut-être : » avec les 3 vrais liens rapides (voir Points d'attention)
 - [x] `apps/web/src/app/not-found.tsx` déclenché correctement pour toute route inconnue (vérifié en direct)
 - [x] Statut HTTP 404 réel renvoyé, `<title>`/meta cohérents — a révélé et corrigé un bug de titre dupliqué sur tout le site (voir Points d'attention)
-- [x] Tests : `Page404.test.tsx`, `NotFoundIllustration.test.tsx`, `QuickLinksRow.test.tsx` — 6 tests, 100 % de couverture
+- [x] Tests : `Page404.test.tsx`, `NotFoundIllustration.test.tsx`, `QuickLinksRow.test.tsx`,
+      `usePage404Content.test.ts` — 9 tests, 100 % de couverture
 - [x] `docs/checklist-implementation.md` et `docs/mockup-reference.md` mis à jour à ✅

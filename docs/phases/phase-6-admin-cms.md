@@ -5,19 +5,18 @@
 **L'item 4 est en cours** (démarré session 2026-09-16, suite) : `GET /content/public/:page`
 (public, `PUBLISHED`-only) ajouté, et les pages `home`/`a-propos`/`la-une`/
 `nos-creations-galerie`/`creation-detail`/`contact`/`collections-liste`/`collection-detail`/
-`nos-ateliers-liste`/`atelier-detail`/`journal-liste`/`journal-article` — 12 pages sur les
-14 de la Phase 1 — lisent désormais leur texte depuis `PageSection` avec repli sur les
-littéraux codés en dur pour toute section pas encore éditée dans le CMS (`la-une`,
+`nos-ateliers-liste`/`atelier-detail`/`journal-liste`/`journal-article`/`page-404` — 13
+pages sur les 14 de la Phase 1 — lisent désormais leur texte depuis `PageSection` avec repli
+sur les littéraux codés en dur pour toute section pas encore éditée dans le CMS (`la-une`,
 `nos-creations-galerie`, `creation-detail`, `contact`, `collections-liste`,
-`collection-detail`, `nos-ateliers-liste`, `atelier-detail`, `journal-liste` et
-`journal-article` ajoutées dans des sessions ultérieures, voir
+`collection-detail`, `nos-ateliers-liste`, `atelier-detail`, `journal-liste`,
+`journal-article` et `page-404` ajoutées dans des sessions ultérieures, voir
 `docs/pages/la-une.md`/`docs/pages/nos-creations-galerie.md`/`docs/pages/creation-detail.md`/
 `docs/pages/contact.md`/`docs/pages/collections-liste.md`/`docs/pages/collection-detail.md`/
 `docs/pages/nos-ateliers-liste.md`/`docs/pages/atelier-detail.md`/`docs/pages/journal-liste.md`/
-`docs/pages/journal-article.md`).
-**Les 2 autres pages de la Phase 1 restent non migrées** (`page-404`,
-`navigation-mobile`) — migration progressive, une session à la fois, comme annoncé dès
-l'origine de cet item.
+`docs/pages/journal-article.md`/`docs/pages/page-404.md`).
+**La dernière page de la Phase 1 reste non migrée** (`navigation-mobile`) — migration
+progressive, une session à la fois, comme annoncé dès l'origine de cet item.
 Dépend de : Phase 1 (`creations`, `collections`, `ateliers`, `blog`, `media`) — le CMS édite
 du contenu qui doit déjà exister en base.
 
@@ -92,8 +91,12 @@ projet ("manage all texts and images in the website").
    (session 2026-09-16, suite) : `journal-article` (12/14 pages Phase 1) — bande CTA de
    fermeture (headline + corps + libellé de bouton) uniquement, le reste de la page (header,
    corps, bloc auteur, articles liés) reste dérivé de `BlogPost` réel ou du lookup
-   `author-profiles.ts`, voir `docs/pages/journal-article.md`. Les 2 autres pages restent à
-   migrer, une session à la fois.
+   `author-profiles.ts`, voir `docs/pages/journal-article.md`. **Douzième tranche faite**
+   (session 2026-09-16, suite) : `page-404` (13/14 pages Phase 1) — titre + sous-texte du
+   message d'erreur ; `Page404.tsx` devient `'use client'` pour consommer react-query (écart
+   par rapport à sa description initiale « entièrement statique »), `not-found.tsx` reste un
+   Server Component pur, voir `docs/pages/page-404.md`. Il reste `navigation-mobile` à
+   migrer.
 
 ## Points d'attention
 
@@ -115,7 +118,8 @@ projet ("manage all texts and images in the website").
   react-query ; `a-propos` migré dans le même passage (`useAProposContent`,
   `GET /content/public/a-propos`) ; `la-une`, `nos-creations-galerie`, `creation-detail`,
   `contact`, `collections-liste`, `collection-detail`, `nos-ateliers-liste`,
-  `atelier-detail`, `journal-liste` et `journal-article` migrées dans des sessions ultérieures
+  `atelier-detail`, `journal-liste`, `journal-article` et `page-404` migrées dans des
+  sessions ultérieures
   (`useLaUneContent`/
   `GET /content/public/la-une`, `useGalleryContent`/`GET /content/public/nos-creations-galerie`,
   `useCreationDetailContent`/`GET /content/public/creation-detail`, `useContactContent`/
@@ -124,8 +128,9 @@ projet ("manage all texts and images in the website").
   `useAteliersListeContent`/`GET /content/public/nos-ateliers-liste`,
   `useAtelierDetailContent`/`GET /content/public/atelier-detail`,
   `useJournalListeContent`/`GET /content/public/journal-liste`,
-  `useJournalArticleContent`/`GET /content/public/journal-article`). **Seulement 12 pages sur
-  les 14 de la Phase 1** — les 2 autres restent sur leurs littéraux codés en dur (item 4,
+  `useJournalArticleContent`/`GET /content/public/journal-article`,
+  `usePage404Content`/`GET /content/public/page-404`). **Seulement 13 pages sur
+  les 14 de la Phase 1** — la dernière restante sur ses littéraux codés en dur (item 4,
   migration progressive non finie, voir statut en tête de fiche)
 - ⚠️ Un compte `ADMIN` peut uploader une image dans la médiathèque et l'utiliser sur une fiche
   `creation` existante — l'upload et le lien direct (`entityType`/`entityId`) fonctionnent,
@@ -136,10 +141,10 @@ projet ("manage all texts and images in the website").
 - [x] `docs/checklist-implementation.md` : les 2 pages + 2 modules passés à ✅
 - ⬜ Toutes les phases (0 à 6) ne sont **pas encore** toutes à ✅ dans
   `docs/checklist-implementation.md` au sens strict de la phase — l'item 4 de l'"Ordre
-  suggéré" (migration des pages publiques) est **en cours** (12/14 pages Phase 1 migrées :
+  suggéré" (migration des pages publiques) est **en cours** (13/14 pages Phase 1 migrées :
   `home`, `a-propos`, `la-une`, `nos-creations-galerie`, `creation-detail`, `contact`,
   `collections-liste`, `collection-detail`, `nos-ateliers-liste`, `atelier-detail`,
-  `journal-liste`, `journal-article`), pas terminé
+  `journal-liste`, `journal-article`, `page-404`), pas terminé
 
 ## Phase suivante
 
