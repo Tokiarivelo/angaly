@@ -5,6 +5,7 @@ import Link from 'next/link';
 import { ROUTES } from '@/lib/routes';
 
 import { useAtelierDetail } from '../hooks/useAtelierDetail';
+import { useAtelierDetailContent } from '../hooks/useAtelierDetailContent';
 import { AtelierAmbianceGallery } from './AtelierAmbianceGallery';
 import { AtelierHeroGallery } from './AtelierHeroGallery';
 import { AtelierInfoPanel } from './AtelierInfoPanel';
@@ -18,6 +19,7 @@ import { AtelierLocalSeoBlock } from './AtelierLocalSeoBlock';
  */
 export function AtelierDetailPage({ slug }: { slug: string }) {
   const { data: atelier, isLoading, error } = useAtelierDetail(slug);
+  const { data: content } = useAtelierDetailContent();
 
   if (isLoading) {
     return null;
@@ -57,7 +59,7 @@ export function AtelierDetailPage({ slug }: { slug: string }) {
       </nav>
 
       <div className="mx-auto max-w-[1600px]">
-        <AtelierHeroGallery atelier={atelier} />
+        <AtelierHeroGallery atelier={atelier} content={content.hero} />
         <AtelierInfoPanel atelier={atelier} />
       </div>
 

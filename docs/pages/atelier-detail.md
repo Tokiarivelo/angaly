@@ -29,7 +29,7 @@ session, `AtelierDetailPage` appelle `useAtelierDetail(slug)` (react-query sur
 apps/web/src/features/atelier-detail/
   ui/
     AtelierDetailPage.tsx         → orchestre fil d'Ariane + galerie héro + panneau info + galerie ambiance + bloc SEO local
-    AtelierHeroGallery.tsx         → grande photo + 2 tuiles (photo secondaire + tuile décorative fixe « L'art de la précision »)
+    AtelierHeroGallery.tsx         → grande photo + 2 tuiles (photo secondaire + tuile décorative), tagline + libellé de tuile réels (contenu — voir hooks/useAtelierDetailContent.ts)
     AtelierInfoPanel.tsx            → adresse, téléphone (click-to-call), horaires, services, mini-carte, actions
     AtelierOpeningHoursList.tsx      → rendu typé jour par jour de openingHours (« Fermé » explicite)
     AtelierServicesList.tsx           → checklist 2 colonnes, dernier élément seul en pleine largeur
@@ -38,16 +38,17 @@ apps/web/src/features/atelier-detail/
     AtelierLocalSeoBlock.tsx             → paragraphe éditorial SEO local templaté avec city/name réels (élision « d' » gérée)
   hooks/
     useAtelierDetail.ts                  → react-query sur GET /api/ateliers/:slug
+    useAtelierDetailContent.ts            → héro réel (tagline + libellé tuile), GET /content/public/atelier-detail, repli codé en dur
   api/
-    atelier-detail.api.ts                 → useAtelierDetailQuery
+    atelier-detail.api.ts                 → useAtelierDetailQuery, useAtelierDetailSectionsContentQuery
   utils/
     buildOpeningHoursSchedule.ts           → groupe les jours consécutifs, garde « Fermé » explicite (≠ résumé compact de nos-ateliers-liste)
     buildDirectionsUrl.ts                   → lien Google Maps depuis lat/long (repli adresse) — copie feature-locale, pas d'import cross-feature
   __tests__/
     buildOpeningHoursSchedule.test.ts, buildDirectionsUrl.test.ts, useAtelierDetail.test.ts,
-    AtelierServicesList.test.tsx, AtelierOpeningHoursList.test.tsx, AtelierMiniMap.test.tsx,
-    AtelierHeroGallery.test.tsx, AtelierAmbianceGallery.test.tsx, AtelierInfoPanel.test.tsx,
-    AtelierLocalSeoBlock.test.tsx, AtelierDetailPage.test.tsx
+    useAtelierDetailContent.test.ts, AtelierServicesList.test.tsx, AtelierOpeningHoursList.test.tsx,
+    AtelierMiniMap.test.tsx, AtelierHeroGallery.test.tsx, AtelierAmbianceGallery.test.tsx,
+    AtelierInfoPanel.test.tsx, AtelierLocalSeoBlock.test.tsx, AtelierDetailPage.test.tsx
   index.ts
 ```
 
@@ -61,17 +62,30 @@ apps/web/src/features/atelier-detail/
 | Endpoint | Module | Usage |
 | --- | --- | --- |
 | `GET /api/ateliers/:slug` | `ateliers` | Fiche complète (adresse, horaires, services, médias, coordonnées) |
+| `GET /api/content/public/atelier-detail` | `content` | Tagline du héro + libellé de la tuile « L'art de la précision », `PUBLISHED`-only |
 
 ## Modèles Prisma touchés
 
 `Atelier` (tous champs), `Media` (via `AtelierMedia` — galerie héro + galerie ambiance,
-même relation, cyclée sur les tuiles réelles disponibles). Le seed a été enrichi de 3
-nouvelles photos d'atelier (bobines de fil, détail de broderie, mains d'une couturière) —
-l'unique photo précédente ne suffisait pas pour peupler les 6 emplacements photo réels de
-cette page (2 en héro + 4 en galerie ambiance) sans dupliquer la même image côte à côte.
+même relation, cyclée sur les tuiles réelles disponibles), `PageSection`
+(`page="atelier-detail"`, `sectionKey="hero"` — tagline + libellé de tuile). Le seed a été
+enrichi de 3 nouvelles photos d'atelier (bobines de fil, détail de broderie, mains d'une
+couturière) — l'unique photo précédente ne suffisait pas pour peupler les 6 emplacements
+photo réels de cette page (2 en héro + 4 en galerie ambiance) sans dupliquer la même image
+côte à côte.
 
 ## Points d'attention
 
+- **Tagline du héro + libellé de la tuile « L'art de la précision » migrés vers
+  `PageSection` CMS** (session 2026-09-16, suite — dixième tranche de
+  `docs/phases/phase-6-admin-cms.md` item 4, après `home`/`a-propos`/`la-une`/
+  `nos-creations-galerie`/`creation-detail`/`contact`/`collections-liste`/
+  `collection-detail`/`nos-ateliers-liste`) : `AtelierHeroGallery` lit
+  `GET /content/public/atelier-detail` via `useAtelierDetailContent`, repli sur les
+  littéraux codés en dur si la section `hero` est absente/`DRAFT` — voir
+  `docs/features/content.md`. Le `<h1>` lui-même reste `atelier.name` (donnée réelle). La
+  galerie ambiance (titre/sous-titre/citation) et le bloc SEO local restent codés en dur —
+  hors périmètre de cette tranche.
 - **Fidélité vérifiée via `agy`/StitchMCP `get_screen`** (écran réel
   `1942a02ebcdf4602bbb913a464048643`), pas seulement `stitch-prompts/20-atelier-detail.md`.
 - **Section « Nos Artisans » (équipe) omise** : l'écran réel montre 3 portraits nommés

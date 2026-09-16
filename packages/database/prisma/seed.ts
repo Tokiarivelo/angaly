@@ -1379,6 +1379,15 @@ async function main() {
       subtitleText: "Venez découvrir notre savoir-faire dans l'un de nos ateliers.",
       status: ContentStatus.PUBLISHED,
     },
+    // --- Page Sections (Atelier Detail) ------------------------------------------
+    {
+      page: 'atelier-detail',
+      sectionKey: 'hero',
+      locale: Locale.FR,
+      subtitleText: 'Le cœur de la création sur mesure',
+      dataJson: { precisionTileLabel: "L'art de la précision" },
+      status: ContentStatus.PUBLISHED,
+    },
   ];
 
   const createdPageSections = new Map<string, { id: string }>();

@@ -65,7 +65,10 @@ phase n'a pas été traitée en session dédiée (voir `.cursor/rules/006-phase-
 - [x] ✅ **nos-ateliers-liste** — Liste des ateliers + carte. Texte du header (titre/sous-titre)
       lu depuis `PageSection` (`content`, Phase 6) depuis la session 2026-09-16 (suite), avec
       repli sur les littéraux codés en dur — voir `docs/features/content.md`
-- [x] ✅ **atelier-detail** — Fiche détail d'un atelier
+- [x] ✅ **atelier-detail** — Fiche détail d'un atelier. Tagline du héro + libellé de la
+      tuile « L'art de la précision » lus depuis `PageSection` (`content`, Phase 6) depuis
+      la session 2026-09-16 (suite), avec repli sur les littéraux codés en dur — voir
+      `docs/features/content.md`
 - [x] ✅ **contact** — Page de contact. Texte du header (titre/sous-titre) lu depuis
       `PageSection` (`content`, Phase 6) depuis la session 2026-09-16 (suite), avec repli sur
       les littéraux codés en dur — voir `docs/features/content.md`
@@ -243,8 +246,8 @@ phase n'a pas été traitée en session dédiée (voir `.cursor/rules/006-phase-
       (session 2026-09-16). Endpoint public `GET /content/public/:page` (`PUBLISHED`-only,
       sans auth) ajouté en session 2026-09-16 (suite), consommé par
       `home`/`a-propos`/`la-une`/`nos-creations-galerie`/`creation-detail`/`contact`/
-      `collections-liste`/`collection-detail`/`nos-ateliers-liste` (9/14 pages Phase 1) — voir
-      `docs/features/content.md`
+      `collections-liste`/`collection-detail`/`nos-ateliers-liste`/`atelier-detail`
+      (10/14 pages Phase 1) — voir `docs/features/content.md`
 
 > Périmètre volontairement limité aux 2 pages couvertes par une maquette Stitch
 > (`stitch-prompts/31-*.md`). Le reste du back-office listé au spec §60-66
@@ -259,10 +262,10 @@ phase n'a pas été traitée en session dédiée (voir `.cursor/rules/006-phase-
 > l'étape 4 de `docs/phases/phase-6-admin-cms.md` (migrer les pages publiques vers
 > `PageSection`) a démarré en session 2026-09-16 (suite) —
 > `home`/`a-propos`/`la-une`/`nos-creations-galerie`/`creation-detail`/`contact`/
-> `collections-liste`/`collection-detail`/`nos-ateliers-liste` migrées (9 des 14 pages
-> Phase 1), les 5 autres restent **non traitées** ; le panneau "Utilisée dans" de
-> `admin-mediatheque` est limité par un bug pré-existant non corrigé (relations `Media`
-> jamais connectées par `confirm-upload`, voir `docs/features/media.md`).
+> `collections-liste`/`collection-detail`/`nos-ateliers-liste`/`atelier-detail` migrées
+> (10 des 14 pages Phase 1), les 4 autres restent **non traitées** ; le panneau "Utilisée
+> dans" de `admin-mediatheque` est limité par un bug pré-existant non corrigé (relations
+> `Media` jamais connectées par `confirm-upload`, voir `docs/features/media.md`).
 
 ### Hors périmètre spec — ajouté le 2026-09-15
 - [x] ✅ **admin-ai-settings** — `/admin/dashboard` + `/admin/ai-settings`, choix du modèle

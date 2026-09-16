@@ -1,6 +1,7 @@
 import { setupServer } from 'msw/node';
 
 import { aProposHandlers } from './handlers/a-propos.handlers';
+import { atelierDetailHandlers } from './handlers/atelier-detail.handlers';
 import { authentificationHandlers } from './handlers/authentification.handlers';
 import { categoriesHandlers } from './handlers/categories.handlers';
 import { collectionDetailHandlers } from './handlers/collection-detail.handlers';
@@ -25,6 +26,7 @@ export const server = setupServer(
   ...laUneHandlers,
   ...nosCreationsGalerieHandlers,
   ...nosAteliersListeHandlers,
+  ...atelierDetailHandlers,
   ...creationDetailHandlers,
   ...collectionDetailHandlers,
   ...collectionsListeHandlers,
