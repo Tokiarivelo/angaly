@@ -75,7 +75,10 @@ phase n'a pas été traitée en session dédiée (voir `.cursor/rules/006-phase-
 - [x] ✅ **journal-liste** — Blog/Journal, liste. Texte du header (titre/sous-titre) lu
       depuis `PageSection` (`content`, Phase 6) depuis la session 2026-09-16 (suite), avec
       repli sur les littéraux codés en dur — voir `docs/features/content.md`
-- [x] ✅ **journal-article** — Article de blog
+- [x] ✅ **journal-article** — Article de blog. Bande CTA de fermeture (headline + corps +
+      libellé de bouton) lue depuis `PageSection` (`content`, Phase 6) depuis la session
+      2026-09-16 (suite), avec repli sur les littéraux codés en dur — voir
+      `docs/features/content.md`
 - [x] ✅ **page-404** — Page 404
 - [x] ✅ **navigation-mobile** — Drawer, bottom bar, recherche, WhatsApp FAB
 
@@ -249,7 +252,7 @@ phase n'a pas été traitée en session dédiée (voir `.cursor/rules/006-phase-
       sans auth) ajouté en session 2026-09-16 (suite), consommé par
       `home`/`a-propos`/`la-une`/`nos-creations-galerie`/`creation-detail`/`contact`/
       `collections-liste`/`collection-detail`/`nos-ateliers-liste`/`atelier-detail`/
-      `journal-liste` (11/14 pages Phase 1) — voir `docs/features/content.md`
+      `journal-liste`/`journal-article` (12/14 pages Phase 1) — voir `docs/features/content.md`
 
 > Périmètre volontairement limité aux 2 pages couvertes par une maquette Stitch
 > (`stitch-prompts/31-*.md`). Le reste du back-office listé au spec §60-66
@@ -265,8 +268,8 @@ phase n'a pas été traitée en session dédiée (voir `.cursor/rules/006-phase-
 > `PageSection`) a démarré en session 2026-09-16 (suite) —
 > `home`/`a-propos`/`la-une`/`nos-creations-galerie`/`creation-detail`/`contact`/
 > `collections-liste`/`collection-detail`/`nos-ateliers-liste`/`atelier-detail`/
-> `journal-liste` migrées
-> (11 des 14 pages Phase 1), les 3 autres restent **non traitées** ; le panneau "Utilisée
+> `journal-liste`/`journal-article` migrées
+> (12 des 14 pages Phase 1), les 2 autres restent **non traitées** ; le panneau "Utilisée
 > dans" de `admin-mediatheque` est limité par un bug pré-existant non corrigé (relations
 > `Media` jamais connectées par `confirm-upload`, voir `docs/features/media.md`).
 

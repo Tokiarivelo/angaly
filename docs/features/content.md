@@ -16,8 +16,8 @@ images est portée par `media`).
   fiche prévoyait à terme un `GET /api/content/public/:page`. Il existe désormais —
   `GET /content/public/:page` (voir "Endpoint public" ci-dessous) — et `home`/`a-propos`/
   `la-une`/`nos-creations-galerie`/`creation-detail`/`contact`/`collections-liste`/
-  `collection-detail`/`nos-ateliers-liste`/`atelier-detail`/`journal-liste` (11 des 14 pages
-  Phase 1) le consomment. Les 3 autres pages de la Phase 1 restent sur leurs littéraux codés en dur ;
+  `collection-detail`/`nos-ateliers-liste`/`atelier-detail`/`journal-liste`/`journal-article`
+  (12 des 14 pages Phase 1) le consomment. Les 2 autres pages de la Phase 1 restent sur leurs littéraux codés en dur ;
   l'étape 4 de `docs/phases/phase-6-admin-cms.md` ("brancher les pages publiques") reste donc
   en cours, pas terminée — "migration progressive, pas un big-bang", une page à la fois.
 - **Statut à 2 valeurs, pas 3** : `stitch-prompts/31-*.md` décrit trois pastilles (Publié /
@@ -153,14 +153,15 @@ __tests__/
   indirection `shared/`).
 - **Pages consommatrices** : `admin-gestion-contenu` (édition, endpoints `content/sections`).
   `home`, `a-propos`, `la-une`, `nos-creations-galerie`, `creation-detail`, `contact`,
-  `collections-liste`, `collection-detail`, `nos-ateliers-liste`, `atelier-detail` et
-  `journal-liste` (lecture publique, endpoint `content/public/:page`) — 11 pages sur les 14
-  de la Phase 1, voir
+  `collections-liste`, `collection-detail`, `nos-ateliers-liste`, `atelier-detail`,
+  `journal-liste` et `journal-article` (lecture publique, endpoint `content/public/:page`) —
+  12 pages sur les 14 de la Phase 1, voir
   `docs/pages/home.md`/`docs/pages/a-propos.md`/`docs/pages/la-une.md`/
   `docs/pages/nos-creations-galerie.md`/`docs/pages/creation-detail.md`/`docs/pages/contact.md`/
   `docs/pages/collections-liste.md`/`docs/pages/collection-detail.md`/
-  `docs/pages/nos-ateliers-liste.md`/`docs/pages/atelier-detail.md`/`docs/pages/journal-liste.md`
-  et l'écart ci-dessus. Les 3 autres pages publiques restent à migrer.
+  `docs/pages/nos-ateliers-liste.md`/`docs/pages/atelier-detail.md`/`docs/pages/journal-liste.md`/
+  `docs/pages/journal-article.md`
+  et l'écart ci-dessus. Les 2 autres pages publiques restent à migrer.
 
 ## Points d'attention
 
@@ -184,9 +185,9 @@ __tests__/
       use-case, controller integration) et pour n'exiger aucune `Authorization`
 - [x] `home`/`a-propos`/`la-une`/`nos-creations-galerie`/`creation-detail`/`contact`/
       `collections-liste`/`collection-detail`/`nos-ateliers-liste`/`atelier-detail`/
-      `journal-liste` lisent
+      `journal-liste`/`journal-article` lisent
       réellement `PageSection` côté public (react-query, `useHomeContent`/`useAProposContent`/
       `useLaUneContent`/`useGalleryContent`/`useCreationDetailContent`/`useContactContent`/
       `useCollectionsContent`/`useCollectionDetailContent`/`useAteliersListeContent`/
-      `useAtelierDetailContent`/`useJournalListeContent`), avec repli testé sur les littéraux
-      codés en dur pour toute section absente/`DRAFT`
+      `useAtelierDetailContent`/`useJournalListeContent`/`useJournalArticleContent`), avec
+      repli testé sur les littéraux codés en dur pour toute section absente/`DRAFT`

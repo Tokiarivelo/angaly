@@ -6,6 +6,7 @@ import { getAuthorProfile } from '@/lib/author-profiles';
 import { ROUTES } from '@/lib/routes';
 
 import { useJournalArticle } from '../hooks/useJournalArticle';
+import { useJournalArticleContent } from '../hooks/useJournalArticleContent';
 import { useRelatedArticles } from '../hooks/useRelatedArticles';
 import { AppointmentCtaBand } from './AppointmentCtaBand';
 import { ArticleBody } from './ArticleBody';
@@ -18,6 +19,7 @@ import { SocialShareBar } from './SocialShareBar';
 export function JournalArticlePage({ slug }: { slug: string }) {
   const { data: article, isLoading, error } = useJournalArticle(slug);
   const { articles: related } = useRelatedArticles(slug);
+  const { data: content } = useJournalArticleContent();
 
   if (isLoading) {
     return null;
@@ -79,7 +81,7 @@ export function JournalArticlePage({ slug }: { slug: string }) {
       </article>
 
       <RelatedArticlesRow articles={related} />
-      <AppointmentCtaBand />
+      <AppointmentCtaBand content={content.closingCta} />
     </>
   );
 }

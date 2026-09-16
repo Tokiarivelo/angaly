@@ -12,6 +12,7 @@ import { creationDetailHandlers } from './handlers/creation-detail.handlers';
 import { demandeSurMesureHandlers } from './handlers/demande-sur-mesure.handlers';
 import { ficheProduitHandlers } from './handlers/fiche-produit.handlers';
 import { homeHandlers } from './handlers/home.handlers';
+import { journalArticleHandlers } from './handlers/journal-article.handlers';
 import { journalListeHandlers } from './handlers/journal-liste.handlers';
 import { laUneHandlers } from './handlers/la-une.handlers';
 import { nosAteliersListeHandlers } from './handlers/nos-ateliers-liste.handlers';
@@ -29,6 +30,7 @@ export const server = setupServer(
   ...nosAteliersListeHandlers,
   ...atelierDetailHandlers,
   ...journalListeHandlers,
+  ...journalArticleHandlers,
   ...creationDetailHandlers,
   ...collectionDetailHandlers,
   ...collectionsListeHandlers,

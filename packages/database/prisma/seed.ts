@@ -1397,6 +1397,17 @@ async function main() {
       subtitleText: "Mariage, mode, coulisses d'atelier et conseils d'entretien.",
       status: ContentStatus.PUBLISHED,
     },
+    // --- Page Sections (Journal Article) --------------------------------------------
+    {
+      page: 'journal-article',
+      sectionKey: 'closing-cta',
+      locale: Locale.FR,
+      titleText: 'Envie de concrétiser votre projet ?',
+      bodyText:
+        "Nos maîtres tailleurs vous reçoivent pour une consultation privée dans notre atelier d'Antananarivo.",
+      ctaPrimaryLabel: 'Prendre rendez-vous',
+      status: ContentStatus.PUBLISHED,
+    },
   ];
 
   const createdPageSections = new Map<string, { id: string }>();
