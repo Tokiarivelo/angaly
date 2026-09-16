@@ -1370,6 +1370,15 @@ async function main() {
       ctaSecondaryLabel: 'Voir toutes les collections',
       status: ContentStatus.PUBLISHED,
     },
+    // --- Page Sections (Nos Ateliers Liste) -------------------------------------
+    {
+      page: 'nos-ateliers-liste',
+      sectionKey: 'header',
+      locale: Locale.FR,
+      titleText: 'Nos Ateliers',
+      subtitleText: "Venez découvrir notre savoir-faire dans l'un de nos ateliers.",
+      status: ContentStatus.PUBLISHED,
+    },
   ];
 
   const createdPageSections = new Map<string, { id: string }>();

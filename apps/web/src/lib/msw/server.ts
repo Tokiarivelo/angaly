@@ -12,6 +12,7 @@ import { demandeSurMesureHandlers } from './handlers/demande-sur-mesure.handlers
 import { ficheProduitHandlers } from './handlers/fiche-produit.handlers';
 import { homeHandlers } from './handlers/home.handlers';
 import { laUneHandlers } from './handlers/la-une.handlers';
+import { nosAteliersListeHandlers } from './handlers/nos-ateliers-liste.handlers';
 import { nosCreationsGalerieHandlers } from './handlers/nos-creations-galerie.handlers';
 import { prendreRendezVousHandlers } from './handlers/prendre-rendez-vous.handlers';
 import { reservationEssayageHandlers } from './handlers/reservation-essayage.handlers';
@@ -23,6 +24,7 @@ export const server = setupServer(
   ...aProposHandlers,
   ...laUneHandlers,
   ...nosCreationsGalerieHandlers,
+  ...nosAteliersListeHandlers,
   ...creationDetailHandlers,
   ...collectionDetailHandlers,
   ...collectionsListeHandlers,
