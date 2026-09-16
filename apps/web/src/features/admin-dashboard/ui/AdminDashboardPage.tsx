@@ -7,7 +7,7 @@ const sections = [
     label: 'Paramètres IA',
     description:
       "Choisir le modèle utilisé par Pattern Studio pour estimer les mesures manquantes (Gemini ou le modèle statistique entraîné).",
-    href: '/admin/ai-settings',
+    href: '/ai-settings',
     icon: Sparkles,
   },
 ];

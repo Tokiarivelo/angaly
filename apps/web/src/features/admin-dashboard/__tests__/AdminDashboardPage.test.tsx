@@ -8,6 +8,6 @@ describe('AdminDashboardPage', () => {
 
     expect(screen.getByRole('heading', { name: 'Administration ANGALY' })).toBeInTheDocument();
     const link = screen.getByRole('link', { name: /Paramètres IA/i });
-    expect(link).toHaveAttribute('href', '/admin/ai-settings');
+    expect(link).toHaveAttribute('href', '/ai-settings');
   });
 });
