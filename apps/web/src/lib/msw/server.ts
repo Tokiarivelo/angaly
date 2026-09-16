@@ -17,6 +17,7 @@ import { journalListeHandlers } from './handlers/journal-liste.handlers';
 import { laUneHandlers } from './handlers/la-une.handlers';
 import { nosAteliersListeHandlers } from './handlers/nos-ateliers-liste.handlers';
 import { nosCreationsGalerieHandlers } from './handlers/nos-creations-galerie.handlers';
+import { navigationMobileHandlers } from './handlers/navigation-mobile.handlers';
 import { page404Handlers } from './handlers/page-404.handlers';
 import { prendreRendezVousHandlers } from './handlers/prendre-rendez-vous.handlers';
 import { reservationEssayageHandlers } from './handlers/reservation-essayage.handlers';
@@ -33,6 +34,7 @@ export const server = setupServer(
   ...journalListeHandlers,
   ...journalArticleHandlers,
   ...page404Handlers,
+  ...navigationMobileHandlers,
   ...creationDetailHandlers,
   ...collectionDetailHandlers,
   ...collectionsListeHandlers,

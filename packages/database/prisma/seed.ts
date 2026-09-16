@@ -1417,6 +1417,14 @@ async function main() {
       subtitleText: "La page que vous cherchez n'existe plus ou a été déplacée.",
       status: ContentStatus.PUBLISHED,
     },
+    // --- Page Sections (Navigation Mobile) --------------------------------------------
+    {
+      page: 'navigation-mobile',
+      sectionKey: 'cta',
+      locale: Locale.FR,
+      ctaPrimaryLabel: 'Prendre rendez-vous',
+      status: ContentStatus.PUBLISHED,
+    },
   ];
 
   const createdPageSections = new Map<string, { id: string }>();

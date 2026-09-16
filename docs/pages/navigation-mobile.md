@@ -35,15 +35,17 @@ apps/web/src/features/navigation/
     useMobileDrawer.ts                  → lit/écrit apps/web/src/stores/mobile-navigation.store.ts
     useMobileSearchOverlay.ts             → idem + requête brute/debouncée (300ms, useEffect+setTimeout, pas de nouvelle dépendance)
     useGlobalSearch.ts                     → react-query sur GET /api/search, dérive hasResults
+    useNavigationContent.ts                 → libellé du CTA rendez-vous partagé (drawer + barre basse), GET /content/public/navigation-mobile, repli codé en dur
   api/
-    navigation.api.ts                        → useGlobalSearchQuery (enabled dès MIN_SEARCH_QUERY_LENGTH)
+    navigation.api.ts                        → useGlobalSearchQuery (enabled dès MIN_SEARCH_QUERY_LENGTH), useNavigationSectionsContentQuery
   consts/
     nav-links.const.ts                        → liens réels du tiroir (voir Points d'attention)
     search-suggestion-chips.const.ts           → 4 chips réels (voir Points d'attention)
     search.const.ts                             → MIN_SEARCH_QUERY_LENGTH (miroir du backend)
     queryKeys.ts
   __tests__/
-    useMobileDrawer.test.ts, useMobileSearchOverlay.test.ts, useGlobalSearch.test.ts
+    useMobileDrawer.test.ts, useMobileSearchOverlay.test.ts, useGlobalSearch.test.ts,
+    useNavigationContent.test.ts
 apps/web/src/stores/mobile-navigation.store.ts  → Zustand (non persisté) partagé Header ↔ Shell
 apps/web/src/components/navigation/__tests__/
   MobileDrawer.test.tsx, MobileBottomBar.test.tsx, WhatsAppFab.test.tsx,
@@ -66,13 +68,27 @@ de `components/navigation/` ne contiennent que du JSX + appels de hooks.
 | Endpoint | Module | Usage |
 | --- | --- | --- |
 | `GET /api/search?q=&limitPerType=5` | `search` | Résultats groupés de l'overlay de recherche mobile (spec §46/§85) — déjà ✅ livré en amont |
+| `GET /api/content/public/navigation-mobile` | `content` | Libellé du CTA « Prendre rendez-vous » (drawer + barre basse), `PUBLISHED`-only |
 
 ## Modèles Prisma touchés
 
-Aucun modèle dédié : `search` agrège en lecture `Creation`, `Product`, `Collection`,
-`BlogPost`, `Atelier` (voir `docs/features/search.md`).
+Aucun modèle dédié pour `search` : agrège en lecture `Creation`, `Product`, `Collection`,
+`BlogPost`, `Atelier` (voir `docs/features/search.md`). `PageSection`
+(`page="navigation-mobile"`, `sectionKey="cta"` — libellé du bouton).
 
 ## Points d'attention
+
+- **Libellé du CTA « Prendre rendez-vous » migré vers `PageSection` CMS** (session
+  2026-09-16, suite — quatorzième et dernière tranche de `docs/phases/phase-6-admin-cms.md`
+  item 4, après `home`/`a-propos`/`la-une`/`nos-creations-galerie`/`creation-detail`/
+  `contact`/`collections-liste`/`collection-detail`/`nos-ateliers-liste`/`atelier-detail`/
+  `journal-liste`/`journal-article`/`page-404`) : `MobileDrawer` (bouton du pied de tiroir)
+  et `MobileBottomBar` (bouton relevé central) lisent tous deux le même
+  `GET /content/public/navigation-mobile` via `useNavigationContent`, repli sur le littéral
+  codé en dur si la section `cta` est absente/`DRAFT` — voir `docs/features/content.md`. Les
+  liens de navigation (`nav-links.const.ts`), les chips de suggestion et le texte de
+  l'overlay de recherche restent codés en dur : ce sont des libellés de navigation/UI, pas du
+  contenu éditorial au sens `PageSection`, hors périmètre de cette tranche.
 
 - **Fidélité vérifiée via `agy`/StitchMCP `get_screen`** sur 3 écrans réels distincts (pas
   1 seul écran compound comme le titre de la fiche le laissait penser) :
@@ -142,5 +158,5 @@ Aucun modèle dédié : `search` agrège en lecture `Creation`, `Product`, `Coll
 - [x] Overlay de recherche plein écran avec chips de suggestion + résultats groupés en direct
 - [x] Sélecteur de langue FR/MG fonctionnel et persistant entre les pages (réutilisé, déjà livré)
 - [x] Navigation clavier complète du tiroir et de l'overlay (piège de focus, fermeture Échap) — via Radix Dialog, vérifié en direct
-- [x] Tests : `useMobileDrawer.test.ts`, `useMobileSearchOverlay.test.ts`, `useGlobalSearch.test.ts`, 5 fichiers de tests composants, `Header.test.tsx` — 22 tests, 100 % de couverture sur `features/navigation` (composants sous `components/**` hors périmètre de la barre de couverture, voir `vitest.config.ts`)
+- [x] Tests : `useMobileDrawer.test.ts`, `useMobileSearchOverlay.test.ts`, `useGlobalSearch.test.ts`, `useNavigationContent.test.ts`, 5 fichiers de tests composants, `Header.test.tsx` — 36 tests, 100 % de couverture sur `features/navigation` (composants sous `components/**` hors périmètre de la barre de couverture, voir `vitest.config.ts`)
 - [x] `docs/checklist-implementation.md` et `docs/mockup-reference.md` mis à jour à ✅

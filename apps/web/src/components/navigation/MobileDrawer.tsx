@@ -8,6 +8,7 @@ import { usePathname } from 'next/navigation';
 
 import { useMobileDrawer } from '@/features/navigation/hooks/useMobileDrawer';
 import { useMobileSearchOverlay } from '@/features/navigation/hooks/useMobileSearchOverlay';
+import { useNavigationContent } from '@/features/navigation/hooks/useNavigationContent';
 import { DRAWER_NAV_LINKS, DRAWER_SECONDARY_LINKS } from '@/features/navigation/consts/nav-links.const';
 import { LanguageSwitcher } from '@/components/layout/LanguageSwitcher';
 import { ROUTES } from '@/lib/routes';
@@ -15,12 +16,14 @@ import { ROUTES } from '@/lib/routes';
 /**
  * Real Stitch "Menu Mobile" screen: full-screen navy drawer. Built on Radix Dialog for
  * free focus-trap + Escape-to-close (spec §74 accessibility) rather than hand-rolled logic.
+ * Rendez-vous CTA label — real content, see hooks/useNavigationContent.ts.
  */
 export function MobileDrawer() {
   const { isOpen, close } = useMobileDrawer();
   const { open: openSearch } = useMobileSearchOverlay();
   const pathname = usePathname();
   const { status } = useSession();
+  const { data: content } = useNavigationContent();
 
   return (
     <Dialog.Root open={isOpen} onOpenChange={(open) => !open && close()}>
@@ -107,7 +110,7 @@ export function MobileDrawer() {
               onClick={close}
               className="w-full bg-angaly-ivory px-6 py-4 text-center text-sm font-medium tracking-widest text-angaly-navy uppercase transition-colors hover:bg-angaly-warm-ivory"
             >
-              Prendre rendez-vous
+              {content.cta.label}
             </Link>
             <div className="flex items-center justify-center gap-6">
               <LanguageSwitcher />
