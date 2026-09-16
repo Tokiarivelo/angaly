@@ -1342,6 +1342,15 @@ async function main() {
         "Chaque pièce Angaly naît d'un dialogue entre la vision d'une couturière et le geste d'un artisan. Nos ateliers malgaches perpétuent des techniques transmises de génération en génération, du choix des matières les plus nobles jusqu'à la dernière retouche.",
       status: ContentStatus.PUBLISHED,
     },
+    // --- Page Sections (Contact) ------------------------------------------------
+    {
+      page: 'contact',
+      sectionKey: 'header',
+      locale: Locale.FR,
+      titleText: 'Contactez-nous',
+      subtitleText: 'Une question, un projet ? Nous sommes à votre écoute.',
+      status: ContentStatus.PUBLISHED,
+    },
   ];
 
   const createdPageSections = new Map<string, { id: string }>();

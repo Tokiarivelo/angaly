@@ -2,6 +2,7 @@
 
 import { useAteliersForMap } from '../hooks/useAteliersForMap';
 import { useContactChannels } from '../hooks/useContactChannels';
+import { useContactContent } from '../hooks/useContactContent';
 import { ContactAteliersMiniList } from './ContactAteliersMiniList';
 import { ContactChannelsColumn } from './ContactChannelsColumn';
 import { ContactForm } from './ContactForm';
@@ -15,12 +16,13 @@ import { ContactMap } from './ContactMap';
  * original `FloatingWhatsAppButton` plan doesn't apply to this page.
  */
 export function ContactPage() {
+  const { data: content } = useContactContent();
   const channels = useContactChannels();
   const { ateliers, isLoading } = useAteliersForMap();
 
   return (
     <>
-      <ContactHeader />
+      <ContactHeader content={content.header} />
       <main className="mx-auto w-full max-w-screen-2xl px-8 py-20">
         <div className="grid grid-cols-1 gap-16 lg:grid-cols-12 lg:gap-24">
           <div className="space-y-16 lg:col-span-5">

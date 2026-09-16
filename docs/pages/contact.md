@@ -33,19 +33,21 @@ apps/web/src/features/contact/
     ContactForm.tsx                    → 'use client' (état vient de useContactForm())
     ContactMap.tsx                      → panneau carte statique stylé CSS + carte info centrée (pas de vraie carte, voir Points d'attention)
   hooks/
-    useContactChannels.ts                → coordonnées de contact (téléphone/WhatsApp/email/réseaux/horaires) — valeurs par défaut en dur en attendant `content`
+    useContactChannels.ts                → coordonnées de contact (téléphone/WhatsApp/email/réseaux/horaires) — valeurs par défaut en dur en attendant une future tranche `content`
+    useContactContent.ts                  → header (titre/sous-titre) réel, GET /content/public/contact, repli codé en dur
     useContactForm.ts                     → react-hook-form + Zod + mutation d'envoi
     useAteliersForMap.ts                   → react-query sur GET /api/ateliers pour la mini-liste
   api/
-    contact.api.ts                          → useAteliersForMapQuery, useSendContactMessageMutation
+    contact.api.ts                          → useContactSectionsContentQuery, useAteliersForMapQuery, useSendContactMessageMutation
   schemas/
     contact-form.schema.ts                   → Zod (prénom, nom, email, téléphone optionnel, sujet, message)
   consts/
     contact-subjects.const.ts                 → 6 options du select Sujet
     queryKeys.ts
   __tests__/
-    useContactForm.test.ts, ContactForm.test.tsx, ContactChannelsColumn.test.tsx,
-    ContactAteliersMiniList.test.tsx, ContactMap.test.tsx, ContactPage.test.tsx
+    useContactContent.test.ts, useContactForm.test.ts, ContactForm.test.tsx,
+    ContactChannelsColumn.test.tsx, ContactAteliersMiniList.test.tsx, ContactMap.test.tsx,
+    ContactPage.test.tsx
   index.ts
 ```
 
@@ -58,12 +60,14 @@ les sections ne contiennent que du JSX + appels de hooks.
 | Endpoint | Module | Usage |
 | --- | --- | --- |
 | `GET /api/ateliers` | `ateliers` | Adresses réelles pour la mini-liste |
+| `GET /api/content/public/contact` | `content` | Texte du header (titre/sous-titre), `PUBLISHED`-only — voir Points d'attention |
 | `POST /api/ateliers/contact-messages` | `ateliers` (décision d'architecture, voir Points d'attention) | Envoi du message du formulaire — **mocké via MSW**, pas encore implémenté côté `apps/api` |
 
 ## Modèles Prisma touchés
 
-`Atelier` (`address`, `city` — pour la mini-liste). Aucun modèle Prisma ne persiste le
-message de contact lui-même (voir Points d'attention).
+`Atelier` (`address`, `city` — pour la mini-liste), `PageSection` (`page="contact"`,
+`sectionKey="header"` — texte du header). Aucun modèle Prisma ne persiste le message de
+contact lui-même (voir Points d'attention).
 
 ## Points d'attention
 
@@ -84,9 +88,15 @@ message de contact lui-même (voir Points d'attention).
   l'API réelle en dev, le formulaire affiche donc son état d'erreur (404) — comportement
   attendu et vérifié, pas un bug. Un vrai module `ateliers`/contact-messages` ou un module
   `notifications` dédié reste à construire hors du périmètre frontend de cette session.
+- **Header (titre + sous-titre) migré vers `PageSection` CMS** (session 2026-09-16, suite —
+  sixième tranche de `docs/phases/phase-6-admin-cms.md` item 4, après `home`/`a-propos`/
+  `la-une`/`nos-creations-galerie`/`creation-detail`) : `ContactHeader` lit
+  `GET /content/public/contact` via `useContactContent`, repli sur le littéral codé en dur
+  si la section `header` est absente/`DRAFT` — voir `docs/features/content.md`.
 - Coordonnées de contact (téléphone, réseaux, horaires) : valeurs par défaut codées en dur
   dans `useContactChannels.ts`, même sort que `docs/pages/home.md`/`docs/pages/a-propos.md`
-  en attendant `content` (Phase 6). Réseaux (Facebook/Instagram) restent des liens `#`
+  en attendant une future tranche de migration `content` (Phase 6) — hors périmètre de cette
+  tranche, qui ne couvre que le header. Réseaux (Facebook/Instagram) restent des liens `#`
   décoratifs, cohérent avec le reste du site (aucune vraie URL sociale définie nulle part).
 - Mini-liste d'ateliers 100 % réelle (`GET /api/ateliers`) — s'affiche avec le nombre réel
   d'ateliers en base (1 actuellement), pas les 2 exemples de la maquette.
