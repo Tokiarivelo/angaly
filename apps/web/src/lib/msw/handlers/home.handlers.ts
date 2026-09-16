@@ -104,6 +104,16 @@ export const homeHandlers = [
     });
   }),
 
+  /**
+   * Real endpoint — see docs/features/content.md ("Endpoint public"). Empty
+   * by default (no CMS rows in this hermetic test environment) so
+   * `useHomeContent` falls back to `DEFAULT_HOME_CONTENT` — tests that need
+   * CMS-present/draft-only scenarios override this with `server.use(...)`.
+   */
+  http.get(`${API_BASE_URL}/content/public/accueil`, () => {
+    return HttpResponse.json({ success: true, data: [] });
+  }),
+
   http.get(`${API_BASE_URL}/testimonials`, () => {
     return HttpResponse.json({
       success: true,

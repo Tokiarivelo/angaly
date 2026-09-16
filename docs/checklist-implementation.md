@@ -40,13 +40,17 @@ phase n'a pas été traitée en session dédiée (voir `.cursor/rules/006-phase-
 
 ### Pages
 - [x] ✅ **home** — Page d'accueil (`docs/pages/home.md`) — sections statiques + créations
-      vedettes/ateliers/journal en direct, témoignages/newsletter mockés MSW (Phase 2)
+      vedettes/ateliers/journal en direct, témoignages/newsletter mockés MSW (Phase 2). Texte
+      des sections lu depuis `PageSection` (`content`, Phase 6) depuis la session 2026-09-16
+      (suite), avec repli sur les littéraux codés en dur — voir `docs/features/content.md`
 - [x] ✅ **la-une** — Vitrine éditoriale
 - [x] ✅ **nos-creations-galerie** — Galerie complète des créations
 - [x] ✅ **creation-detail** — Fiche détail d'une création
 - [x] ✅ **collections-liste** — Index des collections
 - [x] ✅ **collection-detail** — Fiche détail d'une collection
-- [x] ✅ **a-propos** — Histoire de la maison
+- [x] ✅ **a-propos** — Histoire de la maison. Texte des sections lu depuis `PageSection`
+      (`content`, Phase 6) depuis la session 2026-09-16 (suite), avec repli sur les
+      littéraux codés en dur — voir `docs/features/content.md`
 - [x] ✅ **nos-ateliers-liste** — Liste des ateliers + carte
 - [x] ✅ **atelier-detail** — Fiche détail d'un atelier
 - [x] ✅ **contact** — Page de contact
@@ -221,7 +225,9 @@ phase n'a pas été traitée en session dédiée (voir `.cursor/rules/006-phase-
       Stitch ne couvre un écran de gestion des comptes dans le périmètre actuel), voir
       `docs/features/users.md`
 - [x] ✅ **content** — `PageSection`/`PageSectionVersion`, sert `admin-gestion-contenu`
-      (session 2026-09-16)
+      (session 2026-09-16). Endpoint public `GET /content/public/:page` (`PUBLISHED`-only,
+      sans auth) ajouté en session 2026-09-16 (suite), consommé par `home`/`a-propos`
+      (2/14 pages Phase 1) — voir `docs/features/content.md`
 
 > Périmètre volontairement limité aux 2 pages couvertes par une maquette Stitch
 > (`stitch-prompts/31-*.md`). Le reste du back-office listé au spec §60-66
@@ -234,7 +240,8 @@ phase n'a pas été traitée en session dédiée (voir `.cursor/rules/006-phase-
 > d'auth, `agy` absent) — structure/copy des 2 pages reconstruites depuis le texte de
 > `stitch-prompts/31-*.md` uniquement, à revalider contre l'écran réel dès que possible ;
 > l'étape 4 de `docs/phases/phase-6-admin-cms.md` (migrer les pages publiques vers
-> `PageSection`) reste explicitement **non traitée** ; le panneau "Utilisée dans" de
+> `PageSection`) a démarré en session 2026-09-16 (suite) — `home`/`a-propos` migrées
+> (2 des 14 pages Phase 1), les 12 autres restent **non traitées** ; le panneau "Utilisée dans" de
 > `admin-mediatheque` est limité par un bug pré-existant non corrigé (relations `Media`
 > jamais connectées par `confirm-upload`, voir `docs/features/media.md`).
 

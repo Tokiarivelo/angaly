@@ -46,6 +46,15 @@ export class PrismaPageSectionRepository implements IPageSectionRepository {
     return records.map((record) => PageSectionMapper.toDomain(record));
   }
 
+  /** PUBLISHED-only — never returns DRAFT rows. See IPageSectionRepository.findPublished. */
+  async findPublished(page: string, locale?: LocaleValue): Promise<PageSectionEntity[]> {
+    const records = await this.prisma.pageSection.findMany({
+      where: { page, status: 'PUBLISHED', ...(locale ? { locale } : {}) },
+      orderBy: { sectionKey: 'asc' },
+    });
+    return records.map((record) => PageSectionMapper.toDomain(record));
+  }
+
   async findById(id: string): Promise<PageSectionEntity | null> {
     const record = await this.prisma.pageSection.findUnique({ where: { id } });
     return record ? PageSectionMapper.toDomain(record) : null;

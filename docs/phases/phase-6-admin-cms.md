@@ -2,8 +2,12 @@
 
 **Statut : ✅ Fait pour les 3 premiers items de l'"Ordre suggéré" ci-dessous** (session
 2026-09-16) : `users` (backend), `content` + `admin-gestion-contenu`, `admin-mediatheque`.
-**L'item 4 reste ⬜ explicitement non traité** — voir ce même item plus bas, qui l'annonçait
-déjà comme "migration progressive, pas un big-bang" et hors périmètre d'une seule session.
+**L'item 4 a démarré** (session 2026-09-16, suite) : `GET /content/public/:page` (public,
+`PUBLISHED`-only) ajouté, et les pages `home`/`a-propos` — 2 pages sur les 14 de la Phase 1 —
+lisent désormais leur texte depuis `PageSection` avec repli sur les littéraux codés en dur
+pour toute section pas encore éditée dans le CMS. **Les 12 autres pages de la Phase 1 restent
+non migrées** (`la-une`, `nos-creations-galerie`, `contact`, etc.) — migration progressive,
+une session à la fois, comme annoncé dès l'origine de cet item.
 Dépend de : Phase 1 (`creations`, `collections`, `ateliers`, `blog`, `media`) — le CMS édite
 du contenu qui doit déjà exister en base.
 
@@ -49,7 +53,10 @@ projet ("manage all texts and images in the website").
    (réutilise `packages/storage`), recherche par bucket/tag/entité liée
 4. Brancher les pages publiques (Phase 1) pour lire leur contenu texte depuis
    `PageSection` au lieu de littéraux codés en dur — migration progressive, section par
-   section, pas un big-bang sur toutes les pages en une fois
+   section, pas un big-bang sur toutes les pages en une fois. **Première tranche faite**
+   (session 2026-09-16, suite) : `home` et `a-propos` (2/14 pages Phase 1) — voir
+   `docs/pages/home.md`, `docs/pages/a-propos.md`, `docs/features/content.md`. Les 12 autres
+   pages restent à migrer, une session à la fois.
 
 ## Points d'attention
 
@@ -64,10 +71,14 @@ projet ("manage all texts and images in the website").
 
 ## Vérification de sortie de phase
 
-- ⬜ Un compte `ADMIN` peut modifier le texte d'une section de la page `home` et voir le
-  changement se refléter côté public sans déploiement — **non atteint** : `save-section-draft`/
-  `publish-section` fonctionnent (testés), mais aucune page publique ne lit encore
-  `PageSection` (item 4, non traité par cette session, voir statut en tête de fiche)
+- [x] Un compte `ADMIN` peut modifier le texte d'une section de la page `home` et voir le
+  changement se refléter côté public sans déploiement — **atteint** (session 2026-09-16,
+  suite) : `save-section-draft`/`publish-section` (déjà testés) plus le nouvel endpoint public
+  `GET /content/public/accueil` (`PUBLISHED`-only) que `useHomeContent` consomme via
+  react-query ; `a-propos` migré dans le même passage (`useAProposContent`,
+  `GET /content/public/a-propos`). **Seulement 2 pages sur les 14 de la Phase 1** — les 12
+  autres restent sur leurs littéraux codés en dur (item 4, migration progressive non finie,
+  voir statut en tête de fiche)
 - ⚠️ Un compte `ADMIN` peut uploader une image dans la médiathèque et l'utiliser sur une fiche
   `creation` existante — l'upload et le lien direct (`entityType`/`entityId`) fonctionnent,
   mais le rattachement via la relation Prisma many-to-many que `creation.media` lit réellement
@@ -77,8 +88,8 @@ projet ("manage all texts and images in the website").
 - [x] `docs/checklist-implementation.md` : les 2 pages + 2 modules passés à ✅
 - ⬜ Toutes les phases (0 à 6) ne sont **pas encore** toutes à ✅ dans
   `docs/checklist-implementation.md` au sens strict de la phase — l'item 4 de l'"Ordre
-  suggéré" (migration des pages publiques) reste ⬜, explicitement hors périmètre de cette
-  session
+  suggéré" (migration des pages publiques) est **en cours** (2/14 pages Phase 1 migrées :
+  `home`, `a-propos`), pas terminé
 
 ## Phase suivante
 

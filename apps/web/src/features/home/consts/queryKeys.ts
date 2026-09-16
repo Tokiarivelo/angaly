@@ -5,4 +5,5 @@ export const QUERY_KEYS = {
   ateliersTeaser: ['home', 'ateliers-teaser'] as const,
   journalTeaser: ['home', 'journal-teaser'] as const,
   homeMedia: ['home', 'media'] as const,
+  content: ['home', 'content'] as const,
 };
