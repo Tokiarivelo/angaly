@@ -14,12 +14,13 @@ images est portée par `media`).
 
 - **Endpoint public de lecture ajouté dans une session suivante** (2026-09-16, suite) : la
   fiche prévoyait à terme un `GET /api/content/public/:page`. Il existe désormais —
-  `GET /content/public/:page` (voir "Endpoint public" ci-dessous) — et `home`/`a-propos`/
-  `la-une`/`nos-creations-galerie`/`creation-detail`/`contact`/`collections-liste`/
-  `collection-detail`/`nos-ateliers-liste`/`atelier-detail`/`journal-liste`/`journal-article`
-  (12 des 14 pages Phase 1) le consomment. Les 2 autres pages de la Phase 1 restent sur leurs littéraux codés en dur ;
-  l'étape 4 de `docs/phases/phase-6-admin-cms.md` ("brancher les pages publiques") reste donc
-  en cours, pas terminée — "migration progressive, pas un big-bang", une page à la fois.
+  `GET /content/public/:page` (voir "Endpoint public" ci-dessous) — et toutes les 14 pages
+  de la Phase 1 (`home`/`a-propos`/`la-une`/`nos-creations-galerie`/`creation-detail`/
+  `contact`/`collections-liste`/`collection-detail`/`nos-ateliers-liste`/`atelier-detail`/
+  `journal-liste`/`journal-article`/`page-404`/`navigation-mobile`) le consomment.
+  L'étape 4 de `docs/phases/phase-6-admin-cms.md` ("brancher les pages publiques") est
+  désormais **terminée** — "migration progressive, pas un big-bang", une page à la fois,
+  jusqu'à couvrir les 14 pages Phase 1.
 - **Statut à 2 valeurs, pas 3** : `stitch-prompts/31-*.md` décrit trois pastilles (Publié /
   Brouillon / Modifications non publiées) mais `PageSection.status` (schema.prisma) est un
   simple `ContentStatus` (`DRAFT`/`PUBLISHED`) par ligne locale — pas de copie séparée
@@ -152,16 +153,16 @@ __tests__/
   `auth/presentation/...` (voir docs/features/users.md pour pourquoi il n'y a pas de nouvelle
   indirection `shared/`).
 - **Pages consommatrices** : `admin-gestion-contenu` (édition, endpoints `content/sections`).
-  `home`, `a-propos`, `la-une`, `nos-creations-galerie`, `creation-detail`, `contact`,
-  `collections-liste`, `collection-detail`, `nos-ateliers-liste`, `atelier-detail`,
-  `journal-liste` et `journal-article` (lecture publique, endpoint `content/public/:page`) —
-  12 pages sur les 14 de la Phase 1, voir
+  Les 14 pages de la Phase 1 — `home`, `a-propos`, `la-une`, `nos-creations-galerie`,
+  `creation-detail`, `contact`, `collections-liste`, `collection-detail`,
+  `nos-ateliers-liste`, `atelier-detail`, `journal-liste`, `journal-article`, `page-404` et
+  `navigation-mobile` (lecture publique, endpoint `content/public/:page`) — voir
   `docs/pages/home.md`/`docs/pages/a-propos.md`/`docs/pages/la-une.md`/
   `docs/pages/nos-creations-galerie.md`/`docs/pages/creation-detail.md`/`docs/pages/contact.md`/
   `docs/pages/collections-liste.md`/`docs/pages/collection-detail.md`/
   `docs/pages/nos-ateliers-liste.md`/`docs/pages/atelier-detail.md`/`docs/pages/journal-liste.md`/
-  `docs/pages/journal-article.md`
-  et l'écart ci-dessus. Les 2 autres pages publiques restent à migrer.
+  `docs/pages/journal-article.md`/`docs/pages/page-404.md`/`docs/pages/navigation-mobile.md`
+  et l'écart ci-dessus.
 
 ## Points d'attention
 
@@ -183,11 +184,13 @@ __tests__/
 - [x] `docs/checklist-implementation.md` : `content` passé à ✅
 - [x] `GET /content/public/:page` testé pour ne jamais renvoyer de section `DRAFT` (repository,
       use-case, controller integration) et pour n'exiger aucune `Authorization`
-- [x] `home`/`a-propos`/`la-une`/`nos-creations-galerie`/`creation-detail`/`contact`/
-      `collections-liste`/`collection-detail`/`nos-ateliers-liste`/`atelier-detail`/
-      `journal-liste`/`journal-article` lisent
+- [x] Les 14 pages de la Phase 1 — `home`/`a-propos`/`la-une`/`nos-creations-galerie`/
+      `creation-detail`/`contact`/`collections-liste`/`collection-detail`/
+      `nos-ateliers-liste`/`atelier-detail`/`journal-liste`/`journal-article`/`page-404`/
+      `navigation-mobile` — lisent
       réellement `PageSection` côté public (react-query, `useHomeContent`/`useAProposContent`/
       `useLaUneContent`/`useGalleryContent`/`useCreationDetailContent`/`useContactContent`/
       `useCollectionsContent`/`useCollectionDetailContent`/`useAteliersListeContent`/
-      `useAtelierDetailContent`/`useJournalListeContent`/`useJournalArticleContent`), avec
+      `useAtelierDetailContent`/`useJournalListeContent`/`useJournalArticleContent`/
+      `usePage404Content`/`useNavigationContent`), avec
       repli testé sur les littéraux codés en dur pour toute section absente/`DRAFT`

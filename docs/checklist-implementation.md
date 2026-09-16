@@ -79,8 +79,13 @@ phase n'a pas été traitée en session dédiée (voir `.cursor/rules/006-phase-
       libellé de bouton) lue depuis `PageSection` (`content`, Phase 6) depuis la session
       2026-09-16 (suite), avec repli sur les littéraux codés en dur — voir
       `docs/features/content.md`
-- [x] ✅ **page-404** — Page 404
-- [x] ✅ **navigation-mobile** — Drawer, bottom bar, recherche, WhatsApp FAB
+- [x] ✅ **page-404** — Page 404. Titre + sous-texte lus depuis `PageSection` (`content`,
+      Phase 6) depuis la session 2026-09-16 (suite), avec repli sur les littéraux codés en
+      dur — voir `docs/features/content.md`
+- [x] ✅ **navigation-mobile** — Drawer, bottom bar, recherche, WhatsApp FAB. Libellé du CTA
+      « Prendre rendez-vous » (partagé drawer + barre basse) lu depuis `PageSection`
+      (`content`, Phase 6) depuis la session 2026-09-16 (suite), avec repli sur le littéral
+      codé en dur — voir `docs/features/content.md`
 
 ### Modules backend
 - [x] ✅ **categories** — taxonomie partagée `Creation`/`Product`/`BlogPost` (`GET /api/categories?kind=`),
@@ -250,9 +255,10 @@ phase n'a pas été traitée en session dédiée (voir `.cursor/rules/006-phase-
 - [x] ✅ **content** — `PageSection`/`PageSectionVersion`, sert `admin-gestion-contenu`
       (session 2026-09-16). Endpoint public `GET /content/public/:page` (`PUBLISHED`-only,
       sans auth) ajouté en session 2026-09-16 (suite), consommé par
+      les 14 pages de la Phase 1 —
       `home`/`a-propos`/`la-une`/`nos-creations-galerie`/`creation-detail`/`contact`/
       `collections-liste`/`collection-detail`/`nos-ateliers-liste`/`atelier-detail`/
-      `journal-liste`/`journal-article` (12/14 pages Phase 1) — voir `docs/features/content.md`
+      `journal-liste`/`journal-article`/`page-404`/`navigation-mobile` — voir `docs/features/content.md`
 
 > Périmètre volontairement limité aux 2 pages couvertes par une maquette Stitch
 > (`stitch-prompts/31-*.md`). Le reste du back-office listé au spec §60-66
@@ -265,11 +271,11 @@ phase n'a pas été traitée en session dédiée (voir `.cursor/rules/006-phase-
 > d'auth, `agy` absent) — structure/copy des 2 pages reconstruites depuis le texte de
 > `stitch-prompts/31-*.md` uniquement, à revalider contre l'écran réel dès que possible ;
 > l'étape 4 de `docs/phases/phase-6-admin-cms.md` (migrer les pages publiques vers
-> `PageSection`) a démarré en session 2026-09-16 (suite) —
-> `home`/`a-propos`/`la-une`/`nos-creations-galerie`/`creation-detail`/`contact`/
-> `collections-liste`/`collection-detail`/`nos-ateliers-liste`/`atelier-detail`/
-> `journal-liste`/`journal-article` migrées
-> (12 des 14 pages Phase 1), les 2 autres restent **non traitées** ; le panneau "Utilisée
+> `PageSection`) démarrée en session 2026-09-16 (suite) est désormais **terminée** — les 14
+> pages de la Phase 1 (`home`/`a-propos`/`la-une`/`nos-creations-galerie`/`creation-detail`/
+> `contact`/`collections-liste`/`collection-detail`/`nos-ateliers-liste`/`atelier-detail`/
+> `journal-liste`/`journal-article`/`page-404`/`navigation-mobile`) lisent toutes leur texte
+> depuis `PageSection` ; le panneau "Utilisée
 > dans" de `admin-mediatheque` est limité par un bug pré-existant non corrigé (relations
 > `Media` jamais connectées par `confirm-upload`, voir `docs/features/media.md`).
 
