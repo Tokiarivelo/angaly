@@ -1,7 +1,7 @@
 # Phase 2 — Conversion
 
-**Statut : ⬜ À faire.** Dépend de : Phase 1 (creations/products doivent exister pour être
-personnalisés/achetés/réservés).
+**Statut : ✅ Complète (11 pages, 6 modules).** Dépend de : Phase 1 (creations/products
+doivent exister pour être personnalisés/achetés/réservés).
 
 ## Objectif (spec §101, Phase 2)
 
