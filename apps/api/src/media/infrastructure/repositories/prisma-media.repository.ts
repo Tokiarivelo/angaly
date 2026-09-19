@@ -1,4 +1,4 @@
-import { Injectable } from '@nestjs/common';
+import { BadRequestException, Injectable } from '@nestjs/common';
 import { Prisma } from '@angaly/database';
 
 import { PrismaService } from '../../../prisma/prisma.service';
@@ -17,6 +17,7 @@ const REFERENCE_COUNT_SELECT = {
     select: {
       creationRefs: true,
       productRefs: true,
+      productVariantRefs: true,
       collectionRefs: true,
       atelierRefs: true,
       blogPostRefs: true,
@@ -32,6 +33,7 @@ const REFERENCE_COUNT_SELECT = {
 const USAGE_SELECT = {
   creationRefs: { select: { id: true, name: true } },
   productRefs: { select: { id: true, name: true } },
+  productVariantRefs: { select: { id: true, sku: true } },
   collectionRefs: { select: { id: true, name: true } },
   atelierRefs: { select: { id: true, name: true } },
   blogPostRefs: { select: { id: true, title: true } },
@@ -40,6 +42,25 @@ const USAGE_SELECT = {
   patternExportOf: { select: { id: true, format: true } },
   pageSectionRefs: { select: { id: true, page: true, sectionKey: true } },
 } satisfies Prisma.MediaSelect;
+
+/**
+ * Only these `MediaEntityType`s map to a true Media-side many-to-many
+ * relation (`Media[]` declared on both models, connectable from either
+ * side) — see docs/features/media.md "Points d'attention" for the full
+ * reasoning. The other 4 values (`CUSTOMER_AVATAR`, `PATTERN_EXPORT`,
+ * `PAGE_SECTION`, `QUOTE_DOCUMENT`) are either unmodeled or owned by a
+ * single FK on the *other* model, set by that model's own use-case
+ * (`PageSection.mediaId`, `PatternExport.mediaId`) — never by `media`
+ * itself, so they're deliberately excluded here.
+ */
+const ENTITY_TYPE_TO_RELATION: Partial<Record<string, keyof Prisma.MediaCreateInput>> = {
+  CREATION: 'creationRefs',
+  PRODUCT: 'productRefs',
+  PRODUCT_VARIANT: 'productVariantRefs',
+  COLLECTION: 'collectionRefs',
+  ATELIER: 'atelierRefs',
+  BLOG_POST: 'blogPostRefs',
+};
 
 function buildOrderBy(sortBy: MediaListFilter['sortBy']): Prisma.MediaOrderByWithRelationInput[] {
   switch (sortBy) {
@@ -58,24 +79,39 @@ export class PrismaMediaRepository implements IMediaRepository {
   constructor(private readonly prisma: PrismaService) {}
 
   async create(media: MediaEntity): Promise<MediaEntity> {
-    const record = await this.prisma.media.create({
-      data: {
-        id: media.id,
-        bucket: media.bucket,
-        objectKey: media.objectKey,
-        url: media.url,
-        altText: media.altText,
-        mimeType: media.mimeType,
-        sizeBytes: media.sizeBytes,
-        width: media.width,
-        height: media.height,
-        entityType: media.entityRef.entityType,
-        entityId: media.entityRef.entityId,
-        sortOrder: media.sortOrder,
-        uploadedById: media.uploadedById,
-      },
-    });
-    return MediaMapper.toDomain(record);
+    const { entityType, entityId } = media.entityRef;
+    const relationField = entityId ? ENTITY_TYPE_TO_RELATION[entityType] : undefined;
+
+    try {
+      const record = await this.prisma.media.create({
+        data: {
+          id: media.id,
+          bucket: media.bucket,
+          objectKey: media.objectKey,
+          url: media.url,
+          altText: media.altText,
+          mimeType: media.mimeType,
+          sizeBytes: media.sizeBytes,
+          width: media.width,
+          height: media.height,
+          entityType: media.entityRef.entityType,
+          entityId: media.entityRef.entityId,
+          sortOrder: media.sortOrder,
+          uploadedById: media.uploadedById,
+          // Connects the actual polymorphic relation (creationRefs, productRefs, ...) in
+          // addition to the denormalized entityType/entityId above — without this, "used in"
+          // (findUsages/countActiveReferences) never sees a media uploaded through the normal
+          // flow, only seed data that connects it by hand. See docs/features/media.md.
+          ...(relationField ? { [relationField]: { connect: [{ id: entityId }] } } : {}),
+        },
+      });
+      return MediaMapper.toDomain(record);
+    } catch (error) {
+      if (error instanceof Prisma.PrismaClientKnownRequestError && error.code === 'P2025') {
+        throw new BadRequestException(`${entityType} "${entityId}" does not exist — cannot attach this media to it`);
+      }
+      throw error;
+    }
   }
 
   async findById(id: string): Promise<MediaEntity | null> {
@@ -143,6 +179,9 @@ export class PrismaMediaRepository implements IMediaRepository {
     }
     for (const product of record.productRefs) {
       usages.push({ entityType: 'PRODUCT', entityId: product.id, label: product.name });
+    }
+    for (const variant of record.productVariantRefs) {
+      usages.push({ entityType: 'PRODUCT_VARIANT', entityId: variant.id, label: variant.sku });
     }
     for (const collection of record.collectionRefs) {
       usages.push({ entityType: 'COLLECTION', entityId: collection.id, label: collection.name });

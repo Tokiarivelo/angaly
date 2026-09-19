@@ -275,13 +275,14 @@ phase n'a pas été traitée en session dédiée (voir `.cursor/rules/006-phase-
 > pages de la Phase 1 (`home`/`a-propos`/`la-une`/`nos-creations-galerie`/`creation-detail`/
 > `contact`/`collections-liste`/`collection-detail`/`nos-ateliers-liste`/`atelier-detail`/
 > `journal-liste`/`journal-article`/`page-404`/`navigation-mobile`) lisent toutes leur texte
-> depuis `PageSection` ; le panneau "Utilisée
-> dans" de `admin-mediatheque` est limité par un bug pré-existant non corrigé (relations
-> `Media` jamais connectées par `confirm-upload`, voir `docs/features/media.md`).
+> depuis `PageSection` ; le bug qui limitait le panneau "Utilisée dans" de
+> `admin-mediatheque` (relations `Media` jamais connectées par `confirm-upload`/
+> `upload-media-buffer`) est **corrigé** (session 2026-09-19, voir `docs/features/media.md`).
 
 ### Hors périmètre spec — ajouté le 2026-09-15
-- [x] ✅ **admin-ai-settings** — `/admin/dashboard` + `/admin/ai-settings`, choix du modèle
-      IA pour l'estimation de mesures (voir `docs/features/ai-model-settings.md`,
-      `docs/pages/admin-ai-settings.md`). Module backend `admin-ai-settings` distinct des
-      2 modules ci-dessus (`users`, `content`, toujours ⬜) — ce n'est **pas** une avancée
-      de la Phase 6 spec, seulement un shell admin minimal pour cette seule fonctionnalité.
+- [x] ✅ **admin-ai-settings** — `/dashboard` + `/ai-settings` (routes réelles, `(admin)` est un
+      route group Next.js sans préfixe d'URL), choix du modèle IA pour l'estimation de
+      mesures (voir `docs/features/ai-model-settings.md`, `docs/pages/admin-ai-settings.md`).
+      Module backend `admin-ai-settings` distinct des 2 modules ci-dessus (`users`, `content`,
+      passés à ✅ le 2026-09-16) — ce n'est **pas** une avancée de la Phase 6 spec, seulement
+      un shell admin minimal pour cette seule fonctionnalité.

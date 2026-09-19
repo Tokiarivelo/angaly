@@ -11,13 +11,14 @@ optimisation/UX** (session 2026-09-16, suite — audit complet du CMS admin) : v
   `mcp__stitch__*` renvoie `Incompatible auth server`, `agy` n'est pas installé. Construit à
   partir du texte de `stitch-prompts/31-*.md` Écran B uniquement — à revalider dès qu'une
   session avec accès Stitch fonctionnel est disponible.
-- **"Utilisée dans" limité par un bug pré-existant non corrigé** (`docs/features/media.md`,
-  section "Bug potentiel découvert 2026-09-07") : `confirm-upload`/`upload-media-buffer` ne
-  connectent jamais la relation Prisma many-to-many que `findUsages()` lit — le panneau
-  affichera "Aucune utilisation détectée" pour tout média réellement uploadé en production
-  tant que ce bug n'est pas corrigé (il fonctionne correctement sur les données de seed).
-  Documenté plutôt que masqué ; corriger ce bug transverse était hors du périmètre de cette
-  session.
+- **"Utilisée dans"/blocage de suppression corrigés (session 2026-09-19)** — le bug
+  pré-existant (`docs/features/media.md`, section "Bug corrigé 2026-09-19") qui empêchait
+  `confirm-upload`/`upload-media-buffer` de connecter la relation Prisma many-to-many que
+  `findUsages()`/`countActiveReferences()` lisent est résolu : un média uploadé via le flux
+  normal (pas seulement les données de seed) apparaît désormais dans "Utilisée dans" et
+  bloque correctement la suppression s'il est référencé. `productVariantRefs` était en plus
+  absent des deux requêtes (jamais affiché même une fois la relation connectée) — corrigé au
+  passage.
 - **Dossier "Déplacer vers"** (bulk action) non implémenté — aucun endpoint dédié
   n'existait déjà (le fiche le notait explicitement), la barre d'actions groupées n'expose
   donc que "Télécharger"/"Supprimer". Reconfirmé toujours absent lors de l'audit
@@ -193,10 +194,9 @@ RBAC), et toutes les relations inverses de `Media` (`creationRefs`, `productRefs
       `docs/features/media.md`)
 - [x] Filtres par dossier et recherche fonctionnels et combinables (`GET /api/media?entityType=&search=&sortBy=`)
 - [x] Panneau de détail affiche "Utilisée dans" à partir des relations inverses réelles du
-      modèle `Media` — **limité par le bug pré-existant documenté ci-dessus** en attendant sa
-      correction
-- [x] Suppression bloquée (avec message clair) si le média est référencé (même limite que
-      ci-dessus tant que le bug n'est pas corrigé)
+      modèle `Media` — bug de connexion de relation corrigé (session 2026-09-19, voir
+      "Écarts assumés")
+- [x] Suppression bloquée (avec message clair) si le média est référencé — même correction
 - [x] Accès refusé (403) pour un rôle `CLIENT`/`COUTURIERE` sur `GET/PATCH/DELETE /api/media/:id`
       (testé côté `apps/api`) ; côté web la page redirige tout rôle hors `MANAGER`/`ADMIN`
 - [x] Tests : 10 fichiers de tests (`useMediaLibrary`, `useMediaUpload`, `useDeleteMedia`,
