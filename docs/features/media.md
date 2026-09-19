@@ -153,29 +153,35 @@ Relations inverses polymorphiques : `CreationMedia`, `ProductMedia`, `Collection
   branches synthétiques toujours à moitié non couvertes, quel que soit le test écrit — vérifié
   sur ce module où statements/functions/lines sont à 100 % et seules ces branches restent
   en dessous. À remonter au fur et à mesure que d'autres modules diluent leur part.
-- **Bug potentiel découvert (2026-09-07, non corrigé — hors périmètre de la session qui l'a
-  trouvé) :** `confirm-upload`/`upload-media-buffer` ne renseignent que les champs
-  dénormalisés `entityType`/`entityId` sur `Media` — ils ne connectent jamais la relation
-  Prisma many-to-many (`creationRefs`/`collectionRefs`/`atelierRefs`/...). Or
-  `GET /api/creations/:slug` (et les autres endpoints détail) sélectionnent `media` via
-  cette relation, pas via `entityId`. Conséquence probable : un média uploadé en production
-  via le flux normal n'apparaîtrait jamais dans `creation.media`/`collection.media` tant que
-  la relation n'est pas connectée explicitement. Vérifié en écrivant
-  `packages/database/prisma/seed.ts` (qui, lui, connecte bien la relation via un `create`
-  imbriqué) — à corriger dans `confirm-upload.use-case.ts` avant la Phase 6
-  (admin-médiathèque) si ce module doit réellement attacher des médias à des entités.
-  **Confirmé non corrigé par la session 2026-09-16** (Phase 6, `admin-mediatheque`) : le
-  panneau "Utilisée dans" (`findUsages()`, `GET /api/media/:id`) lit exactement ces mêmes
-  relations Prisma (`creationRefs`, `productRefs`, ...) — il fonctionnera pour les données de
-  seed (qui connectent la relation) mais **affichera "Aucune utilisation détectée" pour tout
-  média réellement uploadé via le flux normal en production**, tant que ce bug n'est pas
-  corrigé. `countActiveReferences` (utilisé par `delete-media` pour bloquer la suppression)
-  a exactement la même limite : un média récemment uploadé et déjà utilisé sur le site
-  pourrait donc être supprimable à tort. Corriger `confirm-upload.use-case.ts`/
-  `upload-media-buffer.use-case.ts` pour connecter la relation many-to-many est un
-  prérequis explicite avant de faire confiance à ces deux garde-fous en production — non
-  traité dans cette session (changement transverse à plusieurs modules, hors du périmètre
-  "gestion de contenu + médiathèque" assigné).
+- **Bug corrigé (2026-09-19)** — `confirm-upload`/`upload-media-buffer` ne renseignaient que
+  les champs dénormalisés `entityType`/`entityId` sur `Media`, sans jamais connecter la
+  relation Prisma many-to-many (`creationRefs`/`productRefs`/`productVariantRefs`/
+  `collectionRefs`/`atelierRefs`/`blogPostRefs`) — découvert le 2026-09-07, confirmé non
+  corrigé par la session Phase 6 du 2026-09-16 (`admin-mediatheque`), corrigé cette session.
+  Le fix vit dans `PrismaMediaRepository.create()` (infrastructure, pas dans les deux
+  use-cases séparément — ils passent tous les deux par le même `mediaRepository.create()`,
+  et Application ne doit de toute façon jamais connaître un nom de relation Prisma, voir
+  règle absolue #14) : une table `ENTITY_TYPE_TO_RELATION` connecte automatiquement la bonne
+  relation quand `entityId` est fourni, pour les 6 `MediaEntityType` qui correspondent à une
+  vraie relation many-to-many côté `Media` (`CREATION`/`PRODUCT`/`PRODUCT_VARIANT`/
+  `COLLECTION`/`ATELIER`/`BLOG_POST`). Les 4 autres valeurs (`CUSTOMER_AVATAR`,
+  `PATTERN_EXPORT`, `PAGE_SECTION`, `QUOTE_DOCUMENT`) restent **volontairement** non
+  connectées : `PageSection.mediaId`/`PatternExport.mediaId` sont des FK simples possédées
+  par l'*autre* modèle (déjà écrites par `content`/`patterns`, jamais par `media`),
+  `QUOTE_DOCUMENT` n'est délibérément jamais relié à `Quote` (voir `docs/features/quotes.md`
+  — le PDF est régénéré à la demande, pas persisté comme référence), et `CUSTOMER_AVATAR` n'a
+  purement et simplement aucun champ dédié sur `Customer` à ce jour (fonctionnalité non
+  modélisée, pas seulement un bug de câblage). Un `entityId` qui ne correspond à aucune ligne
+  réelle du type attendu échoue maintenant proprement en `BadRequestException` (Prisma P2025
+  intercepté) plutôt que de réussir silencieusement sans lien — comportement neuf, mais sans
+  chemin d'appel actuellement atteignable dans le front qui passerait un `entityId` invalide
+  pour ces 6 types (vérifié : `admin-mediatheque` filtre par dossier/`entityType` sans jamais
+  fournir d'`entityId` à l'upload, `personnalisation-creation`'s `useInspirationUpload`
+  n'envoie pas non plus d'`entityId` pour `CREATION`).
+  `findUsages()`/`countActiveReferences()` (`admin-mediatheque`, "Utilisée dans" +
+  garde-fou de suppression) oubliaient en plus `productVariantRefs` dans leur `select` —
+  corrigé au passage, un média de variante n'apparaissait dans aucun des deux même avec la
+  relation connectée.
 
 ## Vérification
 
@@ -187,6 +193,12 @@ Relations inverses polymorphiques : `CreationMedia`, `ProductMedia`, `Collection
 - [x] `get-media-detail`/`update-media` testés unitairement (404 si le média n'existe pas,
       recalcul de `url` par `update-media` quand `bucket`/`objectKey` changent)
 - [x] `list()` testé avec `search`/`sortBy` (repository Prisma)
+- [x] `create()` teste, pour chacun des 6 `MediaEntityType` connectables, que la bonne
+      relation Prisma est connectée ; qu'aucune relation n'est jamais connectée pour les 4
+      types non connectables même avec un `entityId` ; qu'aucune connexion n'est tentée sans
+      `entityId` ; qu'un P2025 (entité cible introuvable) devient un `BadRequestException`
+      propre plutôt qu'une 500 brute ; qu'une autre erreur Prisma remonte inchangée
+      (session 2026-09-19, correction du bug ci-dessus)
 - [x] Testé manuellement de bout en bout contre MinIO + Postgres réels (presign → PUT
       navigateur → confirm → list → delete, et upload buffer multipart) — **la session
       2026-09-16 n'a pas re-testé ce parcours manuel de bout en bout** pour les 3 nouveaux
