@@ -162,8 +162,9 @@ vêtement invendable livré à une cliente réelle). En attendant qu'un tel mod�
 `packages/pattern-engine` reste la seule source de géométrie effectivement utilisée en
 production — ce changement documente une direction future, pas un changement de
 comportement du système aujourd'hui. La contrainte originale de la spec §105 (ne pas
-dépendre *uniquement* d'un LLM) n'a pas été modifiée dans le document de spécification
-lui-même — voir `docs/specifications/ANGALY_Specifications_Completes.md` §105.
+dépendre *uniquement* d'un LLM) a également été mise à jour dans le document de
+spécification lui-même pour refléter cette décision — voir
+`docs/specifications/ANGALY_Specifications_Completes.md` §105.
 
 ### ADR-006 : MinIO pour tous les médias
 
