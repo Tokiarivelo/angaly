@@ -14,9 +14,11 @@ and NaN for missing ones is fed through `transform()`, which predicts the
 missing values from whichever are known — this is a genuine statistical model
 learned from real body-measurement data, not a nearest-neighbour lookup.
 
-Run: `python ml/scripts/train_measurement_model.py` from apps/ai-service/,
-with the dev dependencies (scikit-learn, pandas, joblib) installed.
-Writes to ml/models/ (gitignored — see ml/scripts/README.md).
+Run: `make train.ai` from the monorepo root (downloads the CSVs above into
+ml/data/raw/ and runs this script), or manually — `python
+ml/scripts/train_measurement_model.py` from apps/ai-service/, with the dev
+dependencies (scikit-learn, pandas, joblib) installed and the CSVs already in
+ml/data/raw/. Writes to ml/models/ (gitignored — see ml/scripts/README.md).
 """
 
 from __future__ import annotations

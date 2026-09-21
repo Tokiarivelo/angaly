@@ -49,11 +49,18 @@ labels qui seraient sinon fabriqués — voir « Pourquoi pas un modèle pour la
   confiance honnête (`app/local_model.py`) plutôt qu'une constante arbitraire — toujours
   ≤ 0.6, donc toujours `isIndicativeOnly()` côté NestJS (`ConfidenceScore`).
 - **Artefacts** : `apps/ai-service/ml/models/*.joblib` (gitignored, comme
-  `ml/data/raw/`) — à régénérer via `python ml/scripts/train_measurement_model.py`
-  après `pip install -r requirements.txt`. `app/local_model.py` charge ces artefacts au
-  premier appel ; si absents, `LOCAL_STATISTICAL` est signalé indisponible
-  (`GET /v1/models`) et toute requête y faisant appel retombe automatiquement sur
-  Gemini (jamais d'erreur bloquante).
+  `ml/data/raw/`) — à régénérer via `make train.ai` depuis la racine du monorepo
+  (télécharge les CSV ANSUR II bruts depuis le mirroir public puis lance
+  `ml/scripts/train_measurement_model.py`, requiert `make install.ai` au préalable) ou
+  manuellement via `python ml/scripts/train_measurement_model.py` après avoir placé les
+  CSV dans `ml/data/raw/`. `app/local_model.py` charge ces artefacts au premier appel ;
+  si absents, `LOCAL_STATISTICAL` est signalé indisponible (`GET /v1/models`) et toute
+  requête y faisant appel retombe automatiquement sur Gemini (jamais d'erreur
+  bloquante). Reproductibilité vérifiée (session 2026-09-21) : `make train.ai` sur un
+  checkout vierge retélécharge les mêmes CSV et reproduit exactement le tableau de MAE
+  ci-dessus (entraînement déterministe, `random_state=42`) ; suite `pytest` complète
+  (14 tests, dont les assertions réelles de `test_local_model.py` qui ne s'auto-skippent
+  plus une fois l'artefact présent) toujours verte, couverture 93.5 %.
 
 ### Pourquoi pas un modèle pour la coupe ?
 

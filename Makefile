@@ -80,6 +80,22 @@ install.ai: ## 🐍 Create the ai-service virtualenv and install its dependencie
 	cd apps/ai-service && python3 -m venv .venv && .venv/bin/pip install -r requirements.txt
 	@echo "$(GREEN)✅ ai-service ready — activate with: source apps/ai-service/.venv/bin/activate$(RESET)"
 
+.PHONY: train.ai
+train.ai: ## 🧠 Download ANSUR II + train the LOCAL_STATISTICAL measurement model — requires make install.ai first
+	@echo "$(CYAN)🧠 Fetching ANSUR II (public, real anthropometric survey data)...$(RESET)"
+	@mkdir -p apps/ai-service/ml/data/raw
+	@if [ ! -f apps/ai-service/ml/data/raw/ansur2_male.csv ]; then \
+	  curl -fsSL -o apps/ai-service/ml/data/raw/ansur2_male.csv \
+	    "https://raw.githubusercontent.com/senihberkay/US-Army-ANSUR-II/master/ANSUR%20II%20MALE%20Public.csv"; \
+	else echo "$(YELLOW)⚠️  ansur2_male.csv already present, skipping download.$(RESET)"; fi
+	@if [ ! -f apps/ai-service/ml/data/raw/ansur2_female.csv ]; then \
+	  curl -fsSL -o apps/ai-service/ml/data/raw/ansur2_female.csv \
+	    "https://raw.githubusercontent.com/senihberkay/US-Army-ANSUR-II/master/ANSUR%20II%20FEMALE%20Public.csv"; \
+	else echo "$(YELLOW)⚠️  ansur2_female.csv already present, skipping download.$(RESET)"; fi
+	@echo "$(CYAN)🧠 Training the per-gender IterativeImputer...$(RESET)"
+	cd apps/ai-service && .venv/bin/python ml/scripts/train_measurement_model.py
+	@echo "$(GREEN)✅ Trained artifacts written to apps/ai-service/ml/models/ (gitignored — rerun this target wherever ai-service is deployed)$(RESET)"
+
 .PHONY: env.init
 env.init: ## 📋 Create .env files from .env.example (root + apps)
 	@if [ -f "$(ENV_FILE)" ]; then echo "$(YELLOW)⚠️  .env already exists, skipping.$(RESET)"; \
