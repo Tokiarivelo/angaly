@@ -84,6 +84,43 @@ __tests__/
 
 ## Points d'attention
 
+- **Photo d'inspiration corrigée (session 2026-09-21)** — `uploadInspirationMedia()`
+  (`apps/web/src/features/pattern-studio-wizard/api/pattern-projects.api.ts`) violait
+  `.cursor/rules/002-nextjs-features.mdc` (raw `fetch` hors de `@/lib/api-client`) contre une
+  route `/api/media/upload` que `apps/web` n'expose pas (seul route Next.js sous `app/api/`
+  est le catch-all NextAuth) — la requête échouait donc au niveau réseau avant même d'atteindre
+  le backend. Elle envoyait en plus `entityType: 'PATTERN_PROJECT'`, qui n'a jamais été une
+  valeur valide de `MediaEntityType` (voir `docs/features/media.md`). Chaque échec tombait
+  dans un fallback silencieux : un blob `URL.createObjectURL()` local (jamais persisté,
+  invalide après un rechargement de page) + un `mediaId` fabriqué (`'mock-media-' + Date.now()`)
+  qui ne correspond à aucune ligne `Media` réelle — c'est la cause de "la photo uploadée ne
+  s'affiche pas correctement" remontée par un utilisateur. `analyzeInspirationPhoto()` avait
+  en plus un mismatch de noms de champs des deux côtés avec
+  `AiInspirationController`/`AnalyzeInspirationDto` (`imageUrl` envoyé au lieu de
+  `inspirationImageUrl` attendu ; `detectedFeatures` lu au lieu de
+  `detectedInspirationFeatures` reçu) — la requête échouait donc systématiquement (400) et
+  retombait sur une analyse placeholder fixe (`SIRENE`, texte français codé en dur), affichée
+  à chaque utilisateur indépendamment de sa photo réelle. **Corrigé** : `uploadInspirationMedia`
+  suit désormais le flux presigned-upload → PUT direct navigateur→MinIO → confirm (même
+  pattern que `personnalisation-creation`'s `useInspirationUpload.ts`, via `@/lib/api-client`
+  uniquement, avec le nouveau `MediaEntityType.PATTERN_INSPIRATION`, voir
+  `docs/features/media.md`) ; plus aucun fallback silencieux — un échec réel remonte comme une
+  erreur visible dans l'UI existante (`InspirationStep.tsx` affiche déjà un message d'erreur,
+  l'étape reste optionnelle). `analyzeInspirationPhoto` envoie/lit désormais les bons noms de
+  champs.
+- **Rendu du "meilleur patron" limité pour 3 des 8 `GarmentType` (session 2026-09-21, suivi
+  requis)** — `packages/pattern-engine/src/rules/` n'implémente que `ROBE`/`JUPE`/`PANTALON`/
+  `VESTE`/`CHEMISE`. `COSTUME`, `ROBE_MARIEE` et `AUTRE` n'ont aucune règle dédiée :
+  `PatternEngine.generate()` retombe sur la première règle enregistrée dont `appliesTo()`
+  accepte le type demandé (`VesteRule` pour `COSTUME`, `RobeRule` pour `ROBE_MARIEE`,
+  `ChemiseRule` pour `AUTRE`) — voir `packages/pattern-engine/src/pattern-engine.ts`. Le cas le
+  plus grave est `COSTUME` : `VesteRule` ne génère que les pièces d'une veste, jamais le
+  pantalon/jupe qui complète un costume — la moitié du vêtement demandé n'est simplement pas
+  produite. C'est la cause de "ce n'est pas le meilleur patron pour le type de vêtement
+  sélectionné" remontée par un utilisateur. **Non corrigé dans cette session** (nécessite une
+  vraie géométrie de construction par type, travail spécialisé patronage/couture — voir le
+  skill `pattern-engine-rule`) ; voir `docs/phases/phase-4-premium-pattern-studio.md` pour le
+  suivi.
 - Le statut `REVIEW_REQUIRED` doit réellement bloquer `export-pattern-version` côté backend
   (pas seulement une désactivation de bouton côté UI) tant qu'une `COUTURIERE` n'a pas
   validé — voir spec §27 et `docs/phases/phase-4-premium-pattern-studio.md`.

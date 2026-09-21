@@ -26,6 +26,8 @@ describe('resolveBucketForEntityType', () => {
     ['PATTERN_EXPORT', 'patterns'],
     ['BLOG_POST', 'blog'],
     ['PAGE_SECTION', 'customers'],
+    ['QUOTE_DOCUMENT', 'quotes'],
+    ['PATTERN_INSPIRATION', 'patterns'],
   ] as const)('maps %s to bucket %s', (entityType, bucket) => {
     expect(resolveBucketForEntityType(entityType)).toBe(bucket);
   });

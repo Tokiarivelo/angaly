@@ -144,9 +144,20 @@ Relations inverses polymorphiques : `CreationMedia`, `ProductMedia`, `Collection
   `PRODUCT`→`products`, `PRODUCT_VARIANT`→`products` (photos par couleur, voir
   `docs/features/products.md`), `COLLECTION`→`collections`, `ATELIER`→`ateliers`,
   `CUSTOMER_AVATAR`→`avatars`, `PATTERN_EXPORT`→`patterns`, `BLOG_POST`→`blog`,
-  `PAGE_SECTION`→`customers`. `PAGE_SECTION` hérite du bucket restant (`customers`) faute de
-  bucket dédié dans la spec — à revoir si Phase 6 (admin-gestion-contenu) introduit un bucket
-  propre pour le contenu CMS.
+  `PAGE_SECTION`→`customers`, `QUOTE_DOCUMENT`→`quotes`, `PATTERN_INSPIRATION`→`patterns`
+  (session 2026-09-21, ajouté avec `PATTERN_EXPORT` sur le même bucket — voir ci-dessous).
+  `PAGE_SECTION` hérite du bucket restant (`customers`) faute de bucket dédié dans la spec —
+  à revoir si Phase 6 (admin-gestion-contenu) introduit un bucket propre pour le contenu CMS.
+- **`PATTERN_INSPIRATION` ajouté (session 2026-09-21)** — `pattern-studio-wizard`'s inspiration-photo
+  upload envoyait `entityType: 'PATTERN_PROJECT'`, qui n'a jamais été une valeur valide de
+  `MediaEntityType` (ni côté enum Prisma, ni côté miroir domaine) : chaque upload échouait
+  systématiquement en 400, masqué par un fallback silencieux côté frontend vers un blob
+  `URL.createObjectURL()` local jamais persisté (voir `docs/features/patterns.md` "Points
+  d'attention" pour le détail complet du bug et son correctif). `PATTERN_INSPIRATION` n'a pas
+  de relation many-to-many dédiée (comme `PATTERN_EXPORT`/`PAGE_SECTION`, la référence réelle
+  vit dans `PatternProject.inspirationMediaId`, un FK simple écrit par `patterns`, jamais par
+  `media`) — migration additive uniquement (`ALTER TYPE ... ADD VALUE`), aucune donnée
+  existante affectée.
 - Le seuil de couverture de branches Jest (`apps/api/jest.config.ts`) est fixé à 75 % (au
   lieu de 80 % pour les 3 autres métriques) : les décorateurs NestJS (`@Inject()`, `@Body()`,
   `@Query()`, paramètres de constructeur avec `emitDecoratorMetadata`) produisent des

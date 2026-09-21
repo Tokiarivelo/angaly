@@ -14,6 +14,7 @@ export const MEDIA_ENTITY_TYPES = [
   'BLOG_POST',
   'PAGE_SECTION',
   'QUOTE_DOCUMENT',
+  'PATTERN_INSPIRATION',
 ] as const;
 
 export type MediaEntityType = (typeof MEDIA_ENTITY_TYPES)[number];
@@ -27,7 +28,9 @@ export type MediaEntityType = (typeof MEDIA_ENTITY_TYPES)[number];
  * bucket of its own in the spec (admin CMS content, Phase 6) — revisit if
  * Phase 6 introduces one. PRODUCT_VARIANT deliberately shares PRODUCT's
  * `products` bucket (colorway-specific photos live alongside the product's
- * own, see docs/features/products.md).
+ * own, see docs/features/products.md). PATTERN_INSPIRATION shares
+ * PATTERN_EXPORT's `patterns` bucket (both are Pattern Studio artifacts for
+ * the same `PatternProject`, see docs/features/patterns.md).
  */
 const ENTITY_TYPE_TO_BUCKET: Record<MediaEntityType, string> = {
   CREATION: 'creations',
@@ -40,6 +43,7 @@ const ENTITY_TYPE_TO_BUCKET: Record<MediaEntityType, string> = {
   BLOG_POST: 'blog',
   PAGE_SECTION: 'customers',
   QUOTE_DOCUMENT: 'quotes',
+  PATTERN_INSPIRATION: 'patterns',
 };
 
 export function isMediaEntityType(value: string): value is MediaEntityType {
