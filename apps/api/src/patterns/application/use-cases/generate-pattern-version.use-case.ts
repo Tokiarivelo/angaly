@@ -117,6 +117,23 @@ export class GeneratePatternVersionUseCase {
     const latestVersion = await this.versionRepository.findLatestByProjectId(projectId);
     const nextVersionNumber = (latestVersion?.versionNumber ?? 0) + 1;
 
+    // AUTRE ("Pièce spéciale sur cahier des charges") n'a pas de règle de construction
+    // dédiée à une forme précise — packages/pattern-engine/src/rules/autre.rule.ts ne
+    // produit volontairement qu'un bloc de base rectangulaire générique (voir sa doc
+    // interne et docs/features/patterns.md, "Points d'attention", décision Option A).
+    // Le contrat IPatternRule ne permet pas à une règle d'émettre un avertissement
+    // (PatternEngine.generate() renvoie toujours `warnings: []`, voir pattern-engine.ts),
+    // donc l'avertissement est ajouté ici, où le GarmentType demandé est connu, plutôt que
+    // de laisser l'UI présenter ce bloc de base comme un patron prêt à confectionner.
+    const warnings = [...generationResult.warnings];
+    if (garmentType === 'AUTRE') {
+      warnings.push(
+        'Patron de base générique : ce type de vêtement ("Autre") ne dispose pas de ' +
+          'construction dédiée. Les pièces générées sont un bloc de base rectangulaire ' +
+          'neutre — une adaptation par une couturière est requise avant confection.',
+      );
+    }
+
     const versionId = randomUUID();
     const piecesData = generationResult.pieces.map((piece) => ({
       name: piece.name,
@@ -137,6 +154,7 @@ export class GeneratePatternVersionUseCase {
         parameters,
         measurements,
         estimatedMeasurementKeys,
+        warnings,
         metadata: generationResult.metadata,
       },
       generatedByAI: estimatedMeasurementKeys.length > 0,

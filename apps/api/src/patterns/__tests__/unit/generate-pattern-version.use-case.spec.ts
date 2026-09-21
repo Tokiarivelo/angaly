@@ -265,5 +265,38 @@ describe('GeneratePatternVersionUseCase', () => {
     );
     expect(mockGeneratePiecesUseCase.execute).toHaveBeenCalledTimes(1);
   });
+
+  it('adds a generic-base warning to parametersJson.warnings for AUTRE garment type', async () => {
+    const autreProject = PatternProjectEntity.create({
+      id: 'proj-autre',
+      projectRef: 'ANG-PAT-2026-00005',
+      customerId: 'cust-1',
+      measurementProfileId: null,
+      garmentType: 'AUTRE',
+      occasion: 'Autre',
+      style: null,
+      cutType: 'DROITE',
+      detailsJson: null,
+      inspirationMediaId: null,
+      status: 'DRAFT',
+      createdAt: new Date(),
+      updatedAt: new Date(),
+    });
+    mockProjectRepo.findById.mockResolvedValueOnce(autreProject);
+    mockProjectRepo.update.mockResolvedValueOnce(autreProject);
+
+    const version = await useCase.execute('proj-autre', 'cust-1');
+
+    const warnings = (version.parametersJson as any).warnings as string[];
+    expect(warnings.length).toBe(1);
+    expect(warnings[0]).toContain('générique');
+  });
+
+  it('does not add a generic-base warning for other garment types', async () => {
+    const version = await useCase.execute('proj-1', 'cust-1');
+
+    const warnings = (version.parametersJson as any).warnings as string[];
+    expect(warnings).toEqual([]);
+  });
 });
 

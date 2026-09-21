@@ -3,21 +3,24 @@ import { ChemiseRule } from '../rules/chemise.rule';
 import type { PatternParameters, MeasurementSet } from '../types';
 
 describe('ChemiseRule', () => {
-  it('should apply to CHEMISE and AUTRE garment types', () => {
+  it('should apply to CHEMISE garment type', () => {
     const paramsChemise: PatternParameters = {
       garmentType: 'CHEMISE',
       cutType: 'AJUSTÉE',
       style: null,
       details: {},
     };
+    expect(ChemiseRule.appliesTo(paramsChemise)).toBe(true);
+  });
+
+  it('should no longer apply to AUTRE garment type (has its own dedicated rule)', () => {
     const paramsAutre: PatternParameters = {
       garmentType: 'AUTRE',
       cutType: 'DROITE',
       style: null,
       details: {},
     };
-    expect(ChemiseRule.appliesTo(paramsChemise)).toBe(true);
-    expect(ChemiseRule.appliesTo(paramsAutre)).toBe(true);
+    expect(ChemiseRule.appliesTo(paramsAutre)).toBe(false);
   });
 
   it('should compute pieces correctly with valid measurements', () => {

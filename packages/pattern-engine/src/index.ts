@@ -16,4 +16,7 @@ export { RobeRule } from './rules/robe.rule';
 export { PantalonRule } from './rules/pantalon.rule';
 export { VesteRule } from './rules/veste.rule';
 export { ChemiseRule } from './rules/chemise.rule';
+export { CostumeRule } from './rules/costume.rule';
+export { RobeMarieeRule } from './rules/robe-mariee.rule';
+export { AutreRule } from './rules/autre.rule';
 

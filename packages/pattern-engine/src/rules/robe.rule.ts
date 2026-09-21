@@ -11,7 +11,9 @@ export const RobeRule: IPatternRule = {
   garmentType: 'ROBE',
   requiredMeasurementKeys: REQUIRED_MEASUREMENTS,
   appliesTo(parameters: PatternParameters): boolean {
-    return parameters.garmentType === 'ROBE' || parameters.garmentType === 'ROBE_MARIEE';
+    // ROBE_MARIEE has its own dedicated rule (robe-mariee.rule.ts) with structured-bodice
+    // ease and a train — ROBE alone no longer falls back to accepting it.
+    return parameters.garmentType === 'ROBE';
   },
   computePieces(
     _parameters: PatternParameters,

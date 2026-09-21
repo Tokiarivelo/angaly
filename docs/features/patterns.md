@@ -108,19 +108,63 @@ __tests__/
   erreur visible dans l'UI existante (`InspirationStep.tsx` affiche déjà un message d'erreur,
   l'étape reste optionnelle). `analyzeInspirationPhoto` envoie/lit désormais les bons noms de
   champs.
-- **Rendu du "meilleur patron" limité pour 3 des 8 `GarmentType` (session 2026-09-21, suivi
-  requis)** — `packages/pattern-engine/src/rules/` n'implémente que `ROBE`/`JUPE`/`PANTALON`/
-  `VESTE`/`CHEMISE`. `COSTUME`, `ROBE_MARIEE` et `AUTRE` n'ont aucune règle dédiée :
-  `PatternEngine.generate()` retombe sur la première règle enregistrée dont `appliesTo()`
-  accepte le type demandé (`VesteRule` pour `COSTUME`, `RobeRule` pour `ROBE_MARIEE`,
-  `ChemiseRule` pour `AUTRE`) — voir `packages/pattern-engine/src/pattern-engine.ts`. Le cas le
-  plus grave est `COSTUME` : `VesteRule` ne génère que les pièces d'une veste, jamais le
-  pantalon/jupe qui complète un costume — la moitié du vêtement demandé n'est simplement pas
-  produite. C'est la cause de "ce n'est pas le meilleur patron pour le type de vêtement
-  sélectionné" remontée par un utilisateur. **Non corrigé dans cette session** (nécessite une
-  vraie géométrie de construction par type, travail spécialisé patronage/couture — voir le
-  skill `pattern-engine-rule`) ; voir `docs/phases/phase-4-premium-pattern-studio.md` pour le
-  suivi.
+- **Rendu du "meilleur patron" limité pour 3 des 8 `GarmentType` — corrigé (session
+  2026-09-21)** — `packages/pattern-engine/src/rules/` n'implémentait auparavant que
+  `ROBE`/`JUPE`/`PANTALON`/`VESTE`/`CHEMISE`. `COSTUME`, `ROBE_MARIEE` et `AUTRE` n'avaient
+  aucune règle dédiée : `PatternEngine.generate()` retombait sur la première règle enregistrée
+  dont `appliesTo()` acceptait le type demandé (`VesteRule` pour `COSTUME`, `RobeRule` pour
+  `ROBE_MARIEE`, `ChemiseRule` pour `AUTRE`). Le cas le plus grave était `COSTUME` :
+  `VesteRule` ne générait que les pièces d'une veste, jamais le pantalon qui complète un
+  costume — la moitié du vêtement demandé n'était simplement pas produite. C'était la cause de
+  "ce n'est pas le meilleur patron pour le type de vêtement sélectionné" remontée par un
+  utilisateur.
+
+  **Correction** (via le skill `pattern-engine-rule`, chaque nouvelle règle avec ses tests) :
+  - `packages/pattern-engine/src/rules/costume.rule.ts` — nouvelle règle dédiée `COSTUME`.
+    Décision documentée dans le fichier : un costume produit toujours un ensemble
+    veste + pantalon (jamais de bascule automatique vers une jupe selon `details`/`style`,
+    non spécifié par la spec — garder la règle simple et déterministe). Construction :
+    adaptation autonome (pas de ré-import inter-règles, `packages/pattern-engine` reste sans
+    dépendance externe ni interne) des formules buste/emmanchure/manche/col de
+    `veste.rule.ts` et bassin/enfourchure/ceinture de `pantalon.rule.ts`, réunies en 7 pièces
+    (4 veste + 3 pantalon) dans un seul `computePieces()`.
+  - `packages/pattern-engine/src/rules/robe-mariee.rule.ts` — nouvelle règle dédiée
+    `ROBE_MARIEE`, construction genuinely différente de `robe.rule.ts` : aisance quasi nulle
+    au buste/taille (bustier structuré/baleiné plutôt que porté par l'aisance du tissu),
+    découpe princesse à 3 panneaux (devant/côté/dos) au lieu de 2, jupe devant longueur au
+    sol (1000mm) et jupe dos avec traîne significativement plus longue (+900mm par défaut,
+    mesure `LONGUEUR_TRAINE` si fournie), plus une pièce jupon/doublure de structure — 7
+    pièces au total contre 4 pour `RobeRule`. Hypothèses de patronage documentées en tête du
+    fichier (la spec §19-24 ne détaille pas la construction bustier/traîne).
+  - `packages/pattern-engine/src/rules/autre.rule.ts` — nouvelle règle dédiée `AUTRE`, mais
+    **décision assumée de rester générique** (Option A, voir raisonnement complet en tête du
+    fichier) : `AUTRE` couvre par définition une pièce arbitraire sur cahier des charges libre,
+    sans famille de patron reconnue à adapter (contrairement à `COSTUME`/`ROBE_MARIEE`) — il
+    n'existe pas de géométrie déterministe sensée à produire ici. La règle génère donc un bloc
+    rectangulaire neutre (devant/dos, sans col/manche/aisance spécifique), et
+    `generate-pattern-version.use-case.ts` ajoute désormais explicitement un avertissement
+    dans `parametersJson.warnings` de la `PatternVersion` quand `garmentType === 'AUTRE'`
+    ("patron de base générique… adaptation par une couturière requise"), lu côté `apps/web` de
+    la même façon que `parametersJson.estimatedMeasurementKeys` l'est déjà par
+    `PatternPreviewValidationPage.tsx` — un échec silencieux (présenter une géométrie de
+    chemise comme si elle avait été construite pour la demande, l'ancien comportement) n'est
+    plus possible. Option B (bloquer `AUTRE` sur `REVIEW_REQUIRED` sans jamais générer) a été
+    écartée : ce statut est déjà un geste explicite de l'utilisateur ("Faire vérifier mon
+    patron", `request-review.use-case.ts`, spec §27) indépendant du type de vêtement, et le
+    court-circuiter automatiquement ici aurait cassé le contrat de
+    `generate-pattern-version` (qui doit toujours renvoyer une `PatternVersion` avec des
+    pièces) pour ce seul type.
+  - `VesteRule.appliesTo()` et `RobeRule.appliesTo()` ont été resserrées pour n'accepter que
+    leur propre `GarmentType` (`VESTE`/`ROBE`) maintenant que `COSTUME`/`ROBE_MARIEE` ont leur
+    propre règle ; `ChemiseRule.appliesTo()` de même pour ne plus accepter `AUTRE`. Les 3
+    nouvelles règles sont enregistrées dans
+    `apps/api/src/pattern-engine/infrastructure/providers/pattern-engine.provider.ts`.
+
+  Tests : `packages/pattern-engine/src/__tests__/{costume,robe-mariee,autre}.rule.test.ts`
+  (appliesTo + géométrie + non-régression des règles voisines resserrées), et
+  `apps/api/src/patterns/__tests__/unit/generate-pattern-version.use-case.spec.ts` (nouveau
+  cas `parametersJson.warnings` pour `AUTRE`). `pnpm --filter @angaly/pattern-engine test` et
+  `pnpm --filter @angaly/api test` passent intégralement.
 - Le statut `REVIEW_REQUIRED` doit réellement bloquer `export-pattern-version` côté backend
   (pas seulement une désactivation de bouton côté UI) tant qu'une `COUTURIERE` n'a pas
   validé — voir spec §27 et `docs/phases/phase-4-premium-pattern-studio.md`.
