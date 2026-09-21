@@ -160,6 +160,7 @@ enum MediaEntityType {
   BLOG_POST
   PAGE_SECTION
   QUOTE_DOCUMENT
+  PATTERN_INSPIRATION
 }
 
 enum NotificationType {

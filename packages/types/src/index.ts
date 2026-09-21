@@ -133,6 +133,7 @@ export enum MediaEntityType {
   BLOG_POST = 'BLOG_POST',
   PAGE_SECTION = 'PAGE_SECTION',
   QUOTE_DOCUMENT = 'QUOTE_DOCUMENT',
+  PATTERN_INSPIRATION = 'PATTERN_INSPIRATION',
 }
 
 export enum NotificationType {

@@ -47,11 +47,12 @@ const USAGE_SELECT = {
  * Only these `MediaEntityType`s map to a true Media-side many-to-many
  * relation (`Media[]` declared on both models, connectable from either
  * side) — see docs/features/media.md "Points d'attention" for the full
- * reasoning. The other 4 values (`CUSTOMER_AVATAR`, `PATTERN_EXPORT`,
- * `PAGE_SECTION`, `QUOTE_DOCUMENT`) are either unmodeled or owned by a
- * single FK on the *other* model, set by that model's own use-case
- * (`PageSection.mediaId`, `PatternExport.mediaId`) — never by `media`
- * itself, so they're deliberately excluded here.
+ * reasoning. The other 5 values (`CUSTOMER_AVATAR`, `PATTERN_EXPORT`,
+ * `PAGE_SECTION`, `QUOTE_DOCUMENT`, `PATTERN_INSPIRATION`) are either
+ * unmodeled or owned by a single FK on the *other* model, set by that
+ * model's own use-case (`PageSection.mediaId`, `PatternExport.mediaId`,
+ * `PatternProject.inspirationMediaId`) — never by `media` itself, so
+ * they're deliberately excluded here.
  */
 const ENTITY_TYPE_TO_RELATION: Partial<Record<string, keyof Prisma.MediaCreateInput>> = {
   CREATION: 'creationRefs',

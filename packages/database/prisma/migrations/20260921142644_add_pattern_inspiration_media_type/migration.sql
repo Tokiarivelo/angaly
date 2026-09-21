@@ -1,0 +1,2 @@
+-- AlterEnum
+ALTER TYPE "MediaEntityType" ADD VALUE 'PATTERN_INSPIRATION';

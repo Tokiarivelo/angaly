@@ -96,7 +96,7 @@ describe('PrismaMediaRepository', () => {
     expect(call[0].data[relationField]).toEqual({ connect: [{ id: 'target-1' }] });
   });
 
-  it.each(['PAGE_SECTION', 'PATTERN_EXPORT', 'CUSTOMER_AVATAR', 'QUOTE_DOCUMENT'] as const)(
+  it.each(['PAGE_SECTION', 'PATTERN_EXPORT', 'CUSTOMER_AVATAR', 'QUOTE_DOCUMENT', 'PATTERN_INSPIRATION'] as const)(
     'create() never connects a relation for %s — its media reference is owned by the other model',
     async (entityType) => {
       const { prisma, media } = buildPrismaServiceMock();
