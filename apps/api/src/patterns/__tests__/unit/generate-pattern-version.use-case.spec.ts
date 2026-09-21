@@ -287,7 +287,7 @@ describe('GeneratePatternVersionUseCase', () => {
 
     const version = await useCase.execute('proj-autre', 'cust-1');
 
-    const warnings = (version.parametersJson as any).warnings as string[];
+    const warnings = version.parametersJson.warnings as string[];
     expect(warnings.length).toBe(1);
     expect(warnings[0]).toContain('générique');
   });
@@ -295,7 +295,7 @@ describe('GeneratePatternVersionUseCase', () => {
   it('does not add a generic-base warning for other garment types', async () => {
     const version = await useCase.execute('proj-1', 'cust-1');
 
-    const warnings = (version.parametersJson as any).warnings as string[];
+    const warnings = version.parametersJson.warnings as string[];
     expect(warnings).toEqual([]);
   });
 });
