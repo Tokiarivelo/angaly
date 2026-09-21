@@ -88,13 +88,15 @@ développeur, avant toute implémentation.** Suivre ces étapes dans l'ordre :
 18. **L'IA (`apps/ai-service`) peut produire directement la géométrie du patron** via un
     modèle génératif dédié, pour les types de vêtements couverts par ce modèle — ancienne
     règle ("l'IA ne produit jamais de géométrie, uniquement des suggestions de paramètres")
-    inversée le 2026-09-21 à la demande explicite du projet. **Cette inversion n'est encore
-    qu'une décision de politique, pas une capacité existante** : aucun modèle entraîné sur
-    des données réelles de patronage n'existe à ce jour (voir `docs/features/ai-model-settings.md`,
-    « Pourquoi pas un modèle pour la coupe ? ») et fabriquer une géométrie non grounded serait
-    dangereux (pièces mal formées, tissu gâché, vêtement livré à une vraie cliente). Tant
-    qu'un tel modèle n'existe pas, `packages/pattern-engine` reste la seule source de
-    géométrie en production — voir note dans `docs/architecture.md` ADR-005.
+    inversée le 2026-09-21 à la demande explicite du projet. **Un premier prototype existe
+    depuis le 2026-09-21** (`apps/ai-service/ml/scripts/train_pattern_generator_model.py`,
+    un `MLPRegressor` par `GarmentType` entraîné sur des données réelles — voir
+    `docs/features/ai-model-settings.md`) mais **n'est pas branché en production** : il
+    apprend à approximer la géométrie déjà exacte de `packages/pattern-engine`, ne l'égale
+    pas en précision, et fabriquer une géométrie non grounded/non validée serait dangereux
+    (pièces mal formées, tissu gâché, vêtement livré à une vraie cliente). Tant qu'un modèle
+    de ce type n'est pas validé et explicitement branché, `packages/pattern-engine` reste la
+    seule source de géométrie en production — voir note dans `docs/architecture.md` ADR-005.
 19. **`packages/pattern-engine` reste déterministe et sans dépendance externe** — sert de
     source de vérité géométrique tant qu'aucun modèle IA entraîné n'existe pour un type de
     vêtement donné, et de repli/validation si un modèle génératif est introduit plus tard —

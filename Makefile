@@ -96,6 +96,15 @@ train.ai: ## 🧠 Download ANSUR II + train the LOCAL_STATISTICAL measurement mo
 	cd apps/ai-service && .venv/bin/python ml/scripts/train_measurement_model.py
 	@echo "$(GREEN)✅ Trained artifacts written to apps/ai-service/ml/models/ (gitignored — rerun this target wherever ai-service is deployed)$(RESET)"
 
+.PHONY: train.pattern.ai
+train.pattern.ai: ## 🧵 Sample real pattern-engine geometry + train a DL pattern-generator prototype (research only, not wired to production) — requires make install.ai first
+	@echo "$(CYAN)🧵 Building @angaly/pattern-engine and sampling real geometry...$(RESET)"
+	$(PNPM) --filter @angaly/pattern-engine build
+	node packages/pattern-engine/scripts/generate-training-data.js
+	@echo "$(CYAN)🧵 Training one MLPRegressor per GarmentType...$(RESET)"
+	cd apps/ai-service && .venv/bin/python ml/scripts/train_pattern_generator_model.py
+	@echo "$(GREEN)✅ Trained prototypes written to apps/ai-service/ml/models/ (gitignored). This is a research prototype only — packages/pattern-engine remains the sole geometry source in production, see docs/features/ai-model-settings.md.$(RESET)"
+
 .PHONY: env.init
 env.init: ## 📋 Create .env files from .env.example (root + apps)
 	@if [ -f "$(ENV_FILE)" ]; then echo "$(YELLOW)⚠️  .env already exists, skipping.$(RESET)"; \

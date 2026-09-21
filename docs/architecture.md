@@ -154,16 +154,21 @@ reste possible).
 
 **Mise à jour (2026-09-21)** : à la demande explicite du projet, la règle CLAUDE.md associée
 (18) a été inversée — l'IA est désormais autorisée à produire directement la géométrie d'un
-patron via un modèle génératif dédié, si/quand un tel modèle existe. **Aucun modèle de ce
-type n'est entraîné ni implémenté à ce jour** : il n'existe aucune donnée réelle de patronage
-pour l'entraîner (voir `docs/features/ai-model-settings.md`), et produire une géométrie non
-grounded présenterait un risque business/sécurité concret (patron mal formé → tissu gâché,
-vêtement invendable livré à une cliente réelle). En attendant qu'un tel modèle existe,
-`packages/pattern-engine` reste la seule source de géométrie effectivement utilisée en
-production — ce changement documente une direction future, pas un changement de
-comportement du système aujourd'hui. La contrainte originale de la spec §105 (ne pas
-dépendre *uniquement* d'un LLM) a également été mise à jour dans le document de
-spécification lui-même pour refléter cette décision — voir
+patron via un modèle génératif dédié, si/quand un tel modèle existe et est validé.
+
+**Mise à jour (2026-09-21, suite — premier prototype)** : un premier modèle a été entraîné le
+même jour (`apps/ai-service/ml/scripts/train_pattern_generator_model.py`, un `MLPRegressor`
+par `GarmentType`). Il est honnêtement scopé : entraîné sur 12 000 échantillons réels générés
+en faisant tourner `packages/pattern-engine` lui-même (`packages/pattern-engine/scripts/
+generate-training-data.js`) sur des mesures/paramètres échantillonnés — pas de données
+fabriquées, mais aussi pas de données de patronage réel indépendantes de pattern-engine. Le
+modèle apprend donc à **approximer** la géométrie déjà exacte de pattern-engine (MAE
+held-out : ~0.1 à 0.7 cm selon le type, voir `docs/features/ai-model-settings.md`), pas à la
+dépasser ni à la remplacer. **Il n'est pas branché à `apps/ai-service` ni à aucun chemin de
+production** : `packages/pattern-engine` reste la seule source de géométrie effectivement
+utilisée en production. La contrainte originale de la spec §105 (ne pas dépendre
+*uniquement* d'un LLM) a également été mise à jour dans le document de spécification
+lui-même pour refléter la décision de politique — voir
 `docs/specifications/ANGALY_Specifications_Completes.md` §105.
 
 ### ADR-006 : MinIO pour tous les médias

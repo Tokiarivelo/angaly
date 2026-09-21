@@ -62,6 +62,65 @@ labels qui seraient sinon fabriqués — voir « Pourquoi pas un modèle pour la
   (14 tests, dont les assertions réelles de `test_local_model.py` qui ne s'auto-skippent
   plus une fois l'artefact présent) toujours verte, couverture 93.5 %.
 
+## Prototype — générateur de géométrie de patron (2026-09-21)
+
+**Statut : 🧪 Prototype de recherche, non branché à `apps/ai-service` ni à aucun chemin de
+production.** Documenté ici car il partage l'infrastructure `ml/` avec `LOCAL_STATISTICAL`
+ci-dessus, mais ce n'est **pas** un réglage administrable comme le reste de ce module — il
+n'existe pas d'endpoint, de DTO ni de toggle admin pour lui.
+
+À la demande explicite du projet, CLAUDE.md règle 18 a été inversée (voir
+`docs/architecture.md` ADR-005) pour autoriser un modèle IA à produire directement de la
+géométrie de patron. Un premier prototype a été entraîné pour vérifier que ce chemin est
+techniquement viable :
+
+- **Données** : **pas** un jeu de données externe — `packages/pattern-engine/scripts/
+  generate-training-data.js` échantillonne des paires (paramètres, mesures) réalistes
+  (ancrées sur la table de tailles standard, `TOUR_*`/`LONGUEUR_*` avec un bruit contrôlé) et
+  les fait passer dans **le vrai `PatternEngine.generate()`**, avec les 8 `IPatternRule`
+  réellement utilisées en production. Chaque ligne du jeu d'entraînement est donc une sortie
+  réelle et exacte de pattern-engine — jamais une géométrie fabriquée ou hallucinée. 12 000
+  échantillons (1 500 par `GarmentType`), échantillonnage déterministe (PRNG seedé,
+  `SEED=42` dans le script) donc reproductible à l'identique. Écrit dans
+  `apps/ai-service/ml/data/raw/pattern_geometry_samples.jsonl` (gitignored, comme les autres
+  sources `ml/data/raw/`).
+- **Modèle** : un `sklearn.neural_network.MLPRegressor` (perceptron multicouche, 3 couches
+  cachées 128/128/64) **par `GarmentType`** — la topologie des pièces (nombre de pièces,
+  nombre de sommets par pièce, ordre) est fixe pour un type donné (vérifié
+  automatiquement contre chaque échantillon avant entraînement, `assert_fixed_schema`), ce
+  qui permet une cible de régression à taille fixe : les coordonnées (x, y) aplaties de
+  tous les sommets de toutes les pièces. Entrée : `cutType` en one-hot + mesures connues.
+- **Entraînement** : `apps/ai-service/ml/scripts/train_pattern_generator_model.py` — split
+  80/20, MAE held-out en millimètres. Résultats observés (session 2026-09-21) :
+
+  | `GarmentType` | Pièces | Sommets | MAE held-out |
+  | --- | --- | --- | --- |
+  | JUPE | 2 | 12 | ~0.08–0.11 cm |
+  | AUTRE | 2 | 10 | ~0.08–0.09 cm |
+  | ROBE | 4 | 24 | ~0.17–0.29 cm |
+  | CHEMISE | 5 | 32 | ~0.21–0.22 cm |
+  | VESTE | 4 | 27 | ~0.23–0.24 cm |
+  | ROBE_MARIEE | 7 | 46 | ~0.38–0.41 cm |
+  | PANTALON | 4 | 32 | ~0.19–0.67 cm |
+  | COSTUME | 7 | 52 | ~0.65–0.68 cm |
+
+  (Légère variance résiduelle d'un run à l'autre malgré `random_state=42` sur le split et le
+  MLP — attribuée au solveur Adam ; le jeu d'échantillons lui-même est, lui, identique à
+  chaque run.)
+- **Reproduire** : `make train.pattern.ai` depuis la racine (build `@angaly/pattern-engine`,
+  échantillonne, entraîne — requiert `make install.ai` au préalable). Artefacts écrits dans
+  `apps/ai-service/ml/models/pattern_generator_<type>.joblib` (gitignored).
+- **Ce que ce prototype prouve, et ce qu'il ne prouve pas** : il démontre qu'un modèle de
+  deep learning peut apprendre, avec une bonne fidélité (sub-mm à ~7mm selon le type), à
+  **approximer** la fonction déjà déterministe de pattern-engine. Il ne la dépasse pas en
+  précision (pattern-engine reste exact par construction) et n'ajoute donc, en l'état, aucune
+  valeur de production — son seul intérêt aujourd'hui est de prouver la viabilité technique
+  du chemin ouvert par la règle 18. Le faire remplacer pattern-engine nécessiterait au
+  minimum : des données de patronage réellement indépendantes (pas dérivées de
+  pattern-engine lui-même), une validation couturière systématique de chaque sortie avant
+  tout usage client, et une décision produit explicite — aucune de ces conditions n'est
+  réunie aujourd'hui.
+
 ### Pourquoi pas un modèle pour la coupe ?
 
 Un modèle pour `suggestedCutType` nécessiterait des paires (occasion, style, mesures) →
