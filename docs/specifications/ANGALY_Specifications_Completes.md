@@ -2761,12 +2761,14 @@ La différenciation doit reposer sur :
 patron uniquement d'un LLM") a été la contrainte technique la plus importante de ce document
 depuis sa rédaction initiale. À la demande explicite du projet, cette contrainte est levée :
 un modèle IA génératif est désormais autorisé à produire directement la géométrie d'un patron,
-sans obligation de passer par un moteur de règles déterministe. Aucun modèle de ce type n'est
-entraîné ni implémenté à ce jour — voir `docs/architecture.md` ADR-005 et
-`docs/features/ai-model-settings.md` pour l'état réel et les risques (aucune donnée réelle de
-patronage disponible pour l'entraîner ; une géométrie non grounded produite par un LLM peut
-être mal formée et se traduire, en production, par du tissu gâché ou un vêtement invendable
-livré à une cliente réelle). Le système Premium continue, pour l'instant, de s'appuyer sur :
+sans obligation de passer par un moteur de règles déterministe. Un premier prototype existe
+depuis le 2026-09-21 (entraîné sur des données réelles générées par `packages/pattern-engine`
+lui-même, pas fabriquées) mais n'est pas branché en production — voir `docs/architecture.md`
+ADR-005 et `docs/features/ai-model-settings.md` pour l'état réel, les métriques et les
+risques (le prototype approxime la géométrie déjà exacte de pattern-engine sans la dépasser ;
+une géométrie non grounded/non validée produite par un LLM peut être mal formée et se
+traduire, en production, par du tissu gâché ou un vêtement invendable livré à une cliente
+réelle). Le système Premium continue, pour l'instant, de s'appuyer sur :
 
 ```text
 IA

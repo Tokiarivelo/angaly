@@ -103,6 +103,12 @@ exports NestJS (`PatternEngineModule`) et consommé en injection de dépendance 
   `docs/features/patterns.md` pour le détail du bug corrigé) ; chaque `appliesTo()` ne matche
   plus que son propre `GarmentType`, plus aucune règle ne sert de filet de repli permissif
   pour un type voisin.
+- CLAUDE.md règle 18 autorise désormais, en politique, qu'un modèle IA produise directement
+  de la géométrie (voir `docs/architecture.md` ADR-005) ; un premier prototype de recherche
+  existe (`docs/features/ai-model-settings.md`, entraîné sur des échantillons réels de ce
+  module via `packages/pattern-engine/scripts/generate-training-data.js`) mais n'est **pas**
+  branché ici — ce module reste, en pratique, la seule source de géométrie effectivement
+  utilisée en production.
 
 ## Vérification
 
