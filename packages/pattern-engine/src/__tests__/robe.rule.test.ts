@@ -3,21 +3,24 @@ import { RobeRule } from '../rules/robe.rule';
 import type { PatternParameters, MeasurementSet } from '../types';
 
 describe('RobeRule', () => {
-  it('should apply to ROBE and ROBE_MARIEE garment type', () => {
+  it('should apply to ROBE garment type', () => {
     const paramsRobe: PatternParameters = {
       garmentType: 'ROBE',
       cutType: 'DROITE',
       style: null,
       details: {},
     };
+    expect(RobeRule.appliesTo(paramsRobe)).toBe(true);
+  });
+
+  it('should no longer apply to ROBE_MARIEE garment type (has its own dedicated rule)', () => {
     const paramsMariee: PatternParameters = {
       garmentType: 'ROBE_MARIEE',
       cutType: 'SIRENE',
       style: null,
       details: {},
     };
-    expect(RobeRule.appliesTo(paramsRobe)).toBe(true);
-    expect(RobeRule.appliesTo(paramsMariee)).toBe(true);
+    expect(RobeRule.appliesTo(paramsMariee)).toBe(false);
   });
 
   it('should not apply to JUPE garment type', () => {

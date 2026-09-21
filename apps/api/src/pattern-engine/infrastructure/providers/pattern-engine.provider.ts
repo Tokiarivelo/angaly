@@ -6,6 +6,9 @@ import {
   PantalonRule,
   VesteRule,
   ChemiseRule,
+  CostumeRule,
+  RobeMarieeRule,
+  AutreRule,
 } from '@angaly/pattern-engine';
 
 @Injectable()
@@ -23,6 +26,9 @@ export class PatternEngineProvider implements OnModuleInit {
     this.engine.registerRule(PantalonRule);
     this.engine.registerRule(VesteRule);
     this.engine.registerRule(ChemiseRule);
+    this.engine.registerRule(CostumeRule);
+    this.engine.registerRule(RobeMarieeRule);
+    this.engine.registerRule(AutreRule);
   }
 
   getEngine(): PatternEngine {

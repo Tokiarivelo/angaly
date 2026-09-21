@@ -11,7 +11,9 @@ export const VesteRule: IPatternRule = {
   garmentType: 'VESTE',
   requiredMeasurementKeys: REQUIRED_MEASUREMENTS,
   appliesTo(parameters: PatternParameters): boolean {
-    return parameters.garmentType === 'VESTE' || parameters.garmentType === 'COSTUME';
+    // COSTUME has its own dedicated rule (costume.rule.ts) since it needs trouser pieces
+    // too — VESTE alone no longer falls back to accepting it.
+    return parameters.garmentType === 'VESTE';
   },
   computePieces(
     _parameters: PatternParameters,

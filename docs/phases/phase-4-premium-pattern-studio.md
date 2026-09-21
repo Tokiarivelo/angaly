@@ -42,9 +42,11 @@ par `GarmentType` avec le skill `pattern-engine-rule`).
 4. `pattern-studio-preview-validation-export` (prévisualisation des pièces, statut
    `PatternStatus`, export PDF/SVG/DXF via `packages/storage`)
 5. `mes-projets-patron` (liste + historique de versions, spec §29)
-6. Étendre les règles pour couvrir progressivement `ROBE_MARIEE`, `COSTUME`, etc. — ne pas
-   bloquer la sortie de phase sur la couverture de tous les types de vêtements ; documenter
-   dans `docs/features/pattern-engine.md` lesquels sont couverts.
+6. ~~Étendre les règles pour couvrir progressivement `ROBE_MARIEE`, `COSTUME`, etc.~~ **Fait
+   (session 2026-09-21)** — les 8 `GarmentType` ont chacun leur `IPatternRule` dédiée, voir
+   `packages/pattern-engine/src/rules/README.md` (tableau de couverture) et
+   `docs/features/patterns.md` ("Points d'attention") pour le détail du bug de fallback
+   silencieux corrigé.
 
 ## Points d'attention
 

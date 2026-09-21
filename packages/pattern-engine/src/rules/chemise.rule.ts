@@ -11,7 +11,10 @@ export const ChemiseRule: IPatternRule = {
   garmentType: 'CHEMISE',
   requiredMeasurementKeys: REQUIRED_MEASUREMENTS,
   appliesTo(parameters: PatternParameters): boolean {
-    return parameters.garmentType === 'CHEMISE' || parameters.garmentType === 'AUTRE';
+    // AUTRE has its own dedicated rule (autre.rule.ts, a generic base block) — CHEMISE
+    // alone no longer falls back to accepting it (a custom cahier-des-charges piece is
+    // not a shirt/blouse).
+    return parameters.garmentType === 'CHEMISE';
   },
   computePieces(
     _parameters: PatternParameters,

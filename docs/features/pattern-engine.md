@@ -96,9 +96,13 @@ exports NestJS (`PatternEngineModule`) et consommé en injection de dépendance 
 - `PatternEngineValidationError` est une erreur du package pur (`packages/pattern-engine`),
   sans notion HTTP — c'est au use-case `generate-pattern-version` de `patterns` de la traduire
   en réponse HTTP (ex. 422 avec la liste `missingMeasurementKeys`), jamais à ce module.
-- Une règle absente pour un `GarmentType` donné (Phase 4 en cours de couverture progressive,
-  voir `packages/pattern-engine/src/rules/README.md`) doit produire une erreur claire et
-  actionnable, jamais un plantage silencieux ou une géométrie approximative.
+- Une règle absente pour un `GarmentType` donné doit produire une erreur claire et
+  actionnable, jamais un plantage silencieux ou une géométrie approximative. Les 8
+  `GarmentType` ont désormais chacun leur `IPatternRule` dédiée (session 2026-09-21 — voir
+  `packages/pattern-engine/src/rules/README.md` pour le tableau de couverture et
+  `docs/features/patterns.md` pour le détail du bug corrigé) ; chaque `appliesTo()` ne matche
+  plus que son propre `GarmentType`, plus aucune règle ne sert de filet de repli permissif
+  pour un type voisin.
 
 ## Vérification
 

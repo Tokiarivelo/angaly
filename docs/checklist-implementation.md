@@ -217,11 +217,14 @@ phase n'a pas été traitée en session dédiée (voir `.cursor/rules/006-phase-
 
 ### Modules backend
 - [x] ✅ **measurements** (+ tailles standard XS/S/M/L/XL…, session 2026-09-14)
-- [x] ✅ **patterns** · **pattern-engine** (le moteur géométrique
-      lui-même a déjà une orchestration testée en Phase 0 — reste à écrire les règles par
-      type de vêtement, voir le skill `pattern-engine-rule`). Session 2026-09-14 : corrigé le
-      bug de nommage de mesures qui faisait retomber toute génération sur un corps par défaut
-      codé en dur — voir `docs/features/patterns.md`.
+- [x] ✅ **patterns** · **pattern-engine** (le moteur géométrique lui-même a une orchestration
+      testée depuis la Phase 0 ; les 8 `GarmentType` ont désormais chacun leur `IPatternRule`
+      dédiée, voir `packages/pattern-engine/src/rules/README.md`). Session 2026-09-14 :
+      corrigé le bug de nommage de mesures qui faisait retomber toute génération sur un corps
+      par défaut codé en dur — voir `docs/features/patterns.md`. Session 2026-09-21 : ajout
+      des règles `COSTUME`/`ROBE_MARIEE`/`AUTRE` manquantes (auparavant absorbées
+      silencieusement par `VesteRule`/`RobeRule`/`ChemiseRule`) — voir
+      `docs/features/patterns.md`, "Points d'attention".
 
 ---
 

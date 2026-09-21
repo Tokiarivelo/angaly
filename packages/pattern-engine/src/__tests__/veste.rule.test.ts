@@ -3,21 +3,24 @@ import { VesteRule } from '../rules/veste.rule';
 import type { PatternParameters, MeasurementSet } from '../types';
 
 describe('VesteRule', () => {
-  it('should apply to VESTE and COSTUME garment types', () => {
+  it('should apply to VESTE garment type', () => {
     const paramsVeste: PatternParameters = {
       garmentType: 'VESTE',
       cutType: 'CINTRÉE',
       style: null,
       details: {},
     };
+    expect(VesteRule.appliesTo(paramsVeste)).toBe(true);
+  });
+
+  it('should no longer apply to COSTUME garment type (has its own dedicated rule)', () => {
     const paramsCostume: PatternParameters = {
       garmentType: 'COSTUME',
       cutType: 'DROITE',
       style: null,
       details: {},
     };
-    expect(VesteRule.appliesTo(paramsVeste)).toBe(true);
-    expect(VesteRule.appliesTo(paramsCostume)).toBe(true);
+    expect(VesteRule.appliesTo(paramsCostume)).toBe(false);
   });
 
   it('should compute pieces correctly with valid measurements', () => {
