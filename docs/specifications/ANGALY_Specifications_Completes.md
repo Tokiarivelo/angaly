@@ -2757,7 +2757,16 @@ La différenciation doit reposer sur :
 8. **Un back-office complet**, permettant à la maison de couture de gérer son activité.
 9. **Une architecture technique évolutive**, capable d'accueillir plus tard une application mobile, du scan corporel et de la visualisation 3D.
 
-Le point le plus important techniquement est de ne pas faire dépendre la précision du patron uniquement d'un LLM. Le système Premium doit combiner :
+**Mise à jour (2026-09-21)** : le point ci-dessous ("ne pas faire dépendre la précision du
+patron uniquement d'un LLM") a été la contrainte technique la plus importante de ce document
+depuis sa rédaction initiale. À la demande explicite du projet, cette contrainte est levée :
+un modèle IA génératif est désormais autorisé à produire directement la géométrie d'un patron,
+sans obligation de passer par un moteur de règles déterministe. Aucun modèle de ce type n'est
+entraîné ni implémenté à ce jour — voir `docs/architecture.md` ADR-005 et
+`docs/features/ai-model-settings.md` pour l'état réel et les risques (aucune donnée réelle de
+patronage disponible pour l'entraîner ; une géométrie non grounded produite par un LLM peut
+être mal formée et se traduire, en production, par du tissu gâché ou un vêtement invendable
+livré à une cliente réelle). Le système Premium continue, pour l'instant, de s'appuyer sur :
 
 ```text
 IA
@@ -2770,5 +2779,9 @@ Mesures client
 +
 Validation professionnelle
 ```
+
+— ce schéma reste la seule voie effectivement implémentée ; un futur modèle génératif de
+géométrie viendrait s'y ajouter ou le remplacer partiellement, sans que cela soit garanti
+par une contrainte de conception dès le départ comme c'était le cas jusqu'ici.
 
 Cela donne à Angaly une fonctionnalité beaucoup plus sérieuse, exploitable commercialement et extensible dans le futur.
