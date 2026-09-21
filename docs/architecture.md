@@ -144,12 +144,26 @@ sans imposer Python aux apps TypeScript. Décision utilisateur confirmée en Pha
 
 ### ADR-005 : `packages/pattern-engine` séparé de `apps/ai-service`
 
-**Décision** : le moteur géométrique déterministe est un package TypeScript pur, distinct
-du service IA.
-**Raison** : spec §105 — la précision du patron ne doit jamais dépendre uniquement d'un LLM
-ou d'un modèle de deep learning ; le moteur de règles doit rester déterministe, testable
-sans réseau, et fonctionner même si `apps/ai-service` est indisponible (dégradation : les
-suggestions IA sont optionnelles, la génération manuelle de paramètres reste possible).
+**Décision initiale** : le moteur géométrique déterministe est un package TypeScript pur,
+distinct du service IA.
+**Raison initiale** : spec §105 — « le point le plus important techniquement est de ne pas
+faire dépendre la précision du patron uniquement d'un LLM » ; le moteur de règles doit rester
+déterministe, testable sans réseau, et fonctionner même si `apps/ai-service` est indisponible
+(dégradation : les suggestions IA sont optionnelles, la génération manuelle de paramètres
+reste possible).
+
+**Mise à jour (2026-09-21)** : à la demande explicite du projet, la règle CLAUDE.md associée
+(18) a été inversée — l'IA est désormais autorisée à produire directement la géométrie d'un
+patron via un modèle génératif dédié, si/quand un tel modèle existe. **Aucun modèle de ce
+type n'est entraîné ni implémenté à ce jour** : il n'existe aucune donnée réelle de patronage
+pour l'entraîner (voir `docs/features/ai-model-settings.md`), et produire une géométrie non
+grounded présenterait un risque business/sécurité concret (patron mal formé → tissu gâché,
+vêtement invendable livré à une cliente réelle). En attendant qu'un tel modèle existe,
+`packages/pattern-engine` reste la seule source de géométrie effectivement utilisée en
+production — ce changement documente une direction future, pas un changement de
+comportement du système aujourd'hui. La contrainte originale de la spec §105 (ne pas
+dépendre *uniquement* d'un LLM) n'a pas été modifiée dans le document de spécification
+lui-même — voir `docs/specifications/ANGALY_Specifications_Completes.md` §105.
 
 ### ADR-006 : MinIO pour tous les médias
 

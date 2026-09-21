@@ -5,6 +5,13 @@ globs: ["packages/pattern-engine/**/*", "apps/api/src/pattern-engine/**/*"]
 
 # Pattern Engine — le "rules set" d'Angaly Pattern Studio
 
+> **Note (2026-09-21)** : CLAUDE.md règle 18 a été mise à jour pour autoriser, en
+> politique future, un modèle IA générant directement de la géométrie de patron.
+> Aucun tel modèle n'existe/n'est entraîné à ce jour (voir `docs/architecture.md`
+> ADR-005) — le diagramme et les règles ci-dessous décrivent le comportement
+> **réellement implémenté aujourd'hui**, où `pattern-engine` reste la seule source
+> de géométrie.
+
 ## Principe (spec §25)
 ```
 IA (apps/ai-service)  →  suggère des PatternParameters (style, coupe, détails)

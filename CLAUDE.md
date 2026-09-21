@@ -85,10 +85,20 @@ développeur, avant toute implémentation.** Suivre ces étapes dans l'ordre :
 
 ### Angaly Pattern Studio (IA + Pattern Engine)
 
-18. **L'IA (`apps/ai-service`) ne produit jamais de géométrie de patron** — uniquement des
-    suggestions de paramètres, toujours soumises à validation humaine/couturière
-19. **`packages/pattern-engine` est déterministe et sans dépendance externe** — voir
-    `.cursor/rules/007-pattern-engine.mdc`
+18. **L'IA (`apps/ai-service`) peut produire directement la géométrie du patron** via un
+    modèle génératif dédié, pour les types de vêtements couverts par ce modèle — ancienne
+    règle ("l'IA ne produit jamais de géométrie, uniquement des suggestions de paramètres")
+    inversée le 2026-09-21 à la demande explicite du projet. **Cette inversion n'est encore
+    qu'une décision de politique, pas une capacité existante** : aucun modèle entraîné sur
+    des données réelles de patronage n'existe à ce jour (voir `docs/features/ai-model-settings.md`,
+    « Pourquoi pas un modèle pour la coupe ? ») et fabriquer une géométrie non grounded serait
+    dangereux (pièces mal formées, tissu gâché, vêtement livré à une vraie cliente). Tant
+    qu'un tel modèle n'existe pas, `packages/pattern-engine` reste la seule source de
+    géométrie en production — voir note dans `docs/architecture.md` ADR-005.
+19. **`packages/pattern-engine` reste déterministe et sans dépendance externe** — sert de
+    source de vérité géométrique tant qu'aucun modèle IA entraîné n'existe pour un type de
+    vêtement donné, et de repli/validation si un modèle génératif est introduit plus tard —
+    voir `.cursor/rules/007-pattern-engine.mdc`
 20. **`apps/ai-service` n'est appelé que par le module `ai-inference`** côté NestJS —
     jamais directement depuis `apps/web`
 
