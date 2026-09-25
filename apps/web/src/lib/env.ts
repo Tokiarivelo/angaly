@@ -10,7 +10,7 @@ const envSchema = z.object({
   NEXTAUTH_SECRET: z.string().min(32),
   // Server-to-server URL NextAuth's authorize()/refresh use to reach apps/api directly
   // (bypasses the reverse proxy, which routes /api/auth/* to this app — see docker/nginx and docker/caddy configs).
-  API_INTERNAL_URL: z.string().url().default('http://localhost:3003/api'),
+  API_INTERNAL_URL: z.string().url().default('http://127.0.0.1:3003/api'),
   NODE_ENV: z.enum(['development', 'test', 'production']).default('development'),
 });
 

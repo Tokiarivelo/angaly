@@ -89,16 +89,17 @@ shares the product's `Media` instead; `GET /api/products/:slug` always returns b
 
 ## Points d'attention
 
-- **Données de démo** : `packages/database/prisma/seed.ts` seed désormais 6 produits
-  prêt-à-porter réels (`ANG-PAP-001` à `006`, catégorie `pret-a-porter`), chacun avec
-  variantes taille (FR 34-44, alignées sur `CATALOGUE_SIZES`) × couleur (palette
-  `CATALOGUE_COLOR_FILTERS` : Navy/White/Champagne/Black/Grey), `Inventory` par variante, une
-  photo produit partagée (`MediaEntityType.PRODUCT`) **et une photo par couleur**
-  (`MediaEntityType.PRODUCT_VARIANT`, une même photo connectée à toutes les tailles de cette
-  couleur via `attachVariantColorPhoto()`) et une courte description — les 5 valeurs de
-  `ProductAvailability` sont chacune couvertes par au moins un produit pour exercer le filtre
-  Disponibilité de `pret-a-porter-catalogue`. Toutes les photos vivent dans le bucket MinIO
-  `products`.
+- **Données de démo** : `packages/database/prisma/seed.ts` seed désormais un catalogue
+  complet de 28 produits prêt-à-porter réels (`ANG-PAP-001` à `028`), répartis sur 7 catégories
+  (`Robes`, `Costumes & Tailleurs`, `Chemises & Blouses`, `Pantalons & Jupes`, `Vestes & Manteaux`,
+  `Accessoires & Soie`, `Ligne Essentiels`), chacun avec variantes taille (FR 34-44, alignées sur
+  `CATALOGUE_SIZES`) × couleur (palette `CATALOGUE_COLOR_FILTERS` : Navy/White/Champagne/Black/Grey),
+  210 variantes et lignes d'`Inventory` correspondantes, une photo produit partagée
+  (`MediaEntityType.PRODUCT`) **et des photos par couleur** (`MediaEntityType.PRODUCT_VARIANT`,
+  connectées aux variantes par taille via `attachVariantColorPhoto()`). Les 5 valeurs de
+  `ProductAvailability` sont toutes représentées avec des stocks réels pour exercer l'ensemble des
+  filtres du catalogue et la pagination multi-pages (3 pages à 12 articles/page). Toutes les photos
+  vivent dans le bucket MinIO `products`.
 - Le panier (`POST /api/cart/items` référencé par `docs/pages/fiche-produit.md`) est
   volontairement **hors périmètre** de ce module : le découpage exact (sous-module de
   `products` vs. module `orders` dédié) est renvoyé à la session d'implémentation de Phase 3

@@ -28,16 +28,19 @@ la grille (SEO produit), filtres et tri gérés côté client après hydratation
 ```
 apps/web/src/features/pret-a-porter-catalogue/
   ui/
-    PretAPorterCataloguePage.tsx → orchestre header + filtres + grille + pagination
+    PretAPorterCataloguePage.tsx → orchestre header + filtres + grille + pagination + modal aperçu rapide
     CatalogueFilterBar.tsx        → catégorie, taille, couleur, matière, disponibilité, prix, tri
-    ProductCard.tsx                → photo, badge statut, nom, référence, prix, swatches, favori
+    ProductCard.tsx                → photo, badge statut, nom, référence, prix, swatches, favori, hover "Aperçu rapide"
     ProductStatusBadge.tsx         → pill stylée par `ProductAvailability`
     ProductGrid.tsx                → grille responsive 3-4 colonnes desktop / 2 mobile
     MobileFilterSheet.tsx          → 'use client' panneau plein écran (mobile), état vient de useCatalogueFilters()
+    ProductQuickViewModal.tsx      → 'use client' modal d'aperçu rapide avec visuel dynamique par coloris, sélecteur de couleur/taille, quantité, panier
   hooks/
     useCatalogueFilters.ts         → état des filtres/tri, synchronisé avec les query params URL
     useProducts.ts                 → liste paginée des produits (react-query, dépend des filtres)
     useToggleFavorite.ts            → ajoute/retire un produit des favoris (icône cœur de la carte)
+    useProductQuickView.ts         → ouverture/fermeture du modal d'aperçu rapide et produit actif
+    useQuickViewVariantSelection.ts → sélection dynamique de variante/couleur/taille et permutation d'images de coloris
   api/
     products.api.ts                → useProductsQuery
     favorites.api.ts                → useToggleFavoriteMutation
@@ -48,6 +51,10 @@ apps/web/src/features/pret-a-porter-catalogue/
   __tests__/
     useCatalogueFilters.test.ts
     useProducts.test.ts
+    useProductQuickView.test.ts
+    useQuickViewVariantSelection.test.ts
+    ProductCard.test.tsx
+    ProductQuickViewModal.test.tsx
     PretAPorterCataloguePage.test.tsx
   index.ts
 ```
@@ -124,7 +131,8 @@ produit), `Favorite` (état favori si l'utilisateur est connecté).
 - [x] Filtres (catégorie, taille, couleur, matière, disponibilité, prix) et tri fonctionnels et combinables
 - [x] Filtres synchronisés avec l'URL (query params partageables, back/forward navigables)
 - [x] Icône favori fonctionnelle pour un visiteur connecté (vrai appel API), invite à se connecter sinon
-- [x] Pagination fonctionnelle (chevrons + "n / total", reproduit l'écran réel)
-- [x] Tests : `useCatalogueFilters.test.ts`, `useProducts.test.ts`, `PretAPorterCataloguePage.test.tsx`
-      (+ `catalogue-filters.schema.test.ts`, `ProductStatusBadge.test.tsx`)
+- [x] Modal d'aperçu rapide (`ProductQuickViewModal.tsx`) déclenché au clic sur l'image ou le bouton overlay "Aperçu rapide"
+- [x] Changement interactif de couleur avec mise à jour dynamique du visuel de vêtement selon le coloris (`selectedVariant.media`)
+- [x] Sélecteur de taille dynamique (avec désactivation des tailles épuisées pour le coloris choisi), quantité, prix, SKU et ajout au panier local (`useCartStore`)
+- [x] Tests : `useCatalogueFilters.test.ts`, `useProducts.test.ts`, `useProductQuickView.test.ts`, `useQuickViewVariantSelection.test.ts`, `ProductCard.test.tsx`, `ProductQuickViewModal.test.tsx`, `PretAPorterCataloguePage.test.tsx` (+ `catalogue-filters.schema.test.ts`, `ProductStatusBadge.test.tsx`)
 - [x] `docs/checklist-implementation.md` et `docs/mockup-reference.md` mis à jour à ✅

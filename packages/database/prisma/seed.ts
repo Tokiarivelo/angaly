@@ -161,7 +161,13 @@ async function main() {
     { slug: 'sur-mesure', name: 'Sur Mesure', kind: CategoryKind.CREATION },
     { slug: 'coulisses', name: 'Coulisses', kind: CategoryKind.CREATION },
     { slug: 'creation-du-mois', name: 'Création du mois', kind: CategoryKind.CREATION },
-    { slug: 'pret-a-porter', name: 'Prêt-à-porter', kind: CategoryKind.PRODUCT },
+    { slug: 'robes', name: 'Robes', kind: CategoryKind.PRODUCT },
+    { slug: 'costumes-tailleurs', name: 'Costumes & Tailleurs', kind: CategoryKind.PRODUCT },
+    { slug: 'chemises-blouses', name: 'Chemises & Blouses', kind: CategoryKind.PRODUCT },
+    { slug: 'pantalons-jupes', name: 'Pantalons & Jupes', kind: CategoryKind.PRODUCT },
+    { slug: 'vestes-manteaux', name: 'Vestes & Manteaux', kind: CategoryKind.PRODUCT },
+    { slug: 'accessoires-soie', name: 'Accessoires & Soie', kind: CategoryKind.PRODUCT },
+    { slug: 'pret-a-porter', name: 'Ligne Essentiels', kind: CategoryKind.PRODUCT },
     { slug: 'conseils-mode', name: 'Conseils mode', kind: CategoryKind.BLOG },
     { slug: 'mariage-a-madagascar', name: 'Mariage à Madagascar', kind: CategoryKind.BLOG },
     { slug: 'conseils-costume', name: 'Conseils costume', kind: CategoryKind.BLOG },
@@ -624,36 +630,26 @@ async function main() {
   // avec variantes taille (CATALOGUE_SIZES — tailles FR 34-44) et couleur (palette du filtre
   // CATALOGUE_COLOR_FILTERS : Navy/White/Champagne/Black/Grey) pour que les filtres du
   // catalogue et le sélecteur de couleur de la fiche produit aient de vraies données à filtrer.
-  const pretAPorterCategory = categoryBySlug.get('pret-a-porter')!;
+  const catRobes = categoryBySlug.get('robes')!;
+  const catCostumes = categoryBySlug.get('costumes-tailleurs')!;
+  const catChemises = categoryBySlug.get('chemises-blouses')!;
+  const catPantalonsJupes = categoryBySlug.get('pantalons-jupes')!;
+  const catVestesManteaux = categoryBySlug.get('vestes-manteaux')!;
+  const catAccessoires = categoryBySlug.get('accessoires-soie')!;
+  const catEssentiels = categoryBySlug.get('pret-a-porter')!;
+
   const atelierAntananarivo = createdAteliers.get('antananarivo-centre');
+  const atelierIvandry = createdAteliers.get('antananarivo-ivandry');
+  const atelierAntsirabe = createdAteliers.get('antsirabe-soie');
+  const atelierToamasina = createdAteliers.get('toamasina-croisiere');
 
   const products = [
-    {
-      sku: 'ANG-PAP-001',
-      slug: 'chemise-lin-antsirabe',
-      name: 'Chemise Lin Antsirabe',
-      categoryId: pretAPorterCategory.id,
-      atelierId: atelierAntananarivo?.id ?? null,
-      description:
-        'Chemise fluide en lin naturel tissé à Madagascar, coupe droite et col mao discret — un essentiel intemporel pour toutes les saisons.',
-      price: 138000,
-      status: ProductAvailability.AVAILABLE,
-      material: 'Lin',
-      sizes: ['36', '38', '40', '42'],
-      // Each color has its own photo — picking a swatch on the product page
-      // swaps the gallery to that colorway's pictures (see ColorSelector.tsx).
-      colorPhotos: [
-        { color: 'White', photo: '1496747611176-843222e1e57c', photoAlt: 'Chemise Lin Antsirabe — White' },
-        { color: 'Champagne', photo: '1503342217505-b0a15ec3261c', photoAlt: 'Chemise Lin Antsirabe — Champagne' },
-      ],
-      photo: '1509631179647-0177331693ae',
-      photoAlt: 'Chemise Lin Antsirabe',
-    },
+    // --- ROBES (5 produits) ---
     {
       sku: 'ANG-PAP-002',
       slug: 'robe-portefeuille-soiree',
       name: 'Robe Portefeuille Soirée',
-      categoryId: pretAPorterCategory.id,
+      categoryId: catRobes.id,
       atelierId: atelierAntananarivo?.id ?? null,
       description:
         'Robe portefeuille en crêpe fluide, silhouette cintrée à la taille et jupe évasée pour une allure élégante en toute occasion.',
@@ -667,12 +663,95 @@ async function main() {
       ],
       photo: '1512436991641-6745cdb1723f',
       photoAlt: 'Robe Portefeuille Soirée',
+      createdAt: new Date('2026-03-12T10:00:00.000Z'),
     },
+    {
+      sku: 'ANG-PAP-007',
+      slug: 'robe-midi-soie-sauvage',
+      name: 'Robe Midi en Soie Sauvage',
+      categoryId: catRobes.id,
+      atelierId: atelierAntsirabe?.id ?? null,
+      description:
+        "Robe midi épurée confectionnée dans une soie sauvage d'Antsirabe, col bateau délicat et fente d'aisance latérale.",
+      price: 380000,
+      status: ProductAvailability.AVAILABLE,
+      material: 'Soie',
+      sizes: ['36', '38', '40', '42'],
+      colorPhotos: [
+        { color: 'Champagne', photo: '1571908599407-cdb918ed83bf', photoAlt: 'Robe Midi en Soie Sauvage — Champagne' },
+        { color: 'Navy', photo: '1515886657613-9f3515b0c78f', photoAlt: 'Robe Midi en Soie Sauvage — Navy' },
+      ],
+      photo: '1572804013309-59a88b7e92f1',
+      photoAlt: 'Robe Midi en Soie Sauvage',
+      createdAt: new Date('2026-03-10T14:30:00.000Z'),
+    },
+    {
+      sku: 'ANG-PAP-008',
+      slug: 'robe-chemise-lin-ceinturee',
+      name: 'Robe Chemise Lin Ceinturée',
+      categoryId: catRobes.id,
+      atelierId: atelierToamasina?.id ?? null,
+      description:
+        'Coupe fluide en pur lin tropical prélavé, patte de boutonnage cachée et ceinture coordonnée soulignant la taille.',
+      price: 195000,
+      status: ProductAvailability.AVAILABLE,
+      material: 'Lin',
+      sizes: ['36', '38', '40', '42', '44'],
+      colorPhotos: [
+        { color: 'White', photo: '1496747611176-843222e1e57c', photoAlt: 'Robe Chemise Lin Ceinturée — White' },
+        { color: 'Grey', photo: '1539109136881-3be0616acf4b', photoAlt: 'Robe Chemise Lin Ceinturée — Grey' },
+      ],
+      photo: '1485230895905-ec40ba36b9bc',
+      photoAlt: 'Robe Chemise Lin Ceinturée',
+      createdAt: new Date('2026-03-08T09:15:00.000Z'),
+    },
+    {
+      sku: 'ANG-PAP-009',
+      slug: 'robe-fourreau-cocktail-onyx',
+      name: 'Robe Fourreau Cocktail Onyx',
+      categoryId: catRobes.id,
+      atelierId: atelierIvandry?.id ?? null,
+      description:
+        'Ligne sculpturale et découpe dos nu subtile, taillée dans un crêpe lourd infroissable idéal pour les réceptions mondaines.',
+      price: 320000,
+      status: ProductAvailability.RESERVED,
+      material: 'Crêpe',
+      sizes: ['34', '36', '38'],
+      colorPhotos: [
+        { color: 'Black', photo: '1520975916090-3105956dac38', photoAlt: 'Robe Fourreau Cocktail Onyx — Black' },
+        { color: 'Navy', photo: '1515886657613-9f3515b0c78f', photoAlt: 'Robe Fourreau Cocktail Onyx — Navy' },
+      ],
+      photo: '1520006403909-838d6b92c22e',
+      photoAlt: 'Robe Fourreau Cocktail Onyx',
+      createdAt: new Date('2026-03-05T16:00:00.000Z'),
+    },
+    {
+      sku: 'ANG-PAP-010',
+      slug: 'robe-plissee-soleil-aurore',
+      name: 'Robe Plissée Soleil Aurore',
+      categoryId: catRobes.id,
+      atelierId: atelierAntananarivo?.id ?? null,
+      description:
+        'Mouvement vaporeux incomparable grâce à son plissé permanent fait à la vapeur dans nos ateliers. Doublure soie ton sur ton.',
+      price: 420000,
+      status: ProductAvailability.ON_ORDER,
+      material: 'Organza',
+      sizes: ['36', '38', '40'],
+      colorPhotos: [
+        { color: 'Champagne', photo: '1503342217505-b0a15ec3261c', photoAlt: 'Robe Plissée Soleil Aurore — Champagne' },
+        { color: 'White', photo: '1519741497674-611481863552', photoAlt: 'Robe Plissée Soleil Aurore — White' },
+      ],
+      photo: '1509631179647-0177331693ae',
+      photoAlt: 'Robe Plissée Soleil Aurore',
+      createdAt: new Date('2026-03-01T11:00:00.000Z'),
+    },
+
+    // --- COSTUMES & TAILLEURS (5 produits) ---
     {
       sku: 'ANG-PAP-003',
       slug: 'blazer-structure-marine',
       name: 'Blazer Structuré Marine',
-      categoryId: pretAPorterCategory.id,
+      categoryId: catCostumes.id,
       atelierId: atelierAntananarivo?.id ?? null,
       description:
         "Blazer cintré à l'épaule structurée et doublure satinée — la pièce signature d'un vestiaire de bureau sophistiqué.",
@@ -686,31 +765,115 @@ async function main() {
       ],
       photo: '1534528741775-53994a69daeb',
       photoAlt: 'Blazer Structuré Marine',
+      createdAt: new Date('2026-02-28T09:00:00.000Z'),
     },
     {
-      sku: 'ANG-PAP-004',
-      slug: 'pantalon-tailleur-ivoire',
-      name: 'Pantalon Tailleur Ivoire',
-      categoryId: pretAPorterCategory.id,
-      atelierId: atelierAntananarivo?.id ?? null,
+      sku: 'ANG-PAP-011',
+      slug: 'costume-deux-pieces-ivoire',
+      name: 'Costume Deux-Pièces Ivoire',
+      categoryId: catCostumes.id,
+      atelierId: atelierIvandry?.id ?? null,
       description:
-        'Pantalon fluide à pinces, taille haute et coupe droite — le compagnon parfait du blazer structuré.',
-      price: 168000,
+        'Ensemble tailleur féminin immaculé : veste croisée à boutons nacrés et pantalon droit taille haute en crêpe de laine.',
+      price: 490000,
+      status: ProductAvailability.AVAILABLE,
+      material: 'Laine mélangée',
+      sizes: ['36', '38', '40', '42'],
+      colorPhotos: [
+        { color: 'White', photo: '1519741497674-611481863552', photoAlt: 'Costume Deux-Pièces Ivoire — White' },
+        { color: 'Champagne', photo: '1503342217505-b0a15ec3261c', photoAlt: 'Costume Deux-Pièces Ivoire — Champagne' },
+      ],
+      photo: '1515886657613-9f3515b0c78f',
+      photoAlt: 'Costume Deux-Pièces Ivoire',
+      createdAt: new Date('2026-02-25T15:20:00.000Z'),
+    },
+    {
+      sku: 'ANG-PAP-012',
+      slug: 'ensemble-tailleur-lin-havane',
+      name: 'Ensemble Tailleur Lin Havane',
+      categoryId: catCostumes.id,
+      atelierId: atelierToamasina?.id ?? null,
+      description:
+        "Veste déstructurée sans épaulettes et pantalon fluide coordonné en pur lin, parfaits pour l'élégance tropicale.",
+      price: 285000,
+      status: ProductAvailability.AVAILABLE,
+      material: 'Lin',
+      sizes: ['38', '40', '42', '44'],
+      colorPhotos: [
+        { color: 'Champagne', photo: '1503342217505-b0a15ec3261c', photoAlt: 'Ensemble Tailleur Lin Havane — Champagne' },
+        { color: 'Grey', photo: '1539109136881-3be0616acf4b', photoAlt: 'Ensemble Tailleur Lin Havane — Grey' },
+      ],
+      photo: '1594938298603-c8148c4dae35',
+      photoAlt: 'Ensemble Tailleur Lin Havane',
+      createdAt: new Date('2026-02-22T11:45:00.000Z'),
+    },
+    {
+      sku: 'ANG-PAP-013',
+      slug: 'smoking-femme-satin-nuit',
+      name: 'Smoking Femme Satin Nuit',
+      categoryId: catCostumes.id,
+      atelierId: atelierIvandry?.id ?? null,
+      description:
+        'Le smoking réinventé au féminin : revers châle en satin de soie brillant et coupe fuselée soulignant la cambrure.',
+      price: 520000,
       status: ProductAvailability.ON_ORDER,
-      material: 'Viscose',
+      material: 'Satin',
       sizes: ['34', '36', '38', '40'],
       colorPhotos: [
-        { color: 'White', photo: '1519741497674-611481863552', photoAlt: 'Pantalon Tailleur Ivoire — White' },
-        { color: 'Black', photo: '1520006403909-838d6b92c22e', photoAlt: 'Pantalon Tailleur Ivoire — Black' },
+        { color: 'Navy', photo: '1515886657613-9f3515b0c78f', photoAlt: 'Smoking Femme Satin Nuit — Navy' },
+        { color: 'Black', photo: '1507003211169-0a1dd7228f2d', photoAlt: 'Smoking Femme Satin Nuit — Black' },
       ],
-      photo: '1544078751-58fee2d8a03b',
-      photoAlt: 'Pantalon Tailleur Ivoire',
+      photo: '1507679799987-c73779587ccf',
+      photoAlt: 'Smoking Femme Satin Nuit',
+      createdAt: new Date('2026-02-18T16:10:00.000Z'),
+    },
+    {
+      sku: 'ANG-PAP-014',
+      slug: 'blazer-croise-prince-de-galles',
+      name: 'Blazer Croisé Prince de Galles',
+      categoryId: catCostumes.id,
+      atelierId: atelierAntananarivo?.id ?? null,
+      description:
+        'Tissage milleraies subtilement rehaussé de touches bordeaux, coupe boxy contemporaine et boutons en corne gravée.',
+      price: 345000,
+      status: ProductAvailability.OUT_OF_STOCK,
+      material: 'Laine mélangée',
+      sizes: ['36', '38', '40'],
+      colorPhotos: [
+        { color: 'Grey', photo: '1539109136881-3be0616acf4b', photoAlt: 'Blazer Croisé Prince de Galles — Grey' },
+        { color: 'Black', photo: '1517841905240-472988babdf9', photoAlt: 'Blazer Croisé Prince de Galles — Black' },
+      ],
+      photo: '1617137984095-74e4e5e3613f',
+      photoAlt: 'Blazer Croisé Prince de Galles',
+      createdAt: new Date('2026-02-15T14:00:00.000Z'),
+    },
+
+    // --- CHEMISES & BLOUSES (5 produits) ---
+    {
+      sku: 'ANG-PAP-001',
+      slug: 'chemise-lin-antsirabe',
+      name: 'Chemise Lin Antsirabe',
+      categoryId: catChemises.id,
+      atelierId: atelierAntananarivo?.id ?? null,
+      description:
+        'Chemise fluide en lin naturel tissé à Madagascar, coupe droite et col mao discret — un essentiel intemporel pour toutes les saisons.',
+      price: 138000,
+      status: ProductAvailability.AVAILABLE,
+      material: 'Lin',
+      sizes: ['36', '38', '40', '42'],
+      colorPhotos: [
+        { color: 'White', photo: '1496747611176-843222e1e57c', photoAlt: 'Chemise Lin Antsirabe — White' },
+        { color: 'Champagne', photo: '1503342217505-b0a15ec3261c', photoAlt: 'Chemise Lin Antsirabe — Champagne' },
+      ],
+      photo: '1509631179647-0177331693ae',
+      photoAlt: 'Chemise Lin Antsirabe',
+      createdAt: new Date('2026-02-12T08:30:00.000Z'),
     },
     {
       sku: 'ANG-PAP-005',
       slug: 'chemisier-soie-champagne',
       name: 'Chemisier Soie Champagne',
-      categoryId: pretAPorterCategory.id,
+      categoryId: catChemises.id,
       atelierId: atelierAntananarivo?.id ?? null,
       description:
         'Chemisier en soie naturelle au tombé délicat et col lavallière discret — la touche précieuse du vestiaire quotidien.',
@@ -724,12 +887,95 @@ async function main() {
       ],
       photo: '1571908599407-cdb918ed83bf',
       photoAlt: 'Chemisier Soie Champagne',
+      createdAt: new Date('2026-02-10T10:00:00.000Z'),
+    },
+    {
+      sku: 'ANG-PAP-015',
+      slug: 'blouse-soie-col-lavalliere-nuit',
+      name: 'Blouse Soie Lavallière Nuit',
+      categoryId: catChemises.id,
+      atelierId: atelierAntsirabe?.id ?? null,
+      description:
+        'Mousseline de soie vaporeuse bleu nuit profond, ruban lavallière à nouer ou laisser flotter pour une allure romantique.',
+      price: 215000,
+      status: ProductAvailability.AVAILABLE,
+      material: 'Soie',
+      sizes: ['36', '38', '40', '42'],
+      colorPhotos: [
+        { color: 'Navy', photo: '1515886657613-9f3515b0c78f', photoAlt: 'Blouse Soie Lavallière Nuit — Navy' },
+        { color: 'Black', photo: '1507003211169-0a1dd7228f2d', photoAlt: 'Blouse Soie Lavallière Nuit — Black' },
+      ],
+      photo: '1550614000-4895a10e1bfd',
+      photoAlt: 'Blouse Soie Lavallière Nuit',
+      createdAt: new Date('2026-02-08T14:40:00.000Z'),
+    },
+    {
+      sku: 'ANG-PAP-016',
+      slug: 'chemise-popeline-coton-manches-ballon',
+      name: 'Chemise Popeline Manches Ballon',
+      categoryId: catChemises.id,
+      atelierId: atelierToamasina?.id ?? null,
+      description:
+        "Popeline de coton d'Égypte au toucher soyeux, poignets longs fermés par trois boutons de nacre et manches froncées.",
+      price: 155000,
+      status: ProductAvailability.AVAILABLE,
+      material: 'Coton',
+      sizes: ['34', '36', '38', '40'],
+      colorPhotos: [
+        { color: 'White', photo: '1496747611176-843222e1e57c', photoAlt: 'Chemise Popeline Manches Ballon — White' },
+        { color: 'Grey', photo: '1539109136881-3be0616acf4b', photoAlt: 'Chemise Popeline Manches Ballon — Grey' },
+      ],
+      photo: '1483985988355-763728e1935b',
+      photoAlt: 'Chemise Popeline Manches Ballon',
+      createdAt: new Date('2026-02-05T09:10:00.000Z'),
+    },
+    {
+      sku: 'ANG-PAP-017',
+      slug: 'top-sans-manches-satin-champagne',
+      name: 'Top Sans Manches Satin Champagne',
+      categoryId: catChemises.id,
+      atelierId: atelierAntananarivo?.id ?? null,
+      description:
+        'Top minimaliste en satin fluide, encolure américaine dégagée mettant en valeur le port de tête. Finitions coutures anglaises.',
+      price: 125000,
+      status: ProductAvailability.LAST_PIECE,
+      material: 'Satin',
+      sizes: ['36', '38'],
+      colorPhotos: [
+        { color: 'Champagne', photo: '1503342217505-b0a15ec3261c', photoAlt: 'Top Sans Manches Satin Champagne — Champagne' },
+        { color: 'Black', photo: '1507003211169-0a1dd7228f2d', photoAlt: 'Top Sans Manches Satin Champagne — Black' },
+      ],
+      photo: '1529139574466-a303027c1d8b',
+      photoAlt: 'Top Sans Manches Satin Champagne',
+      createdAt: new Date('2026-02-02T16:50:00.000Z'),
+    },
+
+    // --- PANTALONS & JUPES (4 produits) ---
+    {
+      sku: 'ANG-PAP-004',
+      slug: 'pantalon-tailleur-ivoire',
+      name: 'Pantalon Tailleur Ivoire',
+      categoryId: catPantalonsJupes.id,
+      atelierId: atelierAntananarivo?.id ?? null,
+      description:
+        'Pantalon fluide à pinces, taille haute et coupe droite — le compagnon parfait du blazer structuré.',
+      price: 168000,
+      status: ProductAvailability.ON_ORDER,
+      material: 'Viscose',
+      sizes: ['34', '36', '38', '40'],
+      colorPhotos: [
+        { color: 'White', photo: '1519741497674-611481863552', photoAlt: 'Pantalon Tailleur Ivoire — White' },
+        { color: 'Black', photo: '1520006403909-838d6b92c22e', photoAlt: 'Pantalon Tailleur Ivoire — Black' },
+      ],
+      photo: '1544078751-58fee2d8a03b',
+      photoAlt: 'Pantalon Tailleur Ivoire',
+      createdAt: new Date('2026-01-30T10:00:00.000Z'),
     },
     {
       sku: 'ANG-PAP-006',
       slug: 'jupe-plissee-grise',
       name: 'Jupe Plissée Grise',
-      categoryId: pretAPorterCategory.id,
+      categoryId: catPantalonsJupes.id,
       atelierId: atelierAntananarivo?.id ?? null,
       description:
         'Jupe plissée mi-longue en satin, mouvement fluide à chaque pas — pour une silhouette élégante du bureau au dîner.',
@@ -743,6 +989,233 @@ async function main() {
       ],
       photo: '1593032465175-481ac7f401a0',
       photoAlt: 'Jupe Plissée Grise',
+      createdAt: new Date('2026-01-28T13:15:00.000Z'),
+    },
+    {
+      sku: 'ANG-PAP-018',
+      slug: 'pantalon-palazzo-soie-marine',
+      name: 'Pantalon Palazzo Soie Marine',
+      categoryId: catPantalonsJupes.id,
+      atelierId: atelierIvandry?.id ?? null,
+      description:
+        'Jambes très amples au tombé lourd théâtral, taille haute ceinturée avec poches passepoilées discrètes.',
+      price: 260000,
+      status: ProductAvailability.AVAILABLE,
+      material: 'Soie',
+      sizes: ['36', '38', '40', '42'],
+      colorPhotos: [
+        { color: 'Navy', photo: '1515886657613-9f3515b0c78f', photoAlt: 'Pantalon Palazzo Soie Marine — Navy' },
+        { color: 'Champagne', photo: '1503342217505-b0a15ec3261c', photoAlt: 'Pantalon Palazzo Soie Marine — Champagne' },
+      ],
+      photo: '1508427953056-b00b8d78ebf5',
+      photoAlt: 'Pantalon Palazzo Soie Marine',
+      createdAt: new Date('2026-01-25T11:00:00.000Z'),
+    },
+    {
+      sku: 'ANG-PAP-019',
+      slug: 'jupe-crayon-laine-froide-noire',
+      name: 'Jupe Crayon Laine Froide Noire',
+      categoryId: catPantalonsJupes.id,
+      atelierId: atelierAntananarivo?.id ?? null,
+      description:
+        'Coupe nette sous le genou en laine fresco haute torsion, fente dos et doublure intégrale en satin de soie.',
+      price: 185000,
+      status: ProductAvailability.AVAILABLE,
+      material: 'Laine mélangée',
+      sizes: ['34', '36', '38', '40', '42'],
+      colorPhotos: [
+        { color: 'Black', photo: '1507003211169-0a1dd7228f2d', photoAlt: 'Jupe Crayon Laine Froide Noire — Black' },
+        { color: 'Grey', photo: '1539109136881-3be0616acf4b', photoAlt: 'Jupe Crayon Laine Froide Noire — Grey' },
+      ],
+      photo: '1584308666744-24d5c474f2ae',
+      photoAlt: 'Jupe Crayon Laine Froide Noire',
+      createdAt: new Date('2026-01-22T15:30:00.000Z'),
+    },
+
+    // --- VESTES & MANTEAUX (4 produits) ---
+    {
+      sku: 'ANG-PAP-020',
+      slug: 'trench-coat-gabardine-champagne',
+      name: 'Trench-Coat Gabardine Champagne',
+      categoryId: catVestesManteaux.id,
+      atelierId: atelierAntananarivo?.id ?? null,
+      description:
+        'Trench croisé intemporel en gabardine de coton déperlante, bavolet tempête et boucle de ceinture habillée de cuir.',
+      price: 410000,
+      status: ProductAvailability.AVAILABLE,
+      material: 'Coton',
+      sizes: ['36', '38', '40', '42'],
+      colorPhotos: [
+        { color: 'Champagne', photo: '1503342217505-b0a15ec3261c', photoAlt: 'Trench-Coat Gabardine Champagne — Champagne' },
+        { color: 'Navy', photo: '1515886657613-9f3515b0c78f', photoAlt: 'Trench-Coat Gabardine Champagne — Navy' },
+      ],
+      photo: '1544078751-58fee2d8a03b',
+      photoAlt: 'Trench-Coat Gabardine Champagne',
+      createdAt: new Date('2026-01-20T09:00:00.000Z'),
+    },
+    {
+      sku: 'ANG-PAP-021',
+      slug: 'manteau-drape-cachemire-gris',
+      name: 'Manteau Drapé Cachemire Gris',
+      categoryId: catVestesManteaux.id,
+      atelierId: atelierAntsirabe?.id ?? null,
+      description:
+        'Manteau peignoir non doublé en double face laine et cachemire, col châle généreux et ceinture nouée.',
+      price: 560000,
+      status: ProductAvailability.AVAILABLE,
+      material: 'Cachemire',
+      sizes: ['36', '38', '40', '42', '44'],
+      colorPhotos: [
+        { color: 'Grey', photo: '1539109136881-3be0616acf4b', photoAlt: 'Manteau Drapé Cachemire Gris — Grey' },
+        { color: 'Black', photo: '1517841905240-472988babdf9', photoAlt: 'Manteau Drapé Cachemire Gris — Black' },
+      ],
+      photo: '1539571696357-5a69c17a67c6',
+      photoAlt: 'Manteau Drapé Cachemire Gris',
+      createdAt: new Date('2026-01-18T14:15:00.000Z'),
+    },
+    {
+      sku: 'ANG-PAP-022',
+      slug: 'veste-courte-tweed-perlee',
+      name: 'Veste Courte Tweed Perlée',
+      categoryId: catVestesManteaux.id,
+      atelierId: atelierIvandry?.id ?? null,
+      description:
+        'Veste droite façon boîte en tweed tissé main, bordée de franges fines et boutons or ciselé artisanaux.',
+      price: 375000,
+      status: ProductAvailability.LAST_PIECE,
+      material: 'Laine mélangée',
+      sizes: ['36', '38', '40'],
+      colorPhotos: [
+        { color: 'White', photo: '1519741497674-611481863552', photoAlt: 'Veste Courte Tweed Perlée — White' },
+        { color: 'Navy', photo: '1515886657613-9f3515b0c78f', photoAlt: 'Veste Courte Tweed Perlée — Navy' },
+      ],
+      photo: '1502716119720-b23a93e5fe1b',
+      photoAlt: 'Veste Courte Tweed Perlée',
+      createdAt: new Date('2026-01-15T11:20:00.000Z'),
+    },
+    {
+      sku: 'ANG-PAP-023',
+      slug: 'cape-fluide-crepe-soie-noire',
+      name: 'Cape Fluide Crêpe Soie Noire',
+      categoryId: catVestesManteaux.id,
+      atelierId: atelierAntananarivo?.id ?? null,
+      description:
+        'Cape théâtrale à fentes passe-bras, tombé impeccable pour couvrir une robe de soirée lors des nuits fraîches.',
+      price: 340000,
+      status: ProductAvailability.AVAILABLE,
+      material: 'Crêpe',
+      sizes: ['36', '38', '40', '42'],
+      colorPhotos: [
+        { color: 'Black', photo: '1507003211169-0a1dd7228f2d', photoAlt: 'Cape Fluide Crêpe Soie Noire — Black' },
+        { color: 'Champagne', photo: '1503342217505-b0a15ec3261c', photoAlt: 'Cape Fluide Crêpe Soie Noire — Champagne' },
+      ],
+      photo: '1558769132-cb1aea458c5e',
+      photoAlt: 'Cape Fluide Crêpe Soie Noire',
+      createdAt: new Date('2026-01-12T16:00:00.000Z'),
+    },
+
+    // --- ACCESSOIRES & SOIE (3 produits) ---
+    {
+      sku: 'ANG-PAP-024',
+      slug: 'carre-soie-sauvage-motifs-royaux',
+      name: 'Carré Soie Sauvage Motifs Royaux',
+      categoryId: catAccessoires.id,
+      atelierId: atelierAntsirabe?.id ?? null,
+      description:
+        "Foulard carré 90x90 en pure soie malgache roulotté à la main, sérigraphie originale inspirée de l'architecture d'Ambohimanga.",
+      price: 110000,
+      status: ProductAvailability.AVAILABLE,
+      material: 'Soie',
+      sizes: ['36', '38', '40'],
+      colorPhotos: [
+        { color: 'Champagne', photo: '1503342217505-b0a15ec3261c', photoAlt: 'Carré Soie Sauvage Motifs Royaux — Champagne' },
+        { color: 'Navy', photo: '1515886657613-9f3515b0c78f', photoAlt: 'Carré Soie Sauvage Motifs Royaux — Navy' },
+      ],
+      photo: '1582735689369-4fe89db7114c',
+      photoAlt: 'Carré Soie Sauvage Motifs Royaux',
+      createdAt: new Date('2026-01-10T10:15:00.000Z'),
+    },
+    {
+      sku: 'ANG-PAP-025',
+      slug: 'etole-cachemire-et-soie-nuit',
+      name: 'Étole Cachemire & Soie Nuit',
+      categoryId: catAccessoires.id,
+      atelierId: atelierIvandry?.id ?? null,
+      description:
+        'Étole généreuse 200x70 au toucher plume incomparable, tissage jacquard ultra-fin et finitions micro-franges.',
+      price: 145000,
+      status: ProductAvailability.AVAILABLE,
+      material: 'Cachemire',
+      sizes: ['36', '38', '40'],
+      colorPhotos: [
+        { color: 'Navy', photo: '1515886657613-9f3515b0c78f', photoAlt: 'Étole Cachemire & Soie Nuit — Navy' },
+        { color: 'Grey', photo: '1539109136881-3be0616acf4b', photoAlt: 'Étole Cachemire & Soie Nuit — Grey' },
+      ],
+      photo: '1489987707025-afc232f7ea0f',
+      photoAlt: 'Étole Cachemire & Soie Nuit',
+      createdAt: new Date('2026-01-08T12:00:00.000Z'),
+    },
+    {
+      sku: 'ANG-PAP-026',
+      slug: 'ceinture-corset-cuir-et-broderie',
+      name: 'Ceinture Corset Cuir & Broderie',
+      categoryId: catAccessoires.id,
+      atelierId: atelierAntananarivo?.id ?? null,
+      description:
+        "Ceinture large cintrée en cuir d'agneau plongé, ornée d'un plastron brodé de fil d'or par nos artisanes.",
+      price: 98000,
+      status: ProductAvailability.LAST_PIECE,
+      material: 'Cuir',
+      sizes: ['36', '38', '40'],
+      colorPhotos: [
+        { color: 'Black', photo: '1507003211169-0a1dd7228f2d', photoAlt: 'Ceinture Corset Cuir & Broderie — Black' },
+        { color: 'Champagne', photo: '1503342217505-b0a15ec3261c', photoAlt: 'Ceinture Corset Cuir & Broderie — Champagne' },
+      ],
+      photo: '1525507119028-ed4c629a60a3',
+      photoAlt: 'Ceinture Corset Cuir & Broderie',
+      createdAt: new Date('2026-01-06T15:40:00.000Z'),
+    },
+
+    // --- LIGNE ESSENTIELS (2 produits) ---
+    {
+      sku: 'ANG-PAP-027',
+      slug: 'combinaison-smoking-fluide-onyx',
+      name: 'Combinaison Smoking Onyx',
+      categoryId: catEssentiels.id,
+      atelierId: atelierIvandry?.id ?? null,
+      description:
+        'Allure souveraine en une seule pièce : décolleté smoking croisé en satin, pantalon palazzo fluide et taille ceinturée.',
+      price: 360000,
+      status: ProductAvailability.AVAILABLE,
+      material: 'Crêpe',
+      sizes: ['34', '36', '38', '40'],
+      colorPhotos: [
+        { color: 'Black', photo: '1507003211169-0a1dd7228f2d', photoAlt: 'Combinaison Smoking Onyx — Black' },
+        { color: 'Navy', photo: '1515886657613-9f3515b0c78f', photoAlt: 'Combinaison Smoking Onyx — Navy' },
+      ],
+      photo: '1507003211169-0a1dd7228f2d',
+      photoAlt: 'Combinaison Smoking Onyx',
+      createdAt: new Date('2026-01-04T10:00:00.000Z'),
+    },
+    {
+      sku: 'ANG-PAP-028',
+      slug: 'tunique-kaftan-soie-croisiere',
+      name: 'Tunique Kaftan Soie Croisière',
+      categoryId: catEssentiels.id,
+      atelierId: atelierToamasina?.id ?? null,
+      description:
+        "Inspirée des brises marines de l'Océan Indien, kaftan en crêpe georgette de soie avec broderies d'ancres subtiles.",
+      price: 275000,
+      status: ProductAvailability.AVAILABLE,
+      material: 'Soie',
+      sizes: ['36', '38', '40', '42', '44'],
+      colorPhotos: [
+        { color: 'White', photo: '1496747611176-843222e1e57c', photoAlt: 'Tunique Kaftan Soie Croisière — White' },
+        { color: 'Champagne', photo: '1503342217505-b0a15ec3261c', photoAlt: 'Tunique Kaftan Soie Croisière — Champagne' },
+      ],
+      photo: '1469334031218-e382a71b716b',
+      photoAlt: 'Tunique Kaftan Soie Croisière',
+      createdAt: new Date('2026-01-02T14:00:00.000Z'),
     },
   ];
 
@@ -764,7 +1237,9 @@ async function main() {
         ? 0
         : productData.status === ProductAvailability.LAST_PIECE
           ? 1
-          : 6;
+          : productData.status === ProductAvailability.RESERVED
+            ? 2
+            : 6;
     const quantityReserved = productData.status === ProductAvailability.RESERVED ? 1 : 0;
 
     for (const size of sizes) {
@@ -778,7 +1253,7 @@ async function main() {
         });
         await prisma.inventory.upsert({
           where: { variantId: variant.id },
-          update: {},
+          update: { quantityAvailable, quantityReserved },
           create: { variantId: variant.id, quantityAvailable, quantityReserved },
         });
 
@@ -1727,53 +2202,69 @@ async function main() {
 
     for (const { page, sectionKey, photo, photoAlt } of pageSections) {
       if (!photo) continue;
-      const section = createdPageSections.get(`${page}:${sectionKey}`);
-      if (!section) continue;
-      const existing = await prisma.media.findFirst({
-        where: { entityType: MediaEntityType.PAGE_SECTION, entityId: section.id },
-      });
-      // If no media or photo changed (e.g. pattern-studio updated photo), re-upload
-      if (!existing) {
-        await attachPhoto(storage, 'customers', photo, photoAlt, MediaEntityType.PAGE_SECTION, section.id);
-      } else if (sectionKey === 'pattern-studio' && !existing.objectKey.includes(photo)) {
-        await prisma.media.delete({ where: { id: existing.id } });
-        await attachPhoto(storage, 'customers', photo, photoAlt, MediaEntityType.PAGE_SECTION, section.id);
+      try {
+        const section = createdPageSections.get(`${page}:${sectionKey}`);
+        if (!section) continue;
+        const existing = await prisma.media.findFirst({
+          where: { entityType: MediaEntityType.PAGE_SECTION, entityId: section.id },
+        });
+        // If no media or photo changed (e.g. pattern-studio updated photo), re-upload
+        if (!existing) {
+          await attachPhoto(storage, 'customers', photo, photoAlt, MediaEntityType.PAGE_SECTION, section.id);
+        } else if (sectionKey === 'pattern-studio' && !existing.objectKey.includes(photo)) {
+          await prisma.media.delete({ where: { id: existing.id } });
+          await attachPhoto(storage, 'customers', photo, photoAlt, MediaEntityType.PAGE_SECTION, section.id);
+        }
+      } catch (err) {
+        console.warn(`⚠️ Photo section ${page}:${sectionKey} ignorée:`, err instanceof Error ? err.message : err);
       }
     }
     console.log("✅ Photos des sections de page (Accueil, À propos, La Une, Nos Créations et Creation Detail) vérifiées/hébergées sur MinIO");
 
     for (const t of createdTestimonials) {
-      const exists = await prisma.media.findFirst({
-        where: { entityType: MediaEntityType.CUSTOMER_AVATAR, entityId: t.id },
-      });
-      if (!exists) {
-        await attachPhoto(storage, 'avatars', t.photo, t.photoAlt, MediaEntityType.CUSTOMER_AVATAR, t.id);
+      try {
+        const exists = await prisma.media.findFirst({
+          where: { entityType: MediaEntityType.CUSTOMER_AVATAR, entityId: t.id },
+        });
+        if (!exists) {
+          await attachPhoto(storage, 'avatars', t.photo, t.photoAlt, MediaEntityType.CUSTOMER_AVATAR, t.id);
+        }
+      } catch (err) {
+        console.warn(`⚠️ Avatar témoignage ${t.id} ignoré:`, err instanceof Error ? err.message : err);
       }
     }
     console.log('✅ Avatars des témoignages vérifiés/hébergés sur MinIO');
 
     for (const { slug, photo, photoAlt } of products) {
-      const product = createdProducts.get(slug);
-      if (!product) continue;
-      const exists = await prisma.media.findFirst({
-        where: { entityType: MediaEntityType.PRODUCT, entityId: product.id },
-      });
-      if (!exists) {
-        await attachPhoto(storage, 'products', photo, photoAlt, MediaEntityType.PRODUCT, product.id);
+      try {
+        const product = createdProducts.get(slug);
+        if (!product) continue;
+        const exists = await prisma.media.findFirst({
+          where: { entityType: MediaEntityType.PRODUCT, entityId: product.id },
+        });
+        if (!exists) {
+          await attachPhoto(storage, 'products', photo, photoAlt, MediaEntityType.PRODUCT, product.id);
+        }
+      } catch (err) {
+        console.warn(`⚠️ Photo principale produit ${slug} ignorée:`, err instanceof Error ? err.message : err);
       }
     }
     console.log('✅ Photos des produits prêt-à-porter vérifiées/hébergées sur MinIO');
 
     for (const { slug, colorPhotos } of products) {
       for (const { color, photo, photoAlt } of colorPhotos) {
-        const variantIds = variantIdsByProductColor.get(`${slug}::${color}`) ?? [];
-        if (variantIds.length === 0) continue;
-        const [ownerVariantId] = variantIds;
-        const exists = await prisma.media.findFirst({
-          where: { entityType: MediaEntityType.PRODUCT_VARIANT, entityId: ownerVariantId },
-        });
-        if (!exists) {
-          await attachVariantColorPhoto(storage, photo, photoAlt, ownerVariantId!, variantIds);
+        try {
+          const variantIds = variantIdsByProductColor.get(`${slug}::${color}`) ?? [];
+          if (variantIds.length === 0) continue;
+          const [ownerVariantId] = variantIds;
+          const exists = await prisma.media.findFirst({
+            where: { entityType: MediaEntityType.PRODUCT_VARIANT, entityId: ownerVariantId },
+          });
+          if (!exists) {
+            await attachVariantColorPhoto(storage, photo, photoAlt, ownerVariantId!, variantIds);
+          }
+        } catch (err) {
+          console.warn(`⚠️ Photo variante ${slug}::${color} ignorée:`, err instanceof Error ? err.message : err);
         }
       }
     }
@@ -1793,7 +2284,11 @@ async function downloadPhoto(photoSource: string): Promise<Buffer> {
     photoSource.startsWith('http://') || photoSource.startsWith('https://')
       ? photoSource
       : `https://images.unsplash.com/photo-${photoSource}?w=1600&q=80&fm=jpg`;
-  const response = await fetch(url);
+  const response = await fetch(url, {
+    headers: {
+      'User-Agent': 'Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/120.0.0.0 Safari/537.36',
+    },
+  });
   if (!response.ok) {
     throw new Error(`Échec du téléchargement de la photo ${photoSource} : ${String(response.status)}`);
   }

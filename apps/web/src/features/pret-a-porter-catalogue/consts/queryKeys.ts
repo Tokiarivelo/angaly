@@ -41,3 +41,37 @@ export const CATALOGUE_STATUS_LABELS: { value: ProductAvailability; label: strin
   { value: ProductAvailability.RESERVED, label: 'Réservé' },
   { value: ProductAvailability.OUT_OF_STOCK, label: 'Épuisé' },
 ];
+
+export const SIZE_SORT_ORDER = CATALOGUE_SIZES;
+
+export const PRODUCT_STATUS_INDICATOR: Record<
+  ProductAvailability,
+  { label: string; dotClassName: string; textClassName: string }
+> = {
+  [ProductAvailability.AVAILABLE]: {
+    label: 'En stock',
+    dotClassName: 'bg-angaly-success',
+    textClassName: 'text-angaly-success',
+  },
+  [ProductAvailability.LAST_PIECE]: {
+    label: 'Dernière pièce',
+    dotClassName: 'bg-angaly-warning',
+    textClassName: 'text-angaly-warning',
+  },
+  [ProductAvailability.OUT_OF_STOCK]: {
+    label: 'Épuisé',
+    dotClassName: 'bg-angaly-warm-gray',
+    textClassName: 'text-angaly-slate',
+  },
+  [ProductAvailability.ON_ORDER]: {
+    label: 'Sur commande (délai 3 semaines)',
+    dotClassName: 'bg-angaly-soft-navy',
+    textClassName: 'text-angaly-soft-navy',
+  },
+  [ProductAvailability.RESERVED]: {
+    label: 'Réservé',
+    dotClassName: 'bg-angaly-slate',
+    textClassName: 'text-angaly-slate',
+  },
+};
+

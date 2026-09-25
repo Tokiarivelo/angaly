@@ -124,7 +124,7 @@ dev: ## 🔥 Start web + api + ai-service together in development mode
 	@echo "  API:         http://localhost:3003/docs"
 	@echo "  AI Service:  http://localhost:$(AI_SERVICE_PORT)/health"
 	@trap 'kill 0' EXIT INT TERM; \
-	$(PNPM) dev & \
+	$(PNPM) dev --ui=stream & \
 	if [ -x apps/ai-service/.venv/bin/uvicorn ]; then \
 	  (cd apps/ai-service && .venv/bin/uvicorn app.main:app --reload --port $(AI_SERVICE_PORT)) & \
 	else \

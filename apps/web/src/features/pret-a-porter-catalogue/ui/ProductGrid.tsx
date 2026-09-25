@@ -6,10 +6,11 @@ interface ProductGridProps {
   products: ProductDto[];
   isFavorite: (productId: string) => boolean;
   onToggleFavorite: (productId: string) => void;
+  onQuickView?: (product: ProductDto, initialColor?: string) => void;
 }
 
 /** 3 columns desktop / 2 mobile — verified against the real Stitch screen (`grid-cols-1 sm:grid-cols-2 xl:grid-cols-3`). */
-export function ProductGrid({ products, isFavorite, onToggleFavorite }: ProductGridProps) {
+export function ProductGrid({ products, isFavorite, onToggleFavorite, onQuickView }: ProductGridProps) {
   return (
     <div className="grid grid-cols-2 gap-x-8 gap-y-16 xl:grid-cols-3">
       {products.map((product) => (
@@ -18,6 +19,7 @@ export function ProductGrid({ products, isFavorite, onToggleFavorite }: ProductG
           product={product}
           isFavorite={isFavorite(product.id)}
           onToggleFavorite={onToggleFavorite}
+          onQuickView={onQuickView}
         />
       ))}
     </div>

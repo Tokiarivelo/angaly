@@ -6,18 +6,21 @@ import { useState } from 'react';
 import { useCategoriesQuery } from '../api/products.api';
 import { CATALOGUE_SORT_OPTIONS } from '../consts/queryKeys';
 import { useCatalogueFilters } from '../hooks/useCatalogueFilters';
+import { useProductQuickView } from '../hooks/useProductQuickView';
 import { useProducts } from '../hooks/useProducts';
 import { useToggleFavorite } from '../hooks/useToggleFavorite';
 import { CatalogueFilterBar } from './CatalogueFilterBar';
 import { MobileFilterSheet } from './MobileFilterSheet';
 import { ProductGrid } from './ProductGrid';
+import { ProductQuickViewModal } from './ProductQuickViewModal';
 
-/** Orchestrates the real "ANGALY — Prêt-à-porter Catalogue" screen: sidebar filters + toolbar + grid + pagination. */
+/** Orchestrates the real "ANGALY — Prêt-à-porter Catalogue" screen: sidebar filters + toolbar + grid + pagination + quick view modal. */
 export function PretAPorterCataloguePage() {
   const { filters, setFilter, setPage, resetFilters } = useCatalogueFilters();
   const { items, total, totalPages, isLoading, isError } = useProducts(filters);
   const categoriesQuery = useCategoriesQuery();
   const { isFavorite, toggleFavorite } = useToggleFavorite();
+  const { quickViewProduct, initialColor, openQuickView, closeQuickView } = useProductQuickView();
   const [isMobileFilterOpen, setIsMobileFilterOpen] = useState(false);
 
   const categories = categoriesQuery.data ?? [];
@@ -85,7 +88,14 @@ export function PretAPorterCataloguePage() {
             <p className="py-24 text-center text-sm text-angaly-slate">Aucun article ne correspond à ces filtres.</p>
           )}
 
-          {items.length > 0 && <ProductGrid products={items} isFavorite={isFavorite} onToggleFavorite={toggleFavorite} />}
+          {items.length > 0 && (
+            <ProductGrid
+              products={items}
+              isFavorite={isFavorite}
+              onToggleFavorite={toggleFavorite}
+              onQuickView={openQuickView}
+            />
+          )}
 
           {totalPages > 1 && (
             <div className="mt-20 flex items-center justify-center space-x-4">
@@ -122,6 +132,14 @@ export function PretAPorterCataloguePage() {
         categories={categories}
         setFilter={setFilter}
         resetFilters={resetFilters}
+      />
+
+      <ProductQuickViewModal
+        product={quickViewProduct}
+        initialColor={initialColor}
+        onClose={closeQuickView}
+        isFavorite={quickViewProduct ? isFavorite(quickViewProduct.id) : false}
+        onToggleFavorite={toggleFavorite}
       />
     </main>
   );
