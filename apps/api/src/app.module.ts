@@ -15,6 +15,7 @@ import { MessagesModule } from './messages/messages.module';
 import { PrismaModule } from './prisma/prisma.module';
 import { ProductsModule } from './products/products.module';
 import { QuotesModule } from './quotes/quotes.module';
+import { CreationProjectsModule } from './creation-projects/creation-projects.module';
 import { SearchModule } from './search/search.module';
 import { MeasurementsModule } from './measurements/measurements.module';
 import { AiInferenceModule } from './ai-inference/ai-inference.module';
@@ -56,6 +57,7 @@ import { HealthController } from './shared/health/health.controller';
     BlogModule,
     SearchModule,
     QuotesModule,
+    CreationProjectsModule,
     MeasurementsModule,
     AiInferenceModule,
     ReviewsModule,

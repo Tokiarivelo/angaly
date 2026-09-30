@@ -36,7 +36,7 @@ export const EspaceClientDashboardPage = () => {
       </div>
 
       <div className="pt-4">
-        <h2 className="font-serif text-xl text-primary-deep-navy mb-4">Accès rapide</h2>
+        <h2 className="font-serif text-xl text-angaly-navy mb-4">Accès rapide</h2>
         <QuickAccessTilesGrid />
       </div>
 
@@ -44,7 +44,7 @@ export const EspaceClientDashboardPage = () => {
         <div className="lg:col-span-2">
           {/* Main content area for future use, maybe a larger widget or graph */}
           <div className="bg-white rounded-2xl border border-border p-8 h-full min-h-[300px] flex items-center justify-center">
-            <p className="text-slate text-center">Espace réservé pour les suggestions personnalisées ou la galerie d'inspiration.</p>
+            <p className="text-angaly-slate text-center">Espace réservé pour les suggestions personnalisées ou la galerie d'inspiration.</p>
           </div>
         </div>
         <div className="lg:col-span-1">

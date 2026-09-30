@@ -104,6 +104,15 @@ enum QuoteStatus {
   EXPIRED
 }
 
+enum CreationProjectStage {
+  CONSULTATION
+  CONCEPTION
+  PATRON
+  CONFECTION
+  ESSAYAGE
+  TERMINEE
+}
+
 enum MeasurementUnit {
   CM
   INCH
@@ -265,6 +274,7 @@ model Customer {
   reviews             Review[]
   aiConversations     AIConversation[]
   conversations       Conversation[]
+  creationProjects    CreationProject[]
 
   @@index([lastName, firstName])
   @@map("customers")
@@ -353,6 +363,7 @@ model Creation {
   media      Media[]     @relation("CreationMedia")
   favorites  Favorite[]
   quotes     Quote[]
+  creationProjects CreationProject[]
 
   @@index([categoryId])
   @@index([collectionId])
@@ -535,10 +546,37 @@ model Quote {
 
   customer Customer  @relation(fields: [customerId], references: [id])
   creation Creation? @relation(fields: [creationId], references: [id])
+  creationProjects CreationProject[]
 
   @@index([customerId])
   @@index([status])
   @@map("quotes")
+}
+
+// ============================================================
+// Mes créations (spec §53) — pipeline d'une création sur mesure
+// ============================================================
+
+model CreationProject {
+  id          String               @id @default(cuid())
+  reference   String               @unique
+  customerId  String
+  title       String
+  description String?
+  stage       CreationProjectStage @default(CONSULTATION)
+  quoteId     String?
+  creationId  String?
+  completedAt DateTime?
+  createdAt   DateTime             @default(now())
+  updatedAt   DateTime             @updatedAt
+
+  customer Customer  @relation(fields: [customerId], references: [id], onDelete: Cascade)
+  quote    Quote?    @relation(fields: [quoteId], references: [id])
+  creation Creation? @relation(fields: [creationId], references: [id])
+
+  @@index([customerId, createdAt])
+  @@index([stage])
+  @@map("creation_projects")
 }
 
 // ============================================================

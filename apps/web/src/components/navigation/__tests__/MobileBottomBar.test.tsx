@@ -21,7 +21,7 @@ describe('MobileBottomBar', () => {
       '/prendre-rendez-vous',
     );
     expect(screen.getByRole('link', { name: /Favoris/ })).toHaveAttribute('href', '/mes-favoris');
-    expect(screen.getByRole('link', { name: /Compte/ })).toHaveAttribute('href', '/connexion');
+    expect(screen.getByRole('link', { name: /Compte/ })).toHaveAttribute('href', '/espace-client');
   });
 
   it('marks the Accueil link as the current page on "/"', () => {

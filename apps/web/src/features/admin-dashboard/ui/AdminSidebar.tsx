@@ -3,8 +3,12 @@
 import React from 'react';
 import Link from 'next/link';
 import { usePathname } from 'next/navigation';
-import { LayoutDashboard, Sparkles, FileEdit, Image as ImageIcon, LogOut } from 'lucide-react';
-import { signOut } from 'next-auth/react';
+import { LayoutDashboard, Sparkles, FileEdit, Image as ImageIcon, LogOut, Home, UserRound } from 'lucide-react';
+import { signOut, useSession } from 'next-auth/react';
+
+import { Role } from '@angaly/types';
+
+import { ROUTES } from '@/lib/routes';
 
 // NB: `(admin)` is a Next.js route group — it adds no URL segment, so these
 // pages' real URLs have no `/admin` prefix (`/dashboard`, `/ai-settings`,
@@ -15,15 +19,23 @@ import { signOut } from 'next-auth/react';
 // admin-ai-settings/.../ai-settings/page.tsx (Phase 5, not touched by this
 // session) still has the stale prefix and should be corrected the next time
 // that file is edited.
-const navItems = [
-  { label: 'Tableau de bord', href: '/dashboard', icon: LayoutDashboard },
-  { label: 'Gestion de contenu', href: '/gestion-contenu', icon: FileEdit },
-  { label: 'Médiathèque', href: '/mediatheque', icon: ImageIcon },
-  { label: 'Paramètres IA', href: '/ai-settings', icon: Sparkles },
+const STAFF: Role[] = [Role.COUTURIERE, Role.MANAGER, Role.ADMIN];
+const CONTENT: Role[] = [Role.MANAGER, Role.ADMIN];
+
+// `roles` mirrors each page's own server-side gate (apps/web/src/app/(admin)/*/page.tsx),
+// which silently redirects to /dashboard — hide the link instead of offering a dead end.
+const navItems: { label: string; href: string; icon: typeof LayoutDashboard; roles: Role[] }[] = [
+  { label: 'Tableau de bord', href: '/dashboard', icon: LayoutDashboard, roles: STAFF },
+  { label: 'Gestion de contenu', href: '/gestion-contenu', icon: FileEdit, roles: CONTENT },
+  { label: 'Médiathèque', href: '/mediatheque', icon: ImageIcon, roles: CONTENT },
+  { label: 'Paramètres IA', href: '/ai-settings', icon: Sparkles, roles: [Role.ADMIN] },
 ];
 
 export const AdminSidebar: React.FC = () => {
   const pathname = usePathname();
+  const { data: session } = useSession();
+  const role = session?.user?.role;
+  const visibleItems = navItems.filter((item) => role !== undefined && item.roles.includes(role));
 
   return (
     <aside className="w-64 flex-shrink-0 hidden lg:block border-r border-border min-h-[calc(100vh-4rem)] p-6 bg-white">
@@ -31,7 +43,21 @@ export const AdminSidebar: React.FC = () => {
         Administration
       </p>
       <nav className="space-y-1">
-        {navItems.map((item) => {
+        <Link
+          href={ROUTES.home}
+          className="flex items-center gap-3 px-4 py-3 rounded-xl text-sm font-medium text-angaly-slate border border-border hover:bg-angaly-ivory hover:text-angaly-navy transition-colors"
+        >
+          <Home size={18} />
+          Retour au site
+        </Link>
+        <Link
+          href={ROUTES.compte}
+          className="flex items-center gap-3 px-4 py-3 mb-4 rounded-xl text-sm font-medium text-angaly-slate border border-border hover:bg-angaly-ivory hover:text-angaly-navy transition-colors"
+        >
+          <UserRound size={18} />
+          Espace client
+        </Link>
+        {visibleItems.map((item) => {
           const isActive = pathname === item.href;
           const Icon = item.icon;
           return (

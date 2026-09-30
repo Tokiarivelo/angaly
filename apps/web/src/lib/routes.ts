@@ -21,8 +21,11 @@ export const ROUTES = {
   prendreRendezVous: '/prendre-rendez-vous',
   reservationEssayage: '/essayage/reserver',
   favoris: '/mes-favoris',
+  /** Back-office (staff only — the (admin) layout redirects other roles to /). */
+  backOffice: '/dashboard',
   connexion: '/connexion',
   inscription: '/inscription',
   motDePasseOublie: '/mot-de-passe-oublie',
-  compte: '/connexion',
+  /** Client space — unauthenticated visitors are redirected to /connexion (with redirectTo) by the (client) layout. */
+  compte: '/espace-client',
 } as const;

@@ -87,6 +87,25 @@ export enum QuoteStatus {
   EXPIRED = 'EXPIRED',
 }
 
+/** Pipeline "Mes créations" (spec §53), dans l'ordre. */
+export enum CreationProjectStage {
+  CONSULTATION = 'CONSULTATION',
+  CONCEPTION = 'CONCEPTION',
+  PATRON = 'PATRON',
+  CONFECTION = 'CONFECTION',
+  ESSAYAGE = 'ESSAYAGE',
+  TERMINEE = 'TERMINEE',
+}
+
+export const CREATION_PROJECT_STAGES_ORDER: readonly CreationProjectStage[] = [
+  CreationProjectStage.CONSULTATION,
+  CreationProjectStage.CONCEPTION,
+  CreationProjectStage.PATRON,
+  CreationProjectStage.CONFECTION,
+  CreationProjectStage.ESSAYAGE,
+  CreationProjectStage.TERMINEE,
+];
+
 export enum MeasurementUnit {
   CM = 'CM',
   INCH = 'INCH',
@@ -518,6 +537,17 @@ export interface QuoteDto extends Timestamps {
   status: QuoteStatus;
   validUntil: string | null;
   estimatedDelayDays: number | null;
+}
+
+export interface CreationProjectDto extends Timestamps {
+  id: string;
+  reference: string;
+  title: string;
+  description: string | null;
+  stage: CreationProjectStage;
+  quoteId: string | null;
+  creationId: string | null;
+  completedAt: string | null;
 }
 
 // ============================================================

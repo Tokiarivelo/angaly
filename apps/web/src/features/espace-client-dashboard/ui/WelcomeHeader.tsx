@@ -14,14 +14,14 @@ export const WelcomeHeader: React.FC<WelcomeHeaderProps> = ({ firstName }) => {
   return (
     <div className="flex flex-col md:flex-row md:items-end justify-between gap-4 mb-8">
       <div>
-        <p className="text-sm text-slate mb-1 capitalize">{today}</p>
-        <h1 className="font-serif text-3xl md:text-4xl text-primary-deep-navy">
+        <p className="text-sm text-angaly-slate mb-1 capitalize">{today}</p>
+        <h1 className="font-serif text-3xl md:text-4xl text-angaly-navy">
           Bonjour, {firstName}
         </h1>
       </div>
       <Link 
         href="/rendez-vous" 
-        className="inline-flex items-center justify-center gap-2 px-6 py-3 bg-primary-deep-navy text-white rounded-full font-medium hover:bg-primary-dark transition-colors shrink-0"
+        className="inline-flex items-center justify-center gap-2 px-6 py-3 bg-angaly-navy text-white rounded-full font-medium hover:bg-primary-dark transition-colors shrink-0"
       >
         <Plus size={18} />
         Prendre rendez-vous

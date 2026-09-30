@@ -18,12 +18,12 @@ export const QuickAccessTilesGrid: React.FC = () => {
           <Link 
             key={tile.href} 
             href={tile.href}
-            className="bg-white p-4 rounded-xl border border-border hover:border-primary-deep-navy transition-colors flex flex-col items-center justify-center text-center gap-3 group"
+            className="bg-white p-4 rounded-xl border border-border hover:border-angaly-navy transition-colors flex flex-col items-center justify-center text-center gap-3 group"
           >
             <div className={`w-12 h-12 rounded-full flex items-center justify-center transition-transform group-hover:scale-110 ${tile.color}`}>
               <Icon size={24} />
             </div>
-            <span className="text-sm font-medium text-primary-deep-navy">{tile.label}</span>
+            <span className="text-sm font-medium text-angaly-navy">{tile.label}</span>
           </Link>
         );
       })}

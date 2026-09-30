@@ -35,19 +35,19 @@ export const PremiumProjectCard: React.FC<PremiumProjectCardProps> = ({ project 
           <Layers size={20} />
         </div>
         <div>
-          <h2 className="font-serif text-lg text-primary-deep-navy">Pattern Studio</h2>
+          <h2 className="font-serif text-lg text-angaly-navy">Pattern Studio</h2>
           <p className="text-xs text-[#C5B190] font-medium tracking-wide uppercase">Création Premium</p>
         </div>
       </div>
 
       <div className="flex-1 relative z-10">
-        <h3 className="font-medium text-primary-deep-navy text-lg mb-2">{project.name}</h3>
-        <p className="text-sm text-slate mb-4">
+        <h3 className="font-medium text-angaly-navy text-lg mb-2">{project.name}</h3>
+        <p className="text-sm text-angaly-slate mb-4">
           {PATTERN_STATUS_LABELS[project.status] ?? 'Votre projet est en cours de modélisation par notre moteur AI.'}
         </p>
       </div>
 
-      <Link href="/pattern-studio" className="mt-6 text-sm font-medium text-primary-deep-navy hover:underline underline-offset-4 relative z-10">
+      <Link href="/pattern-studio" className="mt-6 text-sm font-medium text-angaly-navy hover:underline underline-offset-4 relative z-10">
         Reprendre le projet &rarr;
       </Link>
     </div>

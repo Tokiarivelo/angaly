@@ -1,6 +1,6 @@
 'use client';
 
-import { useRouter, useSearchParams } from 'next/navigation';
+import { useSearchParams } from 'next/navigation';
 import { useCallback } from 'react';
 
 import { REDIRECT_TO_PARAM } from '../consts/queryKeys';
@@ -14,11 +14,13 @@ function isSafeRedirectTarget(target: string | null): target is string {
 }
 
 export function useAuthRedirect(): () => void {
-  const router = useRouter();
   const searchParams = useSearchParams();
 
   return useCallback(() => {
     const redirectTo = searchParams.get(REDIRECT_TO_PARAM);
-    router.push(isSafeRedirectTarget(redirectTo) ? redirectTo : DEFAULT_POST_LOGIN_ROUTE);
-  }, [router, searchParams]);
+    // Full page load, not router.push: the login form may be an intercepted-route modal, and a soft
+    // navigation from there re-uses the Router Cache entry for the target that was prefetched while
+    // anonymous (a redirect to /connexion) — an endless /connexion loop despite a valid session.
+    window.location.assign(isSafeRedirectTarget(redirectTo) ? redirectTo : DEFAULT_POST_LOGIN_ROUTE);
+  }, [searchParams]);
 }
