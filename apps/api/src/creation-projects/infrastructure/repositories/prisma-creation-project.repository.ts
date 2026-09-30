@@ -14,7 +14,7 @@ export class PrismaCreationProjectRepository implements ICreationProjectReposito
       where: { customerId },
       orderBy: { createdAt: 'desc' },
     });
-    return rows.map(CreationProjectMapper.toDomain);
+    return rows.map((row) => CreationProjectMapper.toDomain(row));
   }
 
   async findById(id: string): Promise<CreationProjectEntity | null> {

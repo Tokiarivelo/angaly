@@ -1,6 +1,7 @@
 import { CreationProjectStage } from '@angaly/types';
 
-import { CreationProjectEntity, CreationProjectProps } from '../../domain/entities/creation-project.entity';
+import { CreationProjectEntity } from '../../domain/entities/creation-project.entity';
+import type { CreationProjectProps } from '../../domain/entities/creation-project.entity';
 
 const base: CreationProjectProps = {
   id: 'p-1',

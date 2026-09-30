@@ -46,6 +46,7 @@ describe('creation-projects use cases', () => {
   it('lists the projects of the caller’s customer', async () => {
     repository.findByCustomerId.mockResolvedValue([project('c-1')]);
     const result = await new ListCreationProjectsUseCase(customers, repository).execute('u-1');
+    // eslint-disable-next-line @typescript-eslint/unbound-method -- jest mock assertion
     expect(repository.findByCustomerId).toHaveBeenCalledWith('c-1');
     expect(result).toHaveLength(1);
   });

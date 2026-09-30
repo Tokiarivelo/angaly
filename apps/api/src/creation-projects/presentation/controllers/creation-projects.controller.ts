@@ -24,7 +24,7 @@ export class CreationProjectsController {
   @ApiResponse({ status: 200, type: [CreationProjectResponseDto] })
   async list(@CurrentUser() user: AccessTokenPayload): Promise<CreationProjectResponseDto[]> {
     const projects = await this.listCreationProjectsUseCase.execute(user.sub);
-    return projects.map(CreationProjectMapper.toResponse);
+    return projects.map((project) => CreationProjectMapper.toResponse(project));
   }
 
   @Get(':id')
