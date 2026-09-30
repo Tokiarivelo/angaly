@@ -2,6 +2,8 @@ import { useQuery } from '@tanstack/react-query';
 import type { CollectionDto, Locale, PaginatedResponse } from '@angaly/types';
 
 import { apiClient } from '@/lib/api-client';
+import { publicContentPath } from '@/lib/public-content';
+import { useLocaleStore } from '@/stores/locale.store';
 
 /**
  * Local response shape mirroring `PublicPageSectionResponseDto`
@@ -33,9 +35,10 @@ export interface PublicPageSectionDto {
  * the hardcoded header defaults by `sectionKey`.
  */
 export function useCollectionsSectionsContentQuery() {
+  const locale = useLocaleStore((state) => state.locale);
   return useQuery({
-    queryKey: ['collections-liste', 'content'],
-    queryFn: () => apiClient.get<PublicPageSectionDto[]>('/content/public/collections-liste'),
+    queryKey: [...['collections-liste', 'content'], locale],
+    queryFn: () => apiClient.get<PublicPageSectionDto[]>(publicContentPath('collections-liste', locale)),
   });
 }
 

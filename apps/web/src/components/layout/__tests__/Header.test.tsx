@@ -3,6 +3,7 @@ import userEvent from '@testing-library/user-event';
 import { beforeEach, describe, expect, it } from 'vitest';
 
 import { useMobileNavigationStore } from '@/stores/mobile-navigation.store';
+import { withQueryClient } from '@/lib/test-utils';
 
 import { Header } from '../Header';
 
@@ -17,7 +18,7 @@ beforeEach(() => {
 describe('Header (mobile navigation triggers)', () => {
   it('opens the shared mobile drawer state when the menu button is pressed', async () => {
     const user = userEvent.setup();
-    render(<Header />);
+    render(<Header />, { wrapper: withQueryClient() });
 
     await user.click(screen.getByRole('button', { name: 'Ouvrir le menu' }));
 
@@ -26,7 +27,7 @@ describe('Header (mobile navigation triggers)', () => {
 
   it('opens the shared search overlay state when the search button is pressed', async () => {
     const user = userEvent.setup();
-    render(<Header />);
+    render(<Header />, { wrapper: withQueryClient() });
 
     await user.click(screen.getByRole('button', { name: 'Rechercher' }));
 
@@ -36,7 +37,7 @@ describe('Header (mobile navigation triggers)', () => {
 
 describe('Header (desktop navigation)', () => {
   it('renders all primary desktop navigation links including Prêt-à-porter, Journal and Pattern Studio', () => {
-    render(<Header />);
+    render(<Header />, { wrapper: withQueryClient() });
 
     const nav = screen.getByRole('navigation', { name: 'Navigation principale' });
     expect(nav).toBeInTheDocument();
@@ -60,7 +61,7 @@ describe('Header (desktop navigation)', () => {
   });
 
   it('marks the active page with aria-current="page"', () => {
-    render(<Header />);
+    render(<Header />, { wrapper: withQueryClient() });
 
     const homeLink = screen.getByRole('link', { name: 'Accueil' });
     expect(homeLink).toHaveAttribute('aria-current', 'page');

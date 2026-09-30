@@ -2,6 +2,8 @@ import { useQuery } from '@tanstack/react-query';
 import type { CategoryDto, CreationDto, Locale, PaginatedResponse } from '@angaly/types';
 
 import { apiClient } from '@/lib/api-client';
+import { publicContentPath } from '@/lib/public-content';
+import { useLocaleStore } from '@/stores/locale.store';
 
 import { GALLERY_PAGE_SIZE } from '../consts/gallery-filters.const';
 import type { GallerySort } from '../types/gallery.types';
@@ -82,8 +84,9 @@ export interface PublicPageSectionDto {
  * onto the hardcoded header defaults by `sectionKey`.
  */
 export function useGallerySectionsContentQuery() {
+  const locale = useLocaleStore((state) => state.locale);
   return useQuery({
-    queryKey: ['nos-creations-galerie', 'content'],
-    queryFn: () => apiClient.get<PublicPageSectionDto[]>('/content/public/nos-creations-galerie'),
+    queryKey: [...['nos-creations-galerie', 'content'], locale],
+    queryFn: () => apiClient.get<PublicPageSectionDto[]>(publicContentPath('nos-creations-galerie', locale)),
   });
 }

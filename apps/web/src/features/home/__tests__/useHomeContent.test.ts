@@ -100,7 +100,101 @@ describe('useHomeContent', () => {
     expect(result.current.data.hero.subheading).toBe("L'élégance, créée pour vous.");
   });
 
-  it('maps the univers-* sections onto the matching categories.items label by index', async () => {
+  const section = (sectionKey: string, extra: Record<string, unknown>) => ({
+    page: 'accueil',
+    sectionKey,
+    locale: 'FR',
+    titleText: null,
+    subtitleText: null,
+    bodyText: null,
+    ctaPrimaryLabel: null,
+    ctaSecondaryLabel: null,
+    dataJson: null,
+    mediaId: null,
+    updatedAt: '2026-01-01T00:00:00.000Z',
+    ...extra,
+  });
+
+  it('builds the univers tiles from the single editable list (label, image, alt, link), in order', async () => {
+    server.use(
+      http.get(`${API_BASE_URL}/content/public/accueil`, () =>
+        HttpResponse.json({
+          success: true,
+          data: [
+            section('univers', {
+              titleText: 'Nos univers',
+              dataJson: {
+                items: [
+                  { label: 'Cérémonie', imageUrl: 'https://cdn.example/a.jpg', imageAlt: 'Robe', href: '/creations' },
+                  { label: 'Accessoires', imageUrl: null, href: null },
+                  { label: '' },
+                ],
+              },
+            }),
+          ],
+        }),
+      ),
+    );
+
+    const { result } = renderHook(() => useHomeContent(), { wrapper: withQueryClient() });
+
+    await waitFor(() => expect(result.current.data.categories.items).toHaveLength(2));
+    expect(result.current.data.categories.headline).toBe('Nos univers');
+    expect(result.current.data.categories.items[0]).toMatchObject({ label: 'Cérémonie', imageUrl: 'https://cdn.example/a.jpg', imageAlt: 'Robe', href: '/creations' });
+    expect(result.current.data.categories.items[1]).toMatchObject({ label: 'Accessoires', href: '/creations' });
+  });
+
+  it('keeps the four default tiles when the CMS has no (or an empty) univers list', async () => {
+    server.use(
+      http.get(`${API_BASE_URL}/content/public/accueil`, () =>
+        HttpResponse.json({ success: true, data: [section('univers', { dataJson: { items: [] } })] }),
+      ),
+    );
+
+    const { result } = renderHook(() => useHomeContent(), { wrapper: withQueryClient() });
+
+    await waitFor(() => expect(result.current.isLoading).toBe(false));
+    expect(result.current.data.categories.items.map((item) => item.label)).toEqual(['Mariage', 'Costumes', 'Soirée', 'Sur Mesure']);
+  });
+
+  it('builds the sur-mesure steps from the editable list', async () => {
+    server.use(
+      http.get(`${API_BASE_URL}/content/public/accueil`, () =>
+        HttpResponse.json({
+          success: true,
+          data: [
+            section('sur-mesure', {
+              titleText: 'Sur mesure',
+              ctaPrimaryLabel: 'Commencer',
+              dataJson: { steps: [{ label: 'Rencontre', description: 'On se voit' }, { label: 'Livraison', description: 'Prêt' }] },
+            }),
+          ],
+        }),
+      ),
+    );
+
+    const { result } = renderHook(() => useHomeContent(), { wrapper: withQueryClient() });
+
+    await waitFor(() => expect(result.current.data.surMesure.steps).toHaveLength(2));
+    expect(result.current.data.surMesure.headline).toBe('Sur mesure');
+    expect(result.current.data.surMesure.cta).toBe('Commencer');
+  });
+
+  it('requests the content in the visitor’s locale', async () => {
+    const seen: (string | null)[] = [];
+    server.use(
+      http.get(`${API_BASE_URL}/content/public/accueil`, ({ request }) => {
+        seen.push(new URL(request.url).searchParams.get('locale'));
+        return HttpResponse.json({ success: true, data: [] });
+      }),
+    );
+
+    renderHook(() => useHomeContent(), { wrapper: withQueryClient() });
+
+    await waitFor(() => expect(seen).toContain('FR'));
+  });
+
+  it('uses the image chosen in the CMS (media) for a section, and keeps defaults for the others', async () => {
     server.use(
       http.get(`${API_BASE_URL}/content/public/accueil`, () =>
         HttpResponse.json({
@@ -108,15 +202,16 @@ describe('useHomeContent', () => {
           data: [
             {
               page: 'accueil',
-              sectionKey: 'univers-mariage',
+              sectionKey: 'hero',
               locale: 'FR',
-              titleText: 'Mariage modifié',
+              titleText: null,
               subtitleText: null,
               bodyText: null,
               ctaPrimaryLabel: null,
               ctaSecondaryLabel: null,
               dataJson: null,
-              mediaId: null,
+              mediaId: 'media-1',
+              media: { id: 'media-1', url: 'https://cdn.example/from-cms.jpg', altText: 'Choisie dans le CMS' },
               updatedAt: '2026-01-01T00:00:00.000Z',
             },
           ],
@@ -126,9 +221,77 @@ describe('useHomeContent', () => {
 
     const { result } = renderHook(() => useHomeContent(), { wrapper: withQueryClient() });
 
-    await waitFor(() => expect(result.current.isLoading).toBe(false));
+    await waitFor(() => expect(result.current.data.hero.imageUrl).toBe('https://cdn.example/from-cms.jpg'));
+    expect(result.current.data.hero.imageAlt).toBe('Choisie dans le CMS');
+    expect(result.current.data.maison.imageUrl).toMatch(/unsplash/);
+  });
 
-    expect(result.current.data.categories.items[0]?.label).toBe('Mariage modifié');
-    expect(result.current.data.categories.items[1]?.label).toBe('Costumes');
+  it('lets the CMS image win over an alt-text-matched library media', async () => {
+    server.use(
+      http.get(`${API_BASE_URL}/content/public/accueil`, () =>
+        HttpResponse.json({
+          success: true,
+          data: [
+            {
+              page: 'accueil',
+              sectionKey: 'hero',
+              locale: 'FR',
+              titleText: null,
+              subtitleText: null,
+              bodyText: null,
+              ctaPrimaryLabel: null,
+              ctaSecondaryLabel: null,
+              dataJson: null,
+              mediaId: 'media-1',
+              media: { id: 'media-1', url: 'https://cdn.example/from-cms.jpg', altText: 'Choisie dans le CMS' },
+              updatedAt: '2026-01-01T00:00:00.000Z',
+            },
+          ],
+        }),
+      ),
+      http.get(`${API_BASE_URL}/media`, () =>
+        HttpResponse.json({
+          success: true,
+          data: {
+            data: [
+              { id: 'guess', url: 'https://cdn.example/guessed.jpg', altText: 'Robe haute couture', mimeType: 'image/jpeg', width: null, height: null, entityType: 'PAGE_SECTION', entityId: null, sortOrder: 0 },
+            ],
+            total: 1,
+            page: 1,
+            limit: 20,
+            totalPages: 1,
+          },
+        }),
+      ),
+    );
+
+    const { result } = renderHook(() => useHomeContent(), { wrapper: withQueryClient() });
+
+    await waitFor(() => expect(result.current.isLoading).toBe(false));
+    expect(result.current.data.hero.imageUrl).toBe('https://cdn.example/from-cms.jpg');
+  });
+
+  it('takes the remaining home titles (La Une, ateliers, journal, newsletter) from the CMS', async () => {
+    server.use(
+      http.get(`${API_BASE_URL}/content/public/accueil`, () =>
+        HttpResponse.json({
+          success: true,
+          data: [
+            section('la-une', { titleText: 'À la Une', ctaPrimaryLabel: 'Tout voir' }),
+            section('ateliers', { titleText: 'Nos lieux' }),
+            section('journal', { titleText: 'Actualités' }),
+            section('newsletter', { titleText: 'Inscrivez-vous' }),
+          ],
+        }),
+      ),
+    );
+
+    const { result } = renderHook(() => useHomeContent(), { wrapper: withQueryClient() });
+
+    await waitFor(() => expect(result.current.data.laUne.headline).toBe('À la Une'));
+    expect(result.current.data.laUne.cta).toBe('Tout voir');
+    expect(result.current.data.ateliersTeaser.headline).toBe('Nos lieux');
+    expect(result.current.data.journalTeaser.headline).toBe('Actualités');
+    expect(result.current.data.newsletter.headline).toBe('Inscrivez-vous');
   });
 });

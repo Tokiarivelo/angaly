@@ -2,6 +2,8 @@ import { useQuery } from '@tanstack/react-query';
 import type { AtelierDto, Locale } from '@angaly/types';
 
 import { apiClient } from '@/lib/api-client';
+import { publicContentPath } from '@/lib/public-content';
+import { useLocaleStore } from '@/stores/locale.store';
 
 /** Real endpoint — see docs/features/ateliers.md. */
 export function useAtelierDetailQuery(slug: string) {
@@ -42,8 +44,9 @@ export interface PublicPageSectionDto {
  * by `sectionKey`.
  */
 export function useAtelierDetailSectionsContentQuery() {
+  const locale = useLocaleStore((state) => state.locale);
   return useQuery({
-    queryKey: ['atelier-detail', 'content'],
-    queryFn: () => apiClient.get<PublicPageSectionDto[]>('/content/public/atelier-detail'),
+    queryKey: [...['atelier-detail', 'content'], locale],
+    queryFn: () => apiClient.get<PublicPageSectionDto[]>(publicContentPath('atelier-detail', locale)),
   });
 }

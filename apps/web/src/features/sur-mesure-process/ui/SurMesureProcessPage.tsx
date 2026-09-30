@@ -1,3 +1,5 @@
+'use client';
+
 import { useSurMesureContent } from '../hooks/useSurMesureContent';
 import { ClosingCtaBand } from './ClosingCtaBand';
 import { FaqAccordion } from './FaqAccordion';
@@ -14,7 +16,7 @@ export function SurMesureProcessPage() {
   return (
     <>
       <HeroSection content={content.hero} />
-      <ProcessTimeline />
+      <ProcessTimeline content={content.process} />
       <WhyChooseSection content={content.whyChoose} />
       <RealisationsGallery content={content.gallery} />
       <TestimonialBlock content={content.testimonial} />

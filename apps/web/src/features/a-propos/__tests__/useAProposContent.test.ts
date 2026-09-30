@@ -147,4 +147,50 @@ describe('useAProposContent', () => {
     // savoirFaire wasn't in this CMS response — falls back entirely.
     expect(result.current.data.savoirFaire.items).toHaveLength(4);
   });
+
+  it('uses the CMS image (media) for hero/histoire/fondatrice, keeping the default for sections without one', async () => {
+    server.use(
+      http.get(`${API_BASE_URL}/content/public/a-propos`, () =>
+        HttpResponse.json({
+          success: true,
+          data: [
+            {
+              page: 'a-propos',
+              sectionKey: 'hero',
+              locale: 'FR',
+              titleText: null,
+              subtitleText: null,
+              bodyText: null,
+              ctaPrimaryLabel: null,
+              ctaSecondaryLabel: null,
+              dataJson: null,
+              mediaId: 'media-1',
+              media: { id: 'media-1', url: 'https://cdn.example/from-cms.jpg', altText: 'Choisie dans le CMS' },
+              updatedAt: '2026-01-01T00:00:00.000Z',
+            },
+            {
+              page: 'a-propos',
+              sectionKey: 'histoire',
+              locale: 'FR',
+              titleText: null,
+              subtitleText: null,
+              bodyText: null,
+              ctaPrimaryLabel: null,
+              ctaSecondaryLabel: null,
+              dataJson: null,
+              mediaId: 'media-1',
+              media: { id: 'media-1', url: 'https://cdn.example/from-cms.jpg', altText: 'Choisie dans le CMS' },
+              updatedAt: '2026-01-01T00:00:00.000Z',
+            },
+          ],
+        }),
+      ),
+    );
+
+    const { result } = renderHook(() => useAProposContent(), { wrapper: withQueryClient() });
+
+    await waitFor(() => expect(result.current.data.hero.imageUrl).toBe('https://cdn.example/from-cms.jpg'));
+    expect(result.current.data.histoire.imageUrl).toBe('https://cdn.example/from-cms.jpg');
+    expect(result.current.data.fondatrice.imageUrl).toMatch(/^https?:\/\/(?!cdn\.example)/);
+  });
 });

@@ -2,6 +2,8 @@ import { useQuery } from '@tanstack/react-query';
 import type { CollectionDetailDto, Locale } from '@angaly/types';
 
 import { apiClient } from '@/lib/api-client';
+import { publicContentPath } from '@/lib/public-content';
+import { useLocaleStore } from '@/stores/locale.store';
 
 /** Real endpoint — see docs/features/collections.md. Already includes `creations[]`, no separate call needed. */
 export function useCollectionDetailQuery(slug: string) {
@@ -42,8 +44,9 @@ export interface PublicPageSectionDto {
  * band defaults by `sectionKey`.
  */
 export function useCollectionDetailSectionsContentQuery() {
+  const locale = useLocaleStore((state) => state.locale);
   return useQuery({
-    queryKey: ['collection-detail', 'content'],
-    queryFn: () => apiClient.get<PublicPageSectionDto[]>('/content/public/collection-detail'),
+    queryKey: [...['collection-detail', 'content'], locale],
+    queryFn: () => apiClient.get<PublicPageSectionDto[]>(publicContentPath('collection-detail', locale)),
   });
 }

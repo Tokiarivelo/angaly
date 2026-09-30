@@ -9,7 +9,7 @@ import { usePathname } from 'next/navigation';
 import { useMobileDrawer } from '@/features/navigation/hooks/useMobileDrawer';
 import { useMobileSearchOverlay } from '@/features/navigation/hooks/useMobileSearchOverlay';
 import { useNavigationContent } from '@/features/navigation/hooks/useNavigationContent';
-import { DRAWER_NAV_LINKS, DRAWER_SECONDARY_LINKS } from '@/features/navigation/consts/nav-links.const';
+import { useNavigationLinks } from '@/features/navigation/hooks/useNavigationLinks';
 import { LanguageSwitcher } from '@/components/layout/LanguageSwitcher';
 import { ROUTES } from '@/lib/routes';
 
@@ -24,6 +24,7 @@ export function MobileDrawer() {
   const pathname = usePathname();
   const { status } = useSession();
   const { data: content } = useNavigationContent();
+  const { drawer: drawerLinks, secondary: secondaryLinks } = useNavigationLinks();
 
   return (
     <Dialog.Root open={isOpen} onOpenChange={(open) => !open && close()}>
@@ -44,10 +45,10 @@ export function MobileDrawer() {
           </div>
 
           <nav aria-label="Navigation principale" className="flex flex-1 flex-col space-y-6 overflow-y-auto">
-            {DRAWER_NAV_LINKS.map((link) => {
+            {drawerLinks.map((link) => {
               const isActive = pathname === link.href;
               let href: string = link.href;
-              if (link.label === 'Patron Premium' && status === 'unauthenticated') {
+              if (link.href === ROUTES.patternStudio && status === 'unauthenticated') {
                 href = `${ROUTES.connexion}?redirectTo=${encodeURIComponent(link.href)}`;
               }
               return (
@@ -63,7 +64,7 @@ export function MobileDrawer() {
                   }`}
                 >
                   {link.label}
-                  {'badge' in link && (
+                  {link.badge && (
                     <span className="rounded-full border border-angaly-champagne/30 bg-angaly-champagne/10 px-2 py-0.5 font-sans text-[10px] tracking-widest text-angaly-champagne uppercase">
                       {link.badge}
                     </span>
@@ -87,14 +88,14 @@ export function MobileDrawer() {
               <Search className="h-5 w-5" aria-hidden="true" />
               Rechercher
             </button>
-            {DRAWER_SECONDARY_LINKS.map((link) => (
+            {secondaryLinks.map((link) => (
               <Link
                 key={link.href}
                 href={link.href}
                 onClick={close}
                 className="flex items-center gap-4 text-sm tracking-wide text-angaly-slate transition-colors hover:text-angaly-ivory"
               >
-                {link.label === 'Mes favoris' ? (
+                {link.href === ROUTES.favoris ? (
                   <Heart className="h-5 w-5" aria-hidden="true" />
                 ) : (
                   <User className="h-5 w-5" aria-hidden="true" />

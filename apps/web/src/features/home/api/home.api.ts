@@ -2,6 +2,8 @@ import { useQuery } from '@tanstack/react-query';
 import type { CreationDto, Locale, MediaDto, PaginatedResponse } from '@angaly/types';
 
 import { apiClient } from '@/lib/api-client';
+import { publicContentPath } from '@/lib/public-content';
+import { useLocaleStore } from '@/stores/locale.store';
 
 import { QUERY_KEYS } from '../consts/queryKeys';
 import type { AtelierSummary, BlogPostSummary, Testimonial } from '../types';
@@ -24,6 +26,8 @@ export interface PublicPageSectionDto {
   ctaSecondaryLabel: string | null;
   dataJson: unknown;
   mediaId: string | null;
+  /** Image resolved server-side from `mediaId` — takes precedence over any default/heuristic image. */
+  media?: { id: string; url: string; altText: string | null } | null;
   updatedAt: string;
 }
 
@@ -81,9 +85,10 @@ export function useHomeSectionsMediaQuery() {
  * these onto `DEFAULT_HOME_CONTENT` by `sectionKey`.
  */
 export function useHomeSectionsContentQuery() {
+  const locale = useLocaleStore((state) => state.locale);
   return useQuery({
-    queryKey: QUERY_KEYS.content,
-    queryFn: () => apiClient.get<PublicPageSectionDto[]>('/content/public/accueil'),
+    queryKey: [...QUERY_KEYS.content, locale],
+    queryFn: () => apiClient.get<PublicPageSectionDto[]>(publicContentPath('accueil', locale)),
   });
 }
 

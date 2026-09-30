@@ -4,6 +4,7 @@ import { aProposHandlers } from './handlers/a-propos.handlers';
 import { atelierDetailHandlers } from './handlers/atelier-detail.handlers';
 import { authentificationHandlers } from './handlers/authentification.handlers';
 import { categoriesHandlers } from './handlers/categories.handlers';
+import { cmsHandlers } from './handlers/cms.handlers';
 import { collectionDetailHandlers } from './handlers/collection-detail.handlers';
 import { collectionsListeHandlers } from './handlers/collections-liste.handlers';
 import { confirmationRendezVousHandlers } from './handlers/confirmation-rendez-vous.handlers';
@@ -47,4 +48,5 @@ export const server = setupServer(
   ...confirmationRendezVousHandlers,
   ...reservationEssayageHandlers,
   ...demandeSurMesureHandlers,
+  ...cmsHandlers,
 );

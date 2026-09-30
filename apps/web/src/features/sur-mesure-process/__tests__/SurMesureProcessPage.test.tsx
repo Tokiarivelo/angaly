@@ -2,11 +2,13 @@ import { render, screen } from '@testing-library/react';
 import userEvent from '@testing-library/user-event';
 import { describe, expect, it } from 'vitest';
 
+import { withQueryClient } from '@/lib/test-utils';
+
 import { SurMesureProcessPage } from '../ui/SurMesureProcessPage';
 
 describe('SurMesureProcessPage', () => {
   it('renders all 7 sections with the expected headings and CTAs', () => {
-    render(<SurMesureProcessPage />);
+    render(<SurMesureProcessPage />, { wrapper: withQueryClient() });
 
     expect(screen.getByRole('heading', { level: 1, name: 'Sur Mesure' })).toBeInTheDocument();
     expect(screen.getByRole('heading', { name: 'Le parcours sur mesure' })).toBeInTheDocument();
@@ -29,7 +31,7 @@ describe('SurMesureProcessPage', () => {
   });
 
   it('renders all 8 timeline steps in order, with no per-step description', () => {
-    render(<SurMesureProcessPage />);
+    render(<SurMesureProcessPage />, { wrapper: withQueryClient() });
 
     const expected = [
       'Votre idée',
@@ -45,7 +47,7 @@ describe('SurMesureProcessPage', () => {
   });
 
   it('renders exactly 4 gallery pieces with their real titles and category labels', () => {
-    render(<SurMesureProcessPage />);
+    render(<SurMesureProcessPage />, { wrapper: withQueryClient() });
 
     const figures = screen.getAllByRole('figure');
     expect(figures).toHaveLength(4);
@@ -57,7 +59,7 @@ describe('SurMesureProcessPage', () => {
 
   it('opens exactly one FAQ item at a time, navigable via keyboard', async () => {
     const user = userEvent.setup();
-    render(<SurMesureProcessPage />);
+    render(<SurMesureProcessPage />, { wrapper: withQueryClient() });
 
     const firstQuestion = screen.getByRole('button', { name: /délais/i });
     const secondQuestion = screen.getByRole('button', { name: /tarifs/i });

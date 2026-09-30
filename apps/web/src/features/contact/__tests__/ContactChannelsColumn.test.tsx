@@ -5,6 +5,7 @@ import { ContactChannelsColumn } from '../ui/ContactChannelsColumn';
 import type { ContactChannels } from '../hooks/useContactChannels';
 
 const CHANNELS: ContactChannels = {
+  titles: { reach: 'Nous joindre', socials: 'Réseaux', hours: 'Nos horaires' },
   phone: { label: '+261 20 22 123 45', href: 'tel:+261202212345' },
   whatsapp: { href: 'https://wa.me/261202212345' },
   email: { label: 'contact@angaly.mg', href: 'mailto:contact@angaly.mg' },

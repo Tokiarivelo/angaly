@@ -2,6 +2,8 @@ import { useQuery } from '@tanstack/react-query';
 import type { Locale } from '@angaly/types';
 
 import { apiClient } from '@/lib/api-client';
+import { publicContentPath } from '@/lib/public-content';
+import { useLocaleStore } from '@/stores/locale.store';
 
 /**
  * Local response shape mirroring `PublicPageSectionResponseDto`
@@ -35,8 +37,9 @@ export interface PublicPageSectionDto {
  * title/subtitle defaults by `sectionKey`.
  */
 export function usePage404SectionsContentQuery() {
+  const locale = useLocaleStore((state) => state.locale);
   return useQuery({
-    queryKey: ['page-404', 'content'],
-    queryFn: () => apiClient.get<PublicPageSectionDto[]>('/content/public/page-404'),
+    queryKey: [...['page-404', 'content'], locale],
+    queryFn: () => apiClient.get<PublicPageSectionDto[]>(publicContentPath('page-404', locale)),
   });
 }

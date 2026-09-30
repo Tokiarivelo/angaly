@@ -1,3 +1,10 @@
+import { cmsList, cmsText, dataString, readOneOf, readString } from '@/lib/cms/cms-values';
+import type { CmsSection } from '@/lib/cms/use-cms-page';
+import { useCmsPage } from '@/lib/cms/use-cms-page';
+
+import { PROCESS_STEPS } from '../consts/process-steps.const';
+import type { ProcessStep } from '../consts/process-steps.const';
+
 export interface WhyChooseItem {
   icon: 'scissors' | 'gem' | 'heart';
   title: string;
@@ -16,6 +23,7 @@ export interface FaqItem {
 }
 
 export interface SurMesureContent {
+  process: { title: string; steps: ProcessStep[] };
   hero: { title: string; subtitle: string; imageUrl: string };
   whyChoose: { items: WhyChooseItem[] };
   gallery: { title: string; items: RealisationItem[] };
@@ -25,9 +33,8 @@ export interface SurMesureContent {
 }
 
 /**
- * TODO(Phase 6): read from `GET /api/content/sections?page=sur-mesure` once
- * the `content` module exists — see docs/pages/sur-mesure-process.md "Points
- * d'attention". The 4 gallery pieces also default here rather than calling
+ * Built-in default copy — the fallback for anything the CMS (`page="sur-mesure"`, see
+ * `useSurMesureContent` below) doesn't provide. The 4 gallery pieces also default here rather than calling
  * `GET /api/creations?tag=sur-mesure` — that endpoint doesn't exist (the
  * `creations` module has no `tag` filter, only categoryId/collectionId/
  * isFeatured/sort, see apps/api/src/creations/application/dtos/
@@ -41,6 +48,7 @@ export interface SurMesureContent {
  * gallery captions — the real screen wins per CLAUDE.md rule 9).
  */
 const SUR_MESURE_CONTENT: SurMesureContent = {
+  process: { title: 'Le parcours sur mesure', steps: PROCESS_STEPS },
   hero: {
     title: 'Sur Mesure',
     subtitle: 'Votre idée, façonnée avec précision, entièrement pour vous.',
@@ -135,6 +143,76 @@ const SUR_MESURE_CONTENT: SurMesureContent = {
   },
 };
 
-export function useSurMesureContent(): { data: SurMesureContent; isLoading: false; error: null } {
-  return { data: SUR_MESURE_CONTENT, isLoading: false, error: null };
+const ICONS = ['scissors', 'gem', 'heart'] as const;
+
+function withImage(base: string, section: CmsSection | undefined): string {
+  return section?.media?.url ?? base;
+}
+
+/**
+ * Merges the PUBLISHED `sur-mesure` CMS sections onto the default copy: `hero`, `etapes` (process steps),
+ * `pourquoi` (3 pillars), `realisations` (gallery), `temoignage`, `faq`, `closing`. Each field and each list
+ * independently falls back to its default when missing/blank/malformed.
+ */
+export function useSurMesureContent(): { data: SurMesureContent; isLoading: boolean; error: Error | null } {
+  const cms = useCmsPage('sur-mesure');
+  const base = SUR_MESURE_CONTENT;
+  const hero = cms.section('hero');
+  const etapes = cms.section('etapes');
+  const pourquoi = cms.section('pourquoi');
+  const realisations = cms.section('realisations');
+  const temoignage = cms.section('temoignage');
+  const faq = cms.section('faq');
+  const closing = cms.section('closing');
+
+  const data: SurMesureContent = {
+    process: {
+      title: cmsText(etapes?.titleText, base.process.title),
+      steps:
+        cmsList(etapes?.dataJson, 'steps', (item) => {
+          const title = readString(item['title']);
+          return title ? { title } : undefined;
+        })?.map((step, index) => ({ number: index + 1, title: step.title })) ?? base.process.steps,
+    },
+    hero: {
+      title: cmsText(hero?.titleText, base.hero.title),
+      subtitle: cmsText(hero?.subtitleText, base.hero.subtitle),
+      imageUrl: withImage(base.hero.imageUrl, hero),
+    },
+    whyChoose: {
+      items:
+        cmsList(pourquoi?.dataJson, 'items', (item) => {
+          const title = readString(item['title']);
+          const description = readString(item['description']);
+          return title && description ? { icon: readOneOf(item['icon'], ICONS) ?? 'gem', title, description } : undefined;
+        }) ?? base.whyChoose.items,
+    },
+    gallery: {
+      title: cmsText(realisations?.titleText, base.gallery.title),
+      items:
+        cmsList(realisations?.dataJson, 'items', (item) => {
+          const title = readString(item['title']);
+          const imageUrl = readString(item['imageUrl']);
+          return title && imageUrl ? { imageUrl, title, label: readString(item['label']) ?? '' } : undefined;
+        }) ?? base.gallery.items,
+    },
+    testimonial: {
+      quote: cmsText(temoignage?.bodyText, base.testimonial.quote),
+      name: dataString(temoignage?.dataJson, 'name') ?? base.testimonial.name,
+      role: dataString(temoignage?.dataJson, 'role') ?? base.testimonial.role,
+      imageUrl: withImage(base.testimonial.imageUrl, temoignage),
+    },
+    faq: {
+      title: cmsText(faq?.titleText, base.faq.title),
+      items:
+        cmsList(faq?.dataJson, 'items', (item) => {
+          const question = readString(item['question']);
+          const answer = readString(item['answer']);
+          return question && answer ? { question, answer } : undefined;
+        }) ?? base.faq.items,
+    },
+    closing: { title: cmsText(closing?.titleText, base.closing.title) },
+  };
+
+  return { data, isLoading: cms.isLoading, error: cms.error };
 }

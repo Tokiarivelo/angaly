@@ -4,22 +4,23 @@ import { Menu, Search, ShoppingBag, User } from 'lucide-react';
 import Link from 'next/link';
 import { usePathname } from 'next/navigation';
 
-import { HEADER_NAV_LINKS } from '@/features/navigation/consts/nav-links.const';
 import { useMobileDrawer } from '@/features/navigation/hooks/useMobileDrawer';
 import { useMobileSearchOverlay } from '@/features/navigation/hooks/useMobileSearchOverlay';
+import { useNavigationLinks } from '@/features/navigation/hooks/useNavigationLinks';
 import { ROUTES } from '@/lib/routes';
 
 export function Header() {
   const pathname = usePathname();
   const { open: openDrawer } = useMobileDrawer();
   const { open: openSearch } = useMobileSearchOverlay();
+  const { header: headerLinks } = useNavigationLinks();
 
   return (
     <header className="sticky top-0 z-50 bg-angaly-navy text-white">
       <div className="mx-auto grid h-16 max-w-7xl grid-cols-[1fr_auto_1fr] items-center gap-6 px-6">
         <div className="flex items-center">
           <nav aria-label="Navigation principale" className="hidden items-center gap-3.5 xl:gap-5 lg:flex">
-            {HEADER_NAV_LINKS.map((link) => (
+            {headerLinks.map((link) => (
               <Link
                 key={link.href}
                 href={link.href}

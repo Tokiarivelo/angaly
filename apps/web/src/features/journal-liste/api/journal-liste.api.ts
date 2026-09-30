@@ -2,6 +2,8 @@ import { useQuery } from '@tanstack/react-query';
 import type { BlogPostDto, Locale, PaginatedResponse } from '@angaly/types';
 
 import { apiClient } from '@/lib/api-client';
+import { publicContentPath } from '@/lib/public-content';
+import { useLocaleStore } from '@/stores/locale.store';
 
 import { QUERY_KEYS } from '../consts/queryKeys';
 
@@ -51,8 +53,9 @@ export interface PublicPageSectionDto {
  * hardcoded header defaults by `sectionKey`.
  */
 export function useJournalListeSectionsContentQuery() {
+  const locale = useLocaleStore((state) => state.locale);
   return useQuery({
-    queryKey: QUERY_KEYS.content,
-    queryFn: () => apiClient.get<PublicPageSectionDto[]>('/content/public/journal-liste'),
+    queryKey: [...QUERY_KEYS.content, locale],
+    queryFn: () => apiClient.get<PublicPageSectionDto[]>(publicContentPath('journal-liste', locale)),
   });
 }

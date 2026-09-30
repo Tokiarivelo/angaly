@@ -9,7 +9,7 @@ export function ContactChannelsColumn({ channels }: { channels: ContactChannels 
     <div className="space-y-16">
       <section>
         <h2 className="font-heading mb-8 border-b border-angaly-border pb-4 text-2xl tracking-widest text-angaly-royal-navy uppercase">
-          Nous joindre
+          {channels.titles.reach}
         </h2>
         <ul className="space-y-8">
           <li className="group flex items-start">
@@ -49,7 +49,7 @@ export function ContactChannelsColumn({ channels }: { channels: ContactChannels 
 
       <section>
         <h2 className="font-heading mb-8 border-b border-angaly-border pb-4 text-2xl tracking-widest text-angaly-royal-navy uppercase">
-          Réseaux
+          {channels.titles.socials}
         </h2>
         <div className="flex space-x-8">
           {channels.socials.map((social) => {
@@ -68,7 +68,7 @@ export function ContactChannelsColumn({ channels }: { channels: ContactChannels 
 
       <section>
         <h2 className="font-heading mb-6 border-b border-angaly-border pb-4 text-2xl tracking-widest text-angaly-royal-navy uppercase">
-          Nos horaires
+          {channels.titles.hours}
         </h2>
         <ul className="space-y-2 text-sm text-angaly-slate">
           {channels.hours.map((row, index) => (

@@ -2,6 +2,8 @@ import { useQuery } from '@tanstack/react-query';
 import type { CreationDto, Locale, PaginatedResponse } from '@angaly/types';
 
 import { apiClient } from '@/lib/api-client';
+import { publicContentPath } from '@/lib/public-content';
+import { useLocaleStore } from '@/stores/locale.store';
 
 const RELATED_LIMIT = 4;
 
@@ -63,8 +65,9 @@ export interface PublicPageSectionDto {
  * "savoir-faire" defaults by `sectionKey`.
  */
 export function useCreationDetailSectionsContentQuery() {
+  const locale = useLocaleStore((state) => state.locale);
   return useQuery({
-    queryKey: ['creation-detail', 'content'],
-    queryFn: () => apiClient.get<PublicPageSectionDto[]>('/content/public/creation-detail'),
+    queryKey: [...['creation-detail', 'content'], locale],
+    queryFn: () => apiClient.get<PublicPageSectionDto[]>(publicContentPath('creation-detail', locale)),
   });
 }

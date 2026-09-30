@@ -2,6 +2,8 @@ import { useQuery } from '@tanstack/react-query';
 import type { CollectionDto, CreationDto, Locale, PaginatedResponse } from '@angaly/types';
 
 import { apiClient } from '@/lib/api-client';
+import { publicContentPath } from '@/lib/public-content';
+import { useLocaleStore } from '@/stores/locale.store';
 
 /**
  * Local response shape mirroring `PublicPageSectionResponseDto`
@@ -32,9 +34,10 @@ export interface PublicPageSectionDto {
  * defaults by `sectionKey`.
  */
 export function useLaUneSectionsContentQuery() {
+  const locale = useLocaleStore((state) => state.locale);
   return useQuery({
-    queryKey: ['la-une', 'content'],
-    queryFn: () => apiClient.get<PublicPageSectionDto[]>('/content/public/la-une'),
+    queryKey: [...['la-une', 'content'], locale],
+    queryFn: () => apiClient.get<PublicPageSectionDto[]>(publicContentPath('la-une', locale)),
   });
 }
 

@@ -42,9 +42,7 @@ export interface AProposContent {
  * stitch-prompts/21-a-propos.md alone — that text prompt implies an 8th
  * "Valeurs" section (Excellence/Authenticité/Exclusivité/Proximité client)
  * the real screen simply doesn't have; omitted rather than invented. Image
- * URLs stay hardcoded here — unlike `home`, this page has no
- * media-by-alt-text query wired up yet, out of scope for this pass (see
- * docs/pages/a-propos.md).
+ * URLs here are only the fallback for a section with no CMS image.
  */
 const DEFAULT_A_PROPOS_CONTENT: AProposContent = {
   hero: {
@@ -212,8 +210,8 @@ function splitParagraphs(bodyText: string | null | undefined): string[] | undefi
  * still `DRAFT` — the public endpoint never returns those) falls back
  * entirely to the hardcoded default. Within a present section, an
  * individual null/missing/malformed field also falls back to its own
- * default field. Image URLs are never touched — see
- * `DEFAULT_A_PROPOS_CONTENT`'s doc comment.
+ * default field. The hero/histoire/fondatrice images come from the section's
+ * CMS `media` when one is set (savoir-faire/atelier images are `dataJson` URLs).
  */
 function applyCmsSections(base: AProposContent, sections: PublicPageSectionDto[] | undefined): AProposContent {
   const byKey = sectionsByKey(sections);
@@ -231,12 +229,14 @@ function applyCmsSections(base: AProposContent, sections: PublicPageSectionDto[]
       ...base.hero,
       title: hero?.titleText ?? base.hero.title,
       subtitle: hero?.subtitleText ?? base.hero.subtitle,
+      imageUrl: hero?.media?.url ?? base.hero.imageUrl,
     },
     histoire: {
       ...base.histoire,
       title: histoire?.titleText ?? base.histoire.title,
       paragraphs: splitParagraphs(histoire?.bodyText) ?? base.histoire.paragraphs,
       chronology: extractArrayField(histoire?.dataJson, 'chronology', isChronologyItem) ?? base.histoire.chronology,
+      imageUrl: histoire?.media?.url ?? base.histoire.imageUrl,
     },
     fondatrice: {
       ...base.fondatrice,
@@ -244,6 +244,7 @@ function applyCmsSections(base: AProposContent, sections: PublicPageSectionDto[]
       subtitle: fondatrice?.subtitleText ?? base.fondatrice.subtitle,
       paragraph: fondatrice?.bodyText ?? base.fondatrice.paragraph,
       quote: extractStringField(fondatrice?.dataJson, 'quote') ?? base.fondatrice.quote,
+      imageUrl: fondatrice?.media?.url ?? base.fondatrice.imageUrl,
     },
     savoirFaire: {
       ...base.savoirFaire,

@@ -2,6 +2,8 @@ import { useQuery } from '@tanstack/react-query';
 import type { BlogPostDetailDto, BlogPostDto, Locale } from '@angaly/types';
 
 import { apiClient } from '@/lib/api-client';
+import { publicContentPath } from '@/lib/public-content';
+import { useLocaleStore } from '@/stores/locale.store';
 
 const RELATED_LIMIT = 3;
 
@@ -52,8 +54,9 @@ export interface PublicPageSectionDto {
  * these onto the hardcoded closing CTA band defaults by `sectionKey`.
  */
 export function useJournalArticleSectionsContentQuery() {
+  const locale = useLocaleStore((state) => state.locale);
   return useQuery({
-    queryKey: ['journal-article', 'content'],
-    queryFn: () => apiClient.get<PublicPageSectionDto[]>('/content/public/journal-article'),
+    queryKey: [...['journal-article', 'content'], locale],
+    queryFn: () => apiClient.get<PublicPageSectionDto[]>(publicContentPath('journal-article', locale)),
   });
 }

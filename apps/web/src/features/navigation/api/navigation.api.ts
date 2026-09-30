@@ -2,6 +2,8 @@ import { useQuery } from '@tanstack/react-query';
 import type { Locale, SearchResultsResponseDto } from '@angaly/types';
 
 import { apiClient } from '@/lib/api-client';
+import { publicContentPath } from '@/lib/public-content';
+import { useLocaleStore } from '@/stores/locale.store';
 
 import { MIN_SEARCH_QUERY_LENGTH } from '../consts/search.const';
 import { QUERY_KEYS } from '../consts/queryKeys';
@@ -52,8 +54,9 @@ export interface PublicPageSectionDto {
  * the hardcoded rendez-vous CTA label default by `sectionKey`.
  */
 export function useNavigationSectionsContentQuery() {
+  const locale = useLocaleStore((state) => state.locale);
   return useQuery({
-    queryKey: QUERY_KEYS.content,
-    queryFn: () => apiClient.get<PublicPageSectionDto[]>('/content/public/navigation-mobile'),
+    queryKey: [...QUERY_KEYS.content, locale],
+    queryFn: () => apiClient.get<PublicPageSectionDto[]>(publicContentPath('navigation-mobile', locale)),
   });
 }

@@ -1,5 +1,6 @@
 import { useMemo } from 'react';
 
+import { cmsText } from '@/lib/cms/cms-values';
 import { ROUTES } from '@/lib/routes';
 
 import type { PublicPageSectionDto } from '../api/home.api';
@@ -116,6 +117,62 @@ function sectionsByKey(sections: PublicPageSectionDto[] | undefined): Map<string
   return map;
 }
 
+/** An image chosen in the CMS (`mediaId`) always wins over the default and over the alt-text heuristic below. */
+function cmsImage(section: PublicPageSectionDto | undefined): { imageUrl?: string; imageAlt?: string } {
+  return section?.media ? { imageUrl: section.media.url, imageAlt: section.media.altText ?? '' } : {};
+}
+
+/**
+ * Legacy image lookup: a `Media` guessed from its alt text. Only applies when the section has no CMS image
+ * (`hasCmsImage`) — otherwise the editor's choice, already merged into `current`, must stand.
+ */
+function heuristicImage(
+  current: { imageUrl?: string | undefined; imageAlt?: string | undefined },
+  guessed: { url: string; altText: string | null } | undefined,
+  hasCmsImage: boolean,
+): { imageUrl?: string | undefined; imageAlt?: string | undefined } {
+  if (hasCmsImage || !guessed) return { imageUrl: current.imageUrl, imageAlt: current.imageAlt };
+  return { imageUrl: guessed.url, imageAlt: guessed.altText ?? current.imageAlt };
+}
+
+function stringOrUndefined(value: unknown): string | undefined {
+  return typeof value === 'string' && value.trim() !== '' ? value : undefined;
+}
+
+/** `univers.dataJson.items` — the editable tile list (label, image, alt, link); a malformed/empty list falls back to the defaults. */
+function extractUniversItems(dataJson: unknown): HomeContent['categories']['items'] | undefined {
+  const raw = dataJson && typeof dataJson === 'object' ? (dataJson as { items?: unknown }).items : undefined;
+  if (!Array.isArray(raw)) return undefined;
+  const items = raw.flatMap((entry) => {
+    if (!entry || typeof entry !== 'object') return [];
+    const item = entry as Record<string, unknown>;
+    const label = stringOrUndefined(item['label']);
+    if (!label) return [];
+    return [
+      {
+        label,
+        href: stringOrUndefined(item['href']) ?? ROUTES.creations,
+        imageUrl: stringOrUndefined(item['imageUrl']),
+        imageAlt: stringOrUndefined(item['imageAlt']) ?? label,
+      },
+    ];
+  });
+  return items.length > 0 ? items : undefined;
+}
+
+/** `sur-mesure.dataJson.steps` — the editable step list. */
+function extractSteps(dataJson: unknown): HomeContent['surMesure']['steps'] | undefined {
+  const raw = dataJson && typeof dataJson === 'object' ? (dataJson as { steps?: unknown }).steps : undefined;
+  if (!Array.isArray(raw)) return undefined;
+  const steps = raw.flatMap((entry) => {
+    if (!entry || typeof entry !== 'object') return [];
+    const step = entry as Record<string, unknown>;
+    const label = stringOrUndefined(step['label']);
+    return label ? [{ label, description: stringOrUndefined(step['description']) ?? '' }] : [];
+  });
+  return steps.length > 0 ? steps : undefined;
+}
+
 /** `dataJson.eyebrow` is the only `dataJson` field the home page reads today (see seed.ts `hero`). */
 function extractEyebrow(dataJson: unknown): string | undefined {
   if (dataJson && typeof dataJson === 'object' && 'eyebrow' in dataJson) {
@@ -139,10 +196,12 @@ function applyCmsSections(base: HomeContent, sections: PublicPageSectionDto[] | 
   const hero = byKey.get('hero');
   const maison = byKey.get('maison');
   const patternStudio = byKey.get('pattern-studio');
-  const universMariage = byKey.get('univers-mariage');
-  const universCostumes = byKey.get('univers-costumes');
-  const universSoiree = byKey.get('univers-soiree');
-  const universSurMesure = byKey.get('univers-sur-mesure');
+  const laUne = byKey.get('la-une');
+  const ateliers = byKey.get('ateliers');
+  const journal = byKey.get('journal');
+  const newsletter = byKey.get('newsletter');
+  const univers = byKey.get('univers');
+  const surMesure = byKey.get('sur-mesure');
 
   return {
     ...base,
@@ -151,21 +210,33 @@ function applyCmsSections(base: HomeContent, sections: PublicPageSectionDto[] | 
       eyebrow: extractEyebrow(hero?.dataJson) ?? base.hero.eyebrow,
       headline: hero?.titleText ?? base.hero.headline,
       subheading: hero?.subtitleText ?? base.hero.subheading,
+      ...cmsImage(hero),
     },
     maison: {
       ...base.maison,
       eyebrow: maison?.subtitleText ?? base.maison.eyebrow,
       headline: maison?.titleText ?? base.maison.headline,
       paragraph: maison?.bodyText ?? base.maison.paragraph,
+      ...cmsImage(maison),
     },
+    laUne: {
+      headline: cmsText(laUne?.titleText, base.laUne.headline),
+      cta: cmsText(laUne?.ctaPrimaryLabel, base.laUne.cta),
+    },
+    ateliersTeaser: { headline: cmsText(ateliers?.titleText, base.ateliersTeaser.headline) },
+    journalTeaser: { headline: cmsText(journal?.titleText, base.journalTeaser.headline) },
+    newsletter: { headline: cmsText(newsletter?.titleText, base.newsletter.headline) },
     categories: {
       ...base.categories,
-      items: [
-        { ...base.categories.items[0]!, label: universMariage?.titleText ?? base.categories.items[0]!.label },
-        { ...base.categories.items[1]!, label: universCostumes?.titleText ?? base.categories.items[1]!.label },
-        { ...base.categories.items[2]!, label: universSoiree?.titleText ?? base.categories.items[2]!.label },
-        { ...base.categories.items[3]!, label: universSurMesure?.titleText ?? base.categories.items[3]!.label },
-      ],
+      headline: univers?.titleText ?? base.categories.headline,
+      items: extractUniversItems(univers?.dataJson) ?? base.categories.items,
+    },
+    surMesure: {
+      ...base.surMesure,
+      headline: surMesure?.titleText ?? base.surMesure.headline,
+      subheading: surMesure?.subtitleText ?? base.surMesure.subheading,
+      cta: surMesure?.ctaPrimaryLabel ?? base.surMesure.cta,
+      steps: extractSteps(surMesure?.dataJson) ?? base.surMesure.steps,
     },
     patternStudio: {
       ...base.patternStudio,
@@ -173,6 +244,7 @@ function applyCmsSections(base: HomeContent, sections: PublicPageSectionDto[] | 
       headline: patternStudio?.titleText ?? base.patternStudio.headline,
       paragraph: patternStudio?.bodyText ?? base.patternStudio.paragraph,
       cta: patternStudio?.ctaPrimaryLabel ?? base.patternStudio.cta,
+      ...cmsImage(patternStudio),
     },
   };
 }
@@ -182,6 +254,14 @@ export function useHomeContent(): { data: HomeContent; isLoading: boolean; error
   const { data: sections, isLoading: isContentLoading, error: contentError } = useHomeSectionsContentQuery();
 
   const cmsContent = useMemo(() => applyCmsSections(DEFAULT_HOME_CONTENT, sections), [sections]);
+
+  const sectionsWithImage = useMemo(
+    () => new Set((sections ?? []).filter((section) => section.media).map((section) => section.sectionKey)),
+    [sections],
+  );
+
+  // A CMS `univers` list owns its tiles' images — the alt-text lookup below only serves the built-in defaults.
+  const hasCmsUnivers = useMemo(() => (sections ?? []).some((section) => section.sectionKey === 'univers'), [sections]);
 
   const data = useMemo<HomeContent>(() => {
     if (!mediaResponse?.data || mediaResponse.data.length === 0) {
@@ -222,46 +302,39 @@ export function useHomeContent(): { data: HomeContent; isLoading: boolean; error
       ...cmsContent,
       hero: {
         ...cmsContent.hero,
-        imageUrl: heroMedia?.url ?? cmsContent.hero.imageUrl!,
-        imageAlt: heroMedia?.altText ?? cmsContent.hero.imageAlt!,
+        ...heuristicImage(cmsContent.hero, heroMedia, sectionsWithImage.has('hero')),
       },
       maison: {
         ...cmsContent.maison,
-        imageUrl: maisonMedia?.url ?? cmsContent.maison.imageUrl!,
-        imageAlt: maisonMedia?.altText ?? cmsContent.maison.imageAlt!,
+        ...heuristicImage(cmsContent.maison, maisonMedia, sectionsWithImage.has('maison')),
       },
       categories: {
         ...cmsContent.categories,
         items: [
           {
             ...cmsContent.categories.items[0]!,
-            imageUrl: mariageMedia?.url ?? cmsContent.categories.items[0]!.imageUrl!,
-            imageAlt: mariageMedia?.altText ?? cmsContent.categories.items[0]!.imageAlt!,
+            ...heuristicImage(cmsContent.categories.items[0]!, mariageMedia, hasCmsUnivers),
           },
           {
             ...cmsContent.categories.items[1]!,
-            imageUrl: costumesMedia?.url ?? cmsContent.categories.items[1]!.imageUrl!,
-            imageAlt: costumesMedia?.altText ?? cmsContent.categories.items[1]!.imageAlt!,
+            ...heuristicImage(cmsContent.categories.items[1]!, costumesMedia, hasCmsUnivers),
           },
           {
             ...cmsContent.categories.items[2]!,
-            imageUrl: soireeMedia?.url ?? cmsContent.categories.items[2]!.imageUrl!,
-            imageAlt: soireeMedia?.altText ?? cmsContent.categories.items[2]!.imageAlt!,
+            ...heuristicImage(cmsContent.categories.items[2]!, soireeMedia, hasCmsUnivers),
           },
           {
             ...cmsContent.categories.items[3]!,
-            imageUrl: surMesureMedia?.url ?? cmsContent.categories.items[3]!.imageUrl!,
-            imageAlt: surMesureMedia?.altText ?? cmsContent.categories.items[3]!.imageAlt!,
+            ...heuristicImage(cmsContent.categories.items[3]!, surMesureMedia, hasCmsUnivers),
           },
         ],
       },
       patternStudio: {
         ...cmsContent.patternStudio,
-        imageUrl: patternStudioMedia?.url ?? cmsContent.patternStudio.imageUrl!,
-        imageAlt: patternStudioMedia?.altText ?? cmsContent.patternStudio.imageAlt!,
+        ...heuristicImage(cmsContent.patternStudio, patternStudioMedia, sectionsWithImage.has('pattern-studio')),
       },
     };
-  }, [mediaResponse, cmsContent]);
+  }, [mediaResponse, cmsContent, sectionsWithImage, hasCmsUnivers]);
 
   return {
     data,
