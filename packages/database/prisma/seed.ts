@@ -11,6 +11,7 @@ import {
   ProductAvailability,
   Role,
 } from '../generated/client';
+import { seedCmsDefaults } from './cms-defaults';
 
 const prisma = new PrismaClient();
 
@@ -1598,39 +1599,39 @@ async function main() {
     },
     {
       page: 'accueil',
-      sectionKey: 'univers-mariage',
+      sectionKey: 'univers',
       locale: Locale.FR,
-      titleText: 'Mariage',
+      titleText: 'Univers',
+      // Ordered, editable list — add/remove/reorder tiles from the CMS. Images are shared by every locale.
+      dataJson: {
+        items: [
+          { label: 'Mariage', imageUrl: 'https://images.unsplash.com/photo-1583939003579-730e3918a45a?w=800&q=80&fm=jpg', imageAlt: 'Univers Robes de mariée', href: '/creations' },
+          { label: 'Costumes', imageUrl: 'https://images.unsplash.com/photo-1594938298603-c8148c4dae35?w=800&q=80&fm=jpg', imageAlt: 'Univers Costumes homme sur mesure', href: '/creations' },
+          { label: 'Soirée', imageUrl: 'https://images.unsplash.com/photo-1566174053879-31528523f8ae?w=800&q=80&fm=jpg', imageAlt: 'Univers Robes de soirée', href: '/creations' },
+          { label: 'Sur Mesure', imageUrl: 'https://images.unsplash.com/photo-1520006403909-838d6b92c22e?w=800&q=80&fm=jpg', imageAlt: 'Univers Confection sur mesure', href: '/sur-mesure' },
+        ],
+      },
       status: ContentStatus.PUBLISHED,
-      photo: '1583939003579-730e3918a45a',
-      photoAlt: 'Univers Robes de mariée',
     },
     {
       page: 'accueil',
-      sectionKey: 'univers-costumes',
+      sectionKey: 'sur-mesure',
       locale: Locale.FR,
-      titleText: 'Costumes',
+      titleText: "L'Expérience Sur Mesure",
+      subtitleText: '7 étapes vers la perfection',
+      ctaPrimaryLabel: 'Créer ma tenue sur mesure',
+      dataJson: {
+        steps: [
+          { label: 'Rencontre', description: 'Consultation initiale' },
+          { label: 'Esquisse', description: 'Croquis & Design' },
+          { label: 'Matières', description: 'Choix des tissus' },
+          { label: 'Prises', description: 'Mesures précises' },
+          { label: 'Toile', description: 'Premier essayage' },
+          { label: 'Ajustements', description: 'Retouches finales' },
+          { label: 'Livraison', description: 'Votre création' },
+        ],
+      },
       status: ContentStatus.PUBLISHED,
-      photo: '1594938298603-c8148c4dae35',
-      photoAlt: 'Univers Costumes homme sur mesure',
-    },
-    {
-      page: 'accueil',
-      sectionKey: 'univers-soiree',
-      locale: Locale.FR,
-      titleText: 'Soirée',
-      status: ContentStatus.PUBLISHED,
-      photo: '1566174053879-31528523f8ae',
-      photoAlt: 'Univers Robes de soirée',
-    },
-    {
-      page: 'accueil',
-      sectionKey: 'univers-sur-mesure',
-      locale: Locale.FR,
-      titleText: 'Sur Mesure',
-      status: ContentStatus.PUBLISHED,
-      photo: '1520006403909-838d6b92c22e',
-      photoAlt: 'Univers Confection sur mesure',
     },
     {
       page: 'accueil',
@@ -1918,6 +1919,8 @@ async function main() {
     createdPageSections.set(`${section.page}:${section.sectionKey}`, section);
   }
   console.log(`✅ ${pageSections.length} sections de page (Accueil, À propos, La Une, Nos Créations et Creation Detail) créées`);
+  const cmsDefaults = await seedCmsDefaults(prisma, adminUser.id);
+  console.log(`✅ CMS par défaut (pied de page, menus, sur-mesure, Pattern Studio, contact) : ${cmsDefaults.created} créées, ${cmsDefaults.skipped} déjà présentes`);
 
   // --- Testimonials ---------------------------------------------------------
   const testimonials = [
