@@ -1,4 +1,8 @@
-import type { PageSection as PrismaPageSection, PageSectionVersion as PrismaPageSectionVersion } from '@angaly/database';
+import type {
+  Media as PrismaMedia,
+  PageSection as PrismaPageSection,
+  PageSectionVersion as PrismaPageSectionVersion,
+} from '@angaly/database';
 import type { ContentStatus as SharedContentStatus, Locale as SharedLocale } from '@angaly/types';
 
 import { PageSectionVersionResponseDto } from '../../application/dtos/page-section-version-response.dto';
@@ -7,8 +11,10 @@ import { PublicPageSectionResponseDto } from '../../application/dtos/public-page
 import { PageSectionVersionEntity } from '../../domain/entities/page-section-version.entity';
 import { PageSectionEntity } from '../../domain/entities/page-section.entity';
 
+export type PrismaPageSectionWithMedia = PrismaPageSection & { media?: PrismaMedia | null };
+
 export class PageSectionMapper {
-  static toDomain(record: PrismaPageSection): PageSectionEntity {
+  static toDomain(record: PrismaPageSectionWithMedia): PageSectionEntity {
     return PageSectionEntity.create({
       id: record.id,
       page: record.page,
@@ -21,6 +27,7 @@ export class PageSectionMapper {
       ctaSecondaryLabel: record.ctaSecondaryLabel,
       dataJson: record.dataJson,
       mediaId: record.mediaId,
+      media: record.media ? { id: record.media.id, url: record.media.url, altText: record.media.altText } : null,
       status: record.status,
       updatedById: record.updatedById,
       createdAt: record.createdAt,
@@ -41,6 +48,7 @@ export class PageSectionMapper {
     dto.ctaSecondaryLabel = entity.ctaSecondaryLabel;
     dto.dataJson = entity.dataJson;
     dto.mediaId = entity.mediaId;
+    dto.media = entity.media;
     dto.status = entity.status as SharedContentStatus;
     dto.updatedById = entity.updatedById;
     dto.createdAt = entity.createdAt.toISOString();
@@ -61,6 +69,7 @@ export class PageSectionMapper {
     dto.ctaSecondaryLabel = entity.ctaSecondaryLabel;
     dto.dataJson = entity.dataJson;
     dto.mediaId = entity.mediaId;
+    dto.media = entity.media;
     dto.updatedAt = entity.updatedAt.toISOString();
     return dto;
   }

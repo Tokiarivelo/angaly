@@ -43,7 +43,8 @@ export class SaveSectionDraftUseCase {
       ctaPrimaryLabel: input.ctaPrimaryLabel,
       ctaSecondaryLabel: input.ctaSecondaryLabel,
       dataJson: input.dataJson,
-      mediaId: input.mediaId,
+      // An empty string (cleared form field) means "no image" — never a dangling FK value.
+      mediaId: input.mediaId === '' ? null : input.mediaId,
       status: 'DRAFT',
       updatedById: input.actorId,
     });

@@ -35,6 +35,18 @@ function buildVersionRecord(overrides: Partial<PrismaPageSectionVersion> = {}): 
 }
 
 describe('PageSectionMapper', () => {
+  it('exposes the resolved media (url + alt) on both admin and public DTOs', () => {
+    const media = { id: 'media-1', url: 'https://cdn.example/hero.jpg', altText: 'Hero' };
+    const entity = PageSectionMapper.toDomain({ ...buildRecord({ mediaId: 'media-1' }), media: media as never });
+
+    expect(PageSectionMapper.toResponseDto(entity).media).toEqual(media);
+    expect(PageSectionMapper.toPublicResponseDto(entity).media).toEqual(media);
+  });
+
+  it('returns media: null when the section has no image', () => {
+    expect(PageSectionMapper.toPublicResponseDto(PageSectionMapper.toDomain(buildRecord())).media).toBeNull();
+  });
+
   it('maps a Prisma record to a domain entity', () => {
     const entity = PageSectionMapper.toDomain(buildRecord());
     expect(entity.page).toBe('accueil');

@@ -162,6 +162,47 @@ describe('PrismaPageSectionRepository', () => {
     expect(result.titleText).toBe('Nouveau titre');
   });
 
+  it('saveWithSnapshot() keeps dataJson and mediaId when the caller omits them (admin editor never sends dataJson)', async () => {
+    const { prisma, pageSection } = buildPrismaServiceMock();
+    pageSection.findUnique.mockResolvedValue(sampleRecord());
+    pageSection.upsert.mockResolvedValue(sampleRecord());
+    const repository = new PrismaPageSectionRepository(prisma);
+
+    await repository.saveWithSnapshot({
+      page: 'accueil',
+      sectionKey: 'hero',
+      locale: 'FR',
+      titleText: 'Nouveau titre',
+      status: 'DRAFT',
+      updatedById: 'admin-1',
+    });
+
+    const { update } = pageSection.upsert.mock.calls[0]![0] as { update: Record<string, unknown> };
+    expect(update).toMatchObject({ titleText: 'Nouveau titre' });
+    expect(update).not.toHaveProperty('dataJson');
+    expect(update).not.toHaveProperty('mediaId');
+    expect(update).not.toHaveProperty('bodyText');
+  });
+
+  it('saveWithSnapshot() clears mediaId only when it is explicitly null', async () => {
+    const { prisma, pageSection } = buildPrismaServiceMock();
+    pageSection.findUnique.mockResolvedValue(sampleRecord());
+    pageSection.upsert.mockResolvedValue(sampleRecord());
+    const repository = new PrismaPageSectionRepository(prisma);
+
+    await repository.saveWithSnapshot({
+      page: 'accueil',
+      sectionKey: 'hero',
+      locale: 'FR',
+      mediaId: null,
+      status: 'DRAFT',
+      updatedById: 'admin-1',
+    });
+
+    const { update } = pageSection.upsert.mock.calls[0]![0] as { update: Record<string, unknown> };
+    expect(update['mediaId']).toBeNull();
+  });
+
   it('listVersions() orders by createdAt desc', async () => {
     const { prisma, pageSectionVersion } = buildPrismaServiceMock();
     pageSectionVersion.findMany.mockResolvedValue([]);

@@ -1,6 +1,17 @@
 import { ApiProperty } from '@nestjs/swagger';
 import { ContentStatus, Locale } from '@angaly/types';
 
+export class PageSectionMediaDto {
+  @ApiProperty()
+  id!: string;
+
+  @ApiProperty()
+  url!: string;
+
+  @ApiProperty({ nullable: true, type: String })
+  altText!: string | null;
+}
+
 export class PageSectionResponseDto {
   @ApiProperty()
   id!: string;
@@ -34,6 +45,9 @@ export class PageSectionResponseDto {
 
   @ApiProperty({ nullable: true })
   mediaId!: string | null;
+
+  @ApiProperty({ nullable: true, type: PageSectionMediaDto })
+  media!: PageSectionMediaDto | null;
 
   @ApiProperty({ enum: ContentStatus })
   status!: ContentStatus;

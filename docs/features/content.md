@@ -173,6 +173,15 @@ __tests__/
   écriture doit préciser explicitement quelle `locale` elle cible, il n'existe pas de notion
   de "toutes les locales" pour `save-section-draft`.
 
+- **Sémantique de `PATCH /content/sections/:page/:sectionKey`** (2026-09-30) : un champ absent du
+  corps est conservé tel quel ; seul `null` explicite l'efface (avant : l'absence de `dataJson`/
+  `mediaId` les mettait à `null`). Les réponses admin et publique incluent `media { id, url,
+  altText } | null` (jointure sur `mediaId`) pour qu'aucun client n'ait à deviner l'image.
+- **`GET /content/public/:page?locale=`** : sans `locale` ⇒ toutes les lignes publiées (historique) ;
+  `FR` ⇒ lignes FR ; toute autre locale ⇒ une entrée par section = traduction publiée superposée à
+  la base FR (champ texte vide ⇒ valeur FR, `mediaId`/`media` toujours ceux du FR, listes de
+  `dataJson` calées sur la structure FR avec `imageUrl`/`mediaId` hérités par index).
+
 ## Vérification
 
 - [x] `save-section-draft`/`saveWithSnapshot` crée bien une version avant chaque écrasement

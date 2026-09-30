@@ -47,4 +47,13 @@ describe('SaveSectionDraftUseCase', () => {
     );
     expect(result).toBe(saved);
   });
+
+  it('turns an empty-string mediaId (cleared form field) into null instead of a dangling FK value', async () => {
+    const repository = { saveWithSnapshot: jest.fn().mockResolvedValue(null) };
+    const useCase = new SaveSectionDraftUseCase(repository as never);
+
+    await useCase.execute({ page: 'accueil', sectionKey: 'hero', locale: 'FR', mediaId: '', actorId: null });
+
+    expect(repository.saveWithSnapshot).toHaveBeenCalledWith(expect.objectContaining({ mediaId: null }));
+  });
 });

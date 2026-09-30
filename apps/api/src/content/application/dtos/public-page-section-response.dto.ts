@@ -1,6 +1,17 @@
 import { ApiProperty } from '@nestjs/swagger';
 import { Locale } from '@angaly/types';
 
+export class PageSectionMediaDto {
+  @ApiProperty()
+  id!: string;
+
+  @ApiProperty()
+  url!: string;
+
+  @ApiProperty({ nullable: true, type: String })
+  altText!: string | null;
+}
+
 /**
  * Public (unauthenticated) shape of a `PageSection` — deliberately narrower
  * than `PageSectionResponseDto`: no `status` (always PUBLISHED here, by
@@ -37,6 +48,9 @@ export class PublicPageSectionResponseDto {
 
   @ApiProperty({ nullable: true })
   mediaId!: string | null;
+
+  @ApiProperty({ nullable: true, type: PageSectionMediaDto })
+  media!: PageSectionMediaDto | null;
 
   @ApiProperty()
   updatedAt!: string;

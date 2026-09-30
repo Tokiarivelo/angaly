@@ -34,7 +34,10 @@ export class PrismaPageSectionRepository implements IPageSectionRepository {
   constructor(private readonly prisma: PrismaService) {}
 
   async listAll(): Promise<PageSectionEntity[]> {
-    const records = await this.prisma.pageSection.findMany({ orderBy: [{ page: 'asc' }, { sectionKey: 'asc' }] });
+    const records = await this.prisma.pageSection.findMany({
+      orderBy: [{ page: 'asc' }, { sectionKey: 'asc' }],
+      include: { media: true },
+    });
     return records.map((record) => PageSectionMapper.toDomain(record));
   }
 
@@ -42,6 +45,7 @@ export class PrismaPageSectionRepository implements IPageSectionRepository {
     const records = await this.prisma.pageSection.findMany({
       where: { page, sectionKey },
       orderBy: { locale: 'asc' },
+      include: { media: true },
     });
     return records.map((record) => PageSectionMapper.toDomain(record));
   }
@@ -51,18 +55,20 @@ export class PrismaPageSectionRepository implements IPageSectionRepository {
     const records = await this.prisma.pageSection.findMany({
       where: { page, status: 'PUBLISHED', ...(locale ? { locale } : {}) },
       orderBy: { sectionKey: 'asc' },
+      include: { media: true },
     });
     return records.map((record) => PageSectionMapper.toDomain(record));
   }
 
   async findById(id: string): Promise<PageSectionEntity | null> {
-    const record = await this.prisma.pageSection.findUnique({ where: { id } });
+    const record = await this.prisma.pageSection.findUnique({ where: { id }, include: { media: true } });
     return record ? PageSectionMapper.toDomain(record) : null;
   }
 
   async findByKey(page: string, sectionKey: string, locale: LocaleValue): Promise<PageSectionEntity | null> {
     const record = await this.prisma.pageSection.findUnique({
       where: { page_sectionKey_locale: { page, sectionKey, locale } },
+      include: { media: true },
     });
     return record ? PageSectionMapper.toDomain(record) : null;
   }
@@ -100,17 +106,20 @@ export class PrismaPageSectionRepository implements IPageSectionRepository {
           status: input.status,
           updatedById: input.updatedById,
         },
+        // `undefined` = "field not sent, keep what is stored" — only an explicit `null` clears it. The admin
+        // editor never sends `dataJson`; treating omission as null used to wipe eyebrow/items/chronology on save.
         update: {
-          titleText: input.titleText ?? null,
-          subtitleText: input.subtitleText ?? null,
-          bodyText: input.bodyText ?? null,
-          ctaPrimaryLabel: input.ctaPrimaryLabel ?? null,
-          ctaSecondaryLabel: input.ctaSecondaryLabel ?? null,
-          dataJson: (input.dataJson ?? Prisma.JsonNull),
-          mediaId: input.mediaId ?? null,
+          ...(input.titleText !== undefined && { titleText: input.titleText }),
+          ...(input.subtitleText !== undefined && { subtitleText: input.subtitleText }),
+          ...(input.bodyText !== undefined && { bodyText: input.bodyText }),
+          ...(input.ctaPrimaryLabel !== undefined && { ctaPrimaryLabel: input.ctaPrimaryLabel }),
+          ...(input.ctaSecondaryLabel !== undefined && { ctaSecondaryLabel: input.ctaSecondaryLabel }),
+          ...(input.dataJson !== undefined && { dataJson: input.dataJson ?? Prisma.JsonNull }),
+          ...(input.mediaId !== undefined && { mediaId: input.mediaId }),
           status: input.status,
           updatedById: input.updatedById,
         },
+        include: { media: true },
       });
     });
 
@@ -170,6 +179,7 @@ export class PrismaPageSectionRepository implements IPageSectionRepository {
           status: snapshot.status as Prisma.PageSectionUpdateInput['status'],
           updatedById: restoredById,
         },
+        include: { media: true },
       });
     });
 

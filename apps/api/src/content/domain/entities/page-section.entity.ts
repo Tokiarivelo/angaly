@@ -1,6 +1,13 @@
 import type { ContentStatusValue, LocaleValue } from '../value-objects/content-status.vo';
 import { isContentStatus, isLocale } from '../value-objects/content-status.vo';
 
+/** Resolved `Media` row referenced by `mediaId` — lets clients render the image without a second lookup. */
+export interface PageSectionMediaProps {
+  id: string;
+  url: string;
+  altText: string | null;
+}
+
 export interface PageSectionProps {
   id: string;
   page: string;
@@ -13,6 +20,7 @@ export interface PageSectionProps {
   ctaSecondaryLabel: string | null;
   dataJson: unknown;
   mediaId: string | null;
+  media?: PageSectionMediaProps | null;
   status: ContentStatusValue;
   updatedById: string | null;
   createdAt: Date;
@@ -37,6 +45,11 @@ export class PageSectionEntity {
       throw new Error('PageSection.status must be DRAFT or PUBLISHED');
     }
     return new PageSectionEntity(props);
+  }
+
+  /** Copy with some props replaced — entities stay immutable (used to layer a translation over its FR base). */
+  withOverrides(overrides: Partial<PageSectionProps>): PageSectionEntity {
+    return PageSectionEntity.create({ ...this.props, ...overrides });
   }
 
   get id(): string {
@@ -81,6 +94,10 @@ export class PageSectionEntity {
 
   get mediaId(): string | null {
     return this.props.mediaId;
+  }
+
+  get media(): PageSectionMediaProps | null {
+    return this.props.media ?? null;
   }
 
   get status(): ContentStatusValue {

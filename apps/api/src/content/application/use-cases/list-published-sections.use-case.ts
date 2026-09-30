@@ -5,6 +5,7 @@ import {
   IPageSectionRepository,
   PAGE_SECTION_REPOSITORY,
 } from '../../domain/repositories/page-section.repository';
+import { BASE_LOCALE, localizeSection } from '../../domain/services/localize-section';
 import { LocaleValue } from '../../domain/value-objects/content-status.vo';
 
 /**
@@ -19,7 +20,25 @@ export class ListPublishedSectionsUseCase {
     @Inject(PAGE_SECTION_REPOSITORY) private readonly pageSectionRepository: IPageSectionRepository,
   ) {}
 
-  execute(page: string, locale?: LocaleValue): Promise<PageSectionEntity[]> {
-    return this.pageSectionRepository.findPublished(page, locale);
+  /**
+   * No locale: every published row (legacy behaviour). Base locale (FR): its rows only. Any other locale:
+   * one entry per section — the translation layered over the FR base (untranslated fields fall back to FR,
+   * images always come from FR), or the plain FR section when it has no published translation.
+   */
+  async execute(page: string, locale?: LocaleValue): Promise<PageSectionEntity[]> {
+    if (!locale || locale === BASE_LOCALE) {
+      return this.pageSectionRepository.findPublished(page, locale);
+    }
+
+    const rows = await this.pageSectionRepository.findPublished(page);
+    const baseByKey = new Map(rows.filter((row) => row.locale === BASE_LOCALE).map((row) => [row.sectionKey, row]));
+    const localizedByKey = new Map(rows.filter((row) => row.locale === locale).map((row) => [row.sectionKey, row]));
+
+    return [...new Set([...baseByKey.keys(), ...localizedByKey.keys()])]
+      .sort()
+      .flatMap((sectionKey) => {
+        const section = localizeSection(baseByKey.get(sectionKey), localizedByKey.get(sectionKey));
+        return section ? [section] : [];
+      });
   }
 }

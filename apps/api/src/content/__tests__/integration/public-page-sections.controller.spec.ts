@@ -75,6 +75,7 @@ describe('PublicPageSectionsController (integration)', () => {
         ctaSecondaryLabel: null,
         dataJson: { eyebrow: 'MAISON DE COUTURE — MADAGASCAR' },
         mediaId: null,
+        media: null,
         updatedAt: '2026-01-01T00:00:00.000Z',
       },
     ]);
