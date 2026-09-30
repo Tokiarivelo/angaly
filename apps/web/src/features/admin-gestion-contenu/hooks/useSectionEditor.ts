@@ -2,7 +2,7 @@
 
 import { useMemo } from 'react';
 import { useMutation, useQuery, useQueryClient } from '@tanstack/react-query';
-import type { Locale } from '@angaly/types';
+import { Locale } from '@angaly/types';
 
 import {
   fetchSection,
@@ -30,6 +30,9 @@ export const useSectionEditor = (page: string, sectionKeyValue: string, activeLo
     [query.data, activeLocale],
   );
 
+  /** The French row — the source of images and list structure for every translation. */
+  const baseSection = useMemo(() => query.data?.find((section) => section.locale === Locale.FR) ?? null, [query.data]);
+
   const availableLocales = useMemo(() => (query.data ?? []).map((section) => section.locale), [query.data]);
 
   const invalidate = () => {
@@ -54,6 +57,7 @@ export const useSectionEditor = (page: string, sectionKeyValue: string, activeLo
   return {
     ...query,
     activeSection,
+    baseSection,
     availableLocales,
     saveDraft,
     publish,

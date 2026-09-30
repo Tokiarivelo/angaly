@@ -5,10 +5,10 @@ import { FileText } from 'lucide-react';
 import { ContentStatus } from '@angaly/types';
 
 import { Skeleton } from '@/components/ui/skeleton';
-import type { PageSectionGroupDto } from '../api/page-sections.api';
+import type { CatalogPageEntry } from '../utils/merge-section-catalog';
 
 interface SectionsListProps {
-  groups: PageSectionGroupDto[];
+  pages: CatalogPageEntry[];
   isLoading: boolean;
   selected: { page: string; sectionKey: string } | null;
   onSelect: (page: string, sectionKey: string) => void;
@@ -22,17 +22,19 @@ interface SectionsListProps {
  * without a schema change (out of scope for this pass, see
  * docs/features/content.md).
  */
-function statusPillClasses(status: ContentStatus): string {
+function statusPillClasses(status: ContentStatus | null): string {
+  if (status === null) return 'bg-white text-angaly-warm-gray border-dashed border-border';
   return status === ContentStatus.PUBLISHED
     ? 'bg-green-50 text-green-700 border-green-200'
     : 'bg-slate-50 text-slate-700 border-slate-200';
 }
 
-function statusLabel(status: ContentStatus): string {
+function statusLabel(status: ContentStatus | null): string {
+  if (status === null) return 'Non créée';
   return status === ContentStatus.PUBLISHED ? 'Publié' : 'Brouillon';
 }
 
-export const SectionsList: React.FC<SectionsListProps> = ({ groups, isLoading, selected, onSelect }) => {
+export const SectionsList: React.FC<SectionsListProps> = ({ pages, isLoading, selected, onSelect }) => {
   if (isLoading) {
     return (
       <div className="p-4 space-y-3">
@@ -43,15 +45,15 @@ export const SectionsList: React.FC<SectionsListProps> = ({ groups, isLoading, s
     );
   }
 
-  if (groups.length === 0) {
+  if (pages.length === 0) {
     return <p className="text-sm text-angaly-slate p-4">Aucune section éditable pour l&apos;instant.</p>;
   }
 
   return (
     <nav aria-label="Pages et sections" className="divide-y divide-border">
-      {groups.map((group) => (
+      {pages.map((group) => (
         <div key={group.page} className="py-3">
-          <p className="px-4 text-xs uppercase tracking-wider text-angaly-slate font-semibold mb-1">{group.page}</p>
+          <p className="px-4 text-xs uppercase tracking-wider text-angaly-slate font-semibold mb-1">{group.label}</p>
           {group.sections.map((section) => {
             const isActive = selected?.page === group.page && selected.sectionKey === section.sectionKey;
             return (
@@ -67,7 +69,7 @@ export const SectionsList: React.FC<SectionsListProps> = ({ groups, isLoading, s
                 }`}
               >
                 <FileText size={16} className="shrink-0" />
-                <span className="flex-1 truncate">{section.sectionKey}</span>
+                <span className="flex-1 truncate">{section.label}</span>
                 <span
                   className={`text-[11px] px-2 py-0.5 rounded-full border whitespace-nowrap ${statusPillClasses(section.status)}`}
                 >

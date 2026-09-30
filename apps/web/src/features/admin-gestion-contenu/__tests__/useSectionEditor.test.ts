@@ -20,6 +20,7 @@ const SECTION_FR = {
   ctaSecondaryLabel: null,
   dataJson: null,
   mediaId: null,
+  media: null,
   status: ContentStatus.DRAFT,
   updatedById: null,
   createdAt: '2026-01-01T00:00:00.000Z',

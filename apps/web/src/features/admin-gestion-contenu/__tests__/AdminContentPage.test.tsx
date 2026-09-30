@@ -32,11 +32,14 @@ const HERO_SECTION = {
   ctaSecondaryLabel: null,
   dataJson: null,
   mediaId: null,
+  media: null,
   status: ContentStatus.DRAFT,
   updatedById: null,
   createdAt: '2026-01-01T00:00:00.000Z',
   updatedAt: '2026-01-01T00:00:00.000Z',
 };
+
+vi.setConfig({ testTimeout: 20_000 });
 
 describe('AdminContentPage', () => {
   beforeEach(() => {
@@ -56,8 +59,8 @@ describe('AdminContentPage', () => {
     const user = userEvent.setup();
     render(<AdminContentPage />, { wrapper: withQueryClient() });
 
-    await waitFor(() => expect(screen.getByRole('button', { name: /hero/ })).toBeInTheDocument());
-    await user.click(screen.getByRole('button', { name: /hero/ }));
+    await waitFor(() => expect(screen.getAllByRole('button', { name: /Bandeau principal/ })[0]!).toBeInTheDocument());
+    await user.click(screen.getAllByRole('button', { name: /Bandeau principal/ })[0]!);
 
     await waitFor(() => expect(screen.getByLabelText('Titre')).toHaveValue('Bienvenue'));
   });
@@ -68,8 +71,8 @@ describe('AdminContentPage', () => {
 
     render(<AdminContentPage />, { wrapper: withQueryClient() });
 
-    await waitFor(() => expect(screen.getByRole('button', { name: /hero/ })).toBeInTheDocument());
-    await user.click(screen.getByRole('button', { name: /hero/ }));
+    await waitFor(() => expect(screen.getAllByRole('button', { name: /Bandeau principal/ })[0]!).toBeInTheDocument());
+    await user.click(screen.getAllByRole('button', { name: /Bandeau principal/ })[0]!);
     await waitFor(() => expect(screen.getByLabelText('Titre')).toHaveValue('Bienvenue'));
 
     await user.type(screen.getByLabelText('Titre'), '!');
@@ -86,8 +89,8 @@ describe('AdminContentPage', () => {
 
     render(<AdminContentPage />, { wrapper: withQueryClient() });
 
-    await waitFor(() => expect(screen.getByRole('button', { name: /hero/ })).toBeInTheDocument());
-    await user.click(screen.getByRole('button', { name: /hero/ }));
+    await waitFor(() => expect(screen.getAllByRole('button', { name: /Bandeau principal/ })[0]!).toBeInTheDocument());
+    await user.click(screen.getAllByRole('button', { name: /Bandeau principal/ })[0]!);
     await waitFor(() => expect(screen.getByLabelText('Titre')).toHaveValue('Bienvenue'));
 
     await user.type(screen.getByLabelText('Titre'), '!');

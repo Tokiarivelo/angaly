@@ -18,6 +18,13 @@ export interface PageSectionGroupDto {
   sections: SectionSummaryDto[];
 }
 
+/** Resolved image of a section (`mediaId` joined server-side) — nothing else to fetch to preview it. */
+export interface PageSectionMediaDto {
+  id: string;
+  url: string;
+  altText: string | null;
+}
+
 export interface PageSectionDto {
   id: string;
   page: string;
@@ -30,6 +37,7 @@ export interface PageSectionDto {
   ctaSecondaryLabel: string | null;
   dataJson: unknown;
   mediaId: string | null;
+  media: PageSectionMediaDto | null;
   status: ContentStatus;
   updatedById: string | null;
   createdAt: string;
@@ -51,6 +59,8 @@ export interface SaveSectionDraftInput {
   bodyText?: string | null | undefined;
   ctaPrimaryLabel?: string | null | undefined;
   ctaSecondaryLabel?: string | null | undefined;
+  /** Omitted = keep the stored value; `null` = clear it. */
+  dataJson?: Record<string, unknown> | null | undefined;
   mediaId?: string | null | undefined;
 }
 

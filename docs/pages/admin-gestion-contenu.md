@@ -134,6 +134,65 @@ depuis `useSectionEditor.ts`, session 2026-09-16 suite) a été déplacé hors d
   une ligne par langue — `LocaleTabs.tsx` doit clairement indiquer quelle locale est en
   cours d'édition pour éviter d'écraser la mauvaise langue.
 
+- **Passe « couverture complète »** (session 2026-09-30) — constats et correctifs :
+  - **Bug de perte de données corrigé** : l'éditeur n'envoyait jamais `dataJson`, et le backend
+    traitait l'absence comme `null` → chaque « Enregistrer » effaçait `eyebrow`/`chronology`/`items`/
+    `quote`. `saveWithSnapshot` conserve désormais la valeur stockée quand le champ est omis
+    (`undefined`), seul `null` explicite efface. `mediaId: ''` est normalisé en `null`.
+  - **Images** : `mediaId` n'était pas éditable et n'était lu par aucune page publique. L'API
+    renvoie maintenant `media { id, url, altText }` (admin **et** public) ; l'éditeur a un champ
+    image (aperçu, choisir dans la médiathèque, retirer) ; `home` (hero, maison, univers ×4,
+    pattern-studio) et `a-propos` (hero, histoire, fondatrice) l'utilisent en priorité — l'image
+    choisie l'emporte sur l'heuristique par texte alternatif et sur les défauts.
+  - **Champs structurés** : `consts/section-catalog.const.ts` décrit, par `(page, section)`, les
+    champs texte, l'image et les clés `dataJson` (texte simple ou listes ordonnables : chronologie,
+    savoir-faire, galerie). Une section connue en base mais absente du catalogue garde tous les
+    champs texte + une zone JSON validée.
+  - **Toutes les sections listées** : la colonne gauche fusionne le catalogue et la base
+    (`utils/merge-section-catalog.ts`) — une section jamais enregistrée apparaît « Non créée » et se
+    crée depuis l'éditeur (FR ou MG).
+  - **Aperçu** : ouvert par défaut, reflète en direct image, sur-titre, titre, sous-titre,
+    paragraphes, citation, listes et boutons, en largeur ordinateur/mobile, + lien « Voir la page
+    publiée » quand la page a une URL stable.
+  - **Limites connues** : seuls les champs que les pages publiques lisent déjà sont éditables
+    (les autres textes restent en dur dans leurs composants : footer, étapes sur-mesure, teasers
+    d'accueil, etc.) ; les images des créations/collections/ateliers/produits se gèrent dans leurs
+    entités via la médiathèque, pas ici ; seul le français est semé (la locale MG se crée à la
+    main). Écran Stitch non revérifié (accès MCP indisponible lors de cette session).
+
+- **Listes dynamiques + langues** (session 2026-09-30, suite) :
+  - Les 4 sections `univers-*` d'`accueil` sont fusionnées en **une** section `univers` :
+    `dataJson.items = [{ label, imageUrl, imageAlt, href }]`, ajout/suppression/réordonnancement
+    depuis l'éditeur (migration de données `20260930130000_merge_accueil_univers_sections`, seed
+    mis à jour). Même principe pour les étapes sur-mesure (`accueil/sur-mesure`,
+    `dataJson.steps`), la chronologie, le savoir-faire et la galerie d'`a-propos`.
+  - **Images partagées entre langues** : l'image (`mediaId` et les `imageUrl`/`mediaId` des éléments
+    de liste) appartient à la ligne française. L'onglet Malagasy la montre en lecture seule ; la
+    structure des listes (nombre, ordre) suit le français et seul le texte se traduit (le texte FR
+    sert de placeholder). Règle appliquée côté API par `localizeSection`
+    (`apps/api/src/content/domain/services/localize-section.ts`), miroir éditeur :
+    `utils/merge-translation.ts`.
+  - **Le site public lit maintenant la langue** : chaque hook de contenu passe `?locale=` (store
+    `useLocaleStore`) ; pour `MG` l'API renvoie la traduction publiée par-dessus le français
+    (champ vide ⇒ texte FR, section non traduite ⇒ section FR).
+
+- **Couverture étendue** (session 2026-09-30, fin) — nouveaux contenus éditables : pied de page
+  (`footer` : marque, colonnes de liens, copyright avec `{year}`), menus (`navigation` : header,
+  mobile, liens secondaires), titres restants d'`accueil` (`la-une`, `ateliers`, `journal`,
+  `newsletter`), `sur-mesure` (bandeau, parcours, atouts, réalisations, témoignage, FAQ, clôture),
+  `pattern-studio` (bandeau, fonctionnement, confiance, aperçu, offres, clôture) et `contact`
+  (coordonnées, réseaux, horaires). Couche commune : `apps/web/src/lib/cms/` (`useCmsPage`,
+  `cmsText`/`cmsList`…) — chaque champ/liste retombe sur son défaut si absent ou mal formé.
+  - Valeurs par défaut en base : `packages/database/prisma/cms-defaults.ts` (FR publié = ce que le
+    site affiche déjà ; **MG en brouillon**, première traduction de libellés courts **à relire par
+    un locuteur natif** avant publication). Insertion sans écrasement :
+    `pnpm --filter @angaly/database db:seed:cms` (aussi appelée par `db:seed`).
+  - Mode traduction : en plus des images, les champs de choix (icône, phase, « mise en avant »…)
+    sont hérités du français, seul le texte se traduit.
+  - Reste hors CMS : libellés fonctionnels des formulaires/panier/checkout/espace client, textes
+    longs de pages purement dynamiques (produits, créations, journal — gérés par leurs propres
+    entités) et le contenu des pages légales (`/mentions-legales`, etc., pas encore créées).
+
 ## Checklist d'acceptation
 
 - [x] Reproduit `stitch-prompts/31-*.md` Écran A (sidebar, liste de sections, éditeur) — **à

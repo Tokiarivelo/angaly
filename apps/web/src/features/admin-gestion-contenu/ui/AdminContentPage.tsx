@@ -1,11 +1,12 @@
 'use client';
 
-import React, { useEffect, useState } from 'react';
+import React, { useEffect, useMemo, useState } from 'react';
 import { Locale } from '@angaly/types';
 
 import { useSectionEditor } from '../hooks/useSectionEditor';
 import { useSectionsList } from '../hooks/useSectionsList';
 import { useSectionVersionHistory } from '../hooks/useSectionVersionHistory';
+import { mergeSectionCatalog } from '../utils/merge-section-catalog';
 import { SectionsList } from './SectionsList';
 import { SectionEditorForm } from './SectionEditorForm';
 import { VersionHistoryDrawer } from './VersionHistoryDrawer';
@@ -27,6 +28,8 @@ export const AdminContentPage: React.FC<AdminContentPageProps> = ({ initialPage,
   const [activeLocale, setActiveLocale] = useState<Locale>(Locale.FR);
   const [historyOpen, setHistoryOpen] = useState(false);
   const [isFormDirty, setIsFormDirty] = useState(false);
+
+  const pages = useMemo(() => mergeSectionCatalog(groups ?? []), [groups]);
 
   const editor = useSectionEditor(selected?.page ?? '', selected?.sectionKey ?? '', activeLocale);
   const history = useSectionVersionHistory(editor.activeSection?.id ?? null);
@@ -69,7 +72,7 @@ export const AdminContentPage: React.FC<AdminContentPageProps> = ({ initialPage,
       <div className="flex flex-col lg:flex-row gap-6 bg-white border border-border rounded-xl overflow-hidden">
         <div className="lg:w-72 shrink-0 border-b lg:border-b-0 lg:border-r border-border">
           <SectionsList
-            groups={groups ?? []}
+            pages={pages}
             isLoading={isLoadingGroups}
             selected={selected}
             onSelect={selectSection}
@@ -85,17 +88,9 @@ export const AdminContentPage: React.FC<AdminContentPageProps> = ({ initialPage,
               onLocaleChange={changeLocale}
               availableLocales={editor.availableLocales}
               section={editor.activeSection}
+              baseSection={editor.baseSection}
               isLoading={editor.isLoading}
-              onSaveDraft={(values) =>
-                editor.saveDraft.mutate({
-                  titleText: values.titleText,
-                  subtitleText: values.subtitleText,
-                  bodyText: values.bodyText,
-                  ctaPrimaryLabel: values.ctaPrimaryLabel,
-                  ctaSecondaryLabel: values.ctaSecondaryLabel,
-                  mediaId: values.mediaId,
-                })
-              }
+              onSaveDraft={(values) => editor.saveDraft.mutate(values)}
               isSaving={editor.saveDraft.isPending}
               onPublish={() => editor.publish.mutate()}
               isPublishing={editor.publish.isPending}
