@@ -11,7 +11,7 @@ et tout autre assistant IA.
    Stitch ↔ Section de spécification ↔ Phase.
 1. **Consulter la maquette Stitch** référencée (projet
    https://stitch.withgoogle.com/projects/3703874896720765754, prompt source dans
-   `stitch-prompts/`).
+   `stitch-prompts/`) et le skill `.agents/skills/angaly-design-system/`.
 2. **Consulter `docs/checklist-implementation.md`** pour situer l'élément dans le périmètre
    global et connaître son statut actuel.
 3. **Ouvrir `docs/pages/<slug>.md`** (frontend) ou **`docs/features/<slug>.md`** (backend),
@@ -91,6 +91,14 @@ features/<name>/
 
 **Zustand** pour les états globaux (panier, favoris, sidebar admin). Ne pas utiliser React
 Context pour cet usage.
+
+### Design System Haute Couture
+
+Consulter et activer le skill [`.agents/skills/angaly-design-system/`](file:///home/tokiarivelo/Documents/Projects/angaly/.agents/skills/angaly-design-system/SKILL.md) :
+- Palette signature : `#061938` Deep Navy, `#F6F2E9` Ivory, `#936C3E` Antique Gold, `#C5B190` Champagne.
+- Règle 60-25-10-5 obligatoire.
+- Typographie : `font-heading` (`Cormorant Garamond`) pour les titres, `font-sans` (`Inter`) pour l'interface.
+- Formes : angles nets ou subtilement adoucis (`rounded-sm`), jamais d'arrondis « bubble » façon SaaS B2B (`rounded-xl`, `rounded-2xl`).
 
 ### Appels API
 

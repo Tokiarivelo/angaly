@@ -87,18 +87,11 @@ ML dans ce repo). `pattern-studio-wizard` a aussi reçu un sélecteur de taille 
 
 | Page (slug)                | Fiche                                     | Prompt Stitch                                          | Écran Stitch (titre)                    | Section spéc | Statut |
 | ---------------------------- | -------------------------------------------- | ----------------------------------------------------------- | ------------------------------------------ | ------------- | ------ |
-| admin-gestion-contenu           | `docs/pages/admin-gestion-contenu.md`        | `stitch-prompts/31-admin-gestion-contenu-mediatheque.md`      | ANGALY Back-office — Gestion de contenu     | §67           | ✅ *    |
-| admin-mediatheque                 | `docs/pages/admin-mediatheque.md`            | `stitch-prompts/31-admin-gestion-contenu-mediatheque.md`      | ANGALY Back-office — Médiathèque             | §67, §76      | ✅ *    |
+| admin-gestion-contenu           | `docs/pages/admin-gestion-contenu.md`        | `stitch-prompts/31-admin-gestion-contenu-mediatheque.md`      | ANGALY Back-office — Gestion de contenu     | §67           | ✅     |
+| admin-mediatheque                 | `docs/pages/admin-mediatheque.md`            | `stitch-prompts/31-admin-gestion-contenu-mediatheque.md`      | ANGALY Back-office — Médiathèque             | §67, §76      | ✅     |
 | admin-projets-creation           | `docs/pages/admin-projets-creation.md`       | (écran généré directement dans Stitch, pas de prompt)          | ANGALY Back-office — Projets de création    | §53, §67      | ✅     |
 
-\* Implémentées (session 2026-09-16) **sans vérification de l'écran Stitch réel** — l'accès
-`mcp__stitch__*` a échoué (`Incompatible auth server: does not support dynamic client
-registration`, OAuth non configuré pour cet environnement non interactif) et la CLI `agy`
-n'est pas installée. Construit uniquement depuis le texte détaillé de
-`stitch-prompts/31-admin-gestion-contenu-mediatheque.md`, en violation assumée et documentée
-de la règle absolue #9 (voir `docs/pages/admin-gestion-contenu.md`/`admin-mediatheque.md`
-"Écarts assumés") — à revalider contre l'écran réel dès qu'une session avec accès Stitch
-fonctionnel est disponible, avant tout nouvel ajustement visuel de ces deux pages.
+*(Mise à jour 2026-10-01 : vérification StitchMCP effectuée pour les écrans `9551b85b467f43269d36e086dcc036b2` et `f7fa235d11dc4832b4d6362bf321c6d3` ; intégration et harmonisation graphique complètes selon la charte ANGALY Haute Couture).*
 
 ---
 

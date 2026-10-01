@@ -37,10 +37,10 @@ export const MediaUploadDropzone: React.FC<MediaUploadDropzoneProps> = ({ onFile
             onFilesSelected(e.dataTransfer.files);
           }
         }}
-        className="flex items-center gap-2 px-4 py-2 border border-dashed border-angaly-champagne rounded-lg text-sm font-medium text-angaly-navy hover:bg-angaly-champagne/10 transition-colors disabled:opacity-50"
+        className="flex items-center gap-2 px-5 py-2.5 bg-angaly-navy hover:bg-angaly-navy-blue text-white rounded-sm text-xs font-semibold uppercase tracking-wider transition-colors duration-300 shadow-xs disabled:opacity-50 cursor-pointer"
       >
-        <UploadCloud size={18} />
-        {isUploading ? 'Import en cours…' : 'Importer des fichiers'}
+        <UploadCloud size={16} />
+        <span>{isUploading ? 'Import en cours…' : 'Importer des fichiers'}</span>
       </button>
     </div>
   );

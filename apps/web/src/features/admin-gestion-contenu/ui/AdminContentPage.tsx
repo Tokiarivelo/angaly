@@ -61,16 +61,20 @@ export const AdminContentPage: React.FC<AdminContentPageProps> = ({ initialPage,
   }
 
   return (
-    <div>
-      <h1 className="font-serif text-2xl sm:text-3xl text-angaly-navy font-light mb-2">
-        Gestion de contenu
-      </h1>
-      <p className="text-angaly-slate text-sm mb-8">
-        Modifiez les textes et images affichés sur le site public.
-      </p>
+    <div className="space-y-6">
+      <div className="border-b border-angaly-border pb-6 flex flex-col sm:flex-row sm:items-end justify-between gap-4">
+        <div>
+          <h1 className="font-heading text-3xl md:text-4xl text-angaly-navy font-normal tracking-wide mb-1.5">
+            Gestion de contenu
+          </h1>
+          <p className="text-angaly-slate text-sm font-medium">
+            Modifiez les textes et images affichés sur le site public.
+          </p>
+        </div>
+      </div>
 
-      <div className="flex flex-col lg:flex-row gap-6 bg-white border border-border rounded-xl overflow-hidden">
-        <div className="lg:w-72 shrink-0 border-b lg:border-b-0 lg:border-r border-border">
+      <div className="flex flex-col lg:flex-row bg-white border border-angaly-border rounded-sm shadow-sm overflow-hidden">
+        <div className="lg:w-80 shrink-0 border-b lg:border-b-0 lg:border-r border-angaly-border bg-angaly-ivory/30 flex flex-col">
           <SectionsList
             pages={pages}
             isLoading={isLoadingGroups}
@@ -79,7 +83,7 @@ export const AdminContentPage: React.FC<AdminContentPageProps> = ({ initialPage,
           />
         </div>
 
-        <div className="flex-1 p-6">
+        <div className="flex-1 bg-white min-w-0">
           {selected ? (
             <SectionEditorForm
               page={selected.page}
@@ -98,7 +102,9 @@ export const AdminContentPage: React.FC<AdminContentPageProps> = ({ initialPage,
               onDirtyChange={setIsFormDirty}
             />
           ) : (
-            <p className="text-sm text-angaly-slate">Sélectionnez une section à gauche pour commencer.</p>
+            <div className="p-12 text-center">
+              <p className="text-sm text-angaly-slate font-medium">Sélectionnez une section à gauche pour commencer.</p>
+            </div>
           )}
         </div>
       </div>

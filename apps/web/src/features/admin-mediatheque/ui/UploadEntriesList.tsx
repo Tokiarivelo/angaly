@@ -19,9 +19,9 @@ export const UploadEntriesList: React.FC<UploadEntriesListProps> = ({ entries, o
   if (entries.length === 0) return null;
 
   return (
-    <div className="w-full border border-border rounded-lg divide-y divide-border bg-white">
-      <div className="flex items-center justify-between px-3 py-2">
-        <p className="text-xs font-medium text-angaly-slate">Import ({entries.length})</p>
+    <div className="w-full border border-angaly-border rounded-sm divide-y divide-angaly-border bg-white shadow-2xs">
+      <div className="flex items-center justify-between px-3.5 py-2 bg-angaly-ivory/40">
+        <p className="text-xs font-semibold text-angaly-navy uppercase tracking-wider">Import ({entries.length})</p>
         <button
           type="button"
           onClick={onDismiss}

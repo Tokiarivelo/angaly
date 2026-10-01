@@ -19,13 +19,13 @@ export function Header() {
     <header className="sticky top-0 z-50 bg-angaly-navy text-white">
       <div className="mx-auto grid h-16 max-w-7xl grid-cols-[1fr_auto_1fr] items-center gap-6 px-6">
         <div className="flex items-center">
-          <nav aria-label="Navigation principale" className="hidden items-center gap-3.5 xl:gap-5 lg:flex">
+          <nav aria-label="Navigation principale" className="hidden items-center gap-2.5 xl:gap-4 2xl:gap-5 lg:flex">
             {headerLinks.map((link) => (
               <Link
                 key={link.href}
                 href={link.href}
                 aria-current={pathname === link.href ? 'page' : undefined}
-                className="border-b border-transparent pb-1 text-xs tracking-widest text-angaly-ivory/80 uppercase whitespace-nowrap transition-all hover:text-angaly-champagne hover:opacity-100 aria-[current=page]:border-angaly-champagne aria-[current=page]:text-angaly-champagne aria-[current=page]:opacity-100"
+                className="border-b border-transparent pb-1 text-[11px] xl:text-xs tracking-wider xl:tracking-widest text-angaly-ivory/80 uppercase whitespace-nowrap transition-all hover:text-angaly-champagne hover:opacity-100 aria-[current=page]:border-angaly-champagne aria-[current=page]:text-angaly-champagne aria-[current=page]:opacity-100"
               >
                 {link.label}
               </Link>

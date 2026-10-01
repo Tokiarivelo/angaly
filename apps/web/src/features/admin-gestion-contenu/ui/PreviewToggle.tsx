@@ -66,16 +66,34 @@ export const PreviewToggle: React.FC<PreviewToggleProps> = ({ isOpen, onToggle, 
 
       {isOpen && (
         <div className="mt-3">
-          <div className="mb-2 flex gap-1" role="group" aria-label="Largeur de l’aperçu">
-            <button type="button" aria-pressed={!mobile} onClick={() => setMobile(false)} className={`rounded p-1.5 ${!mobile ? 'bg-angaly-navy text-white' : 'text-angaly-slate'}`}>
-              <Monitor size={14} aria-label="Ordinateur" />
-            </button>
-            <button type="button" aria-pressed={mobile} onClick={() => setMobile(true)} className={`rounded p-1.5 ${mobile ? 'bg-angaly-navy text-white' : 'text-angaly-slate'}`}>
-              <Smartphone size={14} aria-label="Mobile" />
-            </button>
+          <div className="mb-2 flex items-center justify-between">
+            <span className="text-[11px] font-semibold uppercase tracking-wider text-angaly-slate">Mode d'aperçu</span>
+            <div className="flex gap-1 rounded-sm border border-angaly-border bg-white p-0.5" role="group" aria-label="Largeur de l’aperçu">
+              <button
+                type="button"
+                aria-pressed={!mobile}
+                onClick={() => setMobile(false)}
+                className={`rounded-sm p-1.5 transition-colors ${!mobile ? 'bg-angaly-navy text-white' : 'text-angaly-slate hover:text-angaly-navy'}`}
+              >
+                <Monitor size={14} aria-label="Ordinateur" />
+              </button>
+              <button
+                type="button"
+                aria-pressed={mobile}
+                onClick={() => setMobile(true)}
+                className={`rounded-sm p-1.5 transition-colors ${mobile ? 'bg-angaly-navy text-white' : 'text-angaly-slate hover:text-angaly-navy'}`}
+              >
+                <Smartphone size={14} aria-label="Mobile" />
+              </button>
+            </div>
           </div>
 
-          <div data-testid="section-preview" className={`mx-auto overflow-hidden rounded-xl border border-border bg-angaly-ivory ${mobile ? 'max-w-[360px]' : 'w-full'}`}>
+          <div
+            data-testid="section-preview"
+            className={`mx-auto overflow-hidden rounded-sm border border-angaly-border bg-angaly-ivory shadow-xs transition-all ${
+              mobile ? 'max-w-[360px]' : 'w-full'
+            }`}
+          >
             {image && (
               <div className="relative h-44 w-full">
                 <Image src={image.url} alt={image.altText ?? ''} fill sizes="(min-width: 768px) 600px, 360px" className="object-cover" />
@@ -84,7 +102,7 @@ export const PreviewToggle: React.FC<PreviewToggleProps> = ({ isOpen, onToggle, 
             <div className="space-y-3 p-6 text-center">
               {isEmpty && <p className="text-sm text-angaly-slate">Rien à afficher pour l’instant.</p>}
               {eyebrow && <p className="text-[11px] uppercase tracking-widest text-angaly-gold">{eyebrow}</p>}
-              {content.titleText && <p className="font-serif text-2xl text-angaly-navy">{content.titleText}</p>}
+              {content.titleText && <p className="font-heading text-2xl text-angaly-navy">{content.titleText}</p>}
               {content.subtitleText && <p className="text-sm text-angaly-slate">{content.subtitleText}</p>}
               {paragraphs(content.bodyText).map((paragraph, index) => (
                 <p key={index} className="text-sm leading-relaxed text-angaly-navy/80">
@@ -108,8 +126,8 @@ export const PreviewToggle: React.FC<PreviewToggleProps> = ({ isOpen, onToggle, 
               })}
               {(Boolean(content.ctaPrimaryLabel) || Boolean(content.ctaSecondaryLabel)) && (
                 <div className="flex flex-wrap justify-center gap-2 pt-2">
-                  {content.ctaPrimaryLabel && <span className="rounded-full bg-angaly-navy px-5 py-2 text-xs text-white">{content.ctaPrimaryLabel}</span>}
-                  {content.ctaSecondaryLabel && <span className="rounded-full border border-angaly-navy px-5 py-2 text-xs text-angaly-navy">{content.ctaSecondaryLabel}</span>}
+                  {content.ctaPrimaryLabel && <span className="rounded-sm bg-angaly-navy px-5 py-2 text-xs font-medium tracking-wider uppercase text-white shadow-xs">{content.ctaPrimaryLabel}</span>}
+                  {content.ctaSecondaryLabel && <span className="rounded-sm border border-angaly-navy px-5 py-2 text-xs font-medium tracking-wider uppercase text-angaly-navy">{content.ctaSecondaryLabel}</span>}
                 </div>
               )}
             </div>

@@ -6,6 +6,7 @@ export const HEADER_NAV_LINKS = [
   { label: 'La Une', href: ROUTES.laUne },
   { label: 'Nos Créations', href: ROUTES.creations },
   { label: 'Prêt-à-porter', href: ROUTES.pretAPorter },
+  { label: 'Sur Mesure', href: ROUTES.surMesure },
   { label: 'Atelier', href: ROUTES.ateliers },
   { label: 'Héritage', href: ROUTES.aPropos },
   { label: 'Journal', href: ROUTES.journal },

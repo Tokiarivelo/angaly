@@ -47,6 +47,7 @@ describe('Header (desktop navigation)', () => {
       { name: 'La Une', href: '/la-une' },
       { name: 'Nos Créations', href: '/creations' },
       { name: 'Prêt-à-porter', href: '/pret-a-porter' },
+      { name: 'Sur Mesure', href: '/sur-mesure' },
       { name: 'Atelier', href: '/ateliers' },
       { name: 'Héritage', href: '/a-propos' },
       { name: 'Journal', href: '/journal' },

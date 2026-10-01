@@ -1,4 +1,5 @@
 import React from 'react';
+import Link from 'next/link';
 
 export interface RecentActivityTimelineItem {
   date: string;
@@ -12,23 +13,39 @@ interface RecentActivityTimelineProps {
 
 export const RecentActivityTimeline: React.FC<RecentActivityTimelineProps> = ({ activities = [] }) => {
   return (
-    <div className="bg-white p-6 rounded-2xl border border-border">
-      <h2 className="font-serif text-xl text-angaly-navy mb-6">Activité récente</h2>
+    <div className="bg-white border border-angaly-border p-6 sm:p-8 h-full flex flex-col justify-between">
+      <div>
+        {activities.length === 0 ? (
+          <p className="text-xs text-angaly-slate text-center py-8">Aucune activité récente.</p>
+        ) : (
+          <div className="relative border-l border-angaly-warm-ivory ml-2 space-y-6 sm:space-y-8">
+            {activities.slice(0, 4).map((act, i) => (
+              <div key={`${act.date}-${i}`} className="relative pl-6">
+                <span
+                  className={`absolute -left-[5px] top-1.5 w-2 h-2 rounded-full border-2 border-white ${
+                    i === 0 ? 'bg-angaly-champagne' : 'bg-angaly-warm-ivory'
+                  }`}
+                />
+                <p className="font-sans text-xs sm:text-sm text-angaly-navy font-medium leading-tight">
+                  {act.title}
+                </p>
+                <p className="text-[11px] text-angaly-warm-gray mt-1">
+                  {act.date}
+                </p>
+              </div>
+            ))}
+          </div>
+        )}
+      </div>
 
-      {activities.length === 0 ? (
-        <p className="text-sm text-angaly-slate text-center py-4">Aucune activité récente.</p>
-      ) : (
-        <div className="relative pl-4 border-l border-border space-y-8">
-          {activities.map((act, i) => (
-            <div key={`${act.date}-${i}`} className="relative">
-              <div className="absolute -left-[21px] mt-1.5 w-2.5 h-2.5 rounded-full bg-angaly-navy ring-4 ring-white" />
-              <p className="text-xs text-angaly-slate mb-1">{act.date}</p>
-              <p className="text-sm font-medium text-angaly-navy">{act.title}</p>
-              <p className="text-sm text-angaly-slate mt-1">{act.description}</p>
-            </div>
-          ))}
-        </div>
-      )}
+      <div className="mt-8 pt-4 border-t border-angaly-border text-center">
+        <Link
+          href="/mes-rendez-vous"
+          className="text-xs font-sans tracking-wider uppercase text-angaly-soft-navy hover:text-angaly-champagne transition-colors font-medium"
+        >
+          Voir tout l'historique
+        </Link>
+      </div>
     </div>
   );
 };

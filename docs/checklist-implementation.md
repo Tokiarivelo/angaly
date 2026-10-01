@@ -172,7 +172,8 @@ phase n'a pas été traitée en session dédiée (voir `.cursor/rules/006-phase-
       avant soumission) — guest checkout non implémenté (compte requis), voir
       `docs/pages/checkout.md` "Points d'attention"
 - [x] ✅ **espace-client-dashboard** — Agrégation réelle (rendez-vous/commandes/pattern-projects/
-      notifications) via plusieurs requêtes react-query, pas d'endpoint agrégé dédié — voir
+      notifications) via plusieurs requêtes react-query ; refonte visuelle haute fidélité
+      alignée sur la maquette Stitch `6740739cfa4644d88cdd4dacc644e2b7` (session 2026-10-01) — voir
       `docs/pages/espace-client-dashboard.md`
 - [x] ✅ **mes-rendez-vous** — Câblé sur `GET /api/appointments` (nouvel endpoint "mes
       rendez-vous", voir module `appointments` ci-dessous) + annulation réelle — voir
@@ -248,8 +249,8 @@ phase n'a pas été traitée en session dédiée (voir `.cursor/rules/006-phase-
 ## 🗂️ PHASE 6 — Admin (back-office) (3 pages, 2 modules) — ✅ 3/3 pages, 2/2 modules
 
 ### Pages
-- [x] ✅ **admin-gestion-contenu** — Éditeur de contenu par page/section (session 2026-09-16)
-- [x] ✅ **admin-mediatheque** — Médiathèque (MinIO) (session 2026-09-16)
+- [x] ✅ **admin-gestion-contenu** — Éditeur de contenu par page/section (session 2026-09-16, harmonisation Haute Couture et alignement maquette Stitch `9551b85b467f43269d36e086dcc036b2` session 2026-10-01)
+- [x] ✅ **admin-mediatheque** — Médiathèque (MinIO) (session 2026-09-16, harmonisation Haute Couture et alignement maquette Stitch `f7fa235d11dc4832b4d6362bf321c6d3` session 2026-10-01)
 - [x] ✅ **admin-projets-creation** — Suivi et avancement des projets de création sur mesure (session 2026-10-01), maquette Stitch « ANGALY Back-office — Projets de création » (`fadeaeb5cacf4d0088c20bde4d9c0f29`), route `/projets-creation` (spec §53, §67)
 
 ### Modules backend

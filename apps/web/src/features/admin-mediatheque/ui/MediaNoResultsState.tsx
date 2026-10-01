@@ -15,14 +15,16 @@ interface MediaNoResultsStateProps {
  */
 export const MediaNoResultsState: React.FC<MediaNoResultsStateProps> = ({ onResetFilters }) => {
   return (
-    <div className="flex flex-col items-center justify-center text-center py-16 px-6 border border-border rounded-xl bg-white">
-      <SearchX className="text-angaly-slate mb-4" size={40} />
-      <p className="text-angaly-navy font-medium mb-1">Aucun média ne correspond à ces filtres</p>
+    <div className="flex flex-col items-center justify-center text-center py-16 px-6 border border-angaly-border rounded-sm bg-white shadow-2xs">
+      <div className="w-14 h-14 rounded-full bg-angaly-ivory flex items-center justify-center mb-4 text-angaly-slate">
+        <SearchX size={26} />
+      </div>
+      <p className="text-angaly-navy font-heading text-lg mb-1">Aucun média ne correspond à ces filtres</p>
       <p className="text-xs text-angaly-slate mb-6">Essayez un autre terme de recherche ou un autre dossier.</p>
       <button
         type="button"
         onClick={onResetFilters}
-        className="text-sm font-medium text-angaly-navy underline hover:no-underline"
+        className="text-xs font-semibold uppercase tracking-wider px-4 py-2 border border-angaly-navy text-angaly-navy hover:bg-angaly-ivory rounded-sm transition-colors cursor-pointer"
       >
         Réinitialiser les filtres
       </button>

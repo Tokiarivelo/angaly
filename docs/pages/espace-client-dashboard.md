@@ -1,16 +1,12 @@
 # Page — `espace-client-dashboard`
 
-**Statut : ✅ Fait** (agrégation multi-requêtes réelle, pas d'endpoint agrégé dédié — décision
-documentée ci-dessous). Phase 3 — Production. Mis à jour le 2026-09-16.
+**Statut : ✅ Fait** (agrégation multi-requêtes réelle + refonte visuelle haute fidélité alignée sur la maquette Stitch `6740739cfa4644d88cdd4dacc644e2b7`). Phase 3 — Production. Mis à jour le 2026-10-01.
 
-`useDashboardSummary.ts` (nouveau) compose `GET /customers/me`, `GET /api/appointments`,
+`useDashboardSummary.ts` compose `GET /customers/me`, `GET /api/appointments`,
 `GET /api/ateliers`, `GET /api/orders`, `GET /api/pattern-projects?mine=true` et
-`GET /api/notifications` via react-query — pas de `GET /api/customers/me/dashboard-summary`
-dédié (l'intention documentée plus bas reste une intention, pas un engagement de cette passe).
-`useRecentActivity.ts` (nouveau) dérive un flux chronologique à partir des mêmes données (pas
-de table d'activité dédiée). Les cartes `NextAppointmentCard`/`CurrentOrderCard`/
-`PremiumProjectCard` affichaient auparavant des dates/statuts codés en dur malgré des props
-réelles ; elles affichent maintenant les vraies valeurs.
+`GET /api/notifications` via react-query — pas d'endpoint agrégé dédié côté backend.
+`useRecentActivity.ts` dérive un flux chronologique à partir des mêmes données.
+Refonte graphique couture (session 2026-10-01) : palette de contrastes couture (`#061938` marine profond, `#C5B190` champagne, `#936C3E` or antique), sidebar couture avec avatar et statut privilège, 4 cartes résumé stylisées, grille 2×2 d'accès rapide avec inversion sombre au survol, timeline d'activité à puces champagne, et footer minimaliste. Redirection intelligente : les clients accédant à `/dashboard` sont redirigés vers `/espace-client`.
 
 ## Objet
 
@@ -21,7 +17,8 @@ Uniquement de la lecture agrégée, aucune mutation propre hormis la navigation.
 
 ## Route(s)
 
-`apps/web/src/app/(client)/espace-client/page.tsx` → `/espace-client`
+- `apps/web/src/app/(client)/espace-client/page.tsx` → `/espace-client`
+- Les visiteurs sans rôle staff accédant à `/dashboard` sont redirigés automatiquement vers `/espace-client` (via `apps/web/src/app/(admin)/layout.tsx`).
 
 Server Component par défaut (résumé en lecture seule) ; les widgets sont hydratés via
 react-query pour rester à jour sans rechargement complet — même approche que `home`.
@@ -29,7 +26,7 @@ react-query pour rester à jour sans rechargement complet — même approche que
 ## Référence maquette
 
 - Prompt Stitch : `stitch-prompts/25-espace-client-dashboard.md`
-- Écran Stitch : **ANGALY — Espace Client (Tableau de bord)**
+- Écran Stitch : **ANGALY — Espace Client (Tableau de bord)** (`6740739cfa4644d88cdd4dacc644e2b7`)
 - Section spécification : §51-52 (`docs/specifications/ANGALY_Specifications_Completes.md`)
 
 ## Arborescence de composants attendue
@@ -37,14 +34,16 @@ react-query pour rester à jour sans rechargement complet — même approche que
 ```
 apps/web/src/features/espace-client-dashboard/
   ui/
-    EspaceClientDashboardPage.tsx → orchestre header de bienvenue + widgets + activité récente
-    WelcomeHeader.tsx              → "Bonjour, {prénom}" + date + CTA "Prendre rendez-vous"
-    NextAppointmentCard.tsx
-    CurrentOrderCard.tsx
-    PremiumProjectCard.tsx         → bordure champagne (accent réservé au Pattern Studio)
-    NotificationsPreviewCard.tsx   → 2-3 dernières notifications
-    QuickAccessTilesGrid.tsx       → Mes créations / Mes mesures / Mes favoris / Mes factures
-    RecentActivityTimeline.tsx
+    ClientSpaceLayout.tsx          → shell de l'espace client (sidebar desktop + topbar mobile + footer)
+    ClientSpaceSidebar.tsx         → sidebar couture #061938, logo ANGALY or, badge privilège
+    EspaceClientDashboardPage.tsx  → orchestre header de bienvenue + 4 widgets résumé + 2/3 accès rapide + 1/3 activité récente
+    WelcomeHeader.tsx              → "Bonjour, {prénom}" + date en capitales + CTA "Prendre un rendez-vous"
+    NextAppointmentCard.tsx        → prochain rendez-vous, statut "CONFIRMÉ", atelier, date
+    CurrentOrderCard.tsx           → commande en cours, vignette tissu marine, étape de confection
+    PremiumProjectCard.tsx         → bordure champagne, filigrane compas, accent Pattern Studio
+    NotificationsPreviewCard.tsx   → dernières notifications avec puces d'alerte non lues
+    QuickAccessTilesGrid.tsx       → 4 tuiles 2×2 s'inversant en marine foncé/or au survol
+    RecentActivityTimeline.tsx     → timeline verticale avec points champagne et horodatage
   hooks/
     useDashboardSummary.ts         → agrège prochain rendez-vous + commande en cours + projet
                                       Premium en cours + notifications via plusieurs requêtes
@@ -59,6 +58,7 @@ apps/web/src/features/espace-client-dashboard/
   __tests__/
     useDashboardSummary.test.ts
     EspaceClientDashboardPage.test.tsx
+    DashboardCards.test.tsx
   index.ts
 ```
 
@@ -127,7 +127,7 @@ cours), `Notification`, `Customer`.
 - [x] Tuiles d'accès rapide et liens de la sidebar fonctionnels vers les pages existantes ou prévues
 - [x] Timeline d'activité récente à jour, ordonnée chronologiquement (dérivée des
       rendez-vous/commandes/notifications réels)
-- [x] Tests : `useDashboardSummary.test.ts` (5 tests), `EspaceClientDashboardPage.test.tsx`
+- [x] Refonte visuelle haute fidélité alignée sur l'écran Stitch `6740739cfa4644d88cdd4dacc644e2b7` (sidebar marine #061938, tuiles 2×2 à inversion de couleur, typographie couture, footer minimaliste)
+- [x] Redirection transparente des clients naviguant vers `/dashboard` vers `/espace-client`
+- [x] Tests : `useDashboardSummary.test.ts` (5 tests), `EspaceClientDashboardPage.test.tsx` (2 tests), `DashboardCards.test.tsx` (11 tests), `useIsStaff.test.ts` (5 tests)
 - [x] `docs/checklist-implementation.md` et `docs/mockup-reference.md` mis à jour à ✅
-- [ ] `useRecentActivity.test.ts` dédié non ajouté (couvert indirectement par
-      `useDashboardSummary.test.ts`/`EspaceClientDashboardPage.test.tsx`) — amélioration possible

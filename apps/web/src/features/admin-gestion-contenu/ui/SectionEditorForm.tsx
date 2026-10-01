@@ -5,7 +5,8 @@ import { Controller, useForm, useWatch } from 'react-hook-form';
 import { zodResolver } from '@hookform/resolvers/zod';
 import { Locale } from '@angaly/types';
 
-import { Button } from '@/components/ui/button';
+import { ChevronRight, History, UploadCloud } from 'lucide-react';
+
 import type { PageSectionDto } from '../api/page-sections.api';
 import { findPageDefinition, findSectionDefinition, GENERIC_TEXT_FIELDS } from '../consts/section-catalog.const';
 import type { TextFieldName } from '../consts/section-catalog.const';
@@ -41,7 +42,7 @@ interface SectionEditorFormProps {
 }
 
 const TEXT_FIELD_ORDER: TextFieldName[] = ['titleText', 'subtitleText', 'bodyText', 'ctaPrimaryLabel', 'ctaSecondaryLabel'];
-const INPUT_CLASSES = 'w-full p-2.5 border border-border rounded-lg text-sm focus:outline-none focus:border-angaly-navy';
+const INPUT_CLASSES = 'w-full p-2.5 border border-angaly-border rounded-sm text-sm focus:outline-none focus:border-angaly-gold focus:ring-1 focus:ring-angaly-gold bg-white text-angaly-navy transition-colors';
 
 function asRecord(value: unknown): Record<string, unknown> | null {
   return value !== null && typeof value === 'object' && !Array.isArray(value) ? (value as Record<string, unknown>) : null;
@@ -140,146 +141,230 @@ export const SectionEditorForm: React.FC<SectionEditorFormProps> = ({
   };
 
   return (
-    <div>
-      <div className="flex items-center justify-between mb-4">
+    <div className="flex flex-col min-h-full">
+      {/* Sticky Header Bar */}
+      <div className="sticky top-0 bg-white/95 backdrop-blur-sm z-10 px-6 sm:px-8 py-4 border-b border-angaly-border flex flex-col sm:flex-row justify-between items-start sm:items-center gap-4">
         <div>
-          <h2 className="font-serif text-xl text-angaly-navy">
-            {pageDefinition?.label ?? page} <span className="text-angaly-slate">&gt;</span> {definition?.label ?? sectionKey}
-          </h2>
+          <div className="flex items-center gap-1.5 text-xs font-semibold text-angaly-slate uppercase tracking-wider mb-1">
+            <span>{pageDefinition?.label ?? page}</span>
+            <ChevronRight size={12} className="text-angaly-warm-gray" />
+            <span className="text-angaly-navy font-bold">{definition?.label ?? sectionKey}</span>
+          </div>
+          <div className="flex items-center gap-3">
+            <h2 className="font-heading text-xl sm:text-2xl text-angaly-navy tracking-wide">
+              {definition?.label ?? sectionKey}
+            </h2>
+            {isDirty && (
+              <span className="px-2 py-0.5 text-[10px] font-bold uppercase tracking-wider bg-angaly-warning/10 text-angaly-warning border border-angaly-warning/30 rounded-sm">
+                Modifié
+              </span>
+            )}
+          </div>
         </div>
-        <button type="button" onClick={onShowHistory} className="text-xs text-angaly-slate hover:text-angaly-navy underline">
-          Voir l&apos;historique des versions
-        </button>
+        <LocaleTabs activeLocale={activeLocale} onChange={onLocaleChange} availableLocales={availableLocales} />
       </div>
 
-      <LocaleTabs activeLocale={activeLocale} onChange={onLocaleChange} availableLocales={availableLocales} />
-
       {isLoading ? (
-        <div className="mt-6 space-y-5">
-          <div className="h-9 w-full animate-pulse rounded-lg bg-angaly-warm-ivory" />
-          <div className="h-9 w-full animate-pulse rounded-lg bg-angaly-warm-ivory" />
-          <div className="h-24 w-full animate-pulse rounded-lg bg-angaly-warm-ivory" />
+        <div className="p-8 space-y-6">
+          <div className="h-10 w-full animate-pulse rounded-sm bg-angaly-warm-ivory/50" />
+          <div className="h-10 w-full animate-pulse rounded-sm bg-angaly-warm-ivory/50" />
+          <div className="h-32 w-full animate-pulse rounded-sm bg-angaly-warm-ivory/50" />
         </div>
       ) : (
         <form
           onSubmit={(e) => {
             void handleSubmit(submit)(e);
           }}
-          className="mt-6 space-y-5"
+          className="flex-1 flex flex-col justify-between"
         >
-          {!section && (
-            <p className="rounded-lg bg-angaly-ivory p-3 text-xs text-angaly-slate">
-              Cette section n’existe pas encore en {activeLocale === Locale.FR ? 'français' : 'malagasy'} : enregistrez un brouillon pour la
-              créer. Tant qu’elle n’est pas publiée, le site affiche son contenu par défaut.
-            </p>
-          )}
-
-          {definition?.image !== undefined && (
-            <Controller
-              control={control}
-              name="mediaId"
-              render={({ field }) => (
-                <SectionImageField
-                  label={definition.image ?? 'Image'}
-                  image={image}
-                  lockedNote={base ? 'Image partagée avec le français — à modifier dans l’onglet Français.' : undefined}
-                  onPick={(media) => {
-                    setImage({ url: media.url, altText: media.altText });
-                    field.onChange(media.id);
-                  }}
-                  onClear={() => {
-                    setImage(null);
-                    field.onChange(null);
-                  }}
-                />
-              )}
-            />
-          )}
-
-          {TEXT_FIELD_ORDER.filter((name) => textFields[name]).map((name) => {
-            const field = textFields[name]!;
-            return (
-              <div key={name}>
-                <label className="block text-xs font-medium text-angaly-slate mb-1" htmlFor={name}>
-                  {field.label}
-                </label>
-                {field.multiline ? (
-                  <textarea id={name} rows={5} placeholder={base?.[name] ?? undefined} {...register(name)} className={INPUT_CLASSES} />
-                ) : (
-                  <input id={name} placeholder={base?.[name] ?? undefined} {...register(name)} className={INPUT_CLASSES} />
-                )}
-                {field.hint && <p className="mt-1 text-xs text-angaly-slate">{field.hint}</p>}
-                {errors[name] && (
-                  <p role="alert" className="mt-1 text-xs text-angaly-error">
-                    {errors[name]?.message}
-                  </p>
-                )}
+          <div className="p-6 sm:p-8 space-y-8">
+            {!section && (
+              <div className="rounded-sm bg-angaly-ivory/80 border border-angaly-border p-4 text-xs text-angaly-slate font-medium">
+                Cette section n’existe pas encore en {activeLocale === Locale.FR ? 'français' : 'malagasy'} : enregistrez un brouillon pour la
+                créer. Tant qu’elle n’est pas publiée, le site affiche son contenu par défaut.
               </div>
-            );
-          })}
+            )}
 
-          {definition?.data && definition.data.length > 0 && (
-            <Controller
-              control={control}
-              name="dataJson"
-              render={({ field }) => (
-                <DataFieldsEditor
-                  fields={definition.data ?? []}
-                  value={asRecord(field.value) ?? {}}
-                  onChange={field.onChange}
-                  baseValue={base ? (asObject(base.dataJson) ?? {}) : undefined}
+            {/* Media Section if image is supported */}
+            {definition?.image !== undefined && (
+              <section className="bg-white p-6 sm:p-8 border border-angaly-border shadow-sm rounded-sm">
+                <h3 className="text-xs font-bold uppercase tracking-widest text-angaly-navy border-b border-angaly-border pb-3 mb-6">
+                  Média d&apos;arrière-plan
+                </h3>
+                <Controller
+                  control={control}
+                  name="mediaId"
+                  render={({ field }) => (
+                    <SectionImageField
+                      label={definition.image ?? 'Image'}
+                      image={image}
+                      lockedNote={base ? 'Image partagée avec le français — à modifier dans l’onglet Français.' : undefined}
+                      onPick={(media) => {
+                        setImage({ url: media.url, altText: media.altText });
+                        field.onChange(media.id);
+                      }}
+                      onClear={() => {
+                        setImage(null);
+                        field.onChange(null);
+                      }}
+                    />
+                  )}
                 />
-              )}
-            />
-          )}
+              </section>
+            )}
 
-          {useRawJson && (
-            <div>
-              <label className="block text-xs font-medium text-angaly-slate mb-1" htmlFor="dataJsonRaw">
-                Données avancées (JSON)
-              </label>
-              <textarea id="dataJsonRaw" rows={6} spellCheck={false} {...register('dataJsonRaw')} className={`${INPUT_CLASSES} font-mono`} />
-              {errors.dataJsonRaw && (
-                <p role="alert" className="mt-1 text-xs text-angaly-error">
-                  {errors.dataJsonRaw.message}
+            {/* Text Content Section */}
+            {TEXT_FIELD_ORDER.some((name) => textFields[name]) && (
+              <section className="bg-white p-6 sm:p-8 border border-angaly-border shadow-sm rounded-sm space-y-6">
+                <h3 className="text-xs font-bold uppercase tracking-widest text-angaly-navy border-b border-angaly-border pb-3 mb-6">
+                  Contenu Textuel
+                </h3>
+                <div className="space-y-6">
+                  {TEXT_FIELD_ORDER.filter((name) => textFields[name]).map((name) => {
+                    const field = textFields[name]!;
+                    const isTitle = name === 'titleText';
+                    return (
+                      <div key={name}>
+                        <div className="mb-2 flex items-end justify-between">
+                          <label className="block text-[11px] font-semibold uppercase tracking-wider text-angaly-slate" htmlFor={name}>
+                            {field.label}
+                          </label>
+                          {isTitle && (
+                            <span className="text-[10px] font-medium text-angaly-gold">Prévisualisation Serif active</span>
+                          )}
+                        </div>
+                        {field.multiline ? (
+                          <textarea
+                            id={name}
+                            rows={isTitle ? 2 : 4}
+                            placeholder={base?.[name] ?? undefined}
+                            {...register(name)}
+                            className={
+                              isTitle
+                                ? 'w-full bg-angaly-ivory/30 border border-angaly-border focus:border-angaly-gold focus:ring-1 focus:ring-angaly-gold focus:bg-white rounded-sm px-4 py-3 font-heading text-2xl sm:text-3xl text-angaly-navy leading-tight transition-colors resize-none focus:outline-none'
+                                : INPUT_CLASSES
+                            }
+                          />
+                        ) : (
+                          <input
+                            id={name}
+                            placeholder={base?.[name] ?? undefined}
+                            {...register(name)}
+                            className={
+                              isTitle
+                                ? 'w-full bg-angaly-ivory/30 border border-angaly-border focus:border-angaly-gold focus:ring-1 focus:ring-angaly-gold focus:bg-white rounded-sm px-4 py-3 font-heading text-2xl text-angaly-navy transition-colors focus:outline-none'
+                                : INPUT_CLASSES
+                            }
+                          />
+                        )}
+                        {field.hint && <p className="mt-1.5 text-xs text-angaly-slate">{field.hint}</p>}
+                        {errors[name] && (
+                          <p role="alert" className="mt-1.5 text-xs text-angaly-error font-medium">
+                            {errors[name]?.message}
+                          </p>
+                        )}
+                      </div>
+                    );
+                  })}
+                </div>
+              </section>
+            )}
+
+            {/* Structured Data Section */}
+            {definition?.data && definition.data.length > 0 && (
+              <section className="bg-white p-6 sm:p-8 border border-angaly-border shadow-sm rounded-sm space-y-6">
+                <h3 className="text-xs font-bold uppercase tracking-widest text-angaly-navy border-b border-angaly-border pb-3 mb-6">
+                  Données Structurées
+                </h3>
+                <Controller
+                  control={control}
+                  name="dataJson"
+                  render={({ field }) => (
+                    <DataFieldsEditor
+                      fields={definition.data ?? []}
+                      value={asRecord(field.value) ?? {}}
+                      onChange={field.onChange}
+                      baseValue={base ? (asObject(base.dataJson) ?? {}) : undefined}
+                    />
+                  )}
+                />
+              </section>
+            )}
+
+            {/* Advanced JSON if unknown section */}
+            {useRawJson && (
+              <section className="bg-white p-6 sm:p-8 border border-angaly-border shadow-sm rounded-sm">
+                <h3 className="text-xs font-bold uppercase tracking-widest text-angaly-navy border-b border-angaly-border pb-3 mb-6">
+                  Données Avancées (JSON)
+                </h3>
+                <div>
+                  <label className="block text-[11px] font-semibold text-angaly-slate uppercase tracking-wider mb-2" htmlFor="dataJsonRaw">
+                    Données avancées (JSON)
+                  </label>
+                  <textarea id="dataJsonRaw" rows={6} spellCheck={false} {...register('dataJsonRaw')} className={`${INPUT_CLASSES} font-mono`} />
+                  {errors.dataJsonRaw && (
+                    <p role="alert" className="mt-1.5 text-xs text-angaly-error font-medium">
+                      {errors.dataJsonRaw.message}
+                    </p>
+                  )}
+                </div>
+              </section>
+            )}
+
+            {/* Section Preview */}
+            <div className="bg-white p-6 sm:p-8 border border-angaly-border shadow-sm rounded-sm">
+              <PreviewToggle
+                isOpen={previewOpen}
+                onToggle={() => setPreviewOpen((v) => !v)}
+                content={{
+                  titleText: base ? pickText(watched.titleText, base.titleText) : watched.titleText,
+                  subtitleText: base ? pickText(watched.subtitleText, base.subtitleText) : watched.subtitleText,
+                  bodyText: base ? pickText(watched.bodyText, base.bodyText) : watched.bodyText,
+                  ctaPrimaryLabel: base ? pickText(watched.ctaPrimaryLabel, base.ctaPrimaryLabel) : watched.ctaPrimaryLabel,
+                  ctaSecondaryLabel: base ? pickText(watched.ctaSecondaryLabel, base.ctaSecondaryLabel) : watched.ctaSecondaryLabel,
+                  dataJson: base ? mergeTranslatedData(base.dataJson, watched.dataJson) : asRecord(watched.dataJson),
+                }}
+                image={image}
+                definition={definition}
+                publicHref={pageDefinition?.route}
+              />
+            </div>
+          </div>
+
+          {/* Sticky Bottom Action Bar */}
+          <div className="sticky bottom-0 bg-white/95 backdrop-blur-sm border-t border-angaly-border px-6 sm:px-8 py-4 flex flex-col sm:flex-row justify-between items-center gap-4 shadow-[0_-4px_20px_rgba(0,0,0,0.03)] z-20">
+            <button
+              type="button"
+              onClick={onShowHistory}
+              className="text-xs font-semibold uppercase tracking-wider text-angaly-slate hover:text-angaly-navy flex items-center gap-2 transition-colors"
+            >
+              <History size={16} />
+              <span>Voir l&apos;historique des versions</span>
+            </button>
+            <div className="flex flex-wrap items-center gap-3">
+              <button
+                type="submit"
+                disabled={isSaving}
+                className="px-5 py-2.5 text-xs font-semibold uppercase tracking-wider border border-angaly-navy text-angaly-navy hover:bg-angaly-ivory transition-colors duration-300 rounded-sm bg-white disabled:opacity-50"
+              >
+                {isSaving ? 'Enregistrement…' : 'Enregistrer comme brouillon'}
+              </button>
+              <button
+                type="button"
+                disabled={isPublishing || !section}
+                onClick={onPublish}
+                aria-describedby={!section ? 'publish-disabled-hint' : undefined}
+                className="px-6 py-2.5 text-xs font-semibold uppercase tracking-wider bg-angaly-navy text-white hover:bg-angaly-navy-blue transition-colors duration-300 rounded-sm shadow-sm flex items-center gap-2 disabled:opacity-50"
+              >
+                <UploadCloud size={16} />
+                <span>{isPublishing ? 'Publication…' : 'Publier les modifications'}</span>
+              </button>
+              {!section && (
+                <p id="publish-disabled-hint" className="text-xs text-angaly-slate self-center font-medium">
+                  Enregistrez un brouillon avant de publier.
                 </p>
               )}
             </div>
-          )}
-
-          <PreviewToggle
-            isOpen={previewOpen}
-            onToggle={() => setPreviewOpen((v) => !v)}
-            content={{
-              titleText: base ? pickText(watched.titleText, base.titleText) : watched.titleText,
-              subtitleText: base ? pickText(watched.subtitleText, base.subtitleText) : watched.subtitleText,
-              bodyText: base ? pickText(watched.bodyText, base.bodyText) : watched.bodyText,
-              ctaPrimaryLabel: base ? pickText(watched.ctaPrimaryLabel, base.ctaPrimaryLabel) : watched.ctaPrimaryLabel,
-              ctaSecondaryLabel: base ? pickText(watched.ctaSecondaryLabel, base.ctaSecondaryLabel) : watched.ctaSecondaryLabel,
-              dataJson: base ? mergeTranslatedData(base.dataJson, watched.dataJson) : asRecord(watched.dataJson),
-            }}
-            image={image}
-            definition={definition}
-            publicHref={pageDefinition?.route}
-          />
-
-          <div className="flex flex-col sm:flex-row gap-3 pt-4 border-t border-border">
-            <Button type="submit" variant="secondary" disabled={isSaving}>
-              {isSaving ? 'Enregistrement…' : 'Enregistrer comme brouillon'}
-            </Button>
-            <Button
-              type="button"
-              disabled={isPublishing || !section}
-              onClick={onPublish}
-              aria-describedby={!section ? 'publish-disabled-hint' : undefined}
-            >
-              {isPublishing ? 'Publication…' : 'Publier les modifications'}
-            </Button>
-            {!section && (
-              <p id="publish-disabled-hint" className="text-xs text-angaly-slate self-center">
-                Enregistrez un brouillon avant de publier.
-              </p>
-            )}
           </div>
         </form>
       )}

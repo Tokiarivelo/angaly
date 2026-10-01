@@ -1,3 +1,5 @@
+'use client';
+
 import { useMutation, useQuery, useQueryClient } from '@tanstack/react-query';
 import type { CreationProjectStage } from '@angaly/types';
 import { adminCreationProjectsApi } from '../api/admin-creation-projects.api';

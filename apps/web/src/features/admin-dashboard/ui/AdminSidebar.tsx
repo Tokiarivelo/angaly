@@ -36,55 +36,98 @@ export const AdminSidebar: React.FC = () => {
   const pathname = usePathname();
   const { data: session } = useSession();
   const role = session?.user?.role;
+  const userName = session?.user?.name || 'Personnel ANGALY';
+  const userInitial = userName.trim().charAt(0).toUpperCase() || 'A';
   const visibleItems = navItems.filter((item) => role !== undefined && item.roles.includes(role));
 
-  return (
-    <aside className="w-64 flex-shrink-0 hidden lg:block border-r border-border min-h-[calc(100vh-4rem)] p-6 bg-white">
-      <p className="px-4 mb-4 text-xs uppercase tracking-wider text-angaly-slate font-semibold">
-        Administration
-      </p>
-      <nav className="space-y-1">
-        <Link
-          href={ROUTES.home}
-          className="flex items-center gap-3 px-4 py-3 rounded-xl text-sm font-medium text-angaly-slate border border-border hover:bg-angaly-ivory hover:text-angaly-navy transition-colors"
-        >
-          <Home size={18} />
-          Retour au site
-        </Link>
-        <Link
-          href={ROUTES.compte}
-          className="flex items-center gap-3 px-4 py-3 mb-4 rounded-xl text-sm font-medium text-angaly-slate border border-border hover:bg-angaly-ivory hover:text-angaly-navy transition-colors"
-        >
-          <UserRound size={18} />
-          Espace client
-        </Link>
-        {visibleItems.map((item) => {
-          const isActive = pathname === item.href;
-          const Icon = item.icon;
-          return (
-            <Link
-              key={item.href}
-              href={item.href}
-              className={`flex items-center gap-3 px-4 py-3 rounded-xl text-sm font-medium transition-colors ${
-                isActive
-                  ? 'bg-angaly-navy text-white'
-                  : 'text-angaly-slate hover:bg-angaly-warm-ivory hover:text-angaly-navy'
-              }`}
-            >
-              <Icon size={18} />
-              {item.label}
-            </Link>
-          );
-        })}
+  const roleLabel =
+    role === Role.ADMIN
+      ? 'Administrateur'
+      : role === Role.MANAGER
+        ? 'Manager Atelier'
+        : role === Role.COUTURIERE
+          ? 'Couturière Atelier'
+          : 'Staff';
 
-        <button
-          onClick={() => void signOut()}
-          className="flex items-center gap-3 px-4 py-3 rounded-xl text-sm font-medium text-red-600 hover:bg-red-50 w-full text-left transition-colors mt-8"
-        >
-          <LogOut size={18} />
-          Déconnexion
-        </button>
+  return (
+    <aside className="w-64 flex-shrink-0 hidden lg:flex flex-col bg-[#061938] border-r border-[#18375D] min-h-screen py-8 select-none z-40">
+      {/* Brand Header */}
+      <div className="px-6 mb-8">
+        <Link href={ROUTES.home} className="block group">
+          <h1 className="font-heading text-2xl tracking-[0.2em] text-[#F6F2E9] uppercase group-hover:text-angaly-champagne transition-colors">
+            ANGALY
+          </h1>
+          <p className="font-sans text-xs tracking-widest text-angaly-champagne uppercase mt-1 opacity-80">
+            Atelier Back-Office
+          </p>
+        </Link>
+      </div>
+
+      {/* Navigation Links */}
+      <nav className="flex-1 overflow-y-auto px-0 [scrollbar-width:thin] [scrollbar-color:#18375D_#061938]">
+        <ul className="space-y-1">
+          {visibleItems.map((item) => {
+            const isActive = pathname === item.href;
+            const Icon = item.icon;
+            return (
+              <li key={item.href}>
+                <Link
+                  href={item.href}
+                  className={`px-6 py-3.5 flex items-center gap-4 font-sans text-sm tracking-wide uppercase font-medium duration-300 ease-in-out w-full border-l-2 ${
+                    isActive
+                      ? 'text-[#C5B190] bg-[#0C2650] border-[#936C3E]'
+                      : 'text-[#D8D3C8] hover:bg-[#0C2650] hover:text-[#C5B190] border-transparent'
+                  }`}
+                >
+                  <Icon size={18} className={isActive ? 'text-[#C5B190]' : 'text-[#D8D3C8]'} />
+                  <span>{item.label}</span>
+                </Link>
+              </li>
+            );
+          })}
+        </ul>
       </nav>
+
+      {/* Footer Profile & Switch */}
+      <div className="mt-auto px-6 pt-6 border-t border-[#18375D]">
+        <div className="flex items-center gap-4 mb-6">
+          <div className="w-10 h-10 rounded-full border border-angaly-champagne bg-[#0C2650] flex items-center justify-center text-angaly-champagne font-heading text-sm font-semibold shrink-0">
+            {userInitial}
+          </div>
+          <div className="overflow-hidden">
+            <p className="text-[#F6F2E9] font-heading text-sm tracking-wide truncate">
+              {userName}
+            </p>
+            <p className="text-angaly-champagne font-sans text-xs truncate">
+              {roleLabel}
+            </p>
+          </div>
+        </div>
+
+        <div className="space-y-2 pt-2 border-t border-[#18375D]/40">
+          <Link
+            href={ROUTES.compte}
+            className="text-[#D8D3C8]/75 hover:text-[#C5B190] flex items-center gap-3 transition-colors font-sans text-xs tracking-wide uppercase w-full"
+          >
+            <UserRound size={15} />
+            <span>Espace client</span>
+          </Link>
+          <Link
+            href={ROUTES.home}
+            className="text-[#D8D3C8]/75 hover:text-[#C5B190] flex items-center gap-3 transition-colors font-sans text-xs tracking-wide uppercase w-full"
+          >
+            <Home size={15} />
+            <span>Retour au site</span>
+          </Link>
+          <button
+            onClick={() => void signOut()}
+            className="text-[#D8D3C8] hover:text-[#C5B190] flex items-center gap-3 transition-colors font-sans text-xs tracking-wide uppercase w-full text-left"
+          >
+            <LogOut size={15} />
+            <span>Déconnexion</span>
+          </button>
+        </div>
+      </div>
     </aside>
   );
 };

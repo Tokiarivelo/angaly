@@ -6,7 +6,6 @@ import { useForm } from 'react-hook-form';
 import { zodResolver } from '@hookform/resolvers/zod';
 import { X } from 'lucide-react';
 
-import { Button } from '@/components/ui/button';
 import { ConfirmDialog } from '@/components/ui/confirm-dialog';
 import { Skeleton } from '@/components/ui/skeleton';
 import { formatFileSize } from '@/lib/utils';
@@ -85,7 +84,7 @@ export const MediaDetailPanel: React.FC<MediaDetailPanelProps> = ({
 
   if (isLoading) {
     return (
-      <aside className="w-full lg:w-80 shrink-0 border-l border-border p-5 space-y-4">
+      <aside className="w-full lg:w-96 shrink-0 border border-angaly-border rounded-sm bg-white p-6 shadow-sm space-y-4">
         <Skeleton className="h-6 w-32" />
         <Skeleton className="h-48 w-full" />
         <Skeleton className="h-4 w-full" />
@@ -99,58 +98,58 @@ export const MediaDetailPanel: React.FC<MediaDetailPanelProps> = ({
   const isReferenced = media.usedIn.length > 0;
 
   return (
-    <aside className="w-full lg:w-80 shrink-0 border-l border-border p-5 overflow-y-auto">
-      <div className="flex items-center justify-between mb-4">
-        <h2 className="font-serif text-lg text-angaly-navy">Détail du média</h2>
+    <aside className="w-full lg:w-96 shrink-0 border border-angaly-border rounded-sm bg-white p-6 shadow-sm overflow-y-auto space-y-6">
+      <div className="flex items-center justify-between border-b border-angaly-border pb-4">
+        <div>
+          <h2 className="font-heading text-xl text-angaly-navy">Détail du média</h2>
+          <p className="text-[11px] text-angaly-slate">Propriétés et utilisations</p>
+        </div>
         <button
           ref={closeButtonRef}
           onClick={onClose}
           aria-label="Fermer"
-          className="p-1 text-angaly-slate hover:text-angaly-navy"
+          className="p-1.5 text-angaly-slate hover:text-angaly-navy hover:bg-angaly-ivory rounded-sm transition-colors cursor-pointer"
         >
-          <X size={18} />
+          <X size={16} />
         </button>
       </div>
 
-      {media.width && media.height ? (
+      <div className="aspect-[4/3] rounded-sm border border-angaly-border bg-angaly-ivory/60 overflow-hidden relative shadow-inner">
         <Image
           src={media.url}
           alt={media.altText ?? ''}
-          width={media.width}
-          height={media.height}
-          sizes="320px"
-          className="w-full h-auto rounded-lg border border-border mb-4"
+          fill
+          sizes="384px"
+          className="object-cover"
         />
-      ) : (
-        <div className="relative w-full aspect-video rounded-lg border border-border mb-4 overflow-hidden bg-angaly-warm-ivory">
-          <Image src={media.url} alt={media.altText ?? ''} fill sizes="320px" className="object-cover" />
-        </div>
-      )}
+      </div>
 
-      <dl className="text-xs text-angaly-slate space-y-1 mb-4">
-        <div className="flex justify-between">
-          <dt>Fichier</dt>
-          <dd className="truncate max-w-[180px]">{fileNameFromUrl(media.url)}</dd>
+      <dl className="text-xs space-y-2 border-b border-angaly-border pb-4">
+        <div className="flex justify-between items-center">
+          <dt className="text-[11px] uppercase tracking-wider text-angaly-slate font-semibold">Fichier</dt>
+          <dd className="font-medium text-angaly-navy truncate max-w-[200px]" title={fileNameFromUrl(media.url)}>
+            {fileNameFromUrl(media.url)}
+          </dd>
         </div>
         {media.width && media.height && (
-          <div className="flex justify-between">
-            <dt>Dimensions</dt>
-            <dd>
-              {media.width} × {media.height}px
+          <div className="flex justify-between items-center">
+            <dt className="text-[11px] uppercase tracking-wider text-angaly-slate font-semibold">Dimensions</dt>
+            <dd className="font-medium text-angaly-navy font-mono">
+              {media.width} × {media.height} px
             </dd>
           </div>
         )}
-        <div className="flex justify-between">
-          <dt>Taille</dt>
-          <dd>{formatFileSize(media.sizeBytes)}</dd>
+        <div className="flex justify-between items-center">
+          <dt className="text-[11px] uppercase tracking-wider text-angaly-slate font-semibold">Poids</dt>
+          <dd className="font-medium text-angaly-navy font-mono">{formatFileSize(media.sizeBytes)}</dd>
         </div>
-        <div className="flex justify-between">
-          <dt>Importé le</dt>
-          <dd>{new Date(media.createdAt).toLocaleDateString('fr-FR')}</dd>
+        <div className="flex justify-between items-center">
+          <dt className="text-[11px] uppercase tracking-wider text-angaly-slate font-semibold">Importé le</dt>
+          <dd className="font-medium text-angaly-navy">{new Date(media.createdAt).toLocaleDateString('fr-FR')}</dd>
         </div>
-        <div className="flex justify-between">
-          <dt>Dossier</dt>
-          <dd>{media.entityType}</dd>
+        <div className="flex justify-between items-center">
+          <dt className="text-[11px] uppercase tracking-wider text-angaly-slate font-semibold">Dossier</dt>
+          <dd className="font-medium text-angaly-navy">{media.entityType}</dd>
         </div>
       </dl>
 
@@ -158,41 +157,46 @@ export const MediaDetailPanel: React.FC<MediaDetailPanelProps> = ({
         onSubmit={(e) => {
           void handleSubmit((values) => onSaveAltText(values.altText))(e);
         }}
-        className="mb-5"
+        className="space-y-2"
       >
-        <label className="block text-xs font-medium text-angaly-slate mb-1" htmlFor="altText">
+        <label className="block text-[11px] font-semibold uppercase tracking-wider text-angaly-slate" htmlFor="altText">
           Texte alternatif (alt)
         </label>
         <input
           id="altText"
           {...register('altText')}
-          className="w-full p-2 border border-border rounded-lg text-sm focus:outline-none focus:border-angaly-navy"
+          className="w-full px-3 py-2 border border-angaly-border rounded-sm text-xs text-angaly-navy bg-white focus:outline-none focus:border-angaly-gold focus:ring-1 focus:ring-angaly-gold transition-colors"
         />
-        {errors.altText && <p className="text-xs text-angaly-error mt-1">{errors.altText.message}</p>}
-        <p className="text-[11px] text-angaly-slate mt-1">Important pour l&apos;accessibilité et le SEO.</p>
-        <Button type="submit" size="sm" variant="secondary" disabled={isSavingAltText} className="mt-2">
+        {errors.altText && <p className="text-xs text-angaly-error font-medium">{errors.altText.message}</p>}
+        <p className="text-[11px] text-angaly-slate">Important pour l&apos;accessibilité et le SEO.</p>
+        <button
+          type="submit"
+          disabled={isSavingAltText}
+          className="px-4 py-2 border border-angaly-navy text-angaly-navy hover:bg-angaly-ivory rounded-sm text-xs font-semibold uppercase tracking-wider transition-colors disabled:opacity-50 cursor-pointer"
+        >
           {isSavingAltText ? 'Enregistrement…' : 'Enregistrer'}
-        </Button>
+        </button>
       </form>
 
-      <div className="mb-5">
-        <p id="media-usage-heading" className="text-xs font-medium text-angaly-slate mb-2">
+      <div className="border-t border-angaly-border pt-4">
+        <p id="media-usage-heading" className="text-[11px] font-semibold uppercase tracking-wider text-angaly-navy mb-2">
           Utilisée dans
         </p>
         {media.usedIn.length === 0 ? (
           <p className="text-xs text-angaly-slate italic">Aucune utilisation détectée.</p>
         ) : (
-          <ul className="space-y-1">
+          <ul className="space-y-1.5">
             {media.usedIn.map((usage) => (
-              <li key={`${usage.entityType}-${usage.entityId}`} className="text-xs text-angaly-navy">
-                {usage.label}
+              <li key={`${usage.entityType}-${usage.entityId}`} className="text-xs text-angaly-navy flex items-center gap-1.5 font-medium">
+                <span className="w-1.5 h-1.5 rounded-full bg-angaly-gold shrink-0" />
+                <span>{usage.label}</span>
               </li>
             ))}
           </ul>
         )}
       </div>
 
-      <div className="space-y-2">
+      <div className="space-y-2 border-t border-angaly-border pt-4">
         <input
           ref={replaceInputRef}
           type="file"
@@ -204,18 +208,18 @@ export const MediaDetailPanel: React.FC<MediaDetailPanelProps> = ({
             e.target.value = '';
           }}
         />
-        <Button
+        <button
           type="button"
-          className="w-full"
           disabled={isReplacing}
           onClick={() => replaceInputRef.current?.click()}
+          className="w-full py-2.5 px-4 bg-angaly-navy hover:bg-angaly-navy-blue text-white rounded-sm text-xs font-semibold uppercase tracking-wider transition-colors shadow-xs disabled:opacity-50 cursor-pointer"
         >
           {isReplacing ? 'Remplacement…' : "Remplacer l'image"}
-        </Button>
+        </button>
         <a
           href={media.url}
           download
-          className="block text-center text-sm border border-border rounded-lg py-2 text-angaly-navy hover:bg-angaly-warm-ivory"
+          className="block text-center text-xs font-semibold uppercase tracking-wider border border-angaly-border bg-white rounded-sm py-2 text-angaly-navy hover:bg-angaly-ivory transition-colors"
         >
           Télécharger
         </a>
@@ -224,16 +228,16 @@ export const MediaDetailPanel: React.FC<MediaDetailPanelProps> = ({
           disabled={isReferenced || isDeleting}
           onClick={() => setConfirmDeleteOpen(true)}
           aria-describedby={isReferenced ? 'media-usage-heading' : undefined}
-          className="w-full text-center text-xs text-angaly-error underline disabled:opacity-40 disabled:no-underline disabled:cursor-not-allowed py-1"
+          className="w-full text-center text-xs text-angaly-error hover:bg-red-50 py-1.5 rounded-sm transition-colors font-medium disabled:opacity-40 disabled:hover:bg-transparent disabled:cursor-not-allowed cursor-pointer"
         >
           Supprimer
         </button>
         {isReferenced && (
-          <p className="text-[11px] text-angaly-slate text-center">
+          <p className="text-[11px] text-angaly-slate text-center font-medium">
             Encore utilisé — voir « Utilisée dans » ci-dessus.
           </p>
         )}
-        {deleteErrorMessage && <p className="text-xs text-angaly-error">{deleteErrorMessage}</p>}
+        {deleteErrorMessage && <p className="text-xs text-angaly-error font-medium">{deleteErrorMessage}</p>}
       </div>
 
       <ConfirmDialog

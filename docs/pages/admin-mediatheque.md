@@ -6,11 +6,13 @@ optimisation/UX** (session 2026-09-16, suite — audit complet du CMS admin) : v
 
 ## Écarts assumés
 
-- **Vérification Stitch non disponible dans cette session** — mêmes causes que pour
-  `admin-gestion-contenu` (voir `docs/pages/admin-gestion-contenu.md` "Écarts assumés") :
-  `mcp__stitch__*` renvoie `Incompatible auth server`, `agy` n'est pas installé. Construit à
-  partir du texte de `stitch-prompts/31-*.md` Écran B uniquement — à revalider dès qu'une
-  session avec accès Stitch fonctionnel est disponible.
+- **Vérification et alignement Stitch réalisés (session 2026-10-01)** — Écran Stitch
+  `f7fa235d11dc4832b4d6362bf321c6d3` (« ANGALY Back-office — Médiathèque », projet 3703874896720765754)
+  inspecté via StitchMCP. L'interface a été entièrement alignée sur le design system
+  ANGALY Haute Couture : en-tête éditorial avec titre serif `font-heading` (`Cormorant Garamond`),
+  chips de dossiers en pills couture, vignettes média à bordure or antique lors de la sélection,
+  panneau latéral de détail enrichi avec métadonnées précises et typographies en capitales
+  espacées, barre d'actions groupées marine et dorée, et boutons aux angles stricts `rounded-sm`.
 - **"Utilisée dans"/blocage de suppression corrigés (session 2026-09-19)** — le bug
   pré-existant (`docs/features/media.md`, section "Bug corrigé 2026-09-19") qui empêchait
   `confirm-upload`/`upload-media-buffer` de connecter la relation Prisma many-to-many que

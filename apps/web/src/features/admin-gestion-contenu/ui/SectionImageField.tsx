@@ -27,11 +27,11 @@ export const SectionImageField: React.FC<SectionImageFieldProps> = ({ label, ima
 
   return (
     <div>
-      <p className="mb-1 text-xs font-medium text-angaly-slate">{label}</p>
-      <div className="flex items-start gap-4">
-        <div className="relative h-28 w-40 shrink-0 overflow-hidden rounded-lg border border-border bg-angaly-ivory">
+      <p className="mb-2 text-[11px] font-semibold text-angaly-slate uppercase tracking-wider">{label}</p>
+      <div className="flex flex-col sm:flex-row items-start gap-4">
+        <div className="relative h-32 w-48 shrink-0 overflow-hidden rounded-sm border border-angaly-border bg-angaly-ivory shadow-inner">
           {image ? (
-            <Image src={image.url} alt={image.altText ?? label} fill sizes="160px" className="object-cover" />
+            <Image src={image.url} alt={image.altText ?? label} fill sizes="192px" className="object-cover" />
           ) : (
             <div className="flex h-full w-full items-center justify-center text-angaly-warm-gray">
               <ImageIcon size={28} aria-hidden="true" />
@@ -39,18 +39,18 @@ export const SectionImageField: React.FC<SectionImageFieldProps> = ({ label, ima
           )}
         </div>
         {lockedNote ? (
-          <p className="text-xs text-angaly-slate">{lockedNote}</p>
+          <p className="text-xs text-angaly-slate mt-2">{lockedNote}</p>
         ) : (
-        <div className="flex flex-col items-start gap-2">
+        <div className="flex flex-col items-start gap-2.5 mt-1">
           <button
             type="button"
             onClick={() => setPickerOpen(true)}
-            className="rounded-lg border border-border px-3 py-1.5 text-sm text-angaly-navy hover:bg-angaly-ivory"
+            className="rounded-sm border border-angaly-navy px-4 py-2 text-xs font-semibold uppercase tracking-wider text-angaly-navy hover:bg-angaly-ivory transition-colors"
           >
             {image ? 'Remplacer l’image' : 'Choisir une image'}
           </button>
           {image && (
-            <button type="button" onClick={onClear} className="text-xs text-angaly-slate underline hover:text-angaly-error">
+            <button type="button" onClick={onClear} className="text-xs text-angaly-error hover:underline font-medium">
               Retirer l’image
             </button>
           )}

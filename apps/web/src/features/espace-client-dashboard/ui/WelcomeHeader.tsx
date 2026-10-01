@@ -1,31 +1,36 @@
 import React from 'react';
 import Link from 'next/link';
-import { Plus } from 'lucide-react';
+import { CalendarPlus } from 'lucide-react';
 import { format } from 'date-fns';
 import { fr } from 'date-fns/locale';
+
+import { ROUTES } from '@/lib/routes';
 
 interface WelcomeHeaderProps {
   firstName: string;
 }
 
 export const WelcomeHeader: React.FC<WelcomeHeaderProps> = ({ firstName }) => {
-  const today = format(new Date(), 'EEEE d MMMM yyyy', { locale: fr });
-  
+  const todayFormatted = format(new Date(), 'd MMMM yyyy', { locale: fr }).toUpperCase();
+
   return (
-    <div className="flex flex-col md:flex-row md:items-end justify-between gap-4 mb-8">
+    <header className="px-6 sm:px-8 lg:px-12 py-8 sm:py-10 flex flex-col sm:flex-row sm:items-end justify-between border-b border-angaly-border bg-angaly-ivory/80 backdrop-blur-sm sticky top-0 z-20 gap-4">
       <div>
-        <p className="text-sm text-angaly-slate mb-1 capitalize">{today}</p>
-        <h1 className="font-serif text-3xl md:text-4xl text-angaly-navy">
-          Bonjour, {firstName}
+        <p className="text-angaly-warm-gray font-sans text-xs tracking-widest uppercase mb-1.5 font-medium">
+          {todayFormatted}
+        </p>
+        <h1 className="font-heading text-3xl sm:text-4xl text-angaly-navy tracking-wide font-normal">
+          Bonjour, {firstName || 'Chère Cliente'}
         </h1>
       </div>
-      <Link 
-        href="/rendez-vous" 
-        className="inline-flex items-center justify-center gap-2 px-6 py-3 bg-angaly-navy text-white rounded-full font-medium hover:bg-primary-dark transition-colors shrink-0"
+
+      <Link
+        href={ROUTES.prendreRendezVous}
+        className="bg-angaly-navy hover:bg-angaly-navy-blue text-white px-6 py-3 font-sans text-xs uppercase tracking-widest transition-colors duration-300 flex items-center justify-center gap-2.5 border border-angaly-navy shrink-0 font-medium self-start sm:self-auto"
       >
-        <Plus size={18} />
-        Prendre rendez-vous
+        <CalendarPlus size={16} />
+        <span>Prendre rendez-vous</span>
       </Link>
-    </div>
+    </header>
   );
 };

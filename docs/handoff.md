@@ -1,8 +1,8 @@
 # Fiche de Passation Inter-Agents (Handoff)
 
 > **Date** : 2026-10-01  
-> **Dernière mise à jour par** : Claude Code (Sonnet 5.5)  
-> **Statut global du dépôt** : 🟢 **Vert** (typecheck monorepo 10/10 OK, tests ciblés 100% OK, base de données synchronisée)
+> **Dernière mise à jour par** : Antigravity  
+> **Statut global du dépôt** : 🟢 **Vert** (typecheck monorepo 10/10 OK, tests frontend 27/27 OK, base de données synchronisée)
 
 ---
 
@@ -16,33 +16,83 @@ Lis docs/handoff.md et poursuis le travail selon les priorités définies.
 
 ---
 
-## 1. Résumé exécutif de la session précédente
+## 1. Résumé exécutif de la session
 
-1. **Écran Back-office « Projets de création » (`/projets-creation`)** :
-   - Vérification de la maquette Google Stitch réelle : écran `fadeaeb5cacf4d0088c20bde4d9c0f29` (« ANGALY Back-office — Projets de création »).
-   - Extension de `CreationProjectDto` dans `@angaly/types` avec `customerName?: string | null`.
-   - Backend NestJS : Use-cases `ListAllCreationProjectsUseCase`, `UpdateCreationProjectStageUseCase`, `CreateCreationProjectFromQuoteUseCase`. Controller `AdminCreationProjectsController` protégé par `StaffOnly` / roles `ADMIN`, `COUTURIERE`.
-   - Déclencheur automatique : Lors de l'acceptation d'un devis (`AcceptQuoteUseCase`), un `CreationProject` est automatiquement créé à l'étape `CONSULTATION` (défaut).
-   - Frontend Next.js : Feature `apps/web/src/features/admin-projets-creation/` (composants UI avec badges d'étapes, filtres par statut, modification d'étape en direct, liens vers le devis, pagination, squelette de chargement, état vide et gestion d'erreurs).
-   - Route sans logique `apps/web/src/app/(admin)/projets-creation/page.tsx` et mise à jour de `AdminSidebar.tsx`.
-2. **Navigation et Espace Client** :
-   - Liens croisés entre site, espace client (`/espace-client`) et back-office (`/dashboard`).
-   - Correction des liens vers `/mes-creations` dans `ClientSpaceSidebar.tsx` et `QuickAccessTilesGrid.tsx`.
-3. **Stabilité TypeScript & Base de données** :
-   - Résolution de toutes les erreurs `tsc` du monorepo (notamment `exactOptionalPropertyTypes` et `isPrimary` dans `pret-a-porter-catalogue`).
-   - Alignement des migrations Prisma : rattrapage propre (`migrate resolve --applied`), statut `Database schema is up to date`.
-   - Script de backfill : `packages/database/prisma/backfill-creation-projects.ts` (`pnpm --filter @angaly/database db:backfill:creation-projects`).
-4. **Protocole de passation inter-agents** :
-   - Règles formalisées dans `AGENTS.md`, `CLAUDE.md`, `.cursor/rules/006-phase-workflow.mdc` et `.cursor/rules/010-session-handoff.mdc`.
+1. **Ajout et fiabilisation du lien « Sur Mesure » dans la barre de navigation** :
+   - Ajout de `{ label: 'Sur Mesure', href: ROUTES.surMesure }` dans `apps/web/src/features/navigation/consts/nav-links.const.ts`.
+   - Mise à jour des valeurs par défaut dans `packages/database/prisma/cms-defaults.ts` (en français « Sur Mesure » et en malagasy « Voatondro manokana »).
+   - Synchronisation directe de la base de données PostgreSQL pour les enregistrements CMS `PageSection` (`page='navigation', sectionKey='header'`).
+   - Ajustement fin des espacements et typographies dans `Header.tsx` (`gap-2.5 xl:gap-4 2xl:gap-5`, `text-[11px] xl:text-xs tracking-wider xl:tracking-widest`) pour garantir une disposition aérée des 9 liens sur desktop (`lg: 1024px` et au-delà) sans empiéter sur le logo central.
+   - Mise à jour de la suite de tests `Header.test.tsx` (4/4 tests validés).
+
+2. **Adaptation complète du module « Gestion de contenu » (`/gestion-contenu`) au Design System ANGALY** :
+   - Récupération et inspection de l'écran Stitch réel `9551b85b467f43269d36e086dcc036b2` (« ANGALY Back-office — Gestion de contenu »).
+   - `AdminContentPage.tsx` : En-tête éditorial avec titre `font-heading text-3xl md:text-4xl text-angaly-navy`, structure 2 colonnes (`lg:w-80` sidebar, `flex-1` éditeur), suppression des arrondis SaaS `rounded-xl` au profit de `rounded-sm` discrets et bordures `#D9D4CA`.
+   - `SectionsList.tsx` : Arborescence sidebar haute couture avec compteur de sections, pastilles de statut épurées (`#46745A` publié, `#5C697A` brouillon, bordure tiretée pour les sections non créées), et liseré or antique `#936C3E` sur l'élément sélectionné.
+   - `LocaleTabs.tsx` : Sélecteur de langue pill switcher couture (`bg-angaly-ivory/80 border border-angaly-border`, onglet actif `bg-angaly-navy text-white shadow-sm rounded-sm`).
+   - `SectionEditorForm.tsx` : Cartes de formulaire structurées (`bg-white border-angaly-border shadow-sm rounded-sm`), champ de titre principal en `font-heading` (`Cormorant Garamond`) avec prévisualisation Serif active, fil d'Ariane contextuel en barre supérieure sticky, barre d'actions sticky inférieure avec déclencheur d'historique, boutons de brouillon et publication couture.
+   - `SectionImageField.tsx` : Zone média couture avec bordures `#D9D4CA`, fond ivoire, et typographies en capitales espacées.
+   - `DataFieldsEditor.tsx` : Éditeur de champs structurés aligné sur `rounded-sm border-angaly-border bg-white` avec états de focus or antique.
+   - `VersionHistoryDrawer.tsx` : Tiroir d'historique Radix Dialog avec typographie `font-heading`, cartes de version épurées et action de restauration dorée.
+   - `PreviewToggle.tsx` : Mode d'aperçu en direct responsive (desktop/mobile) harmonisé avec `font-heading`, bordures couture et boutons `rounded-sm`.
+   - Validation complète de la suite `src/features/admin-gestion-contenu/` (9 suites de tests, 47 tests passés avec succès).
+
+3. **Refonte haute fidélité du Dashboard Client (`/espace-client` & `/dashboard`)** :
+   - Consultation et inspection de la maquette Stitch réelle : écran `6740739cfa4644d88cdd4dacc644e2b7` (« ANGALY — Espace Client (Tableau de bord) »).
+   - Sidebar Client Couture (`ClientSpaceSidebar.tsx`) : Positionnement fixe pleine hauteur (`fixed left-0 top-0 h-screen w-64`), fond `#061938` marine profond, bordure droite `#18375D`, logo ANGALY doré avec sous-titre `Haute Couture` aéré sans trait bas, éléments de navigation en capitales avec espacement généreux (`py-3.5 px-6 font-sans text-sm tracking-wide`), statut actif avec fond `#0C2650` + liseré or antique `#936C3E` + texte champagne `#C5B190`, défilement interne à barre fine invisible, profil utilisateur en pied de menu avec avatar bordé d'or et statut `Cliente Privilège`, bouton de déconnexion et retour au site discrets.
+   - Sidebar Back-office Couture (`AdminSidebar.tsx`) & Layout (`AdminLayout.tsx`) : Remplacement de l'ancien panneau blanc SaaS à boutons arrondis par la même structure couture marine profond `#061938` / bordure `#18375D` / accents or, profil staff avec étiquette de rôle (Administrateur, Manager, Couturière) et raccourci fluide vers l'espace client.
+   - Layout de l'espace client (`ClientSpaceLayout.tsx`) : Structure avec décalage `lg:pl-64` pour accueillir la sidebar fixe, barre mobile responsive avec monogramme or, et footer minimaliste (`© ANGALY Haute Couture`, `Besoin d'aide ?`, `Support`, `Mentions Légales`).
+   - Header de bienvenue (`WelcomeHeader.tsx`) : Typographie Playfair serif, date du jour en capitales, bouton d'action couture sombre `Prendre un rendez-vous` vers `/rendez-vous`.
+   - 4 Cartes de synthèse (`NextAppointmentCard.tsx`, `CurrentOrderCard.tsx`, `PremiumProjectCard.tsx`, `NotificationsPreviewCard.tsx`) :
+     - Prochain rendez-vous : badge statut `CONFIRMÉ`, détails atelier, icône agenda champagne, état vide accueillant.
+     - Commande en cours : vignette swatch tissu marine `#061938`, statut confection, barre d'avancement, alignement avec l'enum `OrderStatus` (suppression de la référence erronée à `SHIPPED`).
+     - Projet Premium Pattern Studio : bordure supérieure champagne `border-t-2 border-t-champagne`, filigrane compas/croquis, badge italique `Premium`, référence du projet.
+     - Notifications : puces rouge brique pour éléments non lus, icônes dorées, aperçu des alertes.
+   - Grille d'accès rapide 2×2 (`QuickAccessTilesGrid.tsx`) : Inversion de contraste couture au survol (fond blanc vers marine profond, texte et icônes passant du gris ardoise au champagne/ivoire), suppression des pastilles rondes colorées SaaS.
+   - Timeline d'activité récente (`RecentActivityTimeline.tsx`) : Ligne verticale épurée avec points champagne, horodatage relatif, lien direct vers l'historique complet.
+
+4. **Harmonisation des routes `/dashboard` et `/espace-client`** :
+   - Dans `apps/web/src/app/(admin)/layout.tsx`, redirection automatique des utilisateurs non-staff accédant à `/dashboard` vers `ROUTES.compte` (`/espace-client`) plutôt qu'une redirection abrupte vers l'accueil.
+   - Enrichissement de `AdminDashboardPage.tsx` pour le personnel avec accès direct vers les 4 sections administratives et un lien vers l'Espace Client.
+
+5. **Harmonisation complète et alignement Stitch du module « Médiathèque » (`/mediatheque`)** :
+   - Consultation et alignement direct avec l'écran Stitch réel `f7fa235d11dc4832b4d6362bf321c6d3` (« ANGALY Back-office — Médiathèque »).
+   - En-tête éditorial avec titre serif italique `font-heading text-4xl text-angaly-navy`, sous-titre de statut, et bouton primaire d'upload marine sombre.
+   - Puces de filtre dossiers (`MediaFolderFilterChips.tsx`) horizontales scrollables : marine pour l'actif, ivoire/bordure dorée pour l'inactif.
+   - Barre de recherche couture (`MediaSearchBar.tsx`) et sélecteur de tri / commutateur vue grille / liste (`MediaSortControl.tsx`).
+   - Cartes miniatures (`MediaThumbnailCard.tsx`) : bordure dorée antique épaisse avec badge checkmark couture pour la sélection, overlay d'action rapide au survol, badge de taille de fichier sombre discret.
+   - Vue liste (`MediaListView.tsx`) : tableau épuré haute couture avec indicateurs de sélection dorés.
+   - Volet de détails latéral rétractable (`MediaDetailPanel.tsx`) : cadre de prévisualisation 4:3, table de métadonnées uppercase, formulaire d'édition du texte alternatif accessible, liste des emplacements d'utilisation, et actions de remplacement / téléchargement / suppression.
+   - Barre d'actions groupées marine profonde (`MediaBulkActionsBar.tsx`) avec compteurs et boutons d'action stylisés.
+   - États vides et aucun résultat soignés (`MediaEmptyState.tsx`, `MediaNoResultsState.tsx`, `UploadEntriesList.tsx`).
+   - Validation complète de la suite `src/features/admin-mediatheque/` (10 suites de tests, 33 tests passés avec succès).
+
+6. **Création du Skill d'agent « ANGALY Design System » (`.agents/skills/angaly-design-system/`)** :
+   - Création du skill de projet de plus haute priorité avec `SKILL.md` (frontmatter complet, règles d'activation, proportions 60-25-10-5, tokens CSS et Tailwind v4).
+   - Dossier de références détaillées : `color-palette.md`, `typography.md`, `components.md`, `stitch-workflow.md`.
+   - Dossier d'exemples de code TSX de référence : `couture-card.tsx`, `couture-form.tsx`, `couture-table.tsx`.
+   - Création de l'alias symlink `.agents/skills/design-system -> angaly-design-system`.
+   - Référencement obligatoire dans `AGENTS.md` pour guider automatiquement tous les futurs agents.
 
 ---
 
 ## 2. État du dépôt Git (Arbre de travail)
 
-Arbre propre au 2026-10-01 (rien n'est poussé). Commits de la session, du plus ancien au plus récent :
-`65e64be` fix(web) catalogue · `ecaf7fd` feat(api) creation-projects · `6740d68` feat(database) backfill ·
-`8ef64f6` feat(web) mes-creations + admin · `c7a0519` docs handoff · `a012646` feat(web) pages légales ·
-`7ecffe5` docs règle handoff obligatoire.
+Modifications locales prêtes pour commit (`git status`) :
+- `.agents/skills/angaly-design-system/` & `.agents/skills/design-system` (Skill Haute Couture complet)
+- `AGENTS.md` (référencement du skill dans les règles agents)
+- `apps/web/src/features/navigation/consts/nav-links.const.ts` & `Header.tsx` (lien « Sur Mesure » desktop et mobile)
+- `packages/database/prisma/cms-defaults.ts` (défauts CMS header FR + MG avec « Sur Mesure »)
+- `apps/web/src/features/admin-gestion-contenu/ui/*` (redesign complet haute couture du CMS back-office)
+- `apps/web/src/features/admin-mediatheque/ui/*` (redesign complet haute couture de la médiathèque aligné sur Stitch)
+- `apps/web/src/features/espace-client-dashboard/ui/*` (composants du dashboard client et sidebar fixe redesignés)
+- `apps/web/src/features/admin-dashboard/ui/AdminSidebar.tsx` & `AdminLayout.tsx` (sidebar et shell admin alignés sur la charte couture)
+- `apps/web/src/features/espace-client-dashboard/__tests__/DashboardCards.test.tsx` (nouvelle suite de tests)
+- `apps/web/src/features/espace-client-dashboard/__tests__/EspaceClientDashboardPage.test.tsx` (tests mis à jour)
+- `apps/web/src/components/layout/__tests__/Header.test.tsx` (test navbar mis à jour)
+- `apps/web/src/features/admin-dashboard/ui/AdminDashboardPage.tsx` (dashboard admin enrichi)
+- `apps/web/src/app/(admin)/layout.tsx` (redirection `/dashboard` client vers `/espace-client`)
+- `docs/pages/admin-gestion-contenu.md`, `docs/pages/admin-mediatheque.md`, `docs/pages/espace-client-dashboard.md`, `docs/mockup-reference.md`, `docs/checklist-implementation.md`
 
 ---
 
@@ -51,9 +101,11 @@ Arbre propre au 2026-10-01 (rien n'est poussé). Commits de la session, du plus 
 | Test / Commande | Portée | Résultat |
 | :--- | :--- | :--- |
 | `pnpm typecheck` | Monorepo complet (10 packages Turbo) | ✅ **0 erreur** (10/10 succès) |
-| `pnpm --filter @angaly/web test run src/features/admin-projets-creation/ src/features/mes-creations/ src/features/admin-dashboard/` | Feature admin projets, mes créations, admin sidebar | ✅ **31 tests passés** (7 suites) |
-| `pnpm --filter @angaly/api test -- src/creation-projects src/quotes` | Backend use-cases, entités, controllers | ✅ **137 tests passés** (22 suites) |
-| `pnpm --filter @angaly/database prisma migrate status` | Schéma PostgreSQL | ✅ **Schéma synchronisé** |
+| `pnpm --filter @angaly/web exec vitest run src/features/admin-gestion-contenu/` | CMS Back-Office | ✅ **47 tests passés** (9 suites) |
+| `pnpm --filter @angaly/web exec vitest run src/features/admin-mediatheque/` | Médiathèque Back-Office | ✅ **33 tests passés** (10 suites) |
+| `pnpm --filter @angaly/web exec vitest run src/components/layout/__tests__/Header.test.tsx` | Header & Navbar | ✅ **4 tests passés** (1 suite) |
+| `pnpm --filter @angaly/web test run src/features/espace-client-dashboard/ src/features/admin-dashboard/` | Dashboard client & admin | ✅ **27 tests passés** (6 suites) |
+
 
 ---
 

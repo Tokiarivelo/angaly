@@ -6,14 +6,12 @@ optimisation/UX** (session 2026-09-16, suite — audit complet du CMS admin) : v
 
 ## Écarts assumés
 
-- **Vérification Stitch non disponible dans cette session** : `mcp__stitch__*` a renvoyé
-  `Incompatible auth server: does not support dynamic client registration` (OAuth non
-  configuré pour cet environnement non interactif) et la CLI `agy` n'est pas installée. La
-  structure/copy ci-dessous s'appuie donc sur `stitch-prompts/31-admin-gestion-contenu-mediatheque.md`
-  (texte détaillé : sidebar, colonnes, champs de formulaire, tiroir d'historique) **sans
-  vérification de l'écran rendu réel**, contrairement à la règle absolue #9 — à revalider dès
-  qu'une session avec accès Stitch fonctionnel est disponible, avant tout ajustement visuel
-  ultérieur.
+- **Vérification et alignement Stitch réalisés** : Écran Stitch `9551b85b467f43269d36e086dcc036b2`
+  ("ANGALY Back-office — Gestion de contenu", projet 3703874896720765754) inspecté via StitchMCP.
+  L'interface a été entièrement alignée sur le design system ANGALY Haute Couture :
+  palette (`#061938` navy, `#F6F2E9` ivoire, `#936C3E` or antique, `#D9D4CA` bordures couture),
+  arrondis stricts `rounded-sm` (bannissant les arrondis SaaS `rounded-xl`), typographies
+  éditoriales avec `font-heading` (`Cormorant Garamond`) et indicateurs visuels de prévisualisation Serif.
 - **Champ "Eyebrow"** décrit dans le prompt Stitch pour le hero n'a pas d'équivalent dans le
   modèle `PageSection` (schema.prisma : `titleText`/`subtitleText`/`bodyText`/`ctaPrimaryLabel`/
   `ctaSecondaryLabel`/`dataJson`/`mediaId`) — omis du formulaire plutôt que détourné dans un

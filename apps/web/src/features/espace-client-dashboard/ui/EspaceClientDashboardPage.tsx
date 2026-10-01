@@ -11,45 +11,49 @@ import { NotificationsPreviewCard } from './NotificationsPreviewCard';
 import { QuickAccessTilesGrid } from './QuickAccessTilesGrid';
 import { RecentActivityTimeline } from './RecentActivityTimeline';
 
-export const EspaceClientDashboardPage = () => {
+export const EspaceClientDashboardPage: React.FC = () => {
   const data = useDashboardSummary();
   const { activities } = useRecentActivity();
 
   return (
-    <div className="space-y-8 max-w-5xl mx-auto pb-12">
+    <div className="flex flex-col min-h-full">
+      {/* Sticky Greeting Header */}
       <WelcomeHeader firstName={data.firstName} />
 
-      <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-4 md:gap-6">
-        <div className="lg:col-span-1">
-          <NextAppointmentCard appointment={data.nextAppointment} />
-        </div>
-        <div className="lg:col-span-2">
-          {data.premiumProject ? (
-            <PremiumProjectCard project={data.premiumProject} />
-          ) : (
+      {/* Main Dashboard Canvas */}
+      <div className="p-6 sm:p-8 lg:p-12 space-y-10 lg:space-y-12 max-w-7xl mx-auto w-full flex-1">
+        {/* Summary Row - 4 Cards */}
+        <section aria-label="Résumé de votre compte">
+          <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-6 items-stretch">
+            <NextAppointmentCard appointment={data.nextAppointment} />
             <CurrentOrderCard order={data.currentOrder} />
-          )}
-        </div>
-        <div className="lg:col-span-1">
-          <NotificationsPreviewCard notifications={data.notifications} />
-        </div>
-      </div>
-
-      <div className="pt-4">
-        <h2 className="font-serif text-xl text-angaly-navy mb-4">Accès rapide</h2>
-        <QuickAccessTilesGrid />
-      </div>
-
-      <div className="grid grid-cols-1 lg:grid-cols-3 gap-6 pt-4">
-        <div className="lg:col-span-2">
-          {/* Main content area for future use, maybe a larger widget or graph */}
-          <div className="bg-white rounded-2xl border border-border p-8 h-full min-h-[300px] flex items-center justify-center">
-            <p className="text-angaly-slate text-center">Espace réservé pour les suggestions personnalisées ou la galerie d'inspiration.</p>
+            <PremiumProjectCard project={data.premiumProject} />
+            <NotificationsPreviewCard notifications={data.notifications} />
           </div>
-        </div>
-        <div className="lg:col-span-1">
-          <RecentActivityTimeline activities={activities} />
-        </div>
+        </section>
+
+        {/* Middle Section - Accès Rapide (2/3) & Activité Récente (1/3) */}
+        <section aria-label="Accès rapide et activité récente" className="grid grid-cols-1 lg:grid-cols-3 gap-8 lg:gap-12 items-stretch">
+          {/* Quick Access Tiles (2 columns) */}
+          <div className="lg:col-span-2 flex flex-col">
+            <h2 className="font-heading text-2xl text-angaly-navy mb-6 font-normal">
+              Accès Rapide
+            </h2>
+            <div className="flex-1">
+              <QuickAccessTilesGrid />
+            </div>
+          </div>
+
+          {/* Recent Activity Timeline (1 column) */}
+          <div className="lg:col-span-1 flex flex-col">
+            <h2 className="font-heading text-2xl text-angaly-navy mb-6 font-normal">
+              Activité récente
+            </h2>
+            <div className="flex-1">
+              <RecentActivityTimeline activities={activities} />
+            </div>
+          </div>
+        </section>
       </div>
     </div>
   );

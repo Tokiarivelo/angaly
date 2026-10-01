@@ -10,7 +10,7 @@ import { MediaPickerDialog } from './MediaPickerDialog';
 type DataValue = Record<string, unknown>;
 type Item = Record<string, unknown>;
 
-const INPUT_CLASSES = 'w-full p-2.5 border border-border rounded-lg text-sm focus:outline-none focus:border-angaly-navy';
+const INPUT_CLASSES = 'w-full bg-white border border-angaly-border rounded-sm p-2.5 text-sm focus:outline-none focus:border-angaly-gold focus:ring-1 focus:ring-angaly-gold text-angaly-navy transition-colors';
 
 interface DataFieldsEditorProps {
   fields: readonly DataFieldDefinition[];
@@ -170,8 +170,8 @@ export const DataFieldsEditor: React.FC<DataFieldsEditorProps> = ({ fields, valu
           );
 
         return (
-          <fieldset key={field.key} className="rounded-lg border border-border p-4">
-            <legend className="px-2 text-xs font-medium text-angaly-slate">{field.label}</legend>
+          <fieldset key={field.key} className="rounded-sm border border-angaly-border bg-angaly-ivory/20 p-5 shadow-sm">
+            <legend className="px-2 text-xs font-bold uppercase tracking-wider text-angaly-navy">{field.label}</legend>
             {translating && (
               <p className="mb-3 text-xs text-angaly-slate">
                 La liste (nombre, ordre, images) suit le français : ajoutez, supprimez ou réordonnez dans l’onglet Français.
@@ -182,20 +182,20 @@ export const DataFieldsEditor: React.FC<DataFieldsEditorProps> = ({ fields, valu
             )}
             <ol className="space-y-4">
               {items.map((item, index) => (
-                <li key={index} className="rounded-lg bg-angaly-ivory/60 p-3">
-                  <div className="mb-2 flex items-center justify-between">
-                    <span className="text-xs font-semibold text-angaly-navy">
+                <li key={index} className="rounded-sm bg-white border border-angaly-border p-4 shadow-sm">
+                  <div className="mb-3 flex items-center justify-between border-b border-angaly-border/60 pb-2">
+                    <span className="text-xs font-bold uppercase tracking-wider text-angaly-navy">
                       {field.itemLabel} {index + 1}
                     </span>
                     {!translating && (
-                      <span className="flex items-center gap-1">
-                        <button type="button" aria-label={`Monter ${field.itemLabel} ${index + 1}`} onClick={() => move(index, index - 1)} disabled={index === 0} className="p-1 text-angaly-slate hover:text-angaly-navy disabled:opacity-30">
+                      <span className="flex items-center gap-1.5">
+                        <button type="button" aria-label={`Monter ${field.itemLabel} ${index + 1}`} onClick={() => move(index, index - 1)} disabled={index === 0} className="p-1 text-angaly-slate hover:text-angaly-navy disabled:opacity-30 transition-colors">
                           <ArrowUp size={14} />
                         </button>
-                        <button type="button" aria-label={`Descendre ${field.itemLabel} ${index + 1}`} onClick={() => move(index, index + 1)} disabled={index === items.length - 1} className="p-1 text-angaly-slate hover:text-angaly-navy disabled:opacity-30">
+                        <button type="button" aria-label={`Descendre ${field.itemLabel} ${index + 1}`} onClick={() => move(index, index + 1)} disabled={index === items.length - 1} className="p-1 text-angaly-slate hover:text-angaly-navy disabled:opacity-30 transition-colors">
                           <ArrowDown size={14} />
                         </button>
-                        <button type="button" aria-label={`Supprimer ${field.itemLabel} ${index + 1}`} onClick={() => update(items.filter((_, i) => i !== index))} className="p-1 text-angaly-slate hover:text-angaly-error">
+                        <button type="button" aria-label={`Supprimer ${field.itemLabel} ${index + 1}`} onClick={() => update(items.filter((_, i) => i !== index))} className="p-1 text-angaly-slate hover:text-angaly-error transition-colors">
                           <Trash2 size={14} />
                         </button>
                       </span>
@@ -208,7 +208,7 @@ export const DataFieldsEditor: React.FC<DataFieldsEditorProps> = ({ fields, valu
                       const baseItem = baseItems[index];
                       return (
                         <div key={itemField.key} className={wide ? 'sm:col-span-2' : undefined}>
-                          <label htmlFor={id} className="mb-1 block text-xs text-angaly-slate">
+                          <label htmlFor={id} className="mb-1 block text-[11px] font-semibold text-angaly-slate uppercase tracking-wider">
                             {itemField.label}
                           </label>
                           {translating && sharedKeys.includes(itemField.key) ? (
@@ -216,7 +216,7 @@ export const DataFieldsEditor: React.FC<DataFieldsEditorProps> = ({ fields, valu
                               <SharedImage url={textOf(baseItem?.[itemField.key])} />
                             ) : (
                               <p className="text-sm text-angaly-slate">
-                                {textOf(baseItem?.[itemField.key]) || '—'} <span className="text-xs">(hérité du français)</span>
+                                {textOf(baseItem?.[itemField.key]) || '—'} <span className="text-xs font-normal">(hérité du français)</span>
                               </p>
                             )
                           ) : (
@@ -239,7 +239,7 @@ export const DataFieldsEditor: React.FC<DataFieldsEditorProps> = ({ fields, valu
               <button
                 type="button"
                 onClick={() => update([...items, emptyItem(field.itemFields)])}
-                className="mt-3 inline-flex items-center gap-1 text-sm text-angaly-navy hover:underline"
+                className="mt-3.5 inline-flex items-center gap-1.5 text-xs font-semibold uppercase tracking-wider text-angaly-navy hover:text-angaly-gold transition-colors"
               >
                 <Plus size={14} /> Ajouter — {field.itemLabel.toLowerCase()}
               </button>

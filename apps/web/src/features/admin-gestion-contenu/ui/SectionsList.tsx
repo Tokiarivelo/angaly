@@ -23,10 +23,10 @@ interface SectionsListProps {
  * docs/features/content.md).
  */
 function statusPillClasses(status: ContentStatus | null): string {
-  if (status === null) return 'bg-white text-angaly-warm-gray border-dashed border-border';
+  if (status === null) return 'bg-transparent text-angaly-warm-gray border-dashed border-angaly-border';
   return status === ContentStatus.PUBLISHED
-    ? 'bg-green-50 text-green-700 border-green-200'
-    : 'bg-slate-50 text-slate-700 border-slate-200';
+    ? 'bg-angaly-success/10 text-angaly-success border-angaly-success/30'
+    : 'bg-angaly-slate/10 text-angaly-slate border-angaly-slate/30';
 }
 
 function statusLabel(status: ContentStatus | null): string {
@@ -46,40 +46,51 @@ export const SectionsList: React.FC<SectionsListProps> = ({ pages, isLoading, se
   }
 
   if (pages.length === 0) {
-    return <p className="text-sm text-angaly-slate p-4">Aucune section éditable pour l&apos;instant.</p>;
+    return <p className="text-sm text-angaly-slate p-4 font-medium">Aucune section éditable pour l&apos;instant.</p>;
   }
 
+  const totalSections = pages.reduce((acc, p) => acc + p.sections.length, 0);
+
   return (
-    <nav aria-label="Pages et sections" className="divide-y divide-border">
-      {pages.map((group) => (
-        <div key={group.page} className="py-3">
-          <p className="px-4 text-xs uppercase tracking-wider text-angaly-slate font-semibold mb-1">{group.label}</p>
-          {group.sections.map((section) => {
-            const isActive = selected?.page === group.page && selected.sectionKey === section.sectionKey;
-            return (
-              <button
-                key={section.sectionKey}
-                type="button"
-                onClick={() => onSelect(group.page, section.sectionKey)}
-                aria-current={isActive ? 'true' : undefined}
-                className={`w-full flex items-center gap-3 px-4 py-2.5 text-left text-sm transition-colors ${
-                  isActive
-                    ? 'bg-angaly-navy/5 text-angaly-navy font-medium'
-                    : 'text-angaly-slate hover:bg-angaly-warm-ivory'
-                }`}
-              >
-                <FileText size={16} className="shrink-0" />
-                <span className="flex-1 truncate">{section.label}</span>
-                <span
-                  className={`text-[11px] px-2 py-0.5 rounded-full border whitespace-nowrap ${statusPillClasses(section.status)}`}
+    <div className="flex flex-col h-full">
+      <div className="p-4 border-b border-angaly-border bg-angaly-ivory/60 flex justify-between items-center sticky top-0 z-10">
+        <h2 className="text-xs font-bold uppercase tracking-widest text-angaly-navy">Arborescence</h2>
+        <span className="text-[11px] text-angaly-slate font-medium">
+          {totalSections} sections
+        </span>
+      </div>
+
+      <nav aria-label="Pages et sections" className="divide-y divide-angaly-border overflow-y-auto">
+        {pages.map((group) => (
+          <div key={group.page} className="py-2.5">
+            <p className="px-4 text-[11px] uppercase tracking-wider text-angaly-navy font-bold mb-1.5">{group.label}</p>
+            {group.sections.map((section) => {
+              const isActive = selected?.page === group.page && selected.sectionKey === section.sectionKey;
+              return (
+                <button
+                  key={section.sectionKey}
+                  type="button"
+                  onClick={() => onSelect(group.page, section.sectionKey)}
+                  aria-current={isActive ? 'true' : undefined}
+                  className={`w-full flex items-center gap-2.5 px-4 py-2 text-left text-xs transition-colors border-l-2 ${
+                    isActive
+                      ? 'bg-angaly-ivory text-angaly-navy font-semibold border-angaly-gold'
+                      : 'text-angaly-slate hover:bg-angaly-ivory/50 hover:text-angaly-navy border-transparent font-medium'
+                  }`}
                 >
-                  {statusLabel(section.status)}
-                </span>
-              </button>
-            );
-          })}
-        </div>
-      ))}
-    </nav>
+                  <FileText size={14} className={`shrink-0 ${isActive ? 'text-angaly-gold' : 'text-angaly-warm-gray'}`} />
+                  <span className="flex-1 truncate">{section.label}</span>
+                  <span
+                    className={`text-[10px] uppercase font-semibold tracking-wider px-2 py-0.5 rounded-sm border whitespace-nowrap ${statusPillClasses(section.status)}`}
+                  >
+                    {statusLabel(section.status)}
+                  </span>
+                </button>
+              );
+            })}
+          </div>
+        ))}
+      </nav>
+    </div>
   );
 };

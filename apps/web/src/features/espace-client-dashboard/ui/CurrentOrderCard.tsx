@@ -1,9 +1,8 @@
 import React from 'react';
 import Link from 'next/link';
-import { format } from 'date-fns';
-import { fr } from 'date-fns/locale';
-import { ShoppingBag, CheckCircle2, PackageOpen, Truck } from 'lucide-react';
+import { Package, ArrowRight } from 'lucide-react';
 import { OrderStatus } from '@angaly/types';
+import { ROUTES } from '@/lib/routes';
 
 export interface CurrentOrderCardData {
   id: string; // orderNumber
@@ -15,66 +14,86 @@ interface CurrentOrderCardProps {
   order?: CurrentOrderCardData | null;
 }
 
-const ORDER_STATUS_LABELS: Partial<Record<OrderStatus, string>> = {
-  [OrderStatus.CONFIRMED]: 'Confirmée',
-  [OrderStatus.PAID]: 'Payée',
-  [OrderStatus.IN_PRODUCTION]: 'En préparation',
-  [OrderStatus.READY]: 'Prête',
+const ORDER_STATUS_LABELS: Record<OrderStatus, { label: string; step: string }> = {
+  [OrderStatus.PENDING]: { label: 'En attente', step: 'En attente de paiement' },
+  [OrderStatus.CONFIRMED]: { label: 'Confirmée', step: 'Commande enregistrée' },
+  [OrderStatus.PAID]: { label: 'Payée', step: 'En préparation dans nos ateliers' },
+  [OrderStatus.IN_PRODUCTION]: { label: 'En confection', step: 'Dernière étape : Broderie & Finitions' },
+  [OrderStatus.READY]: { label: 'Prête', step: 'Prête pour livraison' },
+  [OrderStatus.DELIVERED]: { label: 'Livrée', step: 'Commande livrée' },
+  [OrderStatus.CANCELLED]: { label: 'Annulée', step: 'Commande annulée' },
+  [OrderStatus.REFUNDED]: { label: 'Remboursée', step: 'Commande remboursée' },
 };
 
 export const CurrentOrderCard: React.FC<CurrentOrderCardProps> = ({ order }) => {
   if (!order) {
     return (
-      <div className="bg-white p-6 rounded-2xl border border-border flex flex-col items-center justify-center text-center h-full min-h-[200px]">
-        <div className="w-12 h-12 bg-angaly-ivory rounded-full flex items-center justify-center mb-4">
-          <ShoppingBag className="text-angaly-slate" size={24} />
+      <div className="bg-white border border-angaly-border p-6 flex flex-col justify-between hover:border-angaly-champagne transition-colors duration-300 group h-full min-h-[220px]">
+        <div className="flex justify-between items-start mb-4">
+          <Package className="text-angaly-champagne" size={22} />
+          <span className="text-[10px] font-sans tracking-widest uppercase text-angaly-slate bg-angaly-warm-ivory/20 px-2 py-0.5 rounded font-medium">
+            Panier vide
+          </span>
         </div>
-        <h3 className="font-medium text-angaly-navy mb-2">Aucune commande</h3>
-        <p className="text-sm text-angaly-slate">Vous n'avez pas de commande en cours.</p>
+        <div className="my-auto">
+          <h3 className="font-heading text-base text-angaly-navy mb-1 group-hover:text-angaly-gold transition-colors font-medium">
+            Aucune commande
+          </h3>
+          <p className="text-xs text-angaly-slate leading-relaxed">
+            Vous n'avez pas de commande de création en cours.
+          </p>
+        </div>
+        <Link
+          href={ROUTES.creations}
+          className="mt-4 pt-3 border-t border-angaly-border/50 text-xs font-sans tracking-wider uppercase text-angaly-soft-navy hover:text-angaly-navy flex items-center gap-1 font-medium transition-colors"
+        >
+          <span>Découvrir nos créations</span>
+          <ArrowRight size={13} />
+        </Link>
       </div>
     );
   }
 
-  // Example timeline UI
+  const statusInfo = ORDER_STATUS_LABELS[order.status] ?? {
+    label: 'En cours',
+    step: 'Confection en atelier',
+  };
+
   return (
-    <div className="bg-white p-6 rounded-2xl border border-border h-full flex flex-col">
-      <div className="flex items-center justify-between mb-6">
-        <div className="flex items-center gap-3">
-          <div className="w-10 h-10 bg-angaly-ivory rounded-full flex items-center justify-center text-angaly-navy">
-            <ShoppingBag size={20} />
-          </div>
-          <div>
-            <h2 className="font-serif text-lg text-angaly-navy">Commande #{order.id}</h2>
-            <p className="text-xs text-angaly-slate">Passée le {format(new Date(order.createdAt), 'd MMM yyyy', { locale: fr })}</p>
-          </div>
-        </div>
-        <span className="px-3 py-1 bg-angaly-ivory text-angaly-navy text-xs font-medium rounded-full">
-          {ORDER_STATUS_LABELS[order.status] ?? 'En cours'}
+    <div className="bg-white border border-angaly-border p-6 flex flex-col justify-between hover:border-angaly-champagne transition-colors duration-300 group h-full min-h-[220px]">
+      <div className="flex justify-between items-start mb-4">
+        <Package className="text-angaly-champagne" size={22} />
+        <span className="text-[10px] font-sans tracking-widest uppercase text-angaly-gold bg-angaly-champagne/20 px-2 py-0.5 rounded font-medium">
+          {statusInfo.label}
         </span>
       </div>
 
-      <div className="flex-1">
-        <div className="relative pl-6 space-y-6 before:absolute before:inset-0 before:ml-[11px] before:-translate-x-px md:before:mx-auto md:before:translate-x-0 before:h-full before:w-0.5 before:bg-gradient-to-b before:from-transparent before:via-border before:to-transparent">
-          {/* Status dots */}
-          <div className="relative flex items-center justify-between">
-            <div className="flex flex-col items-center">
-              <div className="w-6 h-6 rounded-full bg-angaly-navy text-white flex items-center justify-center z-10"><CheckCircle2 size={14}/></div>
-              <span className="text-xs font-medium mt-2 text-angaly-navy">Validée</span>
-            </div>
-            <div className="flex flex-col items-center">
-              <div className={`w-6 h-6 rounded-full flex items-center justify-center z-10 ${order.status === OrderStatus.IN_PRODUCTION || order.status === OrderStatus.READY ? 'bg-angaly-navy text-white' : 'bg-angaly-ivory border-2 border-border text-angaly-slate'}`}><PackageOpen size={14}/></div>
-              <span className="text-xs font-medium mt-2 text-angaly-navy">Préparation</span>
-            </div>
-            <div className={`flex flex-col items-center ${order.status === OrderStatus.READY ? '' : 'opacity-40'}`}>
-              <div className={`w-6 h-6 rounded-full flex items-center justify-center z-10 ${order.status === OrderStatus.READY ? 'bg-angaly-navy text-white' : 'bg-angaly-ivory border-2 border-border text-angaly-slate'}`}><Truck size={14}/></div>
-              <span className="text-xs font-medium mt-2 text-angaly-slate">Expédiée</span>
-            </div>
-          </div>
+      <div className="flex items-center gap-4 my-auto">
+        {/* Navy silk swatch thumbnail */}
+        <div className="w-12 h-16 bg-angaly-navy-dark border border-angaly-border/80 shrink-0 flex flex-col items-center justify-center relative overflow-hidden shadow-sm">
+          <div className="absolute inset-0 bg-gradient-to-br from-angaly-navy via-angaly-navy-blue to-angaly-royal-navy opacity-90" />
+          <div className="absolute -right-3 -top-3 w-8 h-8 rounded-full bg-angaly-champagne/10 blur-sm" />
+          <span className="relative font-heading text-[9px] tracking-widest text-angaly-champagne uppercase opacity-80">
+            ANGALY
+          </span>
+        </div>
+
+        <div className="min-w-0">
+          <h3 className="font-heading text-base text-angaly-navy leading-tight mb-1 group-hover:text-angaly-gold transition-colors font-medium truncate">
+            Commande #{order.id}
+          </h3>
+          <p className="text-xs text-angaly-warm-gray leading-normal">
+            {statusInfo.step}
+          </p>
         </div>
       </div>
 
-      <Link href={`/suivi-commande/${order.id}`} className="mt-6 text-sm font-medium text-angaly-navy hover:underline underline-offset-4">
-        Suivre ma commande &rarr;
+      <Link
+        href={`/suivi-commande/${order.id}`}
+        className="mt-4 pt-3 border-t border-angaly-border/50 text-xs font-sans tracking-wider uppercase text-angaly-soft-navy hover:text-angaly-navy flex items-center gap-1 font-medium transition-colors"
+      >
+        <span>Suivre ma commande</span>
+        <ArrowRight size={13} />
       </Link>
     </div>
   );
