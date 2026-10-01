@@ -30,8 +30,10 @@ Maison de couture numérique (vitrine, boutique, sur-mesure, espace client, back
 6. Documenter : la fiche, et `docs/deployment.md`/`docs/development.md` si infra, variable
    d'env, port ou procédure de lancement changent.
 7. Mettre à jour `docs/checklist-implementation.md` et `docs/mockup-reference.md`.
-8. **Passation de session / Handoff** : Dès que les tokens s'épuisent ou que la session se
-   termine, consigner immédiatement l'état dans `docs/handoff.md` avant de clore.
+8. **Passation de session / Handoff (obligatoire)** : à chaque changement d'agent de codage
+   (Claude Code, Antigravity, Cursor…), à l'épuisement des tokens et en fin de session, créer ou
+   mettre à jour `docs/handoff.md` **avant de clore** — jamais d'arrêt sans ce fichier à jour.
+   L'agent suivant le lit en premier et s'en sert pour poursuivre l'implémentation.
 
 **Économie de contexte & bascule d'agent** : lire uniquement la ligne/section concernée de
 `mockup-reference.md` et de `checklist-implementation.md` (grep, `offset`/`limit`), jamais en

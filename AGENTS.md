@@ -23,9 +23,10 @@ et tout autre assistant IA.
 7. **Documenter** une fois terminé — comportement, usage, et toujours mettre à jour
    `docs/deployment.md`/`docs/development.md` si le changement touche l'infrastructure.
 8. **Mettre à jour `docs/checklist-implementation.md`** pour refléter le nouveau statut.
-9. **Passation de session / Handoff inter-agents** — en cas de saturation de contexte,
-   consommation avancée de tokens, ou fin de session/phase, mettre à jour immédiatement
-   `docs/handoff.md` pour permettre au prochain agent de reprendre sans perte de contexte.
+9. **Passation de session / Handoff inter-agents (obligatoire)** — à chaque changement d'agent de
+   codage, à l'épuisement des tokens ou en fin de session/phase, créer ou mettre à jour
+   `docs/handoff.md` **avant de clore**. L'agent suivant le lit en premier et poursuit à partir
+   de ce fichier ; sans lui, aucune reprise fiable.
 
 ## Gestion du contexte et bascule inter-agents
 

@@ -15,12 +15,19 @@ Les sessions longues ou comportant de nombreuses modifications consomment rapide
 
 ---
 
+## 0. Règle impérative
+
+**Toujours créer (ou mettre à jour) `docs/handoff.md` avant de changer d'agent de codage, quand les
+tokens sont consommés, ou quand la session se termine.** Si le fichier n'existe pas, le créer.
+L'agent suivant s'en sert comme point de reprise de l'implémentation : une session ne se clôt
+jamais sans ce fichier à jour. Au besoin, l'utilisateur peut déclencher la passation à tout moment.
+
 ## 1. Quand déclencher la passation ?
 
 L'agent sortant **doit** initier la passation dès que :
 1. **Saturation de tokens** : Le contexte approche des 70–80% de capacité ou un avertissement de compression/tronquage survient.
 2. **Fin de lot / tranche de phase** : Une fonctionnalité ou sous-ensemble est implémenté, testé et validé.
-3. **Changement d'outil** : L'utilisateur demande de basculer vers un autre assistant ou d'ouvrir une nouvelle session (`/clear`).
+3. **Changement d'agent / d'outil** : L'utilisateur change d'assistant de codage, ou demande de basculer vers un autre assistant ou d'ouvrir une nouvelle session (`/clear`).
 
 ---
 
@@ -62,4 +69,6 @@ Avant de clore la session ou d'inviter à basculer :
 2. Vérifier brièvement le statut git (`git status --short`).
 3. Prendre la première tâche de la section « Prochaines actions prioritaires » et l'exécuter.
 4. Consulter uniquement les fiches documentaires cibles (`docs/pages/<slug>.md` ou `docs/features/<slug>.md`) et la maquette Stitch concernée.
+   Pour **vérifier** un travail déjà livré, contrôler dans le code que la fonctionnalité est bien
+   implémentée (routes, hooks, endpoints, tests) plutôt que de re-comparer la maquette.
 5. À son tour, en fin de session ou en cas de saturation de tokens, mettre à jour `docs/handoff.md`.
