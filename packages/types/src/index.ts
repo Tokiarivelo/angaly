@@ -551,6 +551,27 @@ export interface CreationProjectDto extends Timestamps {
   customerName?: string | null;
   creationId: string | null;
   completedAt: string | null;
+  /** Couturière / membre du staff en charge du projet (back-office). */
+  assignedTo?: CreationProjectAssigneeDto | null;
+}
+
+export interface CreationProjectAssigneeDto {
+  id: string;
+  email: string;
+  role: Role;
+}
+
+export interface CreationProjectStageEventDto {
+  id: string;
+  fromStage: CreationProjectStage | null;
+  toStage: CreationProjectStage;
+  changedByEmail: string | null;
+  createdAt: string;
+}
+
+/** Détail back-office : projet + historique des étapes (plus récent d'abord). */
+export interface CreationProjectDetailDto extends CreationProjectDto {
+  stageHistory: CreationProjectStageEventDto[];
 }
 
 // ============================================================
