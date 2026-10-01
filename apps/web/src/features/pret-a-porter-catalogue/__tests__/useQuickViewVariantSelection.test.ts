@@ -29,28 +29,28 @@ const mockProduct: ProductDto = {
   status: ProductAvailability.AVAILABLE,
   category: { id: 'cat-1', slug: 'robes', name: 'Robes' },
   media: [
-    { id: 'prod-media-1', url: '/images/product-default.jpg', altText: 'Default', isPrimary: true, sortOrder: 0 },
+    { id: 'prod-media-1', url: '/images/product-default.jpg', altText: 'Default', sortOrder: 0 },
   ],
   variants: [
     createVariant({
       size: '36',
       color: 'Noir',
       quantityAvailable: 2,
-      media: [{ id: 'm-noir-1', url: '/images/robe-noir-1.jpg', altText: 'Noir 1', isPrimary: true, sortOrder: 0 }],
+      media: [{ id: 'm-noir-1', url: '/images/robe-noir-1.jpg', altText: 'Noir 1', sortOrder: 0 }],
     }),
     createVariant({
       size: '38',
       color: 'Noir',
       quantityAvailable: 0,
-      media: [{ id: 'm-noir-1', url: '/images/robe-noir-1.jpg', altText: 'Noir 1', isPrimary: true, sortOrder: 0 }],
+      media: [{ id: 'm-noir-1', url: '/images/robe-noir-1.jpg', altText: 'Noir 1', sortOrder: 0 }],
     }),
     createVariant({
       size: '38',
       color: 'Blanc',
       quantityAvailable: 4,
       media: [
-        { id: 'm-blanc-1', url: '/images/robe-blanc-1.jpg', altText: 'Blanc 1', isPrimary: true, sortOrder: 0 },
-        { id: 'm-blanc-2', url: '/images/robe-blanc-2.jpg', altText: 'Blanc 2', isPrimary: false, sortOrder: 1 },
+        { id: 'm-blanc-1', url: '/images/robe-blanc-1.jpg', altText: 'Blanc 1', sortOrder: 0 },
+        { id: 'm-blanc-2', url: '/images/robe-blanc-2.jpg', altText: 'Blanc 2', sortOrder: 1 },
       ],
     }),
     createVariant({

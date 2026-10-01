@@ -120,7 +120,7 @@ export function ProductQuickViewModal({
             {activeImage ? (
               <Image
                 src={activeImage.url}
-                alt={activeImage.altText || `${product.name} — ${selectedColor || ''}`}
+                alt={activeImage.altText ?? `${product.name} — ${selectedColor ?? ''}`}
                 fill
                 priority
                 sizes="(min-width: 768px) 50vw, 100vw"

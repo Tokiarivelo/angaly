@@ -14,7 +14,7 @@ const sampleProduct: ProductDto = {
   price: { amount: '2450000', currency: 'MGA' },
   status: ProductAvailability.AVAILABLE,
   category: { id: 'cat-1', slug: 'robes', name: 'Robes' },
-  media: [{ id: 'pm-1', url: '/default-image.jpg', altText: 'Default', isPrimary: true, sortOrder: 0 }],
+  media: [{ id: 'pm-1', url: '/default-image.jpg', altText: 'Default', sortOrder: 0 }],
   variants: [
     {
       id: 'var-noir-36',
@@ -25,7 +25,7 @@ const sampleProduct: ProductDto = {
       priceOverride: null,
       quantityAvailable: 3,
       quantityReserved: 0,
-      media: [{ id: 'vm-noir', url: '/robe-noir.jpg', altText: 'Robe Noir', isPrimary: true, sortOrder: 0 }],
+      media: [{ id: 'vm-noir', url: '/robe-noir.jpg', altText: 'Robe Noir', sortOrder: 0 }],
     },
     {
       id: 'var-noir-38',
@@ -36,7 +36,7 @@ const sampleProduct: ProductDto = {
       priceOverride: null,
       quantityAvailable: 0,
       quantityReserved: 0,
-      media: [{ id: 'vm-noir', url: '/robe-noir.jpg', altText: 'Robe Noir', isPrimary: true, sortOrder: 0 }],
+      media: [{ id: 'vm-noir', url: '/robe-noir.jpg', altText: 'Robe Noir', sortOrder: 0 }],
     },
     {
       id: 'var-blanc-36',
@@ -47,7 +47,7 @@ const sampleProduct: ProductDto = {
       priceOverride: null,
       quantityAvailable: 5,
       quantityReserved: 0,
-      media: [{ id: 'vm-blanc', url: '/robe-blanc.jpg', altText: 'Robe Blanc', isPrimary: true, sortOrder: 0 }],
+      media: [{ id: 'vm-blanc', url: '/robe-blanc.jpg', altText: 'Robe Blanc', sortOrder: 0 }],
     },
   ],
   createdAt: '2026-01-01T00:00:00.000Z',

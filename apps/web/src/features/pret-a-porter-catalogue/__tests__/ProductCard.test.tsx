@@ -13,7 +13,7 @@ const mockProduct: ProductDto = {
   price: { amount: '2450000', currency: 'MGA' },
   status: ProductAvailability.AVAILABLE,
   category: { id: 'cat-1', slug: 'robes', name: 'Robes' },
-  media: [{ id: 'm-1', url: '/robe.jpg', altText: 'Robe Saphir', isPrimary: true, sortOrder: 0 }],
+  media: [{ id: 'm-1', url: '/robe.jpg', altText: 'Robe Saphir', sortOrder: 0 }],
   variants: [
     {
       id: 'v-1',

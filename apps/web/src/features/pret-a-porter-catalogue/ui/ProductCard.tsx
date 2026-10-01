@@ -14,7 +14,7 @@ interface ProductCardProps {
   product: ProductDto;
   isFavorite: boolean;
   onToggleFavorite: (productId: string) => void;
-  onQuickView?: (product: ProductDto, initialColor?: string) => void;
+  onQuickView?: ((product: ProductDto, initialColor?: string) => void) | undefined;
 }
 
 /** Distinct colors across a product's variants, for the small swatch row — verified against the real Stitch card. */
