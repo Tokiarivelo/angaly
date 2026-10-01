@@ -1,6 +1,7 @@
 import { Module } from '@nestjs/common';
 
 import { AuthModule } from '../auth/auth.module';
+import { CreationProjectsModule } from '../creation-projects/creation-projects.module';
 import { CreationsModule } from '../creations/creations.module';
 import { CustomersModule } from '../customers/customers.module';
 import { MediaModule } from '../media/media.module';
@@ -23,8 +24,9 @@ import { QuotesController } from './presentation/controllers/quotes.controller';
   // AuthModule: JwtAuthGuard/RolesGuard (all routes) + ACCESS_TOKEN_SERVICE indirectly via guards.
   // CustomersModule: CUSTOMER_REPOSITORY (resolves the caller's Customer.id from the JWT userId).
   // CreationsModule: CREATION_REPOSITORY (validates Quote.creationId on a design-brief intake).
+  // CreationProjectsModule: accept-quote ouvre le projet « Mes créations » du devis accepté.
   // MediaModule: UploadMediaBufferUseCase (export-quote-pdf uploads the generated PDF).
-  imports: [AuthModule, CustomersModule, CreationsModule, MediaModule],
+  imports: [AuthModule, CustomersModule, CreationsModule, MediaModule, CreationProjectsModule],
   controllers: [QuotesController],
   providers: [
     CreateQuoteFromSurMesureRequestUseCase,

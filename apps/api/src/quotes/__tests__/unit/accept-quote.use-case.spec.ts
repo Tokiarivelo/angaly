@@ -5,6 +5,7 @@ import type { ICustomerRepository } from '../../../customers/domain/repositories
 import type { QuoteProps } from '../../domain/entities/quote.entity';
 import { QuoteEntity } from '../../domain/entities/quote.entity';
 import type { IQuoteRepository } from '../../domain/repositories/quote.repository';
+import type { CreateCreationProjectFromQuoteUseCase } from '../../../creation-projects/application/use-cases/create-creation-project-from-quote.use-case';
 import { AcceptQuoteUseCase } from '../../application/use-cases/accept-quote.use-case';
 
 function sampleCustomer(id = 'customer-1', userId = 'user-1'): CustomerEntity {
@@ -53,16 +54,20 @@ function buildRepository(quote: QuoteEntity | null): jest.Mocked<IQuoteRepositor
   };
 }
 
+function buildProjectCreator(): jest.Mocked<Pick<CreateCreationProjectFromQuoteUseCase, 'execute'>> {
+  return { execute: jest.fn().mockResolvedValue({}) };
+}
+
 describe('AcceptQuoteUseCase', () => {
   it('throws NotFoundException for an unknown quoteNumber', async () => {
-    const useCase = new AcceptQuoteUseCase(buildCustomerRepository(), buildRepository(null));
+    const useCase = new AcceptQuoteUseCase(buildCustomerRepository(), buildRepository(null), buildProjectCreator() as unknown as CreateCreationProjectFromQuoteUseCase);
 
     await expect(useCase.execute('missing', 'user-1')).rejects.toThrow(NotFoundException);
   });
 
   it('throws ForbiddenException when the quote belongs to another customer', async () => {
     const repository = buildRepository(QuoteEntity.create(buildProps()));
-    const useCase = new AcceptQuoteUseCase(buildCustomerRepository(sampleCustomer('customer-2', 'user-2')), repository);
+    const useCase = new AcceptQuoteUseCase(buildCustomerRepository(sampleCustomer('customer-2', 'user-2')), repository, buildProjectCreator() as unknown as CreateCreationProjectFromQuoteUseCase);
 
     await expect(useCase.execute('ANG-DEV-2026-abc12345', 'user-2')).rejects.toThrow(ForbiddenException);
   });
@@ -71,19 +76,23 @@ describe('AcceptQuoteUseCase', () => {
     'rejects accepting a %s quote',
     async (status) => {
       const repository = buildRepository(QuoteEntity.create(buildProps({ status })));
-      const useCase = new AcceptQuoteUseCase(buildCustomerRepository(), repository);
+      const projectCreator = buildProjectCreator();
+      const useCase = new AcceptQuoteUseCase(buildCustomerRepository(), repository, projectCreator as unknown as CreateCreationProjectFromQuoteUseCase);
 
       await expect(useCase.execute('ANG-DEV-2026-abc12345', 'user-1')).rejects.toThrow(ConflictException);
       expect(repository.update).not.toHaveBeenCalled();
+      expect(projectCreator.execute).not.toHaveBeenCalled();
     },
   );
 
   it.each(['SENT', 'VIEWED'] as const)('accepts a %s quote owned by the caller', async (status) => {
     const repository = buildRepository(QuoteEntity.create(buildProps({ status })));
-    const useCase = new AcceptQuoteUseCase(buildCustomerRepository(), repository);
+    const projectCreator = buildProjectCreator();
+    const useCase = new AcceptQuoteUseCase(buildCustomerRepository(), repository, projectCreator as unknown as CreateCreationProjectFromQuoteUseCase);
 
     await useCase.execute('ANG-DEV-2026-abc12345', 'user-1');
 
     expect(repository.update).toHaveBeenCalledWith('quote-1', { status: 'ACCEPTED' });
+    expect(projectCreator.execute).toHaveBeenCalledWith(expect.objectContaining({ id: 'quote-1', customerId: 'customer-1' }));
   });
 });

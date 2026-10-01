@@ -5,7 +5,16 @@ import { CreationProjectResponseDto } from '../../application/dtos/creation-proj
 import { CreationProjectEntity } from '../../domain/entities/creation-project.entity';
 
 export class CreationProjectMapper {
-  static toDomain(row: PrismaCreationProject): CreationProjectEntity {
+  static toDomain(
+    row: PrismaCreationProject & {
+      quote?: { quoteNumber: string } | null;
+      customer?: { firstName: string; lastName: string } | null;
+    },
+  ): CreationProjectEntity {
+    const customerName = row.customer
+      ? `${row.customer.firstName} ${row.customer.lastName}`.trim()
+      : null;
+
     return CreationProjectEntity.create({
       id: row.id,
       reference: row.reference,
@@ -14,6 +23,8 @@ export class CreationProjectMapper {
       description: row.description,
       stage: row.stage as CreationProjectStage,
       quoteId: row.quoteId,
+      quoteNumber: row.quote?.quoteNumber ?? null,
+      customerName,
       creationId: row.creationId,
       completedAt: row.completedAt,
       createdAt: row.createdAt,
@@ -29,6 +40,8 @@ export class CreationProjectMapper {
     dto.description = entity.description;
     dto.stage = entity.stage;
     dto.quoteId = entity.quoteId;
+    dto.quoteNumber = entity.quoteNumber;
+    dto.customerName = entity.customerName;
     dto.creationId = entity.creationId;
     dto.completedAt = entity.completedAt?.toISOString() ?? null;
     dto.createdAt = entity.createdAt.toISOString();

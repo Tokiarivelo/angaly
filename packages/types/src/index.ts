@@ -546,6 +546,9 @@ export interface CreationProjectDto extends Timestamps {
   description: string | null;
   stage: CreationProjectStage;
   quoteId: string | null;
+  /** Numéro public du devis lié (route /devis/[quoteNumber]). */
+  quoteNumber: string | null;
+  customerName?: string | null;
   creationId: string | null;
   completedAt: string | null;
 }

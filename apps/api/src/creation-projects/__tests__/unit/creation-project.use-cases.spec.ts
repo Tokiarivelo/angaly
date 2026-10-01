@@ -36,7 +36,14 @@ function project(customerId: string): CreationProjectEntity {
 
 describe('creation-projects use cases', () => {
   const customers = { findByUserId: jest.fn(), findById: jest.fn(), update: jest.fn() } as jest.Mocked<ICustomerRepository>;
-  const repository: jest.Mocked<ICreationProjectRepository> = { findByCustomerId: jest.fn(), findById: jest.fn() };
+  const repository: jest.Mocked<ICreationProjectRepository> = {
+    findByCustomerId: jest.fn(),
+    findById: jest.fn(),
+    findByQuoteId: jest.fn(),
+    findAll: jest.fn(),
+    create: jest.fn(),
+    updateStage: jest.fn(),
+  };
 
   beforeEach(() => {
     jest.resetAllMocks();

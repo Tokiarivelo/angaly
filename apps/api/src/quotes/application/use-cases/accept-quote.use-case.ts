@@ -1,5 +1,6 @@
 import { ConflictException, ForbiddenException, Inject, Injectable, NotFoundException } from '@nestjs/common';
 
+import { CreateCreationProjectFromQuoteUseCase } from '../../../creation-projects/application/use-cases/create-creation-project-from-quote.use-case';
 import { CUSTOMER_REPOSITORY, ICustomerRepository } from '../../../customers/domain/repositories/customer.repository';
 import { QuoteEntity } from '../../domain/entities/quote.entity';
 import { IQuoteRepository, QUOTE_REPOSITORY } from '../../domain/repositories/quote.repository';
@@ -11,6 +12,7 @@ export class AcceptQuoteUseCase {
   constructor(
     @Inject(CUSTOMER_REPOSITORY) private readonly customerRepository: ICustomerRepository,
     @Inject(QUOTE_REPOSITORY) private readonly quoteRepository: IQuoteRepository,
+    private readonly createCreationProject: CreateCreationProjectFromQuoteUseCase,
   ) {}
 
   async execute(quoteNumber: string, userId: string): Promise<QuoteEntity> {
@@ -26,6 +28,8 @@ export class AcceptQuoteUseCase {
       throw new ConflictException(`Cannot accept a quote with status "${quote.status}"`);
     }
 
-    return this.quoteRepository.update(quote.id, { status: 'ACCEPTED' });
+    const accepted = await this.quoteRepository.update(quote.id, { status: 'ACCEPTED' });
+    await this.createCreationProject.execute(accepted);
+    return accepted;
   }
 }

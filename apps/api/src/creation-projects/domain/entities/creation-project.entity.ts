@@ -8,6 +8,9 @@ export interface CreationProjectProps {
   description: string | null;
   stage: CreationProjectStage;
   quoteId: string | null;
+  /** Numéro public du devis lié, résolu par le repository. */
+  quoteNumber?: string | null;
+  customerName?: string | null;
   creationId: string | null;
   completedAt: Date | null;
   createdAt: Date;
@@ -32,6 +35,8 @@ export class CreationProjectEntity {
   get description(): string | null { return this.props.description; }
   get stage(): CreationProjectStage { return this.props.stage; }
   get quoteId(): string | null { return this.props.quoteId; }
+  get quoteNumber(): string | null { return this.props.quoteNumber ?? null; }
+  get customerName(): string | null { return this.props.customerName ?? null; }
   get creationId(): string | null { return this.props.creationId; }
   get completedAt(): Date | null { return this.props.completedAt; }
   get createdAt(): Date { return this.props.createdAt; }

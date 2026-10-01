@@ -8,6 +8,8 @@ export class CreationProjectResponseDto {
   @ApiPropertyOptional({ nullable: true, type: String }) description!: string | null;
   @ApiProperty({ enum: CreationProjectStage }) stage!: CreationProjectStage;
   @ApiPropertyOptional({ nullable: true, type: String }) quoteId!: string | null;
+  @ApiPropertyOptional({ nullable: true, type: String, example: 'ANG-DEV-2026-abc12345' }) quoteNumber!: string | null;
+  @ApiPropertyOptional({ nullable: true, type: String, example: 'Éléonore de Saint-Germain' }) customerName!: string | null;
   @ApiPropertyOptional({ nullable: true, type: String }) creationId!: string | null;
   @ApiPropertyOptional({ nullable: true, type: String }) completedAt!: string | null;
   @ApiProperty() createdAt!: string;

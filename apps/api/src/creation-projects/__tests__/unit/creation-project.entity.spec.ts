@@ -30,4 +30,10 @@ describe('CreationProjectEntity', () => {
   it('rejects an empty title', () => {
     expect(() => CreationProjectEntity.create({ ...base, title: '  ' })).toThrow('title cannot be empty');
   });
+
+  it('exposes optional customerName', () => {
+    const entity = CreationProjectEntity.create({ ...base, customerName: 'Éléonore de Saint-Germain' });
+    expect(entity.customerName).toBe('Éléonore de Saint-Germain');
+  });
 });
+
