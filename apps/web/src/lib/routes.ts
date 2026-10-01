@@ -21,8 +21,10 @@ export const ROUTES = {
   prendreRendezVous: '/prendre-rendez-vous',
   reservationEssayage: '/essayage/reserver',
   favoris: '/mes-favoris',
+  mesCreations: '/mes-creations',
   /** Back-office (staff only — the (admin) layout redirects other roles to /). */
   backOffice: '/dashboard',
+  adminCreationProjects: '/projets-creation',
   connexion: '/connexion',
   inscription: '/inscription',
   motDePasseOublie: '/mot-de-passe-oublie',

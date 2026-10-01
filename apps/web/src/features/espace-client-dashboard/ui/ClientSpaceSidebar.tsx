@@ -31,7 +31,7 @@ const navItems = [
   { label: 'Tableau de bord', href: '/dashboard', icon: LayoutDashboard },
   { label: 'Mes rendez-vous', href: '/mes-rendez-vous', icon: Calendar },
   { label: 'Mes commandes', href: '/mes-commandes', icon: ShoppingBag },
-  { label: 'Mes créations', href: '/creations', icon: Scissors },
+  { label: 'Mes créations', href: ROUTES.mesCreations, icon: Scissors },
   { label: 'Mes projets de patron', href: '/mes-projets-patron', icon: Layers },
   { label: 'Mes mesures', href: '/mes-mesures', icon: Ruler },
   { label: 'Mes favoris', href: '/mes-favoris', icon: Heart },

@@ -1,9 +1,10 @@
 import React from 'react';
 import Link from 'next/link';
 import { Scissors, Ruler, Heart, FileText } from 'lucide-react';
+import { ROUTES } from '@/lib/routes';
 
 const tiles = [
-  { label: 'Mes créations', href: '/creations', icon: Scissors, color: 'bg-orange-50 text-orange-600' },
+  { label: 'Mes créations', href: ROUTES.mesCreations, icon: Scissors, color: 'bg-orange-50 text-orange-600' },
   { label: 'Mes mesures', href: '/mes-mesures', icon: Ruler, color: 'bg-blue-50 text-blue-600' },
   { label: 'Mes favoris', href: '/mes-favoris', icon: Heart, color: 'bg-pink-50 text-pink-600' },
   { label: 'Mes factures', href: '/mes-messages?tab=factures', icon: FileText, color: 'bg-green-50 text-green-600' },

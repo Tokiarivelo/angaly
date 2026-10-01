@@ -17,20 +17,28 @@ function renderAs(role: Role) {
 describe('AdminSidebar', () => {
   it('shows every entry to an ADMIN', () => {
     renderAs(Role.ADMIN);
-    for (const name of ['Tableau de bord', 'Gestion de contenu', 'Médiathèque', 'Paramètres IA']) {
+    for (const name of [
+      'Tableau de bord',
+      'Projets de création',
+      'Gestion de contenu',
+      'Médiathèque',
+      'Paramètres IA',
+    ]) {
       expect(screen.getByRole('link', { name })).toBeInTheDocument();
     }
   });
 
   it('hides the AI settings from a MANAGER', () => {
     renderAs(Role.MANAGER);
+    expect(screen.getByRole('link', { name: 'Projets de création' })).toBeInTheDocument();
     expect(screen.getByRole('link', { name: 'Gestion de contenu' })).toBeInTheDocument();
     expect(screen.queryByRole('link', { name: 'Paramètres IA' })).not.toBeInTheDocument();
   });
 
-  it('only shows the dashboard to a COUTURIERE', () => {
+  it('shows dashboard and creation projects to a COUTURIERE', () => {
     renderAs(Role.COUTURIERE);
     expect(screen.getByRole('link', { name: 'Tableau de bord' })).toBeInTheDocument();
+    expect(screen.getByRole('link', { name: 'Projets de création' })).toBeInTheDocument();
     expect(screen.queryByRole('link', { name: 'Gestion de contenu' })).not.toBeInTheDocument();
     expect(screen.queryByRole('link', { name: 'Médiathèque' })).not.toBeInTheDocument();
   });

@@ -3,7 +3,7 @@
 import React from 'react';
 import Link from 'next/link';
 import { usePathname } from 'next/navigation';
-import { LayoutDashboard, Sparkles, FileEdit, Image as ImageIcon, LogOut, Home, UserRound } from 'lucide-react';
+import { LayoutDashboard, Sparkles, FileEdit, Image as ImageIcon, LogOut, Home, UserRound, Scissors } from 'lucide-react';
 import { signOut, useSession } from 'next-auth/react';
 
 import { Role } from '@angaly/types';
@@ -26,6 +26,7 @@ const CONTENT: Role[] = [Role.MANAGER, Role.ADMIN];
 // which silently redirects to /dashboard — hide the link instead of offering a dead end.
 const navItems: { label: string; href: string; icon: typeof LayoutDashboard; roles: Role[] }[] = [
   { label: 'Tableau de bord', href: '/dashboard', icon: LayoutDashboard, roles: STAFF },
+  { label: 'Projets de création', href: '/projets-creation', icon: Scissors, roles: STAFF },
   { label: 'Gestion de contenu', href: '/gestion-contenu', icon: FileEdit, roles: CONTENT },
   { label: 'Médiathèque', href: '/mediatheque', icon: ImageIcon, roles: CONTENT },
   { label: 'Paramètres IA', href: '/ai-settings', icon: Sparkles, roles: [Role.ADMIN] },
