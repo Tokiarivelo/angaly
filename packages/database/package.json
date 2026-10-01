@@ -10,6 +10,7 @@
     "db:migrate:prod": "dotenv -e ../../.env.prod -- prisma migrate deploy",
     "db:seed": "dotenv -e ../../.env -- tsx prisma/seed.ts",
     "db:seed:cms": "dotenv -e ../../.env -- tsx prisma/seed-cms.ts",
+    "db:backfill:creation-projects": "dotenv -e ../../.env -- tsx prisma/backfill-creation-projects.ts",
     "db:studio": "dotenv -e ../../.env -- prisma studio",
     "db:reset": "dotenv -e ../../.env -- prisma migrate reset --force"
   },
