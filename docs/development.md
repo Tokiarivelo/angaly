@@ -69,6 +69,13 @@ make db.seed      # crée le compte admin + un atelier + des catégories de base
 Compte créé par le seed : `admin@angaly.mg` / `Admin@Angaly2026!` (à changer avant toute
 mise en production réelle).
 
+Commandes sur une base existante (toutes idempotentes, sans écrasement) :
+
+```bash
+pnpm --filter @angaly/database db:seed:cms                      # sections CMS par défaut (create-only)
+pnpm --filter @angaly/database db:backfill:creation-projects    # un projet de création par devis déjà accepté
+```
+
 ### 5. Démarrer les apps
 
 ```bash

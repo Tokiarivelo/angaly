@@ -30,13 +30,20 @@ Maison de couture numérique (vitrine, boutique, sur-mesure, espace client, back
 6. Documenter : la fiche, et `docs/deployment.md`/`docs/development.md` si infra, variable
    d'env, port ou procédure de lancement changent.
 7. Mettre à jour `docs/checklist-implementation.md` et `docs/mockup-reference.md`.
+8. **Passation de session / Handoff** : Dès que les tokens s'épuisent ou que la session se
+   termine, consigner immédiatement l'état dans `docs/handoff.md` avant de clore.
 
-**Économie de contexte** : lire uniquement la ligne/section concernée de `mockup-reference.md` et
-de `checklist-implementation.md` (grep, `offset`/`limit`), jamais en entier — la fiche de la page
-et sa phase suffisent. Retouche triviale (typo, une classe, une ligne) : garder l'étape 1 (Stitch)
-mais sauter 2–3 et 6–7 sauf si le statut change (les tests de l'étape 5 restent obligatoires). Phase terminée → proposer `/clear` ou une nouvelle
-session plutôt que de continuer avec un long historique. Garder les checklists courtes : déplacer
-les items terminés vers `docs/checklist-archive.md` (à créer au besoin), non lu par défaut.
+**Économie de contexte & bascule d'agent** : lire uniquement la ligne/section concernée de
+`mockup-reference.md` et de `checklist-implementation.md` (grep, `offset`/`limit`), jamais en
+entier — la fiche de la page et sa phase suffisent. Retouche triviale (typo, une classe, une ligne) :
+garder l'étape 1 (Stitch) mais sauter 2–3 et 6–7 sauf si le statut change (les tests de l'étape 5
+restent obligatoires).
+**Bascule d'agent** : Dès que le contexte approche de la saturation, mettre à jour `docs/handoff.md`
+(résumé, diff git, tests validés, prochaines actions précises) puis proposer `/clear` ou une
+nouvelle session. Le nouvel agent reprend directement avec la consigne :
+*« Lis docs/handoff.md et poursuis le travail selon les priorités définies. »*
+Garder les checklists courtes : déplacer les items terminés vers `docs/checklist-archive.md` (à créer
+au besoin), non lu par défaut.
 
 ## Règles absolues
 

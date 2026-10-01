@@ -48,17 +48,17 @@ ce fichier trace le lot de cette session).
 - [ ] **Accès Stitch** : redémarrer Claude Code pour charger `STITCH_API_KEY`
       (`.claude/settings.local.json`), puis vérifier les écrans (règle CLAUDE.md n°9) : ajouts de
       navigation (espace client/admin), éditeur CMS. **Rotation de la clé** (elle a été collée dans un chat).
-- [ ] **Page « Mes créations »** (`/mes-creations`) : fiche `docs/pages/mes-creations.md`, ligne
+- [x] **Page « Mes créations »** (`/mes-creations`) — faite, écran Stitch généré, voir `docs/pages/mes-creations.md`. (ancien énoncé : : fiche `docs/pages/mes-creations.md`, ligne
       `mockup-reference.md`, feature slice `apps/web/src/features/mes-creations/` + tests, lien de la
-      sidebar et de la tuile du dashboard `/creations` → `/mes-creations`. Bloqué par l'accès Stitch.
-- [ ] **Alimenter `CreationProject`** : rien ne crée ni ne fait avancer un projet (création à
-      l'acceptation d'un devis ? action admin de changement d'étape ?). À trancher, sinon la page reste vide.
+      sidebar et de la tuile du dashboard `/creations` → `/mes-creations`. Bloqué par l'accès Stitch.)
+- [x] **Écran back-office** pour changer l'étape d'un projet (`/projets-creation`, écran Stitch « ANGALY Back-office — Projets de création » `fadeaeb5cacf4d0088c20bde4d9c0f29`, feature `admin-projets-creation`, tests unitaires et intégration).
 
 ### Base de données / déploiement
-- [ ] `prisma migrate deploy` échoue sur une ancienne migration (« enum label QUOTE_DOCUMENT already
+- [x] `prisma migrate deploy` échoue sur une ancienne migration (« enum label QUOTE_DOCUMENT already
       exists » : base dev construite avec `db push`). Les deux nouvelles migrations ont été appliquées
       à la main via psql — décider : baseline ou reset de la base dev.
-- [ ] Documenter `db:seed:cms` dans `docs/development.md`.
+      Fait le 2026-10-01 : enum `PATTERN_INSPIRATION` rattrapée, 6 migrations marquées appliquées (`migrate resolve --applied`), `migrate status` à jour, aucun écart de schéma.
+- [x] Documenter `db:seed:cms` dans `docs/development.md` (fait, avec `db:backfill:creation-projects`).
 
 ### Contenu
 - [ ] **Relecture des traductions malgaches** par un locuteur natif, puis publication depuis
@@ -72,7 +72,7 @@ ce fichier trace le lot de cette session).
 - [ ] Balayer les autres pages client pour des classes de couleur inexistantes (ex. `angaly-primary`
       dans `mes-mesures`) — texte invisible.
 - [ ] Vérifier dans un navigateur la modale d'inscription (seule la connexion a été testée).
-- [ ] Erreurs `tsc` préexistantes dans `pret-a-porter-catalogue` (`ProductGrid` `onQuickView`, test `isPrimary`).
+- [x] Erreurs `tsc` préexistantes dans `pret-a-porter-catalogue` (`ProductGrid` `onQuickView`, test `isPrimary`) — résolues le 2026-10-01.
 - [ ] Mettre à jour `docs/checklist-implementation.md` et `docs/mockup-reference.md`
       (creation-projects, couverture CMS).
 - [ ] Commits (Conventional Commits, scopes de `commitlint.config.ts`), découpage suggéré :

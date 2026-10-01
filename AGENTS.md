@@ -23,6 +23,29 @@ et tout autre assistant IA.
 7. **Documenter** une fois terminé — comportement, usage, et toujours mettre à jour
    `docs/deployment.md`/`docs/development.md` si le changement touche l'infrastructure.
 8. **Mettre à jour `docs/checklist-implementation.md`** pour refléter le nouveau statut.
+9. **Passation de session / Handoff inter-agents** — en cas de saturation de contexte,
+   consommation avancée de tokens, ou fin de session/phase, mettre à jour immédiatement
+   `docs/handoff.md` pour permettre au prochain agent de reprendre sans perte de contexte.
+
+## Gestion du contexte et bascule inter-agents
+
+### Quand passer le relais ?
+- **Saturation des tokens** : lorsque le contexte approche des limites du modèle (~70–80% de remplissage) ou après plusieurs itérations lourdes générant un historique volumineux.
+- **Fin de lot ou de phase** : une fois une tranche d'implémentation testée et validée.
+- **Changement d'assistant IA** : transition entre Claude Code, Antigravity, Cursor, etc.
+
+### Protocole obligatoire
+1. **Stabiliser et vérifier** : exécuter `pnpm typecheck` et les suites de tests ciblées.
+2. **Rédiger/mettre à jour `docs/handoff.md`** avec :
+   - L'état de l'arbre git (fichiers modifiés / créés).
+   - Les fonctionnalités livrées et vérifiées lors de la session.
+   - Les commandes de test passées avec succès.
+   - Les actions prioritaires immédiates pour l'agent suivant (avec chemins de fichiers explicites).
+   - Les particularités ou pièges d'environnement à garder en mémoire.
+3. **Consigne de reprise pour le nouvel agent** :
+   Inviter l'utilisateur à démarrer une session vierge (`/clear` ou nouvelle conversation) avec la consigne :
+   > `Lis docs/handoff.md et poursuis le travail selon les priorités définies.`
+   Le nouvel agent lit exclusivement `docs/handoff.md` et les fichiers cibles sans recharger l'ensemble de la documentation.
 
 ## Architecture du projet
 

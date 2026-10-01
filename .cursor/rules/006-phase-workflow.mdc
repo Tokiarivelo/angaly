@@ -44,6 +44,10 @@ développeur, **avant toute implémentation**. Suivre ces étapes dans l'ordre :
    touche l'infrastructure, une variable d'environnement, ou la façon de lancer le projet.
 8. **Mettre à jour `docs/checklist-implementation.md` et `docs/mockup-reference.md`** pour
    refléter le nouveau statut.
+9. **Passation de session / Handoff inter-agents** — en cas de saturation de contexte,
+   consommation avancée de tokens, ou fin de session/phase, mettre à jour immédiatement
+   `docs/handoff.md` pour permettre au prochain agent de reprendre sans perte de contexte
+   (voir `010-session-handoff.mdc`).
 
 ## Pas de Trello/Figma ici
 Ce monorepo utilise les maquettes **Google Stitch** (`stitch-prompts/*.md` +

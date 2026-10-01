@@ -214,6 +214,7 @@ phase n'a pas été traitée en session dédiée (voir `.cursor/rules/006-phase-
 - [x] ✅ **pattern-studio-preview-validation-export** — Prévisualisation, validation, export
 - [x] ✅ **mes-projets-patron** — Liste des projets de patron
 - [x] ✅ **mes-mesures** — Profils de mesures
+- [x] ✅ **mes-creations** — Suivi des créations sur-mesure (stepper 6 étapes, `docs/pages/mes-creations.md`)
 
 ### Modules backend
 - [x] ✅ **measurements** (+ tailles standard XS/S/M/L/XL…, session 2026-09-14)
@@ -244,11 +245,12 @@ phase n'a pas été traitée en session dédiée (voir `.cursor/rules/006-phase-
 
 ---
 
-## 🗂️ PHASE 6 — Admin (back-office) (2 pages, 2 modules) — ✅ 2/2 pages, 2/2 modules
+## 🗂️ PHASE 6 — Admin (back-office) (3 pages, 2 modules) — ✅ 3/3 pages, 2/2 modules
 
 ### Pages
 - [x] ✅ **admin-gestion-contenu** — Éditeur de contenu par page/section (session 2026-09-16)
 - [x] ✅ **admin-mediatheque** — Médiathèque (MinIO) (session 2026-09-16)
+- [x] ✅ **admin-projets-creation** — Suivi et avancement des projets de création sur mesure (session 2026-10-01), maquette Stitch « ANGALY Back-office — Projets de création » (`fadeaeb5cacf4d0088c20bde4d9c0f29`), route `/projets-creation` (spec §53, §67)
 
 ### Modules backend
 - [x] ✅ **users** — Gestion des comptes staff (Couturière/Manager/Admin), RBAC (spec §68/§83)

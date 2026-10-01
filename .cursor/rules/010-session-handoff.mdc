@@ -1,0 +1,65 @@
+---
+description: Protocole de passation inter-agents et gestion des tokens (docs/handoff.md)
+globs: ["**/*"]
+---
+
+# Protocole de passation inter-agents & économie de tokens
+
+Ce document s'applique à tout assistant IA (Claude Code, Antigravity, Cursor, Windsurf, Copilot, etc.) et à tout développeur intervenant sur le monorepo ANGALY.
+
+## Problématique & Objectif
+
+Les sessions longues ou comportant de nombreuses modifications consomment rapidement la fenêtre de contexte (tokens). Lorsque le contexte s'épuise ou est tronqué, l'agent risque de régresser, d'oublier des règles clés ou de réinventer du code déjà produit.
+
+**Objectif** : Permettre une bascule instantanée et sans friction vers un nouvel agent ou une session neuve, avec **zéro perte d'information** et **sans relecture coûteuse** de dizaines de fichiers de spécification.
+
+---
+
+## 1. Quand déclencher la passation ?
+
+L'agent sortant **doit** initier la passation dès que :
+1. **Saturation de tokens** : Le contexte approche des 70–80% de capacité ou un avertissement de compression/tronquage survient.
+2. **Fin de lot / tranche de phase** : Une fonctionnalité ou sous-ensemble est implémenté, testé et validé.
+3. **Changement d'outil** : L'utilisateur demande de basculer vers un autre assistant ou d'ouvrir une nouvelle session (`/clear`).
+
+---
+
+## 2. Rôle de `docs/handoff.md`
+
+`docs/handoff.md` est la **source unique de vérité transitoire** pour la relève.
+Il centralise :
+- L'état de l'arbre git à l'instant T (fichiers créés, modifiés, non suivis).
+- La liste des fonctionnalités livrées et leur couverture de tests.
+- Le statut de `pnpm typecheck`, tests unitaires et intégration.
+- La liste priorisée des prochaines actions concrètes (avec les chemins de fichiers cibles exacts).
+- Les pièges d'environnement et décisions d'architecture récentes.
+- Le template de mise à jour pour que l'agent suivant continue la chaîne.
+
+---
+
+## 3. Obligations de l'agent sortant
+
+Avant de clore la session ou d'inviter à basculer :
+1. **Valider le code** :
+   ```bash
+   pnpm typecheck
+   # et les tests de la zone modifiée, ex :
+   pnpm --filter @angaly/web test run <path>
+   pnpm --filter @angaly/api test -- <path>
+   ```
+2. **Mettre à jour `docs/handoff.md`** :
+   Remplir ou actualiser chaque section avec des données concrètes et exactes.
+3. **Fournir le message de transition** :
+   Indiquer explicitement à l'utilisateur :
+   > *"J'ai consigné l'état complet dans `docs/handoff.md`. Vous pouvez maintenant ouvrir une nouvelle session (ou taper `/clear`) et lui donner la consigne :*
+   > **`Lis docs/handoff.md et poursuis le travail selon les priorités définies.`** *"
+
+---
+
+## 4. Obligations du nouvel agent (entrant)
+
+1. **Lire `docs/handoff.md` en priorité absolue** (ne pas lire tout le repo ou tous les fichiers de docs d'emblée).
+2. Vérifier brièvement le statut git (`git status --short`).
+3. Prendre la première tâche de la section « Prochaines actions prioritaires » et l'exécuter.
+4. Consulter uniquement les fiches documentaires cibles (`docs/pages/<slug>.md` ou `docs/features/<slug>.md`) et la maquette Stitch concernée.
+5. À son tour, en fin de session ou en cas de saturation de tokens, mettre à jour `docs/handoff.md`.

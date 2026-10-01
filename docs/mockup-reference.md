@@ -68,6 +68,7 @@
 | pattern-studio-preview-validation-export        | `docs/pages/pattern-studio-preview-validation-export.md` | `stitch-prompts/18-pattern-studio-preview-validation-export.md`              | ANGALY — Validation de Patron (Studio)                 | §26-29        | ✅     |
 | mes-projets-patron                               | `docs/pages/mes-projets-patron.md`                  | `stitch-prompts/27-espace-client-patron-mesures.md`                            | ANGALY — Mes projets de patron                          | §53, §66      | ✅     |
 | mes-mesures                                        | `docs/pages/mes-mesures.md`                         | `stitch-prompts/27-espace-client-patron-mesures.md`                            | ANGALY — Mes mesures                                     | §22-23, §56   | ✅     |
+| mes-creations                                      | `docs/pages/mes-creations.md`                       | (écran généré directement dans Stitch, pas de prompt)                          | ANGALY — Mes créations                                   | §53       | ✅     |
 
 ## PHASE 5 — IA avancée
 
@@ -87,6 +88,7 @@ ML dans ce repo). `pattern-studio-wizard` a aussi reçu un sélecteur de taille 
 | ---------------------------- | -------------------------------------------- | ----------------------------------------------------------- | ------------------------------------------ | ------------- | ------ |
 | admin-gestion-contenu           | `docs/pages/admin-gestion-contenu.md`        | `stitch-prompts/31-admin-gestion-contenu-mediatheque.md`      | ANGALY Back-office — Gestion de contenu     | §67           | ✅ *    |
 | admin-mediatheque                 | `docs/pages/admin-mediatheque.md`            | `stitch-prompts/31-admin-gestion-contenu-mediatheque.md`      | ANGALY Back-office — Médiathèque             | §67, §76      | ✅ *    |
+| admin-projets-creation           | `docs/pages/admin-projets-creation.md`       | (écran généré directement dans Stitch, pas de prompt)          | ANGALY Back-office — Projets de création    | §53, §67      | ✅     |
 
 \* Implémentées (session 2026-09-16) **sans vérification de l'écran Stitch réel** — l'accès
 `mcp__stitch__*` a échoué (`Incompatible auth server: does not support dynamic client
