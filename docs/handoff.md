@@ -1,7 +1,7 @@
 # Fiche de Passation Inter-Agents (Handoff)
 
 > **Date** : 2026-10-01  
-> **Dernière mise à jour par** : Antigravity (Assistant IA)  
+> **Dernière mise à jour par** : Claude Code (Sonnet 5.5)  
 > **Statut global du dépôt** : 🟢 **Vert** (typecheck monorepo 10/10 OK, tests ciblés 100% OK, base de données synchronisée)
 
 ---
@@ -39,33 +39,10 @@ Lis docs/handoff.md et poursuis le travail selon les priorités définies.
 
 ## 2. État du dépôt Git (Arbre de travail)
 
-### Fichiers modifiés
-- `AGENTS.md` (règle 9 et gestion du contexte)
-- `CLAUDE.md` (règle 8 et économie de contexte)
-- `.cursor/rules/006-phase-workflow.mdc` (étape 9 ajoutée)
-- `packages/types/src/index.ts` (ajout `customerName` et types)
-- `packages/database/package.json` (script backfill)
-- `apps/api/src/creation-projects/` (entités, mappers, DTOs, module, prisma repo, tests)
-- `apps/api/src/quotes/` (accept-quote use-case branché sur la création de projet)
-- `apps/web/src/features/admin-dashboard/ui/AdminSidebar.tsx` & tests
-- `apps/web/src/features/espace-client-dashboard/` (liens mes créations)
-- `apps/web/src/features/pret-a-porter-catalogue/` (types et tests corrigés)
-- `apps/web/src/lib/routes.ts` (`ROUTES.adminCreationProjects = '/projets-creation'`)
-- Documentation : `docs/checklist-implementation.md`, `docs/mockup-reference.md`, `docs/features/creation-projects.md`, `docs/pages/admin-projets-creation.md`, `docs/pages/mes-creations.md`, `docs/development.md`, `docs/implementation-status-2026-09-30.md`.
-
-### Nouveaux fichiers non commités
-- `.cursor/rules/010-session-handoff.mdc`
-- `docs/handoff.md` (ce fichier)
-- `apps/api/src/creation-projects/application/dtos/update-creation-project-stage.dto.ts`
-- `apps/api/src/creation-projects/application/use-cases/create-creation-project-from-quote.use-case.ts`
-- `apps/api/src/creation-projects/application/use-cases/list-all-creation-projects.use-case.ts`
-- `apps/api/src/creation-projects/application/use-cases/update-creation-project-stage.use-case.ts`
-- `apps/api/src/creation-projects/presentation/controllers/admin-creation-projects.controller.ts`
-- `apps/api/src/creation-projects/__tests__/unit/creation-project-writes.use-cases.spec.ts`
-- `apps/api/src/creation-projects/__tests__/integration/admin-creation-projects.controller.spec.ts`
-- `apps/web/src/features/admin-projets-creation/` (slice feature complet)
-- `apps/web/src/app/(admin)/projets-creation/page.tsx`
-- `packages/database/prisma/backfill-creation-projects.ts`
+Arbre propre au 2026-10-01 (rien n'est poussé). Commits de la session, du plus ancien au plus récent :
+`65e64be` fix(web) catalogue · `ecaf7fd` feat(api) creation-projects · `6740d68` feat(database) backfill ·
+`8ef64f6` feat(web) mes-creations + admin · `c7a0519` docs handoff · `a012646` feat(web) pages légales ·
+`7ecffe5` docs règle handoff obligatoire.
 
 ---
 
@@ -84,14 +61,7 @@ Lis docs/handoff.md et poursuis le travail selon les priorités définies.
 
 À traiter dans l'ordre par le nouvel agent :
 
-1. **Découpage et validation des commits Git (Recommandé en premier)** :
-   Le dépôt a une grande quantité de changements validés et testés non commités.
-   Découpage recommandé selon les Conventional Commits (`commitlint.config.ts`) :
-   - `fix(auth): resolve redirect loop and modal catch-all route`
-   - `fix(types): resolve exactOptionalPropertyTypes and catalogue test mocks`
-   - `feat(navigation): integrate cross-links between site, client space, and admin`
-   - `feat(creation-projects): implement admin creation projects management and quote hook`
-   - `feat(docs): add inter-agent handoff rules and update implementation status`
+1. **Commits** : ✅ faits (voir section 2). Reste à pousser si l'utilisateur le demande.
 
 2. **Relecture des traductions malgaches du CMS (`/gestion-contenu`)** :
    - Les traductions malgaches ont été initialisées en brouillon dans la base (`db:seed:cms`).
