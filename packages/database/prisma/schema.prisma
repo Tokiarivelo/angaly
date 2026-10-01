@@ -206,16 +206,18 @@ model User {
   createdAt    DateTime  @default(now())
   updatedAt    DateTime  @updatedAt
 
-  customer          Customer?
-  assignedAppointments Appointment[]      @relation("AppointmentAssignee")
-  reviewedPatternVersions PatternVersion[] @relation("PatternVersionReviewer")
-  uploadedMedia     Media[]
-  pageSectionEdits  PageSectionVersion[]
-  blogPosts         BlogPost[]
-  notifications     Notification[]
-  refreshTokens       RefreshToken[]
-  passwordResetTokens PasswordResetToken[]
-  aiModelSettingEdits AiModelSetting[]
+  customer                   Customer?
+  assignedAppointments       Appointment[]               @relation("AppointmentAssignee")
+  assignedCreationProjects   CreationProject[]           @relation("CreationProjectAssignee")
+  creationProjectStageEvents CreationProjectStageEvent[]
+  reviewedPatternVersions    PatternVersion[]            @relation("PatternVersionReviewer")
+  uploadedMedia              Media[]
+  pageSectionEdits           PageSectionVersion[]
+  blogPosts                  BlogPost[]
+  notifications              Notification[]
+  refreshTokens              RefreshToken[]
+  passwordResetTokens        PasswordResetToken[]
+  aiModelSettingEdits        AiModelSetting[]
 
   @@index([email])
   @@index([role])
@@ -264,7 +266,7 @@ model Customer {
   createdAt DateTime @default(now())
   updatedAt DateTime @updatedAt
 
-  user                User                @relation(fields: [userId], references: [id], onDelete: Cascade)
+  user                User                 @relation(fields: [userId], references: [id], onDelete: Cascade)
   appointments        Appointment[]
   orders              Order[]
   quotes              Quote[]
@@ -358,11 +360,11 @@ model Creation {
   createdAt     DateTime             @default(now())
   updatedAt     DateTime             @updatedAt
 
-  category   Category    @relation(fields: [categoryId], references: [id])
-  collection Collection? @relation(fields: [collectionId], references: [id])
-  media      Media[]     @relation("CreationMedia")
-  favorites  Favorite[]
-  quotes     Quote[]
+  category         Category          @relation(fields: [categoryId], references: [id])
+  collection       Collection?       @relation(fields: [collectionId], references: [id])
+  media            Media[]           @relation("CreationMedia")
+  favorites        Favorite[]
+  quotes           Quote[]
   creationProjects CreationProject[]
 
   @@index([categoryId])
@@ -393,10 +395,10 @@ model Product {
   createdAt   DateTime            @default(now())
   updatedAt   DateTime            @updatedAt
 
-  category Category        @relation(fields: [categoryId], references: [id])
-  atelier  Atelier?        @relation(fields: [atelierId], references: [id])
-  variants ProductVariant[]
-  media    Media[]         @relation("ProductMedia")
+  category  Category         @relation(fields: [categoryId], references: [id])
+  atelier   Atelier?         @relation(fields: [atelierId], references: [id])
+  variants  ProductVariant[]
+  media     Media[]          @relation("ProductMedia")
   favorites Favorite[]
 
   @@index([categoryId])
@@ -405,30 +407,30 @@ model Product {
 }
 
 model ProductVariant {
-  id            String  @id @default(cuid())
+  id            String   @id @default(cuid())
   productId     String
-  sku           String  @unique
+  sku           String   @unique
   size          String
   color         String
   material      String?
   priceOverride Decimal? @db.Decimal(12, 2)
 
-  product   Product     @relation(fields: [productId], references: [id], onDelete: Cascade)
-  inventory Inventory?
+  product    Product     @relation(fields: [productId], references: [id], onDelete: Cascade)
+  inventory  Inventory?
   orderItems OrderItem[]
   // Colorway-specific photos (e.g. the "Navy" swatch shows the navy photos) —
   // optional: a variant with none falls back to the product's shared media.
-  media     Media[]     @relation("ProductVariantMedia")
+  media      Media[]     @relation("ProductVariantMedia")
 
   @@index([productId])
   @@map("product_variants")
 }
 
 model Inventory {
-  id                 String @id @default(cuid())
-  variantId          String @unique
-  quantityAvailable  Int    @default(0)
-  quantityReserved   Int    @default(0)
+  id                String @id @default(cuid())
+  variantId         String @unique
+  quantityAvailable Int    @default(0)
+  quantityReserved  Int    @default(0)
 
   variant ProductVariant @relation(fields: [variantId], references: [id], onDelete: Cascade)
 
@@ -528,24 +530,24 @@ model Payment {
 // ============================================================
 
 model Quote {
-  id                  String      @id @default(cuid())
-  quoteNumber         String      @unique
-  customerId          String
-  creationId          String?
-  description         String
-  lineItemsJson        Json
-  subtotal            Decimal     @db.Decimal(12, 2)
-  depositAmount       Decimal     @db.Decimal(12, 2)
-  balanceAmount       Decimal     @db.Decimal(12, 2)
-  total               Decimal     @db.Decimal(12, 2)
-  status              QuoteStatus @default(DRAFT)
-  validUntil          DateTime?
-  estimatedDelayDays  Int?
-  createdAt           DateTime    @default(now())
-  updatedAt           DateTime    @updatedAt
+  id                 String      @id @default(cuid())
+  quoteNumber        String      @unique
+  customerId         String
+  creationId         String?
+  description        String
+  lineItemsJson      Json
+  subtotal           Decimal     @db.Decimal(12, 2)
+  depositAmount      Decimal     @db.Decimal(12, 2)
+  balanceAmount      Decimal     @db.Decimal(12, 2)
+  total              Decimal     @db.Decimal(12, 2)
+  status             QuoteStatus @default(DRAFT)
+  validUntil         DateTime?
+  estimatedDelayDays Int?
+  createdAt          DateTime    @default(now())
+  updatedAt          DateTime    @updatedAt
 
-  customer Customer  @relation(fields: [customerId], references: [id])
-  creation Creation? @relation(fields: [creationId], references: [id])
+  customer         Customer          @relation(fields: [customerId], references: [id])
+  creation         Creation?         @relation(fields: [creationId], references: [id])
   creationProjects CreationProject[]
 
   @@index([customerId])
@@ -558,25 +560,45 @@ model Quote {
 // ============================================================
 
 model CreationProject {
-  id          String               @id @default(cuid())
-  reference   String               @unique
-  customerId  String
-  title       String
-  description String?
-  stage       CreationProjectStage @default(CONSULTATION)
-  quoteId     String?
-  creationId  String?
-  completedAt DateTime?
-  createdAt   DateTime             @default(now())
-  updatedAt   DateTime             @updatedAt
+  id           String               @id @default(cuid())
+  reference    String               @unique
+  customerId   String
+  title        String
+  description  String?
+  stage        CreationProjectStage @default(CONSULTATION)
+  quoteId      String?
+  creationId   String?
+  completedAt  DateTime?
+  assignedToId String?
+  createdAt    DateTime             @default(now())
+  updatedAt    DateTime             @updatedAt
 
-  customer Customer  @relation(fields: [customerId], references: [id], onDelete: Cascade)
-  quote    Quote?    @relation(fields: [quoteId], references: [id])
-  creation Creation? @relation(fields: [creationId], references: [id])
+  customer    Customer                    @relation(fields: [customerId], references: [id], onDelete: Cascade)
+  quote       Quote?                      @relation(fields: [quoteId], references: [id])
+  creation    Creation?                   @relation(fields: [creationId], references: [id])
+  assignedTo  User?                       @relation("CreationProjectAssignee", fields: [assignedToId], references: [id], onDelete: SetNull)
+  stageEvents CreationProjectStageEvent[]
 
   @@index([customerId, createdAt])
   @@index([stage])
+  @@index([assignedToId])
   @@map("creation_projects")
+}
+
+/// Historique des changements d'étape d'un projet (back-office, traçabilité).
+model CreationProjectStageEvent {
+  id          String                @id @default(cuid())
+  projectId   String
+  fromStage   CreationProjectStage?
+  toStage     CreationProjectStage
+  changedById String?
+  createdAt   DateTime              @default(now())
+
+  project   CreationProject @relation(fields: [projectId], references: [id], onDelete: Cascade)
+  changedBy User?           @relation(fields: [changedById], references: [id], onDelete: SetNull)
+
+  @@index([projectId, createdAt])
+  @@map("creation_project_stage_events")
 }
 
 // ============================================================
@@ -584,15 +606,15 @@ model CreationProject {
 // ============================================================
 
 model MeasurementProfile {
-  id        String          @id @default(cuid())
+  id         String          @id @default(cuid())
   customerId String
-  label     String
-  unit      MeasurementUnit @default(CM)
-  createdAt DateTime        @default(now())
-  updatedAt DateTime        @updatedAt
+  label      String
+  unit       MeasurementUnit @default(CM)
+  createdAt  DateTime        @default(now())
+  updatedAt  DateTime        @updatedAt
 
-  customer       Customer         @relation(fields: [customerId], references: [id], onDelete: Cascade)
-  values         Measurement[]
+  customer        Customer         @relation(fields: [customerId], references: [id], onDelete: Cascade)
+  values          Measurement[]
   patternProjects PatternProject[]
 
   @@index([customerId])
@@ -663,15 +685,15 @@ model PatternVersion {
 }
 
 model PatternPiece {
-  id                  String   @id @default(cuid())
-  versionId           String
-  name                String
-  dimensionsJson      Json
+  id                   String  @id @default(cuid())
+  versionId            String
+  name                 String
+  dimensionsJson       Json
   fabricRecommendation String?
-  quantity            Int      @default(1)
-  grainlineJson       Json?
-  seamAllowanceCm     Float?
-  notchesJson         Json?
+  quantity             Int     @default(1)
+  grainlineJson        Json?
+  seamAllowanceCm      Float?
+  notchesJson          Json?
 
   version PatternVersion @relation(fields: [versionId], references: [id], onDelete: Cascade)
 
@@ -695,12 +717,12 @@ model PatternExport {
 
 /// History of the AI assistant conversation for a customer and/or a pattern project (spec §31).
 model AIConversation {
-  id               String              @id @default(cuid())
+  id               String             @id @default(cuid())
   customerId       String?
   patternProjectId String?
   role             AIConversationRole
   message          String
-  createdAt        DateTime            @default(now())
+  createdAt        DateTime           @default(now())
 
   customer       Customer?       @relation(fields: [customerId], references: [id])
   patternProject PatternProject? @relation(fields: [patternProjectId], references: [id])
@@ -715,11 +737,11 @@ model AIConversation {
 /// needs to estimate missing measurements; written only via the ADMIN-only
 /// `/admin/ai-settings` endpoint. See docs/features/ai-model-settings.md.
 model AiModelSetting {
-  id                String             @id @default("singleton")
-  measurementModel  AiMeasurementModel @default(GEMINI)
-  updatedById       String?
-  updatedAt         DateTime           @updatedAt
-  createdAt         DateTime           @default(now())
+  id               String             @id @default("singleton")
+  measurementModel AiMeasurementModel @default(GEMINI)
+  updatedById      String?
+  updatedAt        DateTime           @updatedAt
+  createdAt        DateTime           @default(now())
 
   updatedBy User? @relation(fields: [updatedById], references: [id])
 
@@ -791,24 +813,24 @@ model Favorite {
   entityId   String
   createdAt  DateTime           @default(now())
 
-  customer   Customer    @relation(fields: [customerId], references: [id], onDelete: Cascade)
-  creation   Creation?   @relation(fields: [entityId], references: [id], map: "favorites_creation_fkey")
-  product    Product?    @relation(fields: [entityId], references: [id], map: "favorites_product_fkey")
+  customer Customer  @relation(fields: [customerId], references: [id], onDelete: Cascade)
+  creation Creation? @relation(fields: [entityId], references: [id], map: "favorites_creation_fkey")
+  product  Product?  @relation(fields: [entityId], references: [id], map: "favorites_product_fkey")
 
   @@unique([customerId, entityType, entityId])
   @@map("favorites")
 }
 
 model Notification {
-  id               String           @id @default(cuid())
-  userId           String
-  type             NotificationType
-  title            String
-  body             String
-  isRead           Boolean          @default(false)
+  id                String           @id @default(cuid())
+  userId            String
+  type              NotificationType
+  title             String
+  body              String
+  isRead            Boolean          @default(false)
   relatedEntityType String?
-  relatedEntityId  String?
-  createdAt        DateTime         @default(now())
+  relatedEntityId   String?
+  createdAt         DateTime         @default(now())
 
   user User @relation(fields: [userId], references: [id], onDelete: Cascade)
 
@@ -894,16 +916,16 @@ model Media {
 
   uploadedBy User? @relation(fields: [uploadedById], references: [id])
 
-  creationRefs         Creation[]        @relation("CreationMedia")
-  productRefs          Product[]         @relation("ProductMedia")
-  productVariantRefs   ProductVariant[]  @relation("ProductVariantMedia")
-  collectionRefs       Collection[]      @relation("CollectionMedia")
-  atelierRefs          Atelier[]         @relation("AtelierMedia")
-  blogPostRefs         BlogPost[]        @relation("BlogPostMedia")
-  testimonialRefs      Testimonial[]     @relation("TestimonialMedia")
-  patternInspirationOf PatternProject[]  @relation("PatternInspirationMedia")
-  patternExportOf      PatternExport[]   @relation("PatternExportMedia")
-  pageSectionRefs      PageSection[]     @relation("PageSectionMedia")
+  creationRefs         Creation[]       @relation("CreationMedia")
+  productRefs          Product[]        @relation("ProductMedia")
+  productVariantRefs   ProductVariant[] @relation("ProductVariantMedia")
+  collectionRefs       Collection[]     @relation("CollectionMedia")
+  atelierRefs          Atelier[]        @relation("AtelierMedia")
+  blogPostRefs         BlogPost[]       @relation("BlogPostMedia")
+  testimonialRefs      Testimonial[]    @relation("TestimonialMedia")
+  patternInspirationOf PatternProject[] @relation("PatternInspirationMedia")
+  patternExportOf      PatternExport[]  @relation("PatternExportMedia")
+  pageSectionRefs      PageSection[]    @relation("PageSectionMedia")
 
   @@unique([bucket, objectKey])
   @@index([entityType, entityId])
@@ -931,8 +953,8 @@ model PageSection {
   createdAt         DateTime      @default(now())
   updatedAt         DateTime      @updatedAt
 
-  media     Media?               @relation("PageSectionMedia", fields: [mediaId], references: [id])
-  versions  PageSectionVersion[]
+  media    Media?               @relation("PageSectionMedia", fields: [mediaId], references: [id])
+  versions PageSectionVersion[]
 
   @@unique([page, sectionKey, locale])
   @@map("page_sections")
