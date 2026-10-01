@@ -65,8 +65,9 @@ ce fichier trace le lot de cette session).
       `/gestion-contenu` (brouillons : pied de page, menus, titres d'accueil, sur-mesure,
       Pattern Studio, contact). Les paragraphes longs ne sont pas traduits (repli français).
 - [ ] Textes encore en dur : libellés de formulaires, panier/checkout, espace client.
-- [ ] Pages légales inexistantes vers lesquelles pointe le pied de page : `/mentions-legales`,
-      `/confidentialite`, `/livraison-retours`, `/presse`, `/carrieres`.
+- [x] Pages légales vers lesquelles pointe le pied de page : `/mentions-legales`, `/confidentialite`,
+      `/livraison-retours`, `/conditions-generales`, `/presse`, `/carrieres` (fiche `docs/pages/pages-legales.md`).
+      Reste : textes à faire valider par la maison + NIF/STAT/hébergeur à fournir.
 
 ### Qualité
 - [ ] Balayer les autres pages client pour des classes de couleur inexistantes (ex. `angaly-primary`

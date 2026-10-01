@@ -97,7 +97,7 @@ Lis docs/handoff.md et poursuis le travail selon les priorités définies.
    - Les traductions malgaches ont été initialisées en brouillon dans la base (`db:seed:cms`).
    - Vérifier et affiner le contenu avec l'utilisateur ou relire les textes dans `apps/web/src/lib/cms/` et l'interface admin.
 
-3. **Pages légales statiques manquantes** :
+3. **Pages légales statiques** — ✅ créées le 2026-10-01 (`features/pages-legales`, `docs/pages/pages-legales.md`) ; reste à faire valider les textes et à fournir NIF/STAT/hébergeur :
    - Le footer pointe vers : `/mentions-legales`, `/confidentialite`, `/livraison-retours`, `/conditions-generales`, `/presse`, `/carrieres`.
    - Créer les pages de présentation correspondantes en respectant la charte graphique Angaly (`angaly-deep-navy`, `angaly-warm-ivory`, typographies serif/sans).
 
