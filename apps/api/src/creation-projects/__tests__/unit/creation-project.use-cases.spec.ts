@@ -43,6 +43,10 @@ describe('creation-projects use cases', () => {
     findAll: jest.fn(),
     create: jest.fn(),
     updateStage: jest.fn(),
+    findDetailById: jest.fn(),
+    assign: jest.fn(),
+    findAssignableStaff: jest.fn(),
+    findAssignableStaffById: jest.fn(),
   };
 
   beforeEach(() => {

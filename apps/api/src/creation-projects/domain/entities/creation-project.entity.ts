@@ -1,4 +1,18 @@
-import { CREATION_PROJECT_STAGES_ORDER, CreationProjectStage } from '@angaly/types';
+import { CREATION_PROJECT_STAGES_ORDER, CreationProjectStage, Role } from '@angaly/types';
+
+export interface CreationProjectAssignee {
+  id: string;
+  email: string;
+  role: Role;
+}
+
+export interface CreationProjectStageEvent {
+  id: string;
+  fromStage: CreationProjectStage | null;
+  toStage: CreationProjectStage;
+  changedByEmail: string | null;
+  createdAt: Date;
+}
 
 export interface CreationProjectProps {
   id: string;
@@ -13,6 +27,9 @@ export interface CreationProjectProps {
   customerName?: string | null;
   creationId: string | null;
   completedAt: Date | null;
+  assignedTo?: CreationProjectAssignee | null;
+  /** Renseigné uniquement par `findDetailById` (plus récent d'abord). */
+  stageHistory?: CreationProjectStageEvent[];
   createdAt: Date;
   updatedAt: Date;
 }
@@ -39,6 +56,8 @@ export class CreationProjectEntity {
   get customerName(): string | null { return this.props.customerName ?? null; }
   get creationId(): string | null { return this.props.creationId; }
   get completedAt(): Date | null { return this.props.completedAt; }
+  get assignedTo(): CreationProjectAssignee | null { return this.props.assignedTo ?? null; }
+  get stageHistory(): CreationProjectStageEvent[] { return this.props.stageHistory ?? []; }
   get createdAt(): Date { return this.props.createdAt; }
   get updatedAt(): Date { return this.props.updatedAt; }
 

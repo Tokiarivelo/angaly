@@ -1,15 +1,21 @@
 /* eslint-disable @typescript-eslint/unbound-method -- jest mock assertions on repository methods */
-import { NotFoundException } from '@nestjs/common';
-import { CreationProjectStage } from '@angaly/types';
+import { BadRequestException, NotFoundException } from '@nestjs/common';
+import { CreationProjectStage, Role } from '@angaly/types';
 
+import { AssignCreationProjectUseCase } from '../../application/use-cases/assign-creation-project.use-case';
 import { CreateCreationProjectFromQuoteUseCase } from '../../application/use-cases/create-creation-project-from-quote.use-case';
+import { GetAdminCreationProjectUseCase } from '../../application/use-cases/get-admin-creation-project.use-case';
+import { ListAssignableStaffUseCase } from '../../application/use-cases/list-assignable-staff.use-case';
 import { ListAllCreationProjectsUseCase } from '../../application/use-cases/list-all-creation-projects.use-case';
 import { UpdateCreationProjectStageUseCase } from '../../application/use-cases/update-creation-project-stage.use-case';
-import { CreationProjectEntity } from '../../domain/entities/creation-project.entity';
+import { CreationProjectAssignee, CreationProjectEntity } from '../../domain/entities/creation-project.entity';
 import type { ICreationProjectRepository } from '../../domain/repositories/creation-project.repository';
 import { generateCreationProjectReference } from '../../domain/value-objects/creation-project-reference.vo';
 
-function project(stage = CreationProjectStage.CONSULTATION): CreationProjectEntity {
+function project(
+  stage = CreationProjectStage.CONSULTATION,
+  assignedTo: CreationProjectAssignee | null = null,
+): CreationProjectEntity {
   return CreationProjectEntity.create({
     id: 'p-1',
     reference: 'CRP-2026-abc12345',
@@ -20,6 +26,7 @@ function project(stage = CreationProjectStage.CONSULTATION): CreationProjectEnti
     quoteId: 'q-1',
     creationId: null,
     completedAt: null,
+    assignedTo,
     createdAt: new Date(),
     updatedAt: new Date(),
   });
@@ -33,6 +40,10 @@ describe('creation-projects write use cases', () => {
     findAll: jest.fn(),
     create: jest.fn(),
     updateStage: jest.fn(),
+    findDetailById: jest.fn(),
+    assign: jest.fn(),
+    findAssignableStaff: jest.fn(),
+    findAssignableStaffById: jest.fn(),
   };
 
   beforeEach(() => jest.resetAllMocks());
@@ -95,7 +106,7 @@ describe('creation-projects write use cases', () => {
 
       await new UpdateCreationProjectStageUseCase(repository).execute('p-1', CreationProjectStage.PATRON);
 
-      expect(repository.updateStage).toHaveBeenCalledWith('p-1', CreationProjectStage.PATRON, null);
+      expect(repository.updateStage).toHaveBeenCalledWith('p-1', CreationProjectStage.PATRON, null, null);
     });
 
     it('sets completedAt when reaching TERMINEE', async () => {
@@ -104,7 +115,7 @@ describe('creation-projects write use cases', () => {
 
       await new UpdateCreationProjectStageUseCase(repository).execute('p-1', CreationProjectStage.TERMINEE);
 
-      expect(repository.updateStage).toHaveBeenCalledWith('p-1', CreationProjectStage.TERMINEE, expect.any(Date));
+      expect(repository.updateStage).toHaveBeenCalledWith('p-1', CreationProjectStage.TERMINEE, expect.any(Date), null);
     });
 
     it('does nothing when the stage is unchanged', async () => {
@@ -116,6 +127,93 @@ describe('creation-projects write use cases', () => {
       expect(result).toBe(current);
       expect(repository.updateStage).not.toHaveBeenCalled();
     });
+  });
+
+  it('records the acting staff member when changing the stage', async () => {
+    repository.findById.mockResolvedValue(project());
+    repository.updateStage.mockResolvedValue(project(CreationProjectStage.PATRON));
+
+    await new UpdateCreationProjectStageUseCase(repository).execute('p-1', CreationProjectStage.PATRON, 'u-9');
+
+    expect(repository.updateStage).toHaveBeenCalledWith('p-1', CreationProjectStage.PATRON, null, 'u-9');
+  });
+
+  describe('AssignCreationProjectUseCase', () => {
+    const staff = { id: 'u-2', email: 'couturiere@angaly.mg', role: Role.COUTURIERE };
+
+    it('throws NotFoundException for an unknown project', async () => {
+      repository.findById.mockResolvedValue(null);
+
+      await expect(new AssignCreationProjectUseCase(repository).execute('missing', 'u-2')).rejects.toThrow(
+        NotFoundException,
+      );
+    });
+
+    it('rejects an assignee that is not an active staff member', async () => {
+      repository.findById.mockResolvedValue(project());
+      repository.findAssignableStaffById.mockResolvedValue(null);
+
+      await expect(new AssignCreationProjectUseCase(repository).execute('p-1', 'client-1')).rejects.toThrow(
+        BadRequestException,
+      );
+      expect(repository.assign).not.toHaveBeenCalled();
+    });
+
+    it('assigns an active staff member', async () => {
+      repository.findById.mockResolvedValue(project());
+      repository.findAssignableStaffById.mockResolvedValue(staff);
+      repository.assign.mockResolvedValue(project());
+
+      await new AssignCreationProjectUseCase(repository).execute('p-1', 'u-2');
+
+      expect(repository.assign).toHaveBeenCalledWith('p-1', 'u-2');
+    });
+
+    it('unassigns with null without checking staff', async () => {
+      const assigned = project(CreationProjectStage.CONSULTATION, staff);
+      repository.findById.mockResolvedValue(assigned);
+      repository.assign.mockResolvedValue(project());
+
+      await new AssignCreationProjectUseCase(repository).execute('p-1', null);
+
+      expect(repository.findAssignableStaffById).not.toHaveBeenCalled();
+      expect(repository.assign).toHaveBeenCalledWith('p-1', null);
+    });
+
+    it('does nothing when the assignee is unchanged', async () => {
+      const assigned = project(CreationProjectStage.CONSULTATION, staff);
+      repository.findById.mockResolvedValue(assigned);
+      repository.findAssignableStaffById.mockResolvedValue(staff);
+
+      const result = await new AssignCreationProjectUseCase(repository).execute('p-1', 'u-2');
+
+      expect(result).toBe(assigned);
+      expect(repository.assign).not.toHaveBeenCalled();
+    });
+  });
+
+  describe('GetAdminCreationProjectUseCase', () => {
+    it('throws NotFoundException for an unknown project', async () => {
+      repository.findDetailById.mockResolvedValue(null);
+
+      await expect(new GetAdminCreationProjectUseCase(repository).execute('missing')).rejects.toThrow(
+        NotFoundException,
+      );
+    });
+
+    it('returns the project detail', async () => {
+      const detail = project();
+      repository.findDetailById.mockResolvedValue(detail);
+
+      expect(await new GetAdminCreationProjectUseCase(repository).execute('p-1')).toBe(detail);
+    });
+  });
+
+  it('ListAssignableStaffUseCase returns the repository staff list', async () => {
+    const staff = [{ id: 'u-2', email: 'couturiere@angaly.mg', role: Role.COUTURIERE }];
+    repository.findAssignableStaff.mockResolvedValue(staff);
+
+    expect(await new ListAssignableStaffUseCase(repository).execute()).toBe(staff);
   });
 
   it('ListAllCreationProjectsUseCase forwards the stage filter', async () => {

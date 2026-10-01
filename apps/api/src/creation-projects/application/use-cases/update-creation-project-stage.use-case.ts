@@ -12,7 +12,7 @@ import {
 export class UpdateCreationProjectStageUseCase {
   constructor(@Inject(CREATION_PROJECT_REPOSITORY) private readonly repository: ICreationProjectRepository) {}
 
-  async execute(id: string, stage: CreationProjectStage): Promise<CreationProjectEntity> {
+  async execute(id: string, stage: CreationProjectStage, changedById: string | null = null): Promise<CreationProjectEntity> {
     const project = await this.repository.findById(id);
     if (!project) {
       throw new NotFoundException(`Creation project ${id} not found`);
@@ -21,6 +21,6 @@ export class UpdateCreationProjectStageUseCase {
       return project;
     }
     const completedAt = stage === CreationProjectStage.TERMINEE ? new Date() : null;
-    return this.repository.updateStage(id, stage, completedAt);
+    return this.repository.updateStage(id, stage, completedAt, changedById);
   }
 }
