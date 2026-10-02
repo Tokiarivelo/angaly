@@ -52,7 +52,23 @@ apps/web/src/features/admin-projets-creation/
   index.ts
 ```
 
+## Détail projet & assignation (session 2026-10-01, ajout)
+
+Route `apps/web/src/app/(admin)/projets-creation/[id]/page.tsx` → `/projets-creation/:id` (`ROUTES.adminCreationProject(id)`), accessible en cliquant le titre d'une ligne du tableau.
+
+- Fil d'Ariane, en-tête (référence, titre, pastille d'étape, lien « Voir le devis »).
+- `CreationProjectStepper` : 6 étapes, terminées cochées, courante en or.
+- Carte « Informations » (cliente, ouvert/terminé le, description) et « Historique des étapes » (`CreationProjectHistory`, plus récent d'abord, avec l'email de l'auteur).
+- Colonne droite : `CreationProjectAssigneeCard` (« Couturière assignée », select du staff actif + « Assigner », option « Non assignée » pour désassigner) et `CreationProjectStageCard` (« Changer l'étape »).
+- Le tableau liste aussi la colonne « Couturière ».
+- ⚠️ **Maquette Stitch** : la génération d'un écran « Détail projet » dans Stitch a expiré (timeout) lors de la session ; l'écran a été construit à partir du langage visuel de l'écran liste `fadeaeb5…`. À vérifier/générer dans Stitch puis ajuster (copy, structure) — voir `docs/handoff.md`.
+
+Hooks : `useAdminCreationProject(id)` (détail, assignables, mutations étape + assignation). Tests : `useAdminCreationProject.test.ts`, `AdminCreationProjectDetailPage.test.tsx`.
+
 ## Endpoints consommés
 
 - `GET /api/admin/creation-projects?stage=` — voir `docs/features/creation-projects.md`.
 - `PATCH /api/admin/creation-projects/:id/stage` `{ stage }` — mise à jour de l'étape.
+- `GET /api/admin/creation-projects/:id` — détail + historique des étapes.
+- `GET /api/admin/creation-projects/assignees` — staff actif assignable.
+- `PATCH /api/admin/creation-projects/:id/assignee` `{ userId | null }` — assigner / désassigner.

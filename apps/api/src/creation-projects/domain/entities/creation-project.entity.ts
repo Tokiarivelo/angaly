@@ -1,4 +1,5 @@
-import { CREATION_PROJECT_STAGES_ORDER, CreationProjectStage, Role } from '@angaly/types';
+import type { Role } from '@angaly/types';
+import { CREATION_PROJECT_STAGES_ORDER, CreationProjectStage } from '@angaly/types';
 
 export interface CreationProjectAssignee {
   id: string;

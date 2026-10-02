@@ -1,4 +1,4 @@
-import { CreationProjectStage, CREATION_PROJECT_STAGES_ORDER } from '@angaly/types';
+import { CreationProjectStage, CREATION_PROJECT_STAGES_ORDER, Role } from '@angaly/types';
 
 export const ADMIN_CREATION_STAGE_LABELS: Record<CreationProjectStage, string> = {
   [CreationProjectStage.CONSULTATION]: 'Consultation',
@@ -20,3 +20,9 @@ export const ADMIN_CREATION_STAGE_BADGE_CLASSES: Record<CreationProjectStage, st
 
 export const FILTER_CHIP_STAGES = ['ALL', ...CREATION_PROJECT_STAGES_ORDER] as const;
 export type FilterChipStage = (typeof FILTER_CHIP_STAGES)[number];
+
+export const ADMIN_STAFF_ROLE_LABELS: Partial<Record<Role, string>> = {
+  [Role.COUTURIERE]: 'Couturière',
+  [Role.MANAGER]: 'Manager',
+  [Role.ADMIN]: 'Administrateur',
+};

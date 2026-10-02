@@ -252,6 +252,7 @@ phase n'a pas été traitée en session dédiée (voir `.cursor/rules/006-phase-
 - [x] ✅ **admin-gestion-contenu** — Éditeur de contenu par page/section (session 2026-09-16, harmonisation Haute Couture et alignement maquette Stitch `9551b85b467f43269d36e086dcc036b2` session 2026-10-01)
 - [x] ✅ **admin-mediatheque** — Médiathèque (MinIO) (session 2026-09-16, harmonisation Haute Couture et alignement maquette Stitch `f7fa235d11dc4832b4d6362bf321c6d3` session 2026-10-01)
 - [x] ✅ **admin-projets-creation** — Suivi et avancement des projets de création sur mesure (session 2026-10-01), maquette Stitch « ANGALY Back-office — Projets de création » (`fadeaeb5cacf4d0088c20bde4d9c0f29`), route `/projets-creation` (spec §53, §67)
+  - [x] ✅ Assignation d'une couturière + page détail `/projets-creation/:id` + historique des étapes (2026-10-01) — ⚠️ écran Stitch « Détail projet » non généré (timeout), à vérifier
 
 ### Modules backend
 - [x] ✅ **users** — Gestion des comptes staff (Couturière/Manager/Admin), RBAC (spec §68/§83)

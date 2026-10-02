@@ -8,7 +8,8 @@ import { GetAdminCreationProjectUseCase } from '../../application/use-cases/get-
 import { ListAssignableStaffUseCase } from '../../application/use-cases/list-assignable-staff.use-case';
 import { ListAllCreationProjectsUseCase } from '../../application/use-cases/list-all-creation-projects.use-case';
 import { UpdateCreationProjectStageUseCase } from '../../application/use-cases/update-creation-project-stage.use-case';
-import { CreationProjectAssignee, CreationProjectEntity } from '../../domain/entities/creation-project.entity';
+import type { CreationProjectAssignee} from '../../domain/entities/creation-project.entity';
+import { CreationProjectEntity } from '../../domain/entities/creation-project.entity';
 import type { ICreationProjectRepository } from '../../domain/repositories/creation-project.repository';
 import { generateCreationProjectReference } from '../../domain/value-objects/creation-project-reference.vo';
 

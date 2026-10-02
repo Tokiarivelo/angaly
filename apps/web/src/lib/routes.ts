@@ -25,6 +25,7 @@ export const ROUTES = {
   /** Back-office (staff only — the (admin) layout redirects other roles to /). */
   backOffice: '/dashboard',
   adminCreationProjects: '/projets-creation',
+  adminCreationProject: (id: string) => `/projets-creation/${id}`,
   connexion: '/connexion',
   inscription: '/inscription',
   motDePasseOublie: '/mot-de-passe-oublie',

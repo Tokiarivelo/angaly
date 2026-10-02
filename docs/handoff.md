@@ -113,6 +113,11 @@ Modifications locales prêtes pour commit (`git status`) :
 
 À traiter dans l'ordre par le nouvel agent :
 
+0. **Projets de création — assignation + détail (session Claude Code 2026-10-01)** : implémenté (migration `20261001120000_…` appliquée en dev, `assignedToId` + `CreationProjectStageEvent`, endpoints `GET /admin/creation-projects/:id`, `GET …/assignees`, `PATCH …/:id/assignee`, page `/projets-creation/:id`, colonne « Couturière »). Tests : api 40/40 (`src/creation-projects`), web 25/25 (`admin-projets-creation`), typecheck api+web OK.
+   - ⚠️ **À faire** : la génération Stitch de l'écran « Détail projet » a expiré (timeout, aucun écran créé — 90 écrans avant/après). Générer/vérifier l'écran dans Stitch (projet `3703874896720765754`) puis ajuster `AdminCreationProjectDetailPage` (copy, structure) — la page actuelle n'est calée que sur l'écran liste.
+   - 2026-10-02 : seconde tentative de génération → timeout à nouveau, toujours 90 écrans (aucun « Détail projet »). Tests re-validés (web 25/25, api 40/40, typecheck web OK). Travail web de la page détail **non commité**. Générer l'écran manuellement dans l'UI Stitch, ou valider la page actuelle sans maquette dédiée.
+   - Idées non faites : notification à la couturière assignée, filtre « mes projets » pour `COUTURIERE`.
+
 1. **Commits** : ✅ faits (voir section 2). Reste à pousser si l'utilisateur le demande.
 
 2. **Relecture des traductions malgaches du CMS (`/gestion-contenu`)** :

@@ -13,6 +13,7 @@ import {
   ADMIN_CREATION_STAGE_LABELS,
 } from '../consts/stage-config.const';
 import { formatDate } from '@/lib/utils';
+import { ROUTES } from '@/lib/routes';
 
 interface CreationProjectRowProps {
   project: CreationProjectDto;
@@ -69,9 +70,12 @@ export const CreationProjectRow: React.FC<CreationProjectRowProps> = ({
             <Scissors size={18} className="text-[#8A877F]" />
           </div>
           <div className="min-w-0">
-            <p className="font-headline font-bold text-[#061938] text-sm truncate max-w-xs md:max-w-md">
+            <Link
+              href={ROUTES.adminCreationProject(project.id)}
+              className="block font-headline font-bold text-[#061938] text-sm truncate max-w-xs md:max-w-md hover:text-[#936C3E] transition-colors"
+            >
               {project.title}
-            </p>
+            </Link>
             <p className="text-[#8A877F] text-[11px] truncate max-w-xs md:max-w-md">
               {customerLabel}
             </p>
@@ -102,6 +106,11 @@ export const CreationProjectRow: React.FC<CreationProjectRowProps> = ({
           month: 'short',
           year: 'numeric',
         })}
+      </td>
+
+      {/* Couturière */}
+      <td className="py-4 px-6 text-xs whitespace-nowrap text-[#5C697A]">
+        {project.assignedTo ? project.assignedTo.email : <span className="text-[#8A877F]">Non assignée</span>}
       </td>
 
       {/* Étape Badge */}

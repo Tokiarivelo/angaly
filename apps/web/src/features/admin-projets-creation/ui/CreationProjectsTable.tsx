@@ -49,6 +49,9 @@ export const CreationProjectsTable: React.FC<CreationProjectsTableProps> = ({
                 Ouvert le
               </th>
               <th scope="col" className="py-4 px-6 font-medium">
+                Couturière
+              </th>
+              <th scope="col" className="py-4 px-6 font-medium">
                 Étape
               </th>
               <th scope="col" className="py-4 px-6 font-medium text-right">
@@ -59,7 +62,7 @@ export const CreationProjectsTable: React.FC<CreationProjectsTableProps> = ({
           <tbody className="divide-y divide-[#D9D4CA] text-xs font-body">
             {projects.length === 0 ? (
               <tr>
-                <td colSpan={6} className="p-0">
+                <td colSpan={7} className="p-0">
                   <EmptyCreationProjectsState />
                 </td>
               </tr>
