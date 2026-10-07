@@ -30,6 +30,14 @@ export interface CreationProjectAiPatternModalProps {
     input: GenerateCreationProjectAiPatternInput,
   ) => Promise<GenerateCreationProjectAiPatternResponseDto>;
   isGenerating: boolean;
+  /** Photos déjà rattachées au projet, proposables comme inspiration (lues une seule fois par l'IA). */
+  inspirationImages?: InspirationImageOption[] | undefined;
+}
+
+export interface InspirationImageOption {
+  id: string;
+  url: string;
+  title: string;
 }
 
 interface StandardMeasurements {
@@ -144,6 +152,7 @@ export const CreationProjectAiPatternModal: React.FC<CreationProjectAiPatternMod
   projectTitle,
   onGeneratePattern,
   isGenerating,
+  inspirationImages = [],
 }) => {
   const [garmentType, setGarmentType] = useState<CreationProjectGarmentType>('ROBE');
   const [cutType, setCutType] = useState<string>('EVASEE');
@@ -153,6 +162,7 @@ export const CreationProjectAiPatternModal: React.FC<CreationProjectAiPatternMod
   const [requestAiSuggestion, setRequestAiSuggestion] = useState<boolean>(true);
   const [saveMedia, setSaveMedia] = useState<boolean>(true);
   const [addNote, setAddNote] = useState<boolean>(true);
+  const [inspirationImageUrl, setInspirationImageUrl] = useState<string | null>(null);
 
   const [generatedResult, setGeneratedResult] =
     useState<GenerateCreationProjectAiPatternResponseDto | null>(null);
@@ -191,6 +201,7 @@ export const CreationProjectAiPatternModal: React.FC<CreationProjectAiPatternMod
         cutType,
         style: styleDescription.trim() || undefined,
         requestAiSuggestion,
+        ...(requestAiSuggestion && inspirationImageUrl ? { inspirationImageUrl } : {}),
         saveMedia,
         addNote,
         measurements: {
@@ -458,6 +469,39 @@ export const CreationProjectAiPatternModal: React.FC<CreationProjectAiPatternMod
                     </div>
                   </div>
                 </div>
+
+                {/* Photo d'inspiration (optionnelle) */}
+                {requestAiSuggestion && inspirationImages.length > 0 && (
+                  <fieldset className="space-y-2.5 p-3.5 bg-white border border-[#D9D4CA] rounded-sm">
+                    <legend className="sr-only">Photo d&apos;inspiration</legend>
+                    <span className="block text-xs font-headline uppercase tracking-widest text-[#061938] font-semibold">
+                      Photo d&apos;inspiration (optionnel)
+                    </span>
+                    <p className="text-[11px] text-[#5C697A]">
+                      L&apos;IA lit la photo une seule fois ; ses caractéristiques sont ensuite mémorisées.
+                    </p>
+                    <div className="flex flex-wrap gap-2">
+                      {inspirationImages.map((img) => {
+                        const selected = inspirationImageUrl === img.url;
+                        return (
+                          <button
+                            key={img.id}
+                            type="button"
+                            aria-pressed={selected}
+                            aria-label={img.title}
+                            onClick={() => setInspirationImageUrl(selected ? null : img.url)}
+                            className={`w-16 h-16 rounded-sm overflow-hidden border-2 transition-colors ${
+                              selected ? 'border-[#936C3E]' : 'border-[#D9D4CA] hover:border-[#061938]'
+                            }`}
+                          >
+                            {/* eslint-disable-next-line @next/next/no-img-element */}
+                            <img src={img.url} alt="" className="w-full h-full object-cover" />
+                          </button>
+                        );
+                      })}
+                    </div>
+                  </fieldset>
+                )}
 
                 {/* 4. Options d'Atelier */}
                 <div className="space-y-2.5 p-3.5 bg-white border border-[#D9D4CA] rounded-sm">

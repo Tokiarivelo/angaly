@@ -94,6 +94,10 @@ export const CreationProjectStageWorkspace: React.FC<CreationProjectStageWorkspa
 
   const stageNotes = notes.filter((n) => n.stage === selectedStage);
   const stageMedia = media.filter((m) => m.stage === selectedStage);
+  // Raster photos only: generated patterns are SVG data URIs and must never be sent to a vision model.
+  const inspirationImages = media
+    .filter((m) => m.mimeType?.startsWith('image/') && m.mimeType !== 'image/svg+xml' && /^https?:/.test(m.url))
+    .map((m) => ({ id: m.id, url: m.url, title: m.title ?? m.fileName ?? 'Photo' }));
 
   const handleAddNote = async (e: React.FormEvent) => {
     e.preventDefault();
@@ -479,6 +483,7 @@ export const CreationProjectStageWorkspace: React.FC<CreationProjectStageWorkspa
           projectTitle={projectTitle}
           onGeneratePattern={onGenerateAiPattern}
           isGenerating={Boolean(isGeneratingAiPattern)}
+          inspirationImages={inspirationImages}
         />
       )}
     </section>

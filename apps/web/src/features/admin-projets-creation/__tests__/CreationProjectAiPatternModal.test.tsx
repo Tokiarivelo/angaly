@@ -204,4 +204,44 @@ describe('CreationProjectAiPatternModal', () => {
     });
     expect(screen.getByText('Moteur indisponible')).toBeInTheDocument();
   });
+
+  it('sends the chosen inspiration photo URL with the generation request', async () => {
+    const user = userEvent.setup();
+    onGeneratePattern.mockResolvedValue(MOCK_RESPONSE);
+
+    render(
+      <CreationProjectAiPatternModal
+        isOpen={true}
+        onClose={onClose}
+        projectReference="CRP-2026-TEST"
+        onGeneratePattern={onGeneratePattern}
+        isGenerating={false}
+        inspirationImages={[
+          { id: 'm1', url: 'https://cdn.angaly.test/a.jpg', title: 'Robe A' },
+          { id: 'm2', url: 'https://cdn.angaly.test/b.jpg', title: 'Robe B' },
+        ]}
+      />,
+    );
+
+    await user.click(screen.getByRole('button', { name: 'Robe B' }));
+    await user.click(screen.getByRole('button', { name: /Générer le patron par IA/i }));
+
+    await waitFor(() =>
+      expect(onGeneratePattern).toHaveBeenCalledWith(
+        expect.objectContaining({ inspirationImageUrl: 'https://cdn.angaly.test/b.jpg' }),
+      ),
+    );
+  });
+
+  it('omits the inspiration photo section when the project has no photos', () => {
+    render(
+      <CreationProjectAiPatternModal
+        isOpen={true}
+        onClose={onClose}
+        onGeneratePattern={onGeneratePattern}
+        isGenerating={false}
+      />,
+    );
+    expect(screen.queryByText(/Photo d.inspiration/i)).not.toBeInTheDocument();
+  });
 });
