@@ -2,6 +2,8 @@
 // These types are shared between the frontend (apps/web) and backend (apps/api).
 // Enums mirror packages/database/prisma/schema.prisma 1:1 — keep both in sync.
 
+import type { ProviderCredentials } from './ai-providers';
+
 // ============================================================
 // Enums
 // ============================================================
@@ -569,10 +571,147 @@ export interface CreationProjectStageEventDto {
   createdAt: string;
 }
 
-/** Détail back-office : projet + historique des étapes (plus récent d'abord). */
+export interface CreationProjectStageNoteDto {
+  id: string;
+  projectId: string;
+  stage: CreationProjectStage;
+  content: string;
+  authorEmail: string | null;
+  createdAt: string;
+  updatedAt: string;
+}
+
+export interface CreationProjectStageMediaDto {
+  id: string;
+  projectId: string;
+  stage: CreationProjectStage;
+  url: string;
+  title: string | null;
+  fileName: string | null;
+  mimeType: string | null;
+  sizeBytes: number | null;
+  uploadedByEmail: string | null;
+  createdAt: string;
+}
+
+export interface AddCreationProjectStageNoteInput {
+  stage: CreationProjectStage;
+  content: string;
+}
+
+export interface AddCreationProjectStageMediaInput {
+  stage: CreationProjectStage;
+  url: string;
+  title?: string | undefined;
+  fileName?: string | undefined;
+  mimeType?: string | undefined;
+  sizeBytes?: number | undefined;
+}
+
+/** Détail back-office : projet + historique des étapes + notes d'atelier + médias par étape. */
 export interface CreationProjectDetailDto extends CreationProjectDto {
   stageHistory: CreationProjectStageEventDto[];
+  stageNotes: CreationProjectStageNoteDto[];
+  stageMedia: CreationProjectStageMediaDto[];
 }
+
+export interface AdminCustomerOptionDto {
+  id: string;
+  firstName: string;
+  lastName: string;
+  email: string;
+  phone: string | null;
+}
+
+export interface AdminQuoteOptionDto {
+  id: string;
+  quoteNumber: string;
+  total: string;
+  customerName?: string | null;
+}
+
+export interface CreateAdminCreationProjectInput {
+  customerId?: string | undefined;
+  newCustomer?: {
+    firstName: string;
+    lastName: string;
+    email: string;
+    phone?: string | null | undefined;
+  } | undefined;
+  title: string;
+  garmentType?: string | undefined;
+  occasion?: string | undefined;
+  eventDate?: string | undefined;
+  budgetRange?: string | undefined;
+  description?: string | undefined;
+  initialStage?: CreationProjectStage | undefined;
+  quoteId?: string | undefined;
+  assignedToId?: string | null | undefined;
+  inspirationMediaUrls?: string[] | undefined;
+}
+
+export type CreationProjectGarmentType =
+  | 'ROBE'
+  | 'JUPE'
+  | 'PANTALON'
+  | 'VESTE'
+  | 'CHEMISE'
+  | 'COSTUME'
+  | 'ROBE_MARIEE'
+  | 'AUTRE';
+
+export interface GenerateCreationProjectAiPatternInput {
+  garmentType: CreationProjectGarmentType;
+  style?: string | undefined;
+  cutType?: string | undefined;
+  details?: Record<string, string> | undefined;
+  measurements?: Record<string, number> | undefined;
+  requestAiSuggestion?: boolean | undefined;
+  saveMedia?: boolean | undefined;
+  addNote?: boolean | undefined;
+}
+
+export interface GeneratedPatternPieceGeometryDto {
+  name: string;
+  outlineMm: Array<{ x: number; y: number }>;
+  seamAllowanceMm: number;
+  grainline: {
+    angleDegrees: number;
+    originX: number;
+    originY: number;
+  };
+  notches: Array<{
+    edgeIndex: number;
+    positionAlongEdge: number;
+  }>;
+  quantity?: number | undefined;
+  fabricRecommendation?: string | undefined;
+  widthMm: number;
+  heightMm: number;
+}
+
+export interface GenerateCreationProjectAiPatternResponseDto {
+  pieces: GeneratedPatternPieceGeometryDto[];
+  parameters: {
+    garmentType: string;
+    cutType: string;
+    style?: string | undefined;
+    details: Record<string, string>;
+  };
+  measurements: Record<string, number>;
+  aiSuggestion?: {
+    suggestedCutType: string;
+    suggestedDetails: Record<string, string>;
+    confidence: number;
+    modelVersion: string;
+    isIndicativeOnly: boolean;
+  } | undefined;
+  svgContent: string;
+  svgDataUri: string;
+  media?: CreationProjectStageMediaDto | undefined;
+  note?: CreationProjectStageNoteDto | undefined;
+}
+
 
 // ============================================================
 // Ateliers — typed shape for Atelier.openingHoursJson / servicesJson
@@ -639,6 +778,7 @@ export interface PatternAiSuggestionRequest {
   style: string | null;
   measurements: Record<string, number>;
   inspirationImageUrl: string | null;
+  provider?: ProviderCredentials;
 }
 
 /** Response contract from apps/ai-service — suggested parameters, never final geometry. */
@@ -872,3 +1012,9 @@ export * from './size-charts';
 // ============================================================
 
 export * from './media';
+
+// ============================================================
+// AI Providers & Settings (admin-ai-settings, ai-inference)
+// ============================================================
+
+export * from './ai-providers';

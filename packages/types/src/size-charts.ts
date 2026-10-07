@@ -3,6 +3,8 @@
 // (clés renommées vers le vocabulaire canonique des mesures — voir
 // apps/web/src/features/mes-mesures/consts/measurement-fields.const.ts)
 
+import type { ProviderCredentials } from './ai-providers';
+
 export type SizeChartGender = 'FEMME' | 'HOMME';
 
 export type StandardSizeLabel =
@@ -85,6 +87,7 @@ export interface PatternMeasurementEstimationRequest {
   knownMeasurements: Record<string, number>;
   requiredKeys: string[];
   modelPreference?: MeasurementModelPreference;
+  provider?: ProviderCredentials;
 }
 
 export interface PatternMeasurementEstimationResponse {
