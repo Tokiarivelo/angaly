@@ -39,6 +39,21 @@ class GeminiProvider(LlmProvider):
         )
         return schema.model_validate_json(response.text)
 
+    def generate_json_from_image(
+        self, prompt: str, schema: type[T], image_bytes: bytes, mime_type: str
+    ) -> T:
+        client = self._get_client()
+        response = client.models.generate_content(
+            model=self.model,
+            contents=[types.Part.from_bytes(data=image_bytes, mime_type=mime_type), prompt],
+            config=types.GenerateContentConfig(
+                response_mime_type="application/json",
+                response_schema=schema,
+                max_output_tokens=512,
+            ),
+        )
+        return schema.model_validate_json(response.text)
+
     def test_connection(self) -> tuple[bool, int, str]:
         start = time.perf_counter()
         try:

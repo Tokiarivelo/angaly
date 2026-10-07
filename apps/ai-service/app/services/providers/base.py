@@ -41,6 +41,13 @@ class LlmProvider(ABC):
         """Generates structured output adhering strictly to the given Pydantic schema."""
         pass
 
+    def generate_json_from_image(
+        self, prompt: str, schema: type[T], image_bytes: bytes, mime_type: str
+    ) -> T:
+        """Same as generate_json but with one (already downscaled) image as input.
+        Providers without vision support keep this default."""
+        raise NotImplementedError(f"{type(self).__name__} ne supporte pas l'analyse d'image.")
+
     @abstractmethod
     def test_connection(self) -> tuple[bool, int, str]:
         """Tests connectivity and credentials with the provider.

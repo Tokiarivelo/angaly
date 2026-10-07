@@ -4,6 +4,7 @@ Specified in docs/features/ai-providers.md §6.
 
 from __future__ import annotations
 
+import base64
 import json
 import logging
 import time
@@ -46,6 +47,38 @@ class AnthropicProvider(LlmProvider):
         raw_text = message.content[0].text if message.content else "{}"
         cleaned = clean_json_text(raw_text)
         return schema.model_validate_json(cleaned)
+
+    def generate_json_from_image(
+        self, prompt: str, schema: type[T], image_bytes: bytes, mime_type: str
+    ) -> T:
+        client = self._get_client()
+        schema_json = json.dumps(schema.model_json_schema(), ensure_ascii=False)
+        message = client.messages.create(
+            model=self.model,
+            max_tokens=512,
+            system="Tu es l'assistant de modélisme haute couture d'ANGALY. Tu réponds exclusivement en JSON valide.",
+            messages=[
+                {
+                    "role": "user",
+                    "content": [
+                        {
+                            "type": "image",
+                            "source": {
+                                "type": "base64",
+                                "media_type": mime_type,
+                                "data": base64.b64encode(image_bytes).decode("ascii"),
+                            },
+                        },
+                        {
+                            "type": "text",
+                            "text": f"{prompt}\n\nRéponds EXCLUSIVEMENT avec un objet JSON conforme à ce schéma :\n{schema_json}",
+                        },
+                    ],
+                }
+            ],
+        )
+        raw_text = message.content[0].text if message.content else "{}"
+        return schema.model_validate_json(clean_json_text(raw_text))
 
     def test_connection(self) -> tuple[bool, int, str]:
         start = time.perf_counter()

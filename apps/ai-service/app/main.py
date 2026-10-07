@@ -3,11 +3,18 @@ import logging
 from fastapi import FastAPI
 from pydantic import BaseModel
 
-from .inference import estimate_missing_measurements, is_model_loaded, suggest_pattern_parameters
+from .inference import (
+    analyze_inspiration,
+    estimate_missing_measurements,
+    is_model_loaded,
+    suggest_pattern_parameters,
+)
 from .local_model import is_local_model_available
 from .schemas import (
     AvailableModelsResponse,
     HealthCheckResponse,
+    InspirationAnalysisRequest,
+    InspirationAnalysisResponse,
     PatternAiSuggestionRequest,
     PatternAiSuggestionResponse,
     PatternMeasurementEstimationRequest,
@@ -106,6 +113,17 @@ def suggest_parameters(payload: PatternAiSuggestionRequest) -> PatternAiSuggesti
     """Called by the NestJS `ai-inference` module during Pattern Studio's
     generation step (docs/pages/pattern-studio-wizard.md)."""
     return suggest_pattern_parameters(payload)
+
+
+@app.post(
+    "/v1/pattern/analyze-inspiration",
+    response_model=InspirationAnalysisResponse,
+    response_model_by_alias=True,
+)
+def analyze_inspiration_endpoint(payload: InspirationAnalysisRequest) -> InspirationAnalysisResponse:
+    """Called by `ai-inference` with a photo already downscaled/re-encoded by NestJS; returns compact
+    garment attributes (docs/features/ai-inference.md §Inspiration photos)."""
+    return analyze_inspiration(payload)
 
 
 @app.post(

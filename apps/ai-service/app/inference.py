@@ -5,10 +5,13 @@ Specified in docs/features/ai-providers.md §6.
 
 from __future__ import annotations
 
+import base64
 import logging
 
 from .local_model import LOCAL_MODEL_VERSION, estimate_with_local_model, is_local_model_available
 from .schemas import (
+    InspirationAnalysisRequest,
+    InspirationAnalysisResponse,
     PatternAiSuggestionRequest,
     PatternAiSuggestionResponse,
     PatternMeasurementEstimationRequest,
@@ -65,9 +68,8 @@ def suggest_pattern_parameters(
     Choisis suggestedCutType strictement parmi cette liste : {", ".join(KNOWN_CUT_TYPES)}.
     Propose des détails de construction pertinents (manches, col, longueur, etc.) dans
     suggestedDetails.
-    Si une image d'inspiration est fournie, simule la détection de ses caractéristiques
-    visuelles dans detectedInspirationFeatures.
-    Image d'inspiration : {request.inspiration_image_url or 'Aucune'}
+    Caractéristiques visuelles extraites de la photo d'inspiration (à respecter si présentes) :
+    {request.inspiration_features or 'Aucune'}
     """
 
     try:
@@ -88,8 +90,8 @@ def suggest_pattern_parameters(
             )
             result.suggested_cut_type = "DROITE"
 
-        if not request.inspiration_image_url:
-            result.detected_inspiration_features = None
+        # Features come from the dedicated image analysis, never invented by this text-only call.
+        result.detected_inspiration_features = request.inspiration_features or None
 
         return result
     except Exception as exc:
@@ -100,6 +102,44 @@ def suggest_pattern_parameters(
             detectedInspirationFeatures=None,
             confidence=0.1,
             modelVersion="fallback-0.0.0",
+        )
+
+
+INSPIRATION_FEATURE_KEYS = (
+    "garmentType, neckline, sleeves, length, silhouette, waist, fabricLook, details"
+)
+
+
+def analyze_inspiration(request: InspirationAnalysisRequest) -> InspirationAnalysisResponse:
+    """Reads garment attributes from ONE downscaled photo, once. The compact JSON is cached by the
+    caller (keyed on the image hash) so later calls never pay for image tokens again."""
+    prompt = (
+        "Observe ce vêtement et décris-le de façon concise pour un modéliste. "
+        f"Remplis features avec ces clés uniquement : {INSPIRATION_FEATURE_KEYS} "
+        "(valeurs courtes, 1 à 4 mots, en français, omets une clé si invisible). "
+        f"Choisis suggestedCutType strictement parmi : {', '.join(KNOWN_CUT_TYPES)}. "
+        "N'invente aucune mesure ni géométrie."
+    )
+    try:
+        image_bytes = base64.b64decode(request.image_base64, validate=True)
+        if request.provider:
+            provider = get_llm_provider(request.provider)
+            model_ver = request.provider.model
+        else:
+            provider = GeminiProvider(model=GEMINI_MODEL_VERSION)
+            model_ver = GEMINI_MODEL_VERSION
+
+        result = provider.generate_json_from_image(
+            prompt, InspirationAnalysisResponse, image_bytes, request.mime_type
+        )
+        result.model_version = model_ver
+        if result.suggested_cut_type not in KNOWN_CUT_TYPES:
+            result.suggested_cut_type = None
+        return result
+    except Exception as exc:
+        logger.exception("analyze_inspiration failed: %s", exc)
+        return InspirationAnalysisResponse(
+            features={}, suggestedCutType=None, confidence=0.0, modelVersion="fallback-0.0.0"
         )
 
 

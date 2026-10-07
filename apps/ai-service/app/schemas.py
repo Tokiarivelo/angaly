@@ -51,6 +51,9 @@ class PatternAiSuggestionRequest(BaseModel):
     style: str | None = None
     measurements: dict[str, float] = Field(default_factory=dict)
     inspiration_image_url: str | None = Field(default=None, alias="inspirationImageUrl")
+    # Compact attributes extracted once from the photo (see analyze-inspiration) — replaces the
+    # image in the prompt so the suggestion call stays text-only and cheap.
+    inspiration_features: dict[str, str] | None = Field(default=None, alias="inspirationFeatures")
     provider: ProviderCredentials | None = None
 
     model_config = {"populate_by_name": True}
@@ -103,6 +106,25 @@ class PatternMeasurementEstimationResponse(BaseModel):
         default_factory=dict, alias="estimatedMeasurements"
     )
     estimated_keys: list[str] = Field(default_factory=list, alias="estimatedKeys")
+    confidence: float
+    model_version: str = Field(..., alias="modelVersion")
+
+    model_config = {"populate_by_name": True}
+
+
+class InspirationAnalysisRequest(BaseModel):
+    """One already downscaled inspiration photo, sent by NestJS `ai-inference` (never by the web)."""
+    image_base64: str = Field(..., alias="imageBase64")
+    mime_type: str = Field(default="image/jpeg", alias="mimeType")
+    provider: ProviderCredentials | None = None
+
+    model_config = {"populate_by_name": True}
+
+
+class InspirationAnalysisResponse(BaseModel):
+    """Garment attributes read from the photo — descriptive only, never geometry."""
+    features: dict[str, str] = Field(default_factory=dict)
+    suggested_cut_type: str | None = Field(default=None, alias="suggestedCutType")
     confidence: float
     model_version: str = Field(..., alias="modelVersion")
 
