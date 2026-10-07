@@ -778,7 +778,24 @@ export interface PatternAiSuggestionRequest {
   style: string | null;
   measurements: Record<string, number>;
   inspirationImageUrl: string | null;
+  /** Compact attributes already extracted from the photo — avoids re-sending the image. */
+  inspirationFeatures?: Record<string, string> | null;
   provider?: ProviderCredentials;
+}
+
+/** apps/api → apps/ai-service: one downscaled inspiration photo (base64 stays on the internal network). */
+export interface InspirationAnalysisRequest {
+  imageBase64: string;
+  mimeType: string;
+  provider?: ProviderCredentials;
+}
+
+/** Garment attributes read from the photo — descriptive only, never geometry (ADR-005). */
+export interface InspirationAnalysisResponse {
+  features: Record<string, string>;
+  suggestedCutType: string | null;
+  confidence: number;
+  modelVersion: string;
 }
 
 /** Response contract from apps/ai-service — suggested parameters, never final geometry. */
