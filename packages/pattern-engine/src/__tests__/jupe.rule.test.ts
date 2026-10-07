@@ -54,4 +54,20 @@ describe('JupeRule', () => {
     // Check height
     expect(devant?.grainline.originY).toBe(300); // 600 / 2
   });
+
+  it('changes the skirt silhouette and length with the cut and the longueur detail', () => {
+    const measurements: MeasurementSet = { TOUR_TAILLE: 70, TOUR_BASSIN: 90, LONGUEUR_DOS: 60 };
+    const devant = (cutType: string, details: Record<string, string> = {}) =>
+      JupeRule.computePieces({ garmentType: 'JUPE', cutType, style: null, details }, measurements).find(
+        (p) => p.name === 'Devant',
+      )!;
+    const width = (cutType: string) => Math.max(...devant(cutType).outlineMm.map((p) => p.x));
+
+    expect(width('EVASEE')).toBeGreaterThan(width('DROITE'));
+    expect(width('AJUSTEE')).toBeLessThan(width('DROITE'));
+    expect(devant('SIRENE').outlineMm.length).toBe(devant('DROITE').outlineMm.length + 1);
+
+    const length = (longueur: string) => Math.max(...devant('DROITE', { longueur }).outlineMm.map((p) => p.y));
+    expect(length('MINI')).toBeLessThan(length('MAXI'));
+  });
 });

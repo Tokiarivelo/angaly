@@ -116,3 +116,18 @@ exports NestJS (`PatternEngineModule`) et consommé en injection de dépendance 
 - [x] Au moins un test d'intégration avec une règle concrète une fois `pattern-engine-rule` utilisé pour en scaffolder une (cf. `docs/features/patterns.md`)
 - [x] Aucun import de `@angaly/pattern-engine` détecté en dehors de `apps/api/src/pattern-engine/` (vérification statique/lint)
 - [x] `docs/checklist-implementation.md` : `pattern-engine` passé à ✅
+
+## Choix de design → géométrie (2026-10-07)
+
+Avant cette date, `ROBE` et `JUPE` ignoraient `cutType` et `details` : tous les patrons étaient identiques.
+`src/shared/cut-profile.ts` (fonctions pures) traduit désormais les choix du wizard en nombres :
+
+| Choix | Effet |
+| --- | --- |
+| `cutType` (DROITE, EVASEE, SIRENE, PRINCESSE, AJUSTEE, OVERSIZE) | aisance buste/taille/bassin (écart par rapport à DROITE), évasement de l'ourlet, point de genou « sirène » ; coupe inconnue = DROITE |
+| `details.longueur` (MINI, MIDI, MAXI, SOL, ASYMETRIQUE) | longueur taille→ourlet de la jupe |
+| `details.decollete` / `details.col` | profondeur et largeur de l'encolure devant (`decollete` prime sur `col`) |
+| `details.manches` | pièce `Manche` (courtes, 3/4, longues, ballon, papillon) ; aucune pièce si absent ou `SANS_MANCHES` |
+
+Le corsage de la robe suit maintenant la taille (couture côté buste → taille). **Reste à faire** : appliquer ces
+profils à `CHEMISE`, `VESTE`, `COSTUME`, `PANTALON` (qui ne réagissent qu'à SLIM/LARGE/…) et à `ROBE_MARIEE`.

@@ -4,6 +4,7 @@ import type {
   PatternParameters,
   PatternPieceGeometry,
 } from '../types';
+import { resolveCutProfile, resolveSkirtLengthMm } from '../shared/cut-profile';
 
 // Pour une jupe de base, il nous faut au minimum :
 const REQUIRED_MEASUREMENTS = ['TOUR_TAILLE', 'TOUR_BASSIN', 'LONGUEUR_DOS'];
@@ -15,7 +16,7 @@ export const JupeRule: IPatternRule = {
     return parameters.garmentType === 'JUPE';
   },
   computePieces(
-    _parameters: PatternParameters,
+    parameters: PatternParameters,
     measurements: MeasurementSet,
   ): PatternPieceGeometry[] {
     const tourTaille = measurements['TOUR_TAILLE'] ?? 70;
@@ -25,16 +26,21 @@ export const JupeRule: IPatternRule = {
     // Valeurs de base en mm
     const tt = tourTaille * 10;
     const tb = tourBassin * 10;
-    const lg = longueur * 10;
+    const lg = resolveSkirtLengthMm(parameters.details['longueur']) ?? longueur * 10;
+    const profile = resolveCutProfile(parameters.cutType);
 
     // Calculs simplifiés (base jupe droite)
     // Devant: quart du tour de bassin + 1cm d'aisance
-    const largeurDevant = tb / 4 + 10;
-    const largeurTailleDevant = tt / 4 + 10 + 20; // + pince de 2cm
+    const largeurDevant = tb / 4 + 10 + profile.hipDeltaMm;
+    const largeurTailleDevant = tt / 4 + 10 + 20 + profile.waistDeltaMm; // + pince de 2cm
+    const hemDevant = largeurDevant + profile.hemFlareMm;
 
     // Dos: quart du tour de bassin - 1cm d'aisance
-    const largeurDos = tb / 4 - 10;
-    const largeurTailleDos = tt / 4 - 10 + 30; // + pince de 3cm
+    const largeurDos = tb / 4 - 10 + profile.hipDeltaMm;
+    const largeurTailleDos = tt / 4 - 10 + 30 + profile.waistDeltaMm; // + pince de 3cm
+    const hemDos = largeurDos + profile.hemFlareMm;
+
+    const hipDepth = Math.min(200, lg / 2);
 
     const devant: PatternPieceGeometry = {
       name: 'Devant',
@@ -46,8 +52,9 @@ export const JupeRule: IPatternRule = {
       outlineMm: [
         { x: 0, y: 0 }, // Milieu devant taille
         { x: largeurTailleDevant, y: 10 }, // Côté taille (légèrement remonté)
-        { x: largeurDevant, y: 200 }, // Ligne de bassin (20cm sous la taille)
-        { x: largeurDevant, y: lg }, // Ourlet côté
+        { x: largeurDevant, y: hipDepth }, // Ligne de bassin (20cm sous la taille)
+        ...(profile.fishtail ? [{ x: largeurDevant * 0.9, y: lg * 0.55 }] : []), // Genou (sirène)
+        { x: hemDevant, y: lg }, // Ourlet côté
         { x: 0, y: lg }, // Milieu devant ourlet
         { x: 0, y: 0 }, // Retour origine
       ],
@@ -63,8 +70,9 @@ export const JupeRule: IPatternRule = {
       outlineMm: [
         { x: 0, y: 0 }, // Milieu dos taille
         { x: largeurTailleDos, y: 10 }, // Côté taille
-        { x: largeurDos, y: 200 }, // Ligne de bassin
-        { x: largeurDos, y: lg }, // Ourlet côté
+        { x: largeurDos, y: hipDepth }, // Ligne de bassin
+        ...(profile.fishtail ? [{ x: largeurDos * 0.9, y: lg * 0.55 }] : []), // Genou (sirène)
+        { x: hemDos, y: lg }, // Ourlet côté
         { x: 0, y: lg }, // Milieu dos ourlet
         { x: 0, y: 0 },
       ],

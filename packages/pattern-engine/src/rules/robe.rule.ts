@@ -4,8 +4,59 @@ import type {
   PatternParameters,
   PatternPieceGeometry,
 } from '../types';
+import {
+  resolveCutProfile,
+  resolveNeckline,
+  resolveSkirtLengthMm,
+  resolveSleeve,
+  type SleeveSpec,
+} from '../shared/cut-profile';
 
 const REQUIRED_MEASUREMENTS = ['TOUR_POITRINE', 'TOUR_TAILLE', 'TOUR_BASSIN', 'LONGUEUR_DOS'];
+
+/** Skirt panel: straight, A-line/flared, or fishtail (narrow to the knee, flaring below). */
+function skirtOutline(
+  waistWidth: number,
+  hipWidth: number,
+  hemWidth: number,
+  length: number,
+  fishtail: boolean,
+): PatternPieceGeometry['outlineMm'] {
+  const hipDepth = Math.min(200, length / 2);
+  const points = [
+    { x: 0, y: 0 },
+    { x: waistWidth, y: 10 },
+    { x: hipWidth, y: hipDepth },
+  ];
+  if (fishtail) {
+    points.push({ x: hipWidth * 0.9, y: length * 0.55 });
+  }
+  points.push({ x: hemWidth, y: length }, { x: 0, y: length }, { x: 0, y: 0 });
+  return points;
+}
+
+function sleevePiece(tourPoitrineMm: number, sleeve: SleeveSpec): PatternPieceGeometry {
+  const capHeight = 150;
+  const top = (tourPoitrineMm / 3.2) * sleeve.topRatio;
+  const cuff = (tourPoitrineMm / 3.2) * sleeve.cuffRatio;
+  const inset = (top - cuff) / 2;
+  return {
+    name: 'Manche',
+    fabricRecommendation: null,
+    quantity: 2,
+    seamAllowanceMm: 10,
+    grainline: { angleDegrees: 90, originX: top / 2, originY: (capHeight + sleeve.lengthMm) / 2 },
+    notches: [{ positionAlongEdge: 0.5, edgeIndex: 0 }],
+    outlineMm: [
+      { x: 0, y: capHeight },
+      { x: top / 2, y: 0 },
+      { x: top, y: capHeight },
+      { x: top - inset, y: capHeight + sleeve.lengthMm },
+      { x: inset, y: capHeight + sleeve.lengthMm },
+      { x: 0, y: capHeight },
+    ],
+  };
+}
 
 export const RobeRule: IPatternRule = {
   garmentType: 'ROBE',
@@ -16,7 +67,7 @@ export const RobeRule: IPatternRule = {
     return parameters.garmentType === 'ROBE';
   },
   computePieces(
-    _parameters: PatternParameters,
+    parameters: PatternParameters,
     measurements: MeasurementSet,
   ): PatternPieceGeometry[] {
     const tourPoitrine = measurements['TOUR_POITRINE'] ?? 90;
@@ -24,24 +75,28 @@ export const RobeRule: IPatternRule = {
     const tourBassin = measurements['TOUR_BASSIN'] ?? 95;
     const longueurDos = measurements['LONGUEUR_DOS'] ?? 40;
 
+    const profile = resolveCutProfile(parameters.cutType);
+    const neckline = resolveNeckline(parameters.details);
     const tp = tourPoitrine * 10;
     const tt = tourTaille * 10;
     const tb = tourBassin * 10;
     const lgDos = longueurDos * 10;
 
     // Dimensions corsage
-    const largeurCorsageDevant = tp / 4 + 20; // 2cm aisance
-    const largeurTailleDevant = tt / 4 + 20;
+    const largeurCorsageDevant = tp / 4 + 20 + profile.bodiceDeltaMm; // 2cm aisance (DROITE)
+    const largeurTailleDevant = tt / 4 + 20 + profile.waistDeltaMm;
     const hauteurCorsageDevant = lgDos + 40;
 
-    const largeurCorsageDos = tp / 4 - 10;
-    const largeurTailleDos = tt / 4 - 10;
+    const largeurCorsageDos = tp / 4 - 10 + profile.bodiceDeltaMm;
+    const largeurTailleDos = tt / 4 - 10 + profile.waistDeltaMm;
     const hauteurCorsageDos = lgDos;
 
     // Dimensions jupe
-    const longueurJupe = 650; // 65cm jupe standard
-    const largeurJupeDevant = tb / 4 + 15;
-    const largeurJupeDos = tb / 4 - 10;
+    const longueurJupe = resolveSkirtLengthMm(parameters.details['longueur']) ?? 650; // 65cm par défaut
+    const largeurJupeDevant = tb / 4 + 15 + profile.hipDeltaMm;
+    const largeurJupeDos = tb / 4 - 10 + profile.hipDeltaMm;
+    const hemDevant = largeurJupeDevant + profile.hemFlareMm;
+    const hemDos = largeurJupeDos + profile.hemFlareMm;
 
     const corsageDevant: PatternPieceGeometry = {
       name: 'Corsage Devant',
@@ -51,12 +106,13 @@ export const RobeRule: IPatternRule = {
       grainline: { angleDegrees: 90, originX: largeurCorsageDevant / 2, originY: hauteurCorsageDevant / 2 },
       notches: [{ positionAlongEdge: 0.5, edgeIndex: 1 }],
       outlineMm: [
-        { x: 0, y: 0 },
-        { x: 80, y: 0 },
+        { x: 0, y: neckline.depthMm },
+        { x: neckline.widthMm, y: 0 },
         { x: largeurCorsageDevant, y: 50 },
-        { x: largeurCorsageDevant, y: hauteurCorsageDevant },
+        { x: largeurCorsageDevant, y: hauteurCorsageDevant * 0.55 },
+        { x: largeurTailleDevant, y: hauteurCorsageDevant },
         { x: 0, y: hauteurCorsageDevant },
-        { x: 0, y: 0 },
+        { x: 0, y: neckline.depthMm },
       ],
     };
 
@@ -71,7 +127,8 @@ export const RobeRule: IPatternRule = {
         { x: 0, y: 0 },
         { x: 75, y: 0 },
         { x: largeurCorsageDos, y: 45 },
-        { x: largeurCorsageDos, y: hauteurCorsageDos },
+        { x: largeurCorsageDos, y: hauteurCorsageDos * 0.55 },
+        { x: largeurTailleDos, y: hauteurCorsageDos },
         { x: 0, y: hauteurCorsageDos },
         { x: 0, y: 0 },
       ],
@@ -84,14 +141,7 @@ export const RobeRule: IPatternRule = {
       seamAllowanceMm: 10,
       grainline: { angleDegrees: 90, originX: largeurJupeDevant / 2, originY: longueurJupe / 2 },
       notches: [],
-      outlineMm: [
-        { x: 0, y: 0 },
-        { x: largeurTailleDevant, y: 10 },
-        { x: largeurJupeDevant, y: 200 },
-        { x: largeurJupeDevant, y: longueurJupe },
-        { x: 0, y: longueurJupe },
-        { x: 0, y: 0 },
-      ],
+      outlineMm: skirtOutline(largeurTailleDevant, largeurJupeDevant, hemDevant, longueurJupe, profile.fishtail),
     };
 
     const jupeDos: PatternPieceGeometry = {
@@ -101,16 +151,18 @@ export const RobeRule: IPatternRule = {
       seamAllowanceMm: 10,
       grainline: { angleDegrees: 90, originX: largeurJupeDos / 2, originY: longueurJupe / 2 },
       notches: [],
-      outlineMm: [
-        { x: 0, y: 0 },
-        { x: largeurTailleDos, y: 10 },
-        { x: largeurJupeDos, y: 200 },
-        { x: largeurJupeDos, y: longueurJupe },
-        { x: 0, y: longueurJupe },
-        { x: 0, y: 0 },
-      ],
+      outlineMm: skirtOutline(largeurTailleDos, largeurJupeDos, hemDos, longueurJupe, profile.fishtail),
     };
 
-    return [corsageDevant, corsageDos, jupeDevant, jupeDos];
+    const pieces = [corsageDevant, corsageDos, jupeDevant, jupeDos];
+
+    const sleeve = resolveSleeve(
+      parameters.details['manches'],
+      measurements['LONGUEUR_BRAS'] !== undefined ? measurements['LONGUEUR_BRAS'] * 10 : undefined,
+    );
+    if (sleeve) {
+      pieces.push(sleevePiece(tp, sleeve));
+    }
+    return pieces;
   },
 };
