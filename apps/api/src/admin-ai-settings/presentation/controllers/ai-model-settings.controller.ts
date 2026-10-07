@@ -1,5 +1,5 @@
 import { Body, Controller, Get, Patch, UseGuards } from '@nestjs/common';
-import { ApiBearerAuth, ApiOperation, ApiTags } from '@nestjs/swagger';
+import { ApiBearerAuth, ApiOperation, ApiResponse, ApiTags } from '@nestjs/swagger';
 import { Role } from '@angaly/types';
 import { JwtAuthGuard } from '../../../auth/presentation/guards/jwt-auth.guard';
 import { RolesGuard } from '../../../auth/presentation/guards/roles.guard';
@@ -7,14 +7,14 @@ import { Roles } from '../../../auth/presentation/decorators/roles.decorator';
 import { CurrentUser } from '../../../auth/presentation/decorators/current-user.decorator';
 import type { AccessTokenPayload } from '../../../auth/domain/services/access-token.service';
 import { GetAiModelSettingUseCase } from '../../application/use-cases/get-ai-model-setting.use-case';
-import { UpdateAiModelSettingUseCase } from '../../application/use-cases/update-ai-model-setting.use-case';
-import { UpdateAiModelSettingDto } from '../../application/dtos/update-ai-model-setting.dto';
+import { UpdateAiRoutingUseCase } from '../../application/use-cases/update-ai-routing.use-case';
+import { UpdateAiRoutingDto } from '../../application/dtos/update-ai-routing.dto';
+import { AiRoutingSettingResponseDto } from '../../application/dtos/ai-provider-response.dto';
 
 /**
- * ADMIN-only: lets an administrator choose which backend
- * (`GEMINI` or `LOCAL_STATISTICAL`) `ai-inference` uses for measurement
- * estimation. See docs/features/ai-model-settings.md. Never exposed to
- * CLIENT/COUTURIERE/MANAGER.
+ * ADMIN-only: lets an administrator choose which AI backend
+ * powers measurement estimation and pattern suggestions in Pattern Studio.
+ * See docs/features/ai-providers.md.
  */
 @ApiTags('Admin — AI Model Settings')
 @ApiBearerAuth('access-token')
@@ -24,30 +24,36 @@ import { UpdateAiModelSettingDto } from '../../application/dtos/update-ai-model-
 export class AiModelSettingsController {
   constructor(
     private readonly getAiModelSetting: GetAiModelSettingUseCase,
-    private readonly updateAiModelSetting: UpdateAiModelSettingUseCase,
+    private readonly updateAiRouting: UpdateAiRoutingUseCase,
   ) {}
 
-  @ApiOperation({ summary: 'Get the current AI model preference' })
+  @ApiOperation({ summary: 'Obtenir la configuration active du routage des modèles d’IA' })
+  @ApiResponse({ status: 200, type: AiRoutingSettingResponseDto })
   @Get()
-  async get() {
+  async get(): Promise<AiRoutingSettingResponseDto> {
     const setting = await this.getAiModelSetting.execute();
     return {
       measurementModel: setting.measurementModel,
-      updatedAt: setting.updatedAt,
+      measurementProvider: setting.measurementProvider,
+      patternSuggestionProvider: setting.patternSuggestionProvider,
+      updatedAt: setting.updatedAt.toISOString(),
       updatedById: setting.updatedById,
     };
   }
 
-  @ApiOperation({ summary: 'Change the AI model used for measurement estimation' })
+  @ApiOperation({ summary: 'Modifier les fournisseurs d’IA assignés aux usages de l’atelier' })
+  @ApiResponse({ status: 200, type: AiRoutingSettingResponseDto })
   @Patch()
   async update(
-    @Body() dto: UpdateAiModelSettingDto,
+    @Body() dto: UpdateAiRoutingDto,
     @CurrentUser() user: AccessTokenPayload,
-  ) {
-    const setting = await this.updateAiModelSetting.execute(dto.measurementModel, user.sub);
+  ): Promise<AiRoutingSettingResponseDto> {
+    const setting = await this.updateAiRouting.execute(dto, user.sub);
     return {
       measurementModel: setting.measurementModel,
-      updatedAt: setting.updatedAt,
+      measurementProvider: setting.measurementProvider,
+      patternSuggestionProvider: setting.patternSuggestionProvider,
+      updatedAt: setting.updatedAt.toISOString(),
       updatedById: setting.updatedById,
     };
   }

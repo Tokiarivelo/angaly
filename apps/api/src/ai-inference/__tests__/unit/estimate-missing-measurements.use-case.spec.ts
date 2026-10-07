@@ -2,39 +2,40 @@ import { Test } from '@nestjs/testing';
 import type { TestingModule } from '@nestjs/testing';
 import { EstimateMissingMeasurementsUseCase } from '../../application/use-cases/estimate-missing-measurements.use-case';
 import { AiServiceHttpClient } from '../../infrastructure/services/ai-service-http-client';
-import { GetAiModelSettingUseCase } from '../../../admin-ai-settings/application/use-cases/get-ai-model-setting.use-case';
-import { AiModelSetting } from '../../../admin-ai-settings/domain/entities/ai-model-setting.entity';
-import type {
-  PatternMeasurementEstimationRequest,
-  PatternMeasurementEstimationResponse,
+import { AiProviderResolverService } from '../../application/services/ai-provider-resolver.service';
+import {
+  AiProviderId,
+  type PatternMeasurementEstimationRequest,
+  type PatternMeasurementEstimationResponse,
 } from '@angaly/types';
 
 describe('EstimateMissingMeasurementsUseCase', () => {
   let useCase: EstimateMissingMeasurementsUseCase;
   let aiClient: AiServiceHttpClient;
-  let getAiModelSetting: GetAiModelSettingUseCase;
+  let providerResolver: AiProviderResolverService;
 
   beforeEach(async () => {
     const mockAiClient = {
       estimateMissingMeasurements: jest.fn(),
     };
-    const mockGetAiModelSetting = {
-      execute: jest.fn().mockResolvedValue(
-        new AiModelSetting('singleton', 'GEMINI', null, new Date(), new Date()),
-      ),
+    const mockProviderResolver = {
+      resolveCredentials: jest.fn().mockResolvedValue({
+        provider: AiProviderId.GEMINI,
+        model: 'gemini-2.5-flash',
+      }),
     };
 
     const module: TestingModule = await Test.createTestingModule({
       providers: [
         EstimateMissingMeasurementsUseCase,
         { provide: AiServiceHttpClient, useValue: mockAiClient },
-        { provide: GetAiModelSettingUseCase, useValue: mockGetAiModelSetting },
+        { provide: AiProviderResolverService, useValue: mockProviderResolver },
       ],
     }).compile();
 
     useCase = module.get<EstimateMissingMeasurementsUseCase>(EstimateMissingMeasurementsUseCase);
     aiClient = module.get<AiServiceHttpClient>(AiServiceHttpClient);
-    getAiModelSetting = module.get<GetAiModelSettingUseCase>(GetAiModelSettingUseCase);
+    providerResolver = module.get<AiProviderResolverService>(AiProviderResolverService);
   });
 
   it('flags low-confidence estimations as indicative-only', async () => {
@@ -79,9 +80,10 @@ describe('EstimateMissingMeasurementsUseCase', () => {
   });
 
   it('defaults modelPreference to the admin-configured setting when the caller does not specify one', async () => {
-    jest.spyOn(getAiModelSetting, 'execute').mockResolvedValueOnce(
-      new AiModelSetting('singleton', 'LOCAL_STATISTICAL', 'admin-1', new Date(), new Date()),
-    );
+    jest.spyOn(providerResolver, 'resolveCredentials').mockResolvedValueOnce({
+      provider: AiProviderId.LOCAL_STATISTICAL,
+      model: 'ansur2-ridge-v1',
+    });
     jest.spyOn(aiClient, 'estimateMissingMeasurements').mockResolvedValue({
       estimatedMeasurements: { TOUR_BASSIN: 95 },
       estimatedKeys: ['TOUR_BASSIN'],
@@ -101,7 +103,7 @@ describe('EstimateMissingMeasurementsUseCase', () => {
     );
   });
 
-  it('respects an explicit modelPreference from the caller over the admin default', async () => {
+  it('respects an explicit modelPreference from the caller over the provider resolver default', async () => {
     jest.spyOn(aiClient, 'estimateMissingMeasurements').mockResolvedValue({
       estimatedMeasurements: { TOUR_BASSIN: 95 },
       estimatedKeys: ['TOUR_BASSIN'],
@@ -117,7 +119,6 @@ describe('EstimateMissingMeasurementsUseCase', () => {
       modelPreference: 'GEMINI',
     });
 
-    expect(getAiModelSetting.execute).not.toHaveBeenCalled();
     expect(aiClient.estimateMissingMeasurements).toHaveBeenCalledWith(
       expect.objectContaining({ modelPreference: 'GEMINI' }),
     );

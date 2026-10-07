@@ -46,8 +46,17 @@ describe('PrismaAiModelSettingRepository', () => {
 
     expect(aiModelSetting.upsert).toHaveBeenCalledWith({
       where: { id: 'singleton' },
-      create: { id: 'singleton', measurementModel: 'LOCAL_STATISTICAL', updatedById: 'admin-1' },
-      update: { measurementModel: 'LOCAL_STATISTICAL', updatedById: 'admin-1' },
+      create: {
+        id: 'singleton',
+        measurementModel: 'LOCAL_STATISTICAL',
+        measurementProvider: 'LOCAL_STATISTICAL',
+        updatedById: 'admin-1',
+      },
+      update: {
+        measurementModel: 'LOCAL_STATISTICAL',
+        measurementProvider: 'LOCAL_STATISTICAL',
+        updatedById: 'admin-1',
+      },
     });
     expect(result.measurementModel).toBe('LOCAL_STATISTICAL');
     expect(result.updatedById).toBe('admin-1');

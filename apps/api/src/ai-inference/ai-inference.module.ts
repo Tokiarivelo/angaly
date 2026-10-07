@@ -18,6 +18,8 @@ import { AiInspirationController } from './presentation/controllers/ai-inspirati
 import { AiPatternSuggestionsController } from './presentation/controllers/ai-pattern-suggestions.controller';
 import { AiAvailableModelsController } from './presentation/controllers/ai-available-models.controller';
 
+import { AiProviderResolverService } from './application/services/ai-provider-resolver.service';
+
 @Module({
   imports: [PrismaModule, ConfigModule, AuthModule, AdminAiSettingsModule],
   controllers: [
@@ -32,12 +34,17 @@ import { AiAvailableModelsController } from './presentation/controllers/ai-avail
       useClass: PrismaAIConversationRepository,
     },
     AiServiceHttpClient,
+    AiProviderResolverService,
     SuggestPatternParametersUseCase,
     EstimateMissingMeasurementsUseCase,
     SendAssistantMessageUseCase,
     GetConversationHistoryUseCase,
   ],
   // Exported for the `patterns` module (generation flow can request AI-estimated measurements)
-  exports: [SuggestPatternParametersUseCase, EstimateMissingMeasurementsUseCase],
+  exports: [
+    AiProviderResolverService,
+    SuggestPatternParametersUseCase,
+    EstimateMissingMeasurementsUseCase,
+  ],
 })
 export class AiInferenceModule {}

@@ -8,6 +8,7 @@ describe('UpdateAiModelSettingUseCase', () => {
     const repository: jest.Mocked<IAiModelSettingRepository> = {
       get: jest.fn(),
       update: jest.fn().mockResolvedValue(updated),
+      updateRouting: jest.fn(),
     };
 
     const useCase = new UpdateAiModelSettingUseCase(repository);

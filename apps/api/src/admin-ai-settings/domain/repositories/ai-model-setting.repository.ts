@@ -1,9 +1,18 @@
+import type { AiProviderId } from '@angaly/types';
 import type { AiModelSetting, MeasurementModelPreference } from '../entities/ai-model-setting.entity';
 
 export const AI_MODEL_SETTING_REPOSITORY = 'IAiModelSettingRepository';
+
+export interface UpdateAiRoutingData {
+  measurementModel?: MeasurementModelPreference;
+  measurementProvider?: AiProviderId;
+  patternSuggestionProvider?: AiProviderId;
+  updatedById: string;
+}
 
 export interface IAiModelSettingRepository {
   /** Returns the singleton setting row, creating it with defaults on first read. */
   get(): Promise<AiModelSetting>;
   update(measurementModel: MeasurementModelPreference, updatedById: string): Promise<AiModelSetting>;
+  updateRouting(data: UpdateAiRoutingData): Promise<AiModelSetting>;
 }

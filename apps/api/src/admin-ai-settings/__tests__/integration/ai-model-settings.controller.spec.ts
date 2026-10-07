@@ -10,14 +10,14 @@ import { ACCESS_TOKEN_SERVICE } from '../../../auth/domain/services/access-token
 import { JwtAuthGuard } from '../../../auth/presentation/guards/jwt-auth.guard';
 import { RolesGuard } from '../../../auth/presentation/guards/roles.guard';
 import { GetAiModelSettingUseCase } from '../../application/use-cases/get-ai-model-setting.use-case';
-import { UpdateAiModelSettingUseCase } from '../../application/use-cases/update-ai-model-setting.use-case';
+import { UpdateAiRoutingUseCase } from '../../application/use-cases/update-ai-routing.use-case';
 import { AiModelSetting } from '../../domain/entities/ai-model-setting.entity';
 import { AiModelSettingsController } from '../../presentation/controllers/ai-model-settings.controller';
 
 describe('AiModelSettingsController (integration)', () => {
   let app: INestApplication;
   const getAiModelSettingUseCase = { execute: jest.fn() };
-  const updateAiModelSettingUseCase = { execute: jest.fn() };
+  const updateAiRoutingUseCase = { execute: jest.fn() };
   const accessTokenService = { sign: jest.fn(), verify: jest.fn() };
 
   beforeAll(async () => {
@@ -25,7 +25,7 @@ describe('AiModelSettingsController (integration)', () => {
       controllers: [AiModelSettingsController],
       providers: [
         { provide: GetAiModelSettingUseCase, useValue: getAiModelSettingUseCase },
-        { provide: UpdateAiModelSettingUseCase, useValue: updateAiModelSettingUseCase },
+        { provide: UpdateAiRoutingUseCase, useValue: updateAiRoutingUseCase },
         JwtAuthGuard,
         RolesGuard,
         Reflector,
@@ -77,7 +77,7 @@ describe('AiModelSettingsController (integration)', () => {
   });
 
   it('PATCH /admin/ai-settings updates the preference and records the acting admin', async () => {
-    updateAiModelSettingUseCase.execute.mockResolvedValue(
+    updateAiRoutingUseCase.execute.mockResolvedValue(
       new AiModelSetting('singleton', 'LOCAL_STATISTICAL', 'admin-1', new Date('2026-01-02'), new Date('2026-01-01')),
     );
 
@@ -87,7 +87,10 @@ describe('AiModelSettingsController (integration)', () => {
       .send({ measurementModel: 'LOCAL_STATISTICAL' })
       .expect(200);
 
-    expect(updateAiModelSettingUseCase.execute).toHaveBeenCalledWith('LOCAL_STATISTICAL', 'admin-1');
+    expect(updateAiRoutingUseCase.execute).toHaveBeenCalledWith(
+      { measurementModel: 'LOCAL_STATISTICAL' },
+      'admin-1',
+    );
     expect(response.body).toMatchObject({ measurementModel: 'LOCAL_STATISTICAL', updatedById: 'admin-1' });
   });
 
@@ -98,6 +101,6 @@ describe('AiModelSettingsController (integration)', () => {
       .send({ measurementModel: 'NOT_A_MODEL' })
       .expect(400);
 
-    expect(updateAiModelSettingUseCase.execute).not.toHaveBeenCalled();
+    expect(updateAiRoutingUseCase.execute).not.toHaveBeenCalled();
   });
 });

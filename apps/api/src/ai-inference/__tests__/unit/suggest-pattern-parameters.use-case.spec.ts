@@ -2,6 +2,7 @@ import { Test, TestingModule } from '@nestjs/testing';
 import { SuggestPatternParametersUseCase } from '../../application/use-cases/suggest-pattern-parameters.use-case';
 import { AiServiceHttpClient } from '../../infrastructure/services/ai-service-http-client';
 import { PatternAiSuggestionRequest, PatternAiSuggestionResponse } from '@angaly/types';
+import { AiProviderResolverService } from '../../application/services/ai-provider-resolver.service';
 
 describe('SuggestPatternParametersUseCase', () => {
   let useCase: SuggestPatternParametersUseCase;
@@ -11,11 +12,15 @@ describe('SuggestPatternParametersUseCase', () => {
     const mockAiClient = {
       suggestPatternParameters: jest.fn(),
     };
+    const mockProviderResolver = {
+      resolveCredentials: jest.fn().mockResolvedValue(undefined),
+    };
 
     const module: TestingModule = await Test.createTestingModule({
       providers: [
         SuggestPatternParametersUseCase,
         { provide: AiServiceHttpClient, useValue: mockAiClient },
+        { provide: AiProviderResolverService, useValue: mockProviderResolver },
       ],
     }).compile();
 
