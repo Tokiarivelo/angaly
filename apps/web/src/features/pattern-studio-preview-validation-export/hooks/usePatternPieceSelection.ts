@@ -1,12 +1,13 @@
 'use client';
 
 import { useState, useCallback } from 'react';
-import type { CanvasViewMode } from '../types/pattern-piece-view.types';
+import type { CanvasViewMode, PreviewMode } from '../types/pattern-piece-view.types';
 
 export const usePatternPieceSelection = (initialPieceId: string | null = null) => {
   const [selectedPieceId, setSelectedPieceId] = useState<string | null>(initialPieceId);
   const [zoomLevel, setZoomLevel] = useState<number>(1.0);
   const [viewMode, setViewMode] = useState<CanvasViewMode>('technical');
+  const [previewMode, setPreviewMode] = useState<PreviewMode>('piece');
   const [isHistoryDrawerOpen, setIsHistoryDrawerOpen] = useState<boolean>(false);
 
   const zoomIn = useCallback(() => {
@@ -30,6 +31,8 @@ export const usePatternPieceSelection = (initialPieceId: string | null = null) =
     setSelectedPieceId,
     zoomLevel,
     viewMode,
+    previewMode,
+    setPreviewMode,
     isHistoryDrawerOpen,
     setIsHistoryDrawerOpen,
     zoomIn,

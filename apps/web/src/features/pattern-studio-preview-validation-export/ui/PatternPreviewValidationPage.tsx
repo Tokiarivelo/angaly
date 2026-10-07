@@ -10,6 +10,9 @@ import { CorrectionNoteCard } from './CorrectionNoteCard';
 import { EstimatedMeasurementsBanner } from './EstimatedMeasurementsBanner';
 import { PatternPiecesSidebar } from './PatternPiecesSidebar';
 import { PatternPieceCanvas } from './PatternPieceCanvas';
+import { PatternLayoutOverview } from './PatternLayoutOverview';
+import { Garment3DPanel } from './Garment3DPanel';
+import { PreviewModeTabs } from './PreviewModeTabs';
 import { PatternPieceDetailsPanel } from './PatternPieceDetailsPanel';
 import { ValidationActionBar } from './ValidationActionBar';
 import { ExportPanel } from './ExportPanel';
@@ -108,6 +111,8 @@ export const PatternPreviewValidationPage: React.FC<PatternPreviewValidationPage
     setSelectedPieceId,
     zoomLevel,
     viewMode,
+    previewMode,
+    setPreviewMode,
     isHistoryDrawerOpen,
     setIsHistoryDrawerOpen,
     zoomIn,
@@ -122,6 +127,11 @@ export const PatternPreviewValidationPage: React.FC<PatternPreviewValidationPage
   const estimatedMeasurementKeys = useMemo(() => {
     const raw = currentVersion?.parametersJson?.['estimatedMeasurementKeys'];
     return Array.isArray(raw) ? (raw as string[]) : [];
+  }, [currentVersion]);
+
+  const measurements = useMemo(() => {
+    const raw = currentVersion?.parametersJson?.['measurements'];
+    return raw && typeof raw === 'object' ? (raw as Record<string, number>) : null;
   }, [currentVersion]);
 
   const { mutate: requestReviewMutate, isPending: isRequestingReview } =
@@ -163,7 +173,9 @@ export const PatternPreviewValidationPage: React.FC<PatternPreviewValidationPage
           />
         )}
 
-        {/* 3 Columns Layout: Pieces List | SVG Canvas | Details Panel */}
+        <PreviewModeTabs mode={previewMode} onChange={setPreviewMode} />
+
+        {/* 3 Columns Layout: Pieces List | Preview (2D / ensemble / 3D) | Details Panel */}
         <div className="flex flex-col lg:flex-row items-stretch gap-6">
           <PatternPiecesSidebar
             pieces={pieces}
@@ -171,15 +183,35 @@ export const PatternPreviewValidationPage: React.FC<PatternPreviewValidationPage
             onSelectPiece={(id) => setSelectedPieceId(id)}
           />
 
-          <PatternPieceCanvas
-            piece={activePiece}
-            zoomLevel={zoomLevel}
-            viewMode={viewMode}
-            onZoomIn={zoomIn}
-            onZoomOut={zoomOut}
-            onResetZoom={resetZoom}
-            onToggleViewMode={toggleViewMode}
-          />
+          {previewMode === 'piece' && (
+            <PatternPieceCanvas
+              piece={activePiece}
+              zoomLevel={zoomLevel}
+              viewMode={viewMode}
+              onZoomIn={zoomIn}
+              onZoomOut={zoomOut}
+              onResetZoom={resetZoom}
+              onToggleViewMode={toggleViewMode}
+            />
+          )}
+          {previewMode === 'overview' && (
+            <PatternLayoutOverview
+              pieces={pieces}
+              selectedPieceId={activePieceId}
+              onSelectPiece={(id) => {
+                setSelectedPieceId(id);
+                setPreviewMode('piece');
+              }}
+            />
+          )}
+          {previewMode === '3d' && (
+            <Garment3DPanel
+              pieces={pieces}
+              garmentType={project?.garmentType ?? 'ROBE'}
+              measurements={measurements}
+              selectedPieceId={activePieceId}
+            />
+          )}
 
           <PatternPieceDetailsPanel piece={activePiece} />
         </div>

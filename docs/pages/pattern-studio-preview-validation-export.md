@@ -116,3 +116,23 @@ appels de hooks.
 - [ ] Mobile : sidebar en chips horizontales scrollables, panneau de détails en bottom sheet (voir maquette)
 - [ ] Tests : `usePatternVersion.test.ts`, `useRequestReview.test.ts`, `useExportPattern.test.ts`
 - [ ] `docs/checklist-implementation.md` et `docs/mockup-reference.md` mis à jour à ✅
+
+## Prévisualisation enrichie (2026-10-07)
+
+Un sélecteur d'onglets (`PreviewModeTabs`) pilote la zone centrale :
+
+- **Pièce (2D)** — dessin technique à l'échelle 1:1 (`PatternPieceDrawing`) : ligne de coupe (couture décalée
+  de la marge réelle, coins mitrés) et ligne de couture en pointillé, **AU PLI** quand la pièce est coupée au pli,
+  « Couper N fois », longueurs de chaque côté, cotes largeur/hauteur, droit-fil centré, crans placés sur leur arête,
+  barre d'échelle, grille 1 cm / 10 cm. Calculs purs et testés dans `utils/pattern-geometry.ts`.
+- **Ensemble** — toutes les pièces sur une même feuille, à la même échelle, avec quantités, tailles et surface
+  totale à découper (`PatternLayoutOverview`) ; un clic ouvre la pièce.
+- **3D sur mannequin** (`Garment3DPanel`, three.js chargé à l'ouverture de l'onglet) — mannequin paramétrique aux
+  mesures du client ; les panneaux sont **lofts des largeurs réelles des pièces** (devant + dos = circonférence à
+  chaque hauteur), donc aisance, évasement et longueur vus en 3D sont ceux du patron. Curseur « Assemblage »
+  (pièces éclatées → assemblées), mannequin et transparence optionnels, pièce sélectionnée mise en évidence, rapport
+  d'aisance poitrine/taille/bassin (corps vs vêtement). La chute du tissu n'est **pas** simulée.
+
+Optimisations 3D : rendu à la demande (`frameloop="demand"`, une image par interaction), DPR plafonné à 1,5,
+maillages de quelques centaines de sommets, libération GPU des géométries, chargement différé, repli si WebGL
+indisponible. Vêtements pris en charge : robe, jupe, chemise, veste, costume (pantalon/autre : message explicatif).

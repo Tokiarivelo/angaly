@@ -3,6 +3,8 @@ import { ZoomIn, ZoomOut, RotateCcw, Sliders } from 'lucide-react';
 import type { PatternPieceDto } from '@angaly/types';
 import type { CanvasViewMode } from '../types/pattern-piece-view.types';
 import { computePatternViewBox, toViewBoxAttribute } from '../utils/computePatternViewBox';
+import { getBounds, openPolygon } from '../utils/pattern-geometry';
+import { PatternPieceDrawing } from './PatternPieceDrawing';
 
 interface PatternPieceCanvasProps {
   piece: PatternPieceDto | null;
@@ -48,26 +50,22 @@ export const PatternPieceCanvas: React.FC<PatternPieceCanvasProps> = ({
           { x: 20, y: 240 },
         ];
 
-  const points = outline.map((p) => `${p.x},${p.y}`).join(' ');
-
-  // Fit the SVG viewBox to the piece's real bounds — real generated pieces
-  // span mm coordinates far beyond any single fixed canvas size, so a fixed
-  // viewBox clips them regardless of zoom level.
-  const viewBox = computePatternViewBox(outline);
-  const boundsCenterX = viewBox.minX + viewBox.width / 2;
-  const boundsCenterY = viewBox.minY + viewBox.height / 2;
-  const arrowSize = Math.max(viewBox.width, viewBox.height) * 0.02;
-
-  const grainline = piece.grainlineJson as {
-    angleDegrees?: number;
-    originX?: number;
-    originY?: number;
-  } | null;
-
-  const grainlineOriginX = grainline?.originX ?? boundsCenterX;
-  const grainlineOriginY = grainline?.originY ?? boundsCenterY - viewBox.height * 0.3;
-  const grainlineLength = viewBox.height * 0.6;
-  const grainlineEndY = grainlineOriginY + grainlineLength;
+  // Fit the SVG viewBox to the piece's real bounds — real generated pieces span mm coordinates far
+  // beyond any fixed canvas size. The reserve leaves room for the cutting line, dimension lines and
+  // the scale bar so nothing is clipped; zoom is applied by CSS only and never re-clips.
+  const bounds = getBounds(openPolygon(outline));
+  const longest = Math.max(bounds.width, bounds.height, 1);
+  const unit = longest / 150;
+  const allowanceMm = (piece.seamAllowanceCm ?? 0) * 10;
+  const reserve = allowanceMm + unit * 26;
+  const viewBox = computePatternViewBox(
+    [
+      ...outline,
+      { x: bounds.minX - allowanceMm - unit * 6, y: bounds.minY - allowanceMm - unit * 6 },
+      { x: bounds.maxX + reserve, y: bounds.maxY + reserve },
+    ],
+    0.04,
+  );
 
   return (
     <div className="flex-1 min-h-[440px] bg-[#041329] border border-[#C5B190]/30 rounded-xl p-6 relative flex flex-col justify-between overflow-hidden shadow-inner">
@@ -95,80 +93,42 @@ export const PatternPieceCanvas: React.FC<PatternPieceCanvasProps> = ({
       </div>
 
       {/* Main SVG Render Area */}
-      <div className="flex-1 flex items-center justify-center my-4 overflow-hidden relative">
+      <div className="flex-1 flex items-center justify-center my-4 overflow-hidden relative min-h-[460px]">
         <svg
           data-testid="pattern-piece-svg"
           viewBox={toViewBoxAttribute(viewBox)}
           preserveAspectRatio="xMidYMid meet"
-          className="w-full max-h-[360px] transition-transform duration-200 select-none"
+          className="w-full h-[460px] transition-transform duration-200 select-none"
           style={{ transform: `scale(${zoomLevel})` }}
         >
-          {/* Subtle grid lines in technical mode */}
           {viewMode === 'technical' && (
-            <defs>
-              <pattern id="canvas-grid" width="20" height="20" patternUnits="userSpaceOnUse">
-                <path d="M 20 0 L 0 0 0 20" fill="none" stroke="#C5B190" strokeWidth="0.2" opacity="0.15" />
-              </pattern>
-            </defs>
-          )}
-          {viewMode === 'technical' && (
-            <rect width="100%" height="100%" fill="url(#canvas-grid)" />
-          )}
-
-          {/* Outer piece outline */}
-          <polygon
-            points={points}
-            className="stroke-[#C5B190] fill-[#0C2650]/50 stroke-[1.75]"
-          />
-
-          {/* Seam allowance dotted line (only in technical mode) */}
-          {viewMode === 'technical' && (
-            <polygon
-              points={points}
-              transform="scale(0.92) translate(10, 10)"
-              className="stroke-white/40 stroke-1 stroke-dasharray-[4,4] fill-none"
-            />
-          )}
-
-          {/* Grainline Arrow */}
-          <line
-            x1={grainlineOriginX}
-            y1={grainlineOriginY}
-            x2={grainlineOriginX}
-            y2={grainlineEndY}
-            className="stroke-[#C5B190] stroke-1"
-          />
-          <polygon
-            points={`${grainlineOriginX - arrowSize},${grainlineOriginY + arrowSize} ${grainlineOriginX},${grainlineOriginY - arrowSize} ${grainlineOriginX + arrowSize},${grainlineOriginY + arrowSize}`}
-            className="fill-[#C5B190]"
-          />
-          <polygon
-            points={`${grainlineOriginX - arrowSize},${grainlineEndY - arrowSize} ${grainlineOriginX},${grainlineEndY + arrowSize} ${grainlineOriginX + arrowSize},${grainlineEndY - arrowSize}`}
-            className="fill-[#C5B190]"
-          />
-
-          {/* Grainline Label */}
-          {viewMode === 'technical' && (
-            <text
-              x={grainlineOriginX + arrowSize * 1.5}
-              y={grainlineOriginY + grainlineLength / 2}
-              fill="#C5B190"
-              fontSize={viewBox.width * 0.033}
-              fontFamily="sans-serif"
-              letterSpacing="0.5"
-            >
-              DROIT-FIL
-            </text>
+            <>
+              <defs>
+                <pattern id="canvas-grid-minor" width="10" height="10" patternUnits="userSpaceOnUse">
+                  <path d="M 10 0 L 0 0 0 10" fill="none" stroke="#C5B190" strokeWidth={unit * 0.15} opacity="0.12" />
+                </pattern>
+                <pattern id="canvas-grid-major" width="100" height="100" patternUnits="userSpaceOnUse">
+                  <path d="M 100 0 L 0 0 0 100" fill="none" stroke="#C5B190" strokeWidth={unit * 0.3} opacity="0.22" />
+                </pattern>
+              </defs>
+              <rect
+                x={viewBox.minX}
+                y={viewBox.minY}
+                width={viewBox.width}
+                height={viewBox.height}
+                fill="url(#canvas-grid-minor)"
+              />
+              <rect
+                x={viewBox.minX}
+                y={viewBox.minY}
+                width={viewBox.width}
+                height={viewBox.height}
+                fill="url(#canvas-grid-major)"
+              />
+            </>
           )}
 
-          {/* Notch indicator */}
-          <line
-            x1={viewBox.minX + viewBox.width * 0.12}
-            y1={boundsCenterY}
-            x2={viewBox.minX + viewBox.width * 0.08}
-            y2={boundsCenterY}
-            className="stroke-[#936C3E] stroke-2"
-          />
+          <PatternPieceDrawing piece={piece} outline={outline} mode={viewMode} unit={unit} />
         </svg>
       </div>
 
@@ -176,7 +136,7 @@ export const PatternPieceCanvas: React.FC<PatternPieceCanvasProps> = ({
       <div className="flex items-center justify-between border-t border-[#C5B190]/20 pt-3 z-10">
         <span className="text-[11px] text-[#D8D3C8]/60 italic font-light">
           {viewMode === 'technical'
-            ? 'Marges de couture 1.5 cm et droit-fil affichés'
+            ? `Trait plein : ligne de coupe${allowanceMm > 0 ? ` (marge ${allowanceMm / 10} cm)` : ''} · pointillé : ligne de couture · grille 1 cm / 10 cm`
             : 'Contour principal affiché'}
         </span>
 
