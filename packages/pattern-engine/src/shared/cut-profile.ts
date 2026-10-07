@@ -76,11 +76,15 @@ const COL: Record<string, Neckline> = {
   LAVALLIERE: { widthMm: 70, depthMm: 20 },
 };
 
-/** `decollete` wins over `col` (it is the more explicit depth choice). */
-export function resolveNeckline(details: Record<string, string>): Neckline {
+/** `decollete` wins over `col` (it is the more explicit depth choice). Null when neither is chosen. */
+export function resolveNecklineChoice(details: Record<string, string>): Neckline | null {
   const decollete = details['decollete'] ? DECOLLETE[details['decollete'].toUpperCase()] : undefined;
   const col = details['col'] ? COL[details['col'].toUpperCase()] : undefined;
-  return decollete ?? col ?? DEFAULT_NECKLINE;
+  return decollete ?? col ?? null;
+}
+
+export function resolveNeckline(details: Record<string, string>): Neckline {
+  return resolveNecklineChoice(details) ?? DEFAULT_NECKLINE;
 }
 
 export interface SleeveSpec {
@@ -107,4 +111,105 @@ export function resolveSleeve(manches: string | undefined, longueBrasMm?: number
     default:
       return null; // SANS_MANCHES or not chosen: no sleeve piece
   }
+}
+
+/**
+ * Length multiplier for tops and trousers from the `longueur` detail (1 = the rule's own default).
+ * Skirts and dresses use absolute lengths instead (see resolveSkirtLengthMm).
+ */
+const TOP_LENGTH_FACTORS: Record<string, number> = {
+  MINI: 0.8,
+  MIDI: 1.15,
+  MAXI: 1.45,
+  SOL: 1.8,
+  ASYMETRIQUE: 1.25,
+};
+
+export function resolveTopLengthFactor(longueur: string | undefined): number {
+  return (longueur ? TOP_LENGTH_FACTORS[longueur.toUpperCase()] : undefined) ?? 1;
+}
+
+const TROUSER_LENGTH_FACTORS: Record<string, number> = {
+  MINI: 0.45, // short
+  MIDI: 0.75, // pantacourt
+  MAXI: 1,
+  SOL: 1.04,
+  ASYMETRIQUE: 1,
+};
+
+export function resolveTrouserLengthFactor(longueur: string | undefined): number {
+  return (longueur ? TROUSER_LENGTH_FACTORS[longueur.toUpperCase()] : undefined) ?? 1;
+}
+
+export interface TopAdjustments {
+  /** Added to the quarter bust width / waist width (mm). */
+  bodiceDeltaMm: number;
+  waistDeltaMm: number;
+  /** Added to the side hem point (mm): hip ease plus half the flare — tops barely flare. */
+  hemDeltaMm: number;
+  lengthFactor: number;
+  neckline: Neckline | null;
+  /** Null = keep the rule's own sleeve; false-y piece list handled by the caller. */
+  sleeve: SleeveSpec | null;
+  sleeveless: boolean;
+  /** Collar piece wanted? Round/V/boat/no collar choices remove it. */
+  includeCollar: boolean;
+  /** Cuff piece wanted? Only for long and 3/4 sleeves (or when sleeves are not chosen). */
+  includeCuff: boolean;
+}
+
+const COLLARLESS = new Set(['SANS_COL', 'ROND', 'EN_V', 'BATEAU']);
+const CUFFLESS_SLEEVES = new Set(['SANS_MANCHES', 'COURTES', 'PAPILLON']);
+
+/** Everything a tailored top (chemise, veste, costume jacket) takes from the wizard's choices. */
+export function resolveTopAdjustments(
+  parameters: { cutType: string; details: Record<string, string> },
+  defaultArmLengthMm: number,
+): TopAdjustments {
+  const profile = resolveCutProfile(parameters.cutType);
+  const manches = parameters.details['manches']?.toUpperCase();
+  const col = parameters.details['col']?.toUpperCase();
+
+  return {
+    bodiceDeltaMm: profile.bodiceDeltaMm,
+    waistDeltaMm: profile.waistDeltaMm,
+    hemDeltaMm: profile.hipDeltaMm + Math.round(profile.hemFlareMm * 0.5),
+    lengthFactor: resolveTopLengthFactor(parameters.details['longueur']),
+    neckline: resolveNecklineChoice(parameters.details),
+    sleeve: resolveSleeve(manches, defaultArmLengthMm),
+    sleeveless: manches === 'SANS_MANCHES',
+    includeCollar: !(col && COLLARLESS.has(col)),
+    includeCuff: !(manches && CUFFLESS_SLEEVES.has(manches)),
+  };
+}
+
+export interface LegProfile {
+  /** Half width of the hem on the front piece (mm). */
+  halfHemMm: number;
+  /** Knee width relative to the hem (below 1 = flared leg, above 1 = tapered). */
+  kneeRatio: number;
+  hipDeltaMm: number;
+  waistDeltaMm: number;
+}
+
+const LEG_PROFILES: Record<string, LegProfile> = {
+  DROITE: { halfHemMm: 100, kneeRatio: 1.1, hipDeltaMm: 0, waistDeltaMm: 0 },
+  AJUSTEE: { halfHemMm: 80, kneeRatio: 1.1, hipDeltaMm: -10, waistDeltaMm: -10 },
+  EVASEE: { halfHemMm: 125, kneeRatio: 0.9, hipDeltaMm: 0, waistDeltaMm: 0 },
+  SIRENE: { halfHemMm: 120, kneeRatio: 0.8, hipDeltaMm: -5, waistDeltaMm: -5 },
+  PRINCESSE: { halfHemMm: 140, kneeRatio: 1.05, hipDeltaMm: 10, waistDeltaMm: 10 },
+  OVERSIZE: { halfHemMm: 150, kneeRatio: 1.1, hipDeltaMm: 30, waistDeltaMm: 40 },
+};
+
+/** Trouser leg shape. Historical SLIM/LARGE keywords keep working for free-text cuts. */
+export function resolveLegProfile(cutType: string | null | undefined): LegProfile {
+  const key = (cutType ?? '').toUpperCase();
+  const exact = LEG_PROFILES[key];
+  if (exact) return exact;
+  const base = LEG_PROFILES['DROITE']!;
+  if (key.includes('SLIM') || key.includes('CIGARETTE')) return { ...base, halfHemMm: 80 };
+  if (key.includes('LARGE') || key.includes('PALAZZO') || key.includes('FLUIDE')) {
+    return { ...base, halfHemMm: 140 };
+  }
+  return base;
 }

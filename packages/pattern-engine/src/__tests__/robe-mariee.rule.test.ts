@@ -77,8 +77,10 @@ describe('RobeMarieeRule', () => {
     const jupeDevant = pieces.find((p) => p.name === 'Jupe Devant');
     const jupeDosTraine = pieces.find((p) => p.name === 'Jupe Dos avec Traîne');
 
-    const longueurDevant = jupeDevant?.outlineMm[3]?.y ?? 0; // hem point, front
-    const longueurDos = jupeDosTraine?.outlineMm[4]?.y ?? 0; // train tip point
+    // Hem / train tip = lowest point (the SIRENE cut adds a knee point, so indexes are not stable).
+    const lowest = (outline: Array<{ y: number }> | undefined) => Math.max(...(outline ?? [{ y: 0 }]).map((p) => p.y));
+    const longueurDevant = lowest(jupeDevant?.outlineMm);
+    const longueurDos = lowest(jupeDosTraine?.outlineMm);
 
     expect(longueurDos).toBeGreaterThan(longueurDevant);
     // Default train length is 90cm = 900mm

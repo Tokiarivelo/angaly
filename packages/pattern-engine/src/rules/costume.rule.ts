@@ -4,6 +4,8 @@ import type {
   PatternParameters,
   PatternPieceGeometry,
 } from '../types';
+import { resolveLegProfile, resolveTopAdjustments, resolveTrouserLengthFactor } from '../shared/cut-profile';
+import { sleeveOutline } from '../shared/shapes';
 
 /**
  * COSTUME = "ensemble tailleur veste et pantalon/jupe" (voir
@@ -44,13 +46,16 @@ export const CostumeRule: IPatternRule = {
 
     const tp = tourPoitrine * 10;
     const tt = tourTaille * 10;
-    const lgVeste = Math.round(longueurDos * 10 * 1.6); // Veste tombant mi-fesses (~720mm)
     const lgBras = longueurBras * 10;
+    const adj = resolveTopAdjustments(parameters, lgBras);
+    const lgVeste = Math.round(longueurDos * 10 * 1.6 * adj.lengthFactor); // Veste mi-fesses (~720mm)
 
-    const largeurDevantVeste = Math.round(tp / 4 + 40); // 4cm d'aisance veste tailleur
-    const largeurTailleDevantVeste = Math.round(tt / 4 + 30);
-    const largeurDosVeste = Math.round(tp / 4 + 20);
-    const largeurTailleDosVeste = Math.round(tt / 4 + 15);
+    const largeurDevantVeste = Math.round(tp / 4 + 40 + adj.bodiceDeltaMm); // 4cm d'aisance veste tailleur
+    const largeurTailleDevantVeste = Math.round(tt / 4 + 30 + adj.waistDeltaMm);
+    const largeurDosVeste = Math.round(tp / 4 + 20 + adj.bodiceDeltaMm);
+    const largeurTailleDosVeste = Math.round(tt / 4 + 15 + adj.waistDeltaMm);
+    const neckFront = adj.neckline ?? { widthMm: 85, depthMm: 0 };
+    const neckBackWidth = adj.neckline ? Math.max(adj.neckline.widthMm - 5, 40) : 80;
 
     const pieceDevantVeste: PatternPieceGeometry = {
       name: 'Devant Veste (Costume)',
@@ -64,14 +69,14 @@ export const CostumeRule: IPatternRule = {
       },
       notches: [{ positionAlongEdge: 0.4, edgeIndex: 1 }], // Emmanchure
       outlineMm: [
-        { x: 0, y: 0 }, // Encolure devant
-        { x: 85, y: 0 }, // Pointe encolure/épaule
+        { x: 0, y: neckFront.depthMm }, // Encolure devant
+        { x: neckFront.widthMm, y: 0 }, // Pointe encolure/épaule
         { x: largeurDevantVeste - 30, y: 55 }, // Emmanchure haut
         { x: largeurDevantVeste, y: 240 }, // Dessous de bras
         { x: largeurTailleDevantVeste, y: 440 }, // Ligne de taille cintrée
-        { x: largeurDevantVeste + 10, y: lgVeste }, // Bas veste côté
+        { x: largeurDevantVeste + 10 + adj.hemDeltaMm, y: lgVeste }, // Bas veste côté
         { x: 0, y: lgVeste }, // Bas milieu devant
-        { x: 0, y: 0 },
+        { x: 0, y: neckFront.depthMm },
       ],
     };
 
@@ -88,11 +93,11 @@ export const CostumeRule: IPatternRule = {
       notches: [{ positionAlongEdge: 0.4, edgeIndex: 1 }],
       outlineMm: [
         { x: 0, y: 0 }, // Encolure milieu dos
-        { x: 80, y: 0 }, // Épaule dos
+        { x: neckBackWidth, y: 0 }, // Épaule dos
         { x: largeurDosVeste - 25, y: 50 }, // Emmanchure haut dos
         { x: largeurDosVeste, y: 230 }, // Dessous de bras dos
         { x: largeurTailleDosVeste, y: 430 }, // Taille dos
-        { x: largeurDosVeste + 5, y: lgVeste }, // Bas côté dos
+        { x: largeurDosVeste + 5 + adj.hemDeltaMm, y: lgVeste }, // Bas côté dos
         { x: 0, y: lgVeste }, // Fente / milieu bas dos
         { x: 0, y: 0 },
       ],
@@ -105,14 +110,16 @@ export const CostumeRule: IPatternRule = {
       seamAllowanceMm: 12,
       grainline: { angleDegrees: 90, originX: 160, originY: lgBras / 2 },
       notches: [{ positionAlongEdge: 0.5, edgeIndex: 0 }], // Cran tête de manche
-      outlineMm: [
-        { x: 0, y: 150 }, // Saussée emmanchure
-        { x: 160, y: 0 }, // Tête de manche
-        { x: 320, y: 150 }, // Dessous bras
-        { x: 260, y: lgBras }, // Poignet côté
-        { x: 40, y: lgBras }, // Poignet côté intérieur
-        { x: 0, y: 150 },
-      ],
+      outlineMm: adj.sleeve
+        ? sleeveOutline(320 * adj.sleeve.topRatio, 320 * adj.sleeve.cuffRatio, 150, adj.sleeve.lengthMm)
+        : [
+            { x: 0, y: 150 }, // Saussée emmanchure
+            { x: 160, y: 0 }, // Tête de manche
+            { x: 320, y: 150 }, // Dessous bras
+            { x: 260, y: lgBras }, // Poignet côté
+            { x: 40, y: lgBras }, // Poignet côté intérieur
+            { x: 0, y: 150 },
+          ],
     };
 
     const pieceColVeste: PatternPieceGeometry = {
@@ -137,22 +144,18 @@ export const CostumeRule: IPatternRule = {
       measurements['LONGUEUR_JAMBE'] ?? measurements['LONGUEUR_PANTALON'] ?? 100;
 
     const tb = tourBassin * 10;
-    const lg = longueurJambe * 10;
+    const lg = Math.round(longueurJambe * 10 * resolveTrouserLengthFactor(parameters.details['longueur']));
 
     const hauteurMontant = Math.round(tb / 4 + 20); // ~260mm
     const hauteurGenou = Math.round(hauteurMontant + (lg - hauteurMontant) * 0.5);
 
-    const cutType = (parameters.cutType || '').toUpperCase();
-    let demiLargeurBasDevant = 100; // Coupe droite tailleur par défaut
-    if (cutType.includes('SLIM') || cutType.includes('CIGARETTE')) {
-      demiLargeurBasDevant = 80;
-    } else if (cutType.includes('LARGE') || cutType.includes('PALAZZO') || cutType.includes('FLUIDE')) {
-      demiLargeurBasDevant = 140;
-    }
+    const leg = resolveLegProfile(parameters.cutType);
+    const demiLargeurBasDevant = leg.halfHemMm; // Coupe droite tailleur par défaut
+    const kneeFront = Math.round(demiLargeurBasDevant * leg.kneeRatio);
 
-    const largeurBassinDevant = Math.round(tb / 4 - 10);
+    const largeurBassinDevant = Math.round(tb / 4 - 10 + leg.hipDeltaMm);
     const avanceeFourcheDevant = Math.round((tb / 4) * 0.18);
-    const largeurTailleDevantPantalon = Math.round(tt / 4 + 20);
+    const largeurTailleDevantPantalon = Math.round(tt / 4 + 20 + leg.waistDeltaMm);
     const lignePliDevant = Math.round((largeurBassinDevant + avanceeFourcheDevant) / 2);
 
     const pieceDevantPantalon: PatternPieceGeometry = {
@@ -169,20 +172,21 @@ export const CostumeRule: IPatternRule = {
         { x: avanceeFourcheDevant, y: 0 },
         { x: avanceeFourcheDevant + largeurTailleDevantPantalon, y: 10 },
         { x: avanceeFourcheDevant + largeurBassinDevant, y: 180 },
-        { x: lignePliDevant + Math.round(demiLargeurBasDevant * 1.1), y: hauteurGenou },
+        { x: lignePliDevant + kneeFront, y: hauteurGenou },
         { x: lignePliDevant + demiLargeurBasDevant, y: lg },
         { x: lignePliDevant - demiLargeurBasDevant, y: lg },
-        { x: lignePliDevant - Math.round(demiLargeurBasDevant * 1.1), y: hauteurGenou },
+        { x: lignePliDevant - kneeFront, y: hauteurGenou },
         { x: 0, y: hauteurMontant },
         { x: Math.round(avanceeFourcheDevant * 0.7), y: Math.round(hauteurMontant * 0.6) },
         { x: avanceeFourcheDevant, y: 0 },
       ],
     };
 
-    const largeurBassinDos = Math.round(tb / 4 + 10);
+    const largeurBassinDos = Math.round(tb / 4 + 10 + leg.hipDeltaMm);
     const avanceeFourcheDos = Math.round((tb / 4) * 0.38);
-    const largeurTailleDosPantalon = Math.round(tt / 4 + 30);
+    const largeurTailleDosPantalon = Math.round(tt / 4 + 30 + leg.waistDeltaMm);
     const demiLargeurBasDos = demiLargeurBasDevant + 15;
+    const kneeDos = Math.round(demiLargeurBasDos * leg.kneeRatio);
     const lignePliDos = Math.round((largeurBassinDos + avanceeFourcheDos) / 2);
     const rehausseDos = 35;
 
@@ -200,10 +204,10 @@ export const CostumeRule: IPatternRule = {
         { x: avanceeFourcheDos + 20, y: -rehausseDos },
         { x: avanceeFourcheDos + 20 + largeurTailleDosPantalon, y: 10 },
         { x: avanceeFourcheDos + largeurBassinDos, y: 180 },
-        { x: lignePliDos + Math.round(demiLargeurBasDos * 1.1), y: hauteurGenou },
+        { x: lignePliDos + kneeDos, y: hauteurGenou },
         { x: lignePliDos + demiLargeurBasDos, y: lg },
         { x: lignePliDos - demiLargeurBasDos, y: lg },
-        { x: lignePliDos - Math.round(demiLargeurBasDos * 1.1), y: hauteurGenou },
+        { x: lignePliDos - kneeDos, y: hauteurGenou },
         { x: 0, y: hauteurMontant + 15 },
         { x: Math.round(avanceeFourcheDos * 0.6), y: Math.round(hauteurMontant * 0.7) },
         { x: avanceeFourcheDos + 20, y: -rehausseDos },
@@ -236,11 +240,12 @@ export const CostumeRule: IPatternRule = {
       ],
     };
 
+    const jacket = [pieceDevantVeste, pieceDosVeste];
+    if (!adj.sleeveless) jacket.push(pieceMancheVeste);
+    if (adj.includeCollar) jacket.push(pieceColVeste);
+
     return [
-      pieceDevantVeste,
-      pieceDosVeste,
-      pieceMancheVeste,
-      pieceColVeste,
+      ...jacket,
       pieceDevantPantalon,
       pieceDosPantalon,
       pieceCeinturePantalon,

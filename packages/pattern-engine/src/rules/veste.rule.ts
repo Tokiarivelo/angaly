@@ -4,6 +4,8 @@ import type {
   PatternParameters,
   PatternPieceGeometry,
 } from '../types';
+import { resolveTopAdjustments } from '../shared/cut-profile';
+import { sleeveOutline } from '../shared/shapes';
 
 const REQUIRED_MEASUREMENTS = ['TOUR_POITRINE', 'TOUR_TAILLE', 'LONGUEUR_DOS'];
 
@@ -16,7 +18,7 @@ export const VesteRule: IPatternRule = {
     return parameters.garmentType === 'VESTE';
   },
   computePieces(
-    _parameters: PatternParameters,
+    parameters: PatternParameters,
     measurements: MeasurementSet,
   ): PatternPieceGeometry[] {
     const tourPoitrine = measurements['TOUR_POITRINE'] ?? 96;
@@ -26,13 +28,16 @@ export const VesteRule: IPatternRule = {
 
     const tp = tourPoitrine * 10;
     const tt = tourTaille * 10;
-    const lgVeste = Math.round(longueurDos * 10 * 1.6); // Veste tombant mi-fesses (~720mm)
     const lgBras = longueurBras * 10;
+    const adj = resolveTopAdjustments(parameters, lgBras);
+    const lgVeste = Math.round(longueurDos * 10 * 1.6 * adj.lengthFactor); // Veste mi-fesses (~720mm)
 
-    const largeurDevant = Math.round(tp / 4 + 40); // 4cm d'aisance veste tailleur
-    const largeurTailleDevant = Math.round(tt / 4 + 30);
-    const largeurDos = Math.round(tp / 4 + 20);
-    const largeurTailleDos = Math.round(tt / 4 + 15);
+    const largeurDevant = Math.round(tp / 4 + 40 + adj.bodiceDeltaMm); // 4cm d'aisance veste tailleur
+    const largeurTailleDevant = Math.round(tt / 4 + 30 + adj.waistDeltaMm);
+    const largeurDos = Math.round(tp / 4 + 20 + adj.bodiceDeltaMm);
+    const largeurTailleDos = Math.round(tt / 4 + 15 + adj.waistDeltaMm);
+    const neckFront = adj.neckline ?? { widthMm: 85, depthMm: 0 };
+    const neckBackWidth = adj.neckline ? Math.max(adj.neckline.widthMm - 5, 40) : 80;
 
     const pieceDevant: PatternPieceGeometry = {
       name: 'Devant Veste',
@@ -48,14 +53,14 @@ export const VesteRule: IPatternRule = {
         { positionAlongEdge: 0.4, edgeIndex: 1 }, // Emmanchure
       ],
       outlineMm: [
-        { x: 0, y: 0 }, // Encolure devant
-        { x: 85, y: 0 }, // Pointe encolure/épaule
+        { x: 0, y: neckFront.depthMm }, // Encolure devant
+        { x: neckFront.widthMm, y: 0 }, // Pointe encolure/épaule
         { x: largeurDevant - 30, y: 55 }, // Emmanchure haut
         { x: largeurDevant, y: 240 }, // Dessous de bras
         { x: largeurTailleDevant, y: 440 }, // Ligne de taille cintrée
-        { x: largeurDevant + 10, y: lgVeste }, // Bas veste côté
+        { x: largeurDevant + 10 + adj.hemDeltaMm, y: lgVeste }, // Bas veste côté
         { x: 0, y: lgVeste }, // Bas milieu devant
-        { x: 0, y: 0 },
+        { x: 0, y: neckFront.depthMm },
       ],
     };
 
@@ -74,11 +79,11 @@ export const VesteRule: IPatternRule = {
       ],
       outlineMm: [
         { x: 0, y: 0 }, // Encolure milieu dos
-        { x: 80, y: 0 }, // Épaule dos
+        { x: neckBackWidth, y: 0 }, // Épaule dos
         { x: largeurDos - 25, y: 50 }, // Emmanchure haut dos
         { x: largeurDos, y: 230 }, // Dessous de bras dos
         { x: largeurTailleDos, y: 430 }, // Taille dos
-        { x: largeurDos + 5, y: lgVeste }, // Bas côté dos
+        { x: largeurDos + 5 + adj.hemDeltaMm, y: lgVeste }, // Bas côté dos
         { x: 0, y: lgVeste }, // Fente / milieu bas dos
         { x: 0, y: 0 },
       ],
@@ -97,14 +102,16 @@ export const VesteRule: IPatternRule = {
       notches: [
         { positionAlongEdge: 0.5, edgeIndex: 0 }, // Cran tête de manche
       ],
-      outlineMm: [
-        { x: 0, y: 150 }, // Saussée emmanchure
-        { x: 160, y: 0 }, // Tête de manche
-        { x: 320, y: 150 }, // Dessous bras
-        { x: 260, y: lgBras }, // Poignet côté
-        { x: 40, y: lgBras }, // Poignet côté intérieur
-        { x: 0, y: 150 },
-      ],
+      outlineMm: adj.sleeve
+        ? sleeveOutline(320 * adj.sleeve.topRatio, 320 * adj.sleeve.cuffRatio, 150, adj.sleeve.lengthMm)
+        : [
+            { x: 0, y: 150 }, // Saussée emmanchure
+            { x: 160, y: 0 }, // Tête de manche
+            { x: 320, y: 150 }, // Dessous bras
+            { x: 260, y: lgBras }, // Poignet côté
+            { x: 40, y: lgBras }, // Poignet côté intérieur
+            { x: 0, y: 150 },
+          ],
     };
 
     const pieceCol: PatternPieceGeometry = {
@@ -127,6 +134,9 @@ export const VesteRule: IPatternRule = {
       ],
     };
 
-    return [pieceDevant, pieceDos, pieceManche, pieceCol];
+    const pieces = [pieceDevant, pieceDos];
+    if (!adj.sleeveless) pieces.push(pieceManche);
+    if (adj.includeCollar) pieces.push(pieceCol);
+    return pieces;
   },
 };

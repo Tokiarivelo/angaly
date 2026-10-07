@@ -4,6 +4,8 @@ import type {
   PatternParameters,
   PatternPieceGeometry,
 } from '../types';
+import { resolveTopAdjustments } from '../shared/cut-profile';
+import { sleeveOutline } from '../shared/shapes';
 
 const REQUIRED_MEASUREMENTS = ['TOUR_POITRINE', 'TOUR_TAILLE', 'LONGUEUR_DOS'];
 
@@ -17,7 +19,7 @@ export const ChemiseRule: IPatternRule = {
     return parameters.garmentType === 'CHEMISE';
   },
   computePieces(
-    _parameters: PatternParameters,
+    parameters: PatternParameters,
     measurements: MeasurementSet,
   ): PatternPieceGeometry[] {
     const tourPoitrine = measurements['TOUR_POITRINE'] ?? 92;
@@ -27,13 +29,16 @@ export const ChemiseRule: IPatternRule = {
 
     const tp = tourPoitrine * 10;
     const tt = tourTaille * 10;
-    const lgChemise = Math.round(longueurDos * 10 * 1.55); // ~650mm
     const lgBras = longueurBras * 10 - 50; // Moins la hauteur du poignet (50mm)
+    const adj = resolveTopAdjustments(parameters, lgBras);
+    const lgChemise = Math.round(longueurDos * 10 * 1.55 * adj.lengthFactor); // ~650mm par défaut
 
-    const largeurDevant = Math.round(tp / 4 + 30); // 3cm d'aisance
-    const largeurTailleDevant = Math.round(tt / 4 + 25);
-    const largeurDos = Math.round(tp / 4 + 25);
-    const largeurTailleDos = Math.round(tt / 4 + 20);
+    const largeurDevant = Math.round(tp / 4 + 30 + adj.bodiceDeltaMm); // 3cm d'aisance (DROITE)
+    const largeurTailleDevant = Math.round(tt / 4 + 25 + adj.waistDeltaMm);
+    const largeurDos = Math.round(tp / 4 + 25 + adj.bodiceDeltaMm);
+    const largeurTailleDos = Math.round(tt / 4 + 20 + adj.waistDeltaMm);
+    const neckFront = adj.neckline ?? { widthMm: 70, depthMm: 0 };
+    const neckBackWidth = adj.neckline ? Math.max(adj.neckline.widthMm - 5, 40) : 65;
 
     const pieceDevant: PatternPieceGeometry = {
       name: 'Devant Chemise',
@@ -49,14 +54,14 @@ export const ChemiseRule: IPatternRule = {
         { positionAlongEdge: 0.5, edgeIndex: 1 },
       ],
       outlineMm: [
-        { x: 0, y: 0 }, // Patte de boutonnage haut
-        { x: 70, y: 0 }, // Encolure / épaule
+        { x: 0, y: neckFront.depthMm }, // Patte de boutonnage haut
+        { x: neckFront.widthMm, y: 0 }, // Encolure / épaule
         { x: largeurDevant - 35, y: 45 }, // Emmanchure haut
         { x: largeurDevant, y: 220 }, // Dessous de bras
         { x: largeurTailleDevant, y: 400 }, // Taille
-        { x: largeurDevant - 10, y: lgChemise }, // Côté bas liquette
+        { x: largeurDevant - 10 + adj.hemDeltaMm, y: lgChemise }, // Côté bas liquette
         { x: 0, y: lgChemise }, // Milieu devant bas
-        { x: 0, y: 0 },
+        { x: 0, y: neckFront.depthMm },
       ],
     };
 
@@ -75,11 +80,11 @@ export const ChemiseRule: IPatternRule = {
       ],
       outlineMm: [
         { x: 0, y: 0 }, // Pli milieu dos
-        { x: 65, y: 0 }, // Épaule
+        { x: neckBackWidth, y: 0 }, // Épaule
         { x: largeurDos - 30, y: 40 }, // Emmanchure
         { x: largeurDos, y: 215 }, // Dessous de bras
         { x: largeurTailleDos, y: 395 }, // Taille dos
-        { x: largeurDos - 5, y: lgChemise }, // Côté bas dos
+        { x: largeurDos - 5 + adj.hemDeltaMm, y: lgChemise }, // Côté bas dos
         { x: 0, y: lgChemise }, // Milieu dos bas
         { x: 0, y: 0 },
       ],
@@ -96,14 +101,16 @@ export const ChemiseRule: IPatternRule = {
         originY: lgBras / 2,
       },
       notches: [{ positionAlongEdge: 0.5, edgeIndex: 0 }],
-      outlineMm: [
-        { x: 0, y: 120 },
-        { x: 150, y: 0 },
-        { x: 300, y: 120 },
-        { x: 230, y: lgBras },
-        { x: 70, y: lgBras },
-        { x: 0, y: 120 },
-      ],
+      outlineMm: adj.sleeve
+        ? sleeveOutline(300 * adj.sleeve.topRatio, 300 * adj.sleeve.cuffRatio, 120, adj.sleeve.lengthMm)
+        : [
+            { x: 0, y: 120 },
+            { x: 150, y: 0 },
+            { x: 300, y: 120 },
+            { x: 230, y: lgBras },
+            { x: 70, y: lgBras },
+            { x: 0, y: 120 },
+          ],
     };
 
     const pieceCol: PatternPieceGeometry = {
@@ -146,6 +153,10 @@ export const ChemiseRule: IPatternRule = {
       ],
     };
 
-    return [pieceDevant, pieceDos, pieceManche, pieceCol, piecePoignet];
+    const pieces = [pieceDevant, pieceDos];
+    if (!adj.sleeveless) pieces.push(pieceManche);
+    if (adj.includeCollar) pieces.push(pieceCol);
+    if (!adj.sleeveless && adj.includeCuff) pieces.push(piecePoignet);
+    return pieces;
   },
 };

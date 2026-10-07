@@ -9,54 +9,10 @@ import {
   resolveNeckline,
   resolveSkirtLengthMm,
   resolveSleeve,
-  type SleeveSpec,
 } from '../shared/cut-profile';
+import { skirtOutline, sleevePiece } from '../shared/shapes';
 
 const REQUIRED_MEASUREMENTS = ['TOUR_POITRINE', 'TOUR_TAILLE', 'TOUR_BASSIN', 'LONGUEUR_DOS'];
-
-/** Skirt panel: straight, A-line/flared, or fishtail (narrow to the knee, flaring below). */
-function skirtOutline(
-  waistWidth: number,
-  hipWidth: number,
-  hemWidth: number,
-  length: number,
-  fishtail: boolean,
-): PatternPieceGeometry['outlineMm'] {
-  const hipDepth = Math.min(200, length / 2);
-  const points = [
-    { x: 0, y: 0 },
-    { x: waistWidth, y: 10 },
-    { x: hipWidth, y: hipDepth },
-  ];
-  if (fishtail) {
-    points.push({ x: hipWidth * 0.9, y: length * 0.55 });
-  }
-  points.push({ x: hemWidth, y: length }, { x: 0, y: length }, { x: 0, y: 0 });
-  return points;
-}
-
-function sleevePiece(tourPoitrineMm: number, sleeve: SleeveSpec): PatternPieceGeometry {
-  const capHeight = 150;
-  const top = (tourPoitrineMm / 3.2) * sleeve.topRatio;
-  const cuff = (tourPoitrineMm / 3.2) * sleeve.cuffRatio;
-  const inset = (top - cuff) / 2;
-  return {
-    name: 'Manche',
-    fabricRecommendation: null,
-    quantity: 2,
-    seamAllowanceMm: 10,
-    grainline: { angleDegrees: 90, originX: top / 2, originY: (capHeight + sleeve.lengthMm) / 2 },
-    notches: [{ positionAlongEdge: 0.5, edgeIndex: 0 }],
-    outlineMm: [
-      { x: 0, y: capHeight },
-      { x: top / 2, y: 0 },
-      { x: top, y: capHeight },
-      { x: top - inset, y: capHeight + sleeve.lengthMm },
-      { x: inset, y: capHeight + sleeve.lengthMm },
-      { x: 0, y: capHeight },
-    ],
-  };
-}
 
 export const RobeRule: IPatternRule = {
   garmentType: 'ROBE',
@@ -161,7 +117,7 @@ export const RobeRule: IPatternRule = {
       measurements['LONGUEUR_BRAS'] !== undefined ? measurements['LONGUEUR_BRAS'] * 10 : undefined,
     );
     if (sleeve) {
-      pieces.push(sleevePiece(tp, sleeve));
+      pieces.push(sleevePiece('Manche', tp, sleeve));
     }
     return pieces;
   },

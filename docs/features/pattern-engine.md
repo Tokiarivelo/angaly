@@ -129,5 +129,15 @@ Avant cette date, `ROBE` et `JUPE` ignoraient `cutType` et `details` : tous les 
 | `details.decollete` / `details.col` | profondeur et largeur de l'encolure devant (`decollete` prime sur `col`) |
 | `details.manches` | pièce `Manche` (courtes, 3/4, longues, ballon, papillon) ; aucune pièce si absent ou `SANS_MANCHES` |
 
-Le corsage de la robe suit maintenant la taille (couture côté buste → taille). **Reste à faire** : appliquer ces
-profils à `CHEMISE`, `VESTE`, `COSTUME`, `PANTALON` (qui ne réagissent qu'à SLIM/LARGE/…) et à `ROBE_MARIEE`.
+Le corsage de la robe suit maintenant la taille (couture côté buste → taille).
+
+### Extension aux autres vêtements (2026-10-07)
+
+| Vêtement | Coupe | Détails pris en compte |
+| --- | --- | --- |
+| `CHEMISE`, `VESTE`, `COSTUME` (veste) | aisance buste/taille, léger évasement du bas | `longueur` (×0,8 → ×1,8), `col`/`decollete` (encolure devant/dos), `manches` (longueur et ampleur de la pièce, aucune manche si `SANS_MANCHES`) ; pièce **Col** retirée pour col rond/V/bateau/sans col ; **Poignet** (chemise) retiré sans manche, manches courtes ou papillon |
+| `PANTALON`, `COSTUME` (pantalon) | forme de jambe : ajustée 80 → droite 100 → évasée 125 (genou plus étroit que l'ourlet) → sirène → princesse 140 → oversize 150 mm de demi-ourlet, aisance bassin/taille ; mots-clés SLIM / PALAZZO conservés | `longueur` : mini (short ×0,45), midi (pantacourt ×0,75), maxi, sol |
+| `ROBE_MARIEE` | aisance bustier (devant 60 % / côté 40 % / dos 100 %), jupe : hanches + évasement de l'ourlet, point de genou pour la sirène | `longueur` (jupe devant), `col`/`decollete` (décolleté du bustier), `manches` (pièce Manche optionnelle) |
+
+Une coupe inconnue ou absente donne exactement la géométrie historique (testé pour chaque règle). Les profils et
+helpers sont dans `shared/cut-profile.ts` ; les formes réutilisées (jupe, manche) dans `shared/shapes.ts`.

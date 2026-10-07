@@ -4,6 +4,7 @@ import type {
   PatternParameters,
   PatternPieceGeometry,
 } from '../types';
+import { resolveLegProfile, resolveTrouserLengthFactor } from '../shared/cut-profile';
 
 const REQUIRED_MEASUREMENTS = ['TOUR_TAILLE', 'TOUR_BASSIN'];
 
@@ -24,25 +25,21 @@ export const PantalonRule: IPatternRule = {
     // Dimensions en millimètres
     const tt = tourTaille * 10;
     const tb = tourBassin * 10;
-    const lg = longueurJambe * 10;
+    const lg = Math.round(longueurJambe * 10 * resolveTrouserLengthFactor(parameters.details['longueur']));
 
     // Ligne d'enfourchure (hauteur montant) et genou
     const hauteurMontant = Math.round(tb / 4 + 20); // ~260mm
     const hauteurGenou = Math.round(hauteurMontant + (lg - hauteurMontant) * 0.5); // ~630mm
 
-    // Ajustement de la largeur bas selon la coupe
-    const cutType = (parameters.cutType || '').toUpperCase();
-    let demiLargeurBasDevant = 100; // Standard 200mm bas
-    if (cutType.includes('SLIM') || cutType.includes('CIGARETTE')) {
-      demiLargeurBasDevant = 80;
-    } else if (cutType.includes('LARGE') || cutType.includes('PALAZZO') || cutType.includes('FLUIDE')) {
-      demiLargeurBasDevant = 140;
-    }
+    // Forme de jambe selon la coupe choisie (voir shared/cut-profile.ts)
+    const leg = resolveLegProfile(parameters.cutType);
+    const demiLargeurBasDevant = leg.halfHemMm; // Standard 200mm bas
+    const kneeFront = Math.round(demiLargeurBasDevant * leg.kneeRatio);
 
     // Devant
-    const largeurBassinDevant = Math.round(tb / 4 - 10);
+    const largeurBassinDevant = Math.round(tb / 4 - 10 + leg.hipDeltaMm);
     const avanceeFourcheDevant = Math.round((tb / 4) * 0.18);
-    const largeurTailleDevant = Math.round(tt / 4 + 20);
+    const largeurTailleDevant = Math.round(tt / 4 + 20 + leg.waistDeltaMm);
     const lignePliDevant = Math.round((largeurBassinDevant + avanceeFourcheDevant) / 2);
 
     const pieceDevant: PatternPieceGeometry = {
@@ -63,10 +60,10 @@ export const PantalonRule: IPatternRule = {
         { x: avanceeFourcheDevant, y: 0 },
         { x: avanceeFourcheDevant + largeurTailleDevant, y: 10 },
         { x: avanceeFourcheDevant + largeurBassinDevant, y: 180 },
-        { x: lignePliDevant + Math.round(demiLargeurBasDevant * 1.1), y: hauteurGenou },
+        { x: lignePliDevant + kneeFront, y: hauteurGenou },
         { x: lignePliDevant + demiLargeurBasDevant, y: lg },
         { x: lignePliDevant - demiLargeurBasDevant, y: lg },
-        { x: lignePliDevant - Math.round(demiLargeurBasDevant * 1.1), y: hauteurGenou },
+        { x: lignePliDevant - kneeFront, y: hauteurGenou },
         { x: 0, y: hauteurMontant },
         { x: Math.round(avanceeFourcheDevant * 0.7), y: Math.round(hauteurMontant * 0.6) },
         { x: avanceeFourcheDevant, y: 0 },
@@ -74,10 +71,11 @@ export const PantalonRule: IPatternRule = {
     };
 
     // Dos
-    const largeurBassinDos = Math.round(tb / 4 + 10);
+    const largeurBassinDos = Math.round(tb / 4 + 10 + leg.hipDeltaMm);
     const avanceeFourcheDos = Math.round((tb / 4) * 0.38);
-    const largeurTailleDos = Math.round(tt / 4 + 30);
+    const largeurTailleDos = Math.round(tt / 4 + 30 + leg.waistDeltaMm);
     const demiLargeurBasDos = demiLargeurBasDevant + 15;
+    const kneeDos = Math.round(demiLargeurBasDos * leg.kneeRatio);
     const lignePliDos = Math.round((largeurBassinDos + avanceeFourcheDos) / 2);
     const rehausseDos = 35;
 
@@ -99,10 +97,10 @@ export const PantalonRule: IPatternRule = {
         { x: avanceeFourcheDos + 20, y: -rehausseDos },
         { x: avanceeFourcheDos + 20 + largeurTailleDos, y: 10 },
         { x: avanceeFourcheDos + largeurBassinDos, y: 180 },
-        { x: lignePliDos + Math.round(demiLargeurBasDos * 1.1), y: hauteurGenou },
+        { x: lignePliDos + kneeDos, y: hauteurGenou },
         { x: lignePliDos + demiLargeurBasDos, y: lg },
         { x: lignePliDos - demiLargeurBasDos, y: lg },
-        { x: lignePliDos - Math.round(demiLargeurBasDos * 1.1), y: hauteurGenou },
+        { x: lignePliDos - kneeDos, y: hauteurGenou },
         { x: 0, y: hauteurMontant + 15 },
         { x: Math.round(avanceeFourcheDos * 0.6), y: Math.round(hauteurMontant * 0.7) },
         { x: avanceeFourcheDos + 20, y: -rehausseDos },

@@ -4,6 +4,13 @@ import type {
   PatternParameters,
   PatternPieceGeometry,
 } from '../types';
+import {
+  resolveCutProfile,
+  resolveNecklineChoice,
+  resolveSkirtLengthMm,
+  resolveSleeve,
+} from '../shared/cut-profile';
+import { sleevePiece } from '../shared/shapes';
 
 /**
  * ROBE_MARIEE — construction dédiée, distincte de `robe.rule.ts`.
@@ -41,7 +48,7 @@ export const RobeMarieeRule: IPatternRule = {
     return parameters.garmentType === 'ROBE_MARIEE';
   },
   computePieces(
-    _parameters: PatternParameters,
+    parameters: PatternParameters,
     measurements: MeasurementSet,
   ): PatternPieceGeometry[] {
     const tourPoitrine = measurements['TOUR_POITRINE'] ?? 90;
@@ -56,23 +63,33 @@ export const RobeMarieeRule: IPatternRule = {
     const lgDos = longueurDos * 10;
     const traine = longueurTraine * 10;
 
+    // Choix du wizard (voir shared/cut-profile.ts) : DROITE = construction historique de la règle.
+    const profile = resolveCutProfile(parameters.cutType);
+    const neck = resolveNecklineChoice(parameters.details);
+    const sleeve = resolveSleeve(parameters.details['manches']);
+
     // Bustier structuré — aisance minimale (~5mm), maintien par la structure/baleinage.
-    const largeurBustierDevant = Math.round(tp / 4 * 0.55 + 5);
-    const largeurBustierCote = Math.round(tp / 4 * 0.35 + 5);
-    const largeurTailleDevant = Math.round(tt / 4 * 0.55 + 5);
-    const largeurTailleCote = Math.round(tt / 4 * 0.35 + 5);
+    // L'écart de coupe se répartit entre devant (60 %), côté (40 %) et dos (100 %).
+    const largeurBustierDevant = Math.round(tp / 4 * 0.55 + 5 + profile.bodiceDeltaMm * 0.6);
+    const largeurBustierCote = Math.round(tp / 4 * 0.35 + 5 + profile.bodiceDeltaMm * 0.4);
+    const largeurTailleDevant = Math.round(tt / 4 * 0.55 + 5 + profile.waistDeltaMm * 0.6);
+    const largeurTailleCote = Math.round(tt / 4 * 0.35 + 5 + profile.waistDeltaMm * 0.4);
     const hauteurBustierDevant = lgDos + 30;
 
-    const largeurBustierDos = Math.round(tp / 4 - 15);
-    const largeurTailleDos = Math.round(tt / 4 - 15);
+    const largeurBustierDos = Math.round(tp / 4 - 15 + profile.bodiceDeltaMm);
+    const largeurTailleDos = Math.round(tt / 4 - 15 + profile.waistDeltaMm);
     const hauteurBustierDos = lgDos;
 
     // Jupe devant : longueur au sol (~1000mm), jupe dos : jupe devant + traîne.
-    const longueurJupeDevant = 1000;
+    const longueurJupeDevant = resolveSkirtLengthMm(parameters.details['longueur']) ?? 1000;
     const longueurJupeDos = longueurJupeDevant + traine;
-    const largeurJupeDevant = tb / 4 + 20; // Aisance légèrement plus ample pour l'ampleur bal
-    const largeurJupeCote = tb / 4;
-    const largeurJupeDos = tb / 4 - 5;
+    const largeurJupeDevant = tb / 4 + 20 + profile.hipDeltaMm; // Aisance légèrement plus ample pour l'ampleur bal
+    const largeurJupeCote = tb / 4 + profile.hipDeltaMm;
+    const largeurJupeDos = tb / 4 - 5 + profile.hipDeltaMm;
+    const flare = profile.hemFlareMm;
+    // Sirène : le fourreau reste près du corps jusqu'au genou avant de s'évaser.
+    const kneePoint = (width: number, length: number) =>
+      profile.fishtail ? [{ x: width * 0.9, y: length * 0.55 }] : [];
 
     const bustierDevant: PatternPieceGeometry = {
       name: 'Bustier Devant (Princesse)',
@@ -86,13 +103,13 @@ export const RobeMarieeRule: IPatternRule = {
       },
       notches: [{ positionAlongEdge: 0.5, edgeIndex: 1 }],
       outlineMm: [
-        { x: 0, y: 0 },
-        { x: 90, y: -20 }, // Bord de bustier (décolleté cœur/bustier droit)
+        { x: 0, y: neck?.depthMm ?? 0 },
+        { x: neck ? neck.widthMm + 10 : 90, y: -20 }, // Bord de bustier (décolleté cœur/bustier droit)
         { x: largeurBustierDevant, y: 30 },
         { x: largeurBustierDevant, y: hauteurBustierDevant },
         { x: largeurTailleDevant, y: hauteurBustierDevant },
         { x: 0, y: hauteurBustierDevant },
-        { x: 0, y: 0 },
+        { x: 0, y: neck?.depthMm ?? 0 },
       ],
     };
 
@@ -158,7 +175,8 @@ export const RobeMarieeRule: IPatternRule = {
         { x: 0, y: 0 },
         { x: largeurTailleDevant, y: 10 },
         { x: largeurJupeDevant, y: 260 },
-        { x: largeurJupeDevant, y: longueurJupeDevant },
+        ...kneePoint(largeurJupeDevant, longueurJupeDevant),
+        { x: largeurJupeDevant + flare, y: longueurJupeDevant },
         { x: 0, y: longueurJupeDevant },
         { x: 0, y: 0 },
       ],
@@ -180,7 +198,8 @@ export const RobeMarieeRule: IPatternRule = {
         { x: largeurTailleCote, y: 10 },
         { x: largeurJupeCote, y: 260 },
         // Panneau côté : chute progressive de la longueur devant vers la longueur dos+traîne
-        { x: largeurJupeCote, y: (longueurJupeDevant + longueurJupeDos) / 2 },
+        ...kneePoint(largeurJupeCote, (longueurJupeDevant + longueurJupeDos) / 2),
+        { x: largeurJupeCote + flare, y: (longueurJupeDevant + longueurJupeDos) / 2 },
         { x: 0, y: (longueurJupeDevant + longueurJupeDos) / 2 },
         { x: 0, y: 0 },
       ],
@@ -202,8 +221,9 @@ export const RobeMarieeRule: IPatternRule = {
         { x: 0, y: 0 },
         { x: largeurTailleDos, y: 10 },
         { x: largeurJupeDos, y: 260 },
-        { x: largeurJupeDos + 60, y: longueurJupeDevant }, // Élargissement progressif vers la traîne
-        { x: largeurJupeDos + 120, y: longueurJupeDos }, // Pointe de traîne
+        ...kneePoint(largeurJupeDos, longueurJupeDevant),
+        { x: largeurJupeDos + 60 + flare, y: longueurJupeDevant }, // Élargissement progressif vers la traîne
+        { x: largeurJupeDos + 120 + flare, y: longueurJupeDos }, // Pointe de traîne
         { x: 0, y: longueurJupeDos },
         { x: 0, y: 0 },
       ],
@@ -225,12 +245,16 @@ export const RobeMarieeRule: IPatternRule = {
         { x: (largeurTailleDevant + largeurTailleDos) / 2, y: 10 },
         { x: (largeurJupeDevant + largeurJupeDos) / 2, y: 260 },
         // Le jupon structurant reste à la longueur de la jupe devant (pas de traîne doublée)
-        { x: (largeurJupeDevant + largeurJupeDos) / 2, y: longueurJupeDevant },
+        { x: (largeurJupeDevant + largeurJupeDos) / 2 + flare, y: longueurJupeDevant },
         { x: 0, y: longueurJupeDevant },
         { x: 0, y: 0 },
       ],
     };
 
-    return [bustierDevant, bustierCote, bustierDos, jupeDevant, jupeCote, jupeDosTraine, jupon];
+    const pieces = [bustierDevant, bustierCote, bustierDos, jupeDevant, jupeCote, jupeDosTraine, jupon];
+    if (sleeve) {
+      pieces.push(sleevePiece('Manche', tp, sleeve, 'Dentelle, Organza ou Mikado'));
+    }
+    return pieces;
   },
 };
