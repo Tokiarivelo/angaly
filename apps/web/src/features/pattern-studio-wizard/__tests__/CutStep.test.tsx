@@ -77,4 +77,37 @@ describe('CutStep', () => {
     fireEvent.click(screen.getByText('Appliquer cette coupe'));
     expect(onSelect).toHaveBeenCalledWith('PRINCESSE');
   });
+
+  it('sends the chosen AI provider with the suggestion request', async () => {
+    vi.mocked(apiClient.post).mockResolvedValueOnce({
+      suggestion: {
+        suggestedCutType: 'DROITE',
+        suggestedDetails: {},
+        detectedInspirationFeatures: null,
+        confidence: 0.6,
+        modelVersion: 'm',
+      },
+      isIndicativeOnly: false,
+    });
+
+    render(
+      <CutStep
+        selectedCut=""
+        onSelect={onSelect}
+        garmentType="ROBE"
+        occasion={null}
+        style={null}
+        aiProvider={'ANTHROPIC' as never}
+      />,
+      { wrapper: withQueryClient() },
+    );
+    fireEvent.click(screen.getByRole('button', { name: /Obtenir une suggestion IA/i }));
+
+    await waitFor(() =>
+      expect(apiClient.post).toHaveBeenCalledWith(
+        '/api/ai-inference/pattern-suggestions',
+        expect.objectContaining({ aiProvider: 'ANTHROPIC' }),
+      ),
+    );
+  });
 });

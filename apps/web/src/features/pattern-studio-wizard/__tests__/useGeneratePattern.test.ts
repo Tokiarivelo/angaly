@@ -43,4 +43,19 @@ describe('useGeneratePattern', () => {
     );
     expect(mockPush).toHaveBeenCalledWith('/pattern-studio/projects/proj-1');
   });
+
+  it('sends the chosen AI provider with the generation request', async () => {
+    vi.mocked(apiClient.post).mockResolvedValueOnce({ id: 'v1', versionNumber: 1, projectId: 'proj-1' });
+
+    const { result } = renderHook(() => useGeneratePattern('proj-1'), { wrapper: withQueryClient() });
+    act(() => {
+      result.current.mutate({ measurements: {}, aiProvider: 'ANTHROPIC' as never });
+    });
+    await waitFor(() => expect(result.current.isSuccess).toBe(true));
+
+    expect(apiClient.post).toHaveBeenCalledWith('/api/pattern-projects/proj-1/generate', {
+      measurements: {},
+      aiProvider: 'ANTHROPIC',
+    });
+  });
 });

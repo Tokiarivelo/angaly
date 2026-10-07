@@ -1,3 +1,5 @@
+import type { AiProviderId } from '@angaly/types';
+
 export interface WizardFormData {
   garmentType: string;
   occasion: string;
@@ -9,6 +11,8 @@ export interface WizardFormData {
   detectedFeatures?: Record<string, string> | undefined;
   measurementProfileId?: string | undefined;
   measurements?: Record<string, number> | undefined;
+  /** AI model chosen for this generation; undefined = the atelier's automatic routing. */
+  aiProvider?: AiProviderId | undefined;
 }
 
 export type WizardStepKey =

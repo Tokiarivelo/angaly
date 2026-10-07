@@ -1,6 +1,11 @@
 import { apiClient } from '@/lib/api-client';
 import { MediaEntityType } from '@angaly/types';
-import type { PatternAiSuggestionResponse, PatternProjectDto, PatternVersionDto } from '@angaly/types';
+import type {
+  AiProviderId,
+  PatternAiSuggestionResponse,
+  PatternProjectDto,
+  PatternVersionDto,
+} from '@angaly/types';
 
 export interface UpdatePatternProjectPayload {
   garmentType?: string | undefined;
@@ -28,7 +33,10 @@ export const updatePatternProject = async (
 
 export const generatePattern = async (
   id: string,
-  payload?: { measurements?: Record<string, number> | undefined },
+  payload?: {
+    measurements?: Record<string, number> | undefined;
+    aiProvider?: AiProviderId | undefined;
+  },
 ): Promise<PatternVersionDto> => {
   const res = await apiClient.post<PatternVersionDto | { data: PatternVersionDto }>(
     `/api/pattern-projects/${id}/generate`,
@@ -96,6 +104,7 @@ export interface RequestPatternSuggestionPayload {
   occasion: string | null;
   style: string | null;
   measurements?: Record<string, number>;
+  aiProvider?: AiProviderId | undefined;
 }
 
 export const requestPatternSuggestion = async (

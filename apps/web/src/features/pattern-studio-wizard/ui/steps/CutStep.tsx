@@ -1,5 +1,6 @@
 import React from 'react';
 import { Check, Sparkles } from 'lucide-react';
+import type { AiProviderId } from '@angaly/types';
 import { CUTS } from '../../consts/cuts.const';
 import { usePatternSuggestion } from '../../hooks/usePatternSuggestion';
 
@@ -9,6 +10,7 @@ interface CutStepProps {
   garmentType: string;
   occasion: string | null;
   style: string | null;
+  aiProvider?: AiProviderId | undefined;
 }
 
 export const CutStep: React.FC<CutStepProps> = ({
@@ -17,6 +19,7 @@ export const CutStep: React.FC<CutStepProps> = ({
   garmentType,
   occasion,
   style,
+  aiProvider,
 }) => {
   const { mutate: requestSuggestion, data, isPending } = usePatternSuggestion();
 
@@ -38,7 +41,7 @@ export const CutStep: React.FC<CutStepProps> = ({
 
         <button
           type="button"
-          onClick={() => requestSuggestion({ garmentType, occasion, style })}
+          onClick={() => requestSuggestion({ garmentType, occasion, style, aiProvider })}
           disabled={isPending}
           className="inline-flex items-center gap-2 px-3.5 py-2 rounded-lg text-xs font-semibold bg-[#0C2650] border border-[#C5B190]/30 text-[#C5B190] hover:border-[#C5B190] transition-colors disabled:opacity-60 shrink-0 self-start sm:self-auto"
         >

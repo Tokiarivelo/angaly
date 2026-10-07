@@ -2,6 +2,7 @@
 
 import { useMutation, useQueryClient } from '@tanstack/react-query';
 import { useRouter } from 'next/navigation';
+import type { AiProviderId } from '@angaly/types';
 import { generatePattern } from '../api/pattern-projects.api';
 
 export const useGeneratePattern = (projectId: string) => {
@@ -9,7 +10,10 @@ export const useGeneratePattern = (projectId: string) => {
   const queryClient = useQueryClient();
 
   return useMutation({
-    mutationFn: (payload?: { measurements?: Record<string, number> | undefined }) =>
+    mutationFn: (payload?: {
+      measurements?: Record<string, number> | undefined;
+      aiProvider?: AiProviderId | undefined;
+    }) =>
       generatePattern(projectId, payload),
     onSuccess: () => {
       void queryClient.invalidateQueries({ queryKey: ['pattern-project', projectId] });

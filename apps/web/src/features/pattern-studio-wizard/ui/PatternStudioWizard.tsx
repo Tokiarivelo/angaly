@@ -5,6 +5,8 @@ import Link from 'next/link';
 import { ArrowLeft } from 'lucide-react';
 import { usePatternWizard } from '../hooks/usePatternWizard';
 import { useGeneratePattern } from '../hooks/useGeneratePattern';
+import { useSelectableAiProviders } from '../hooks/useSelectableAiProviders';
+import { AiModelSelector } from './AiModelSelector';
 import { WizardProgressBar } from './WizardProgressBar';
 import { WizardFooterNav } from './WizardFooterNav';
 import { GenerationLoadingScreen } from './GenerationLoadingScreen';
@@ -34,10 +36,11 @@ export const PatternStudioWizard: React.FC<PatternStudioWizardProps> = ({ projec
   } = usePatternWizard(projectId);
 
   const { mutate: generate, isPending: isGenerating } = useGeneratePattern(projectId);
+  const { data: selectableProviders } = useSelectableAiProviders();
 
   const handleNextOrGenerate = () => {
     if (currentStep === 7) {
-      generate({ measurements: formData.measurements });
+      generate({ measurements: formData.measurements, aiProvider: formData.aiProvider });
     } else {
       goToNextStep();
     }
@@ -112,6 +115,7 @@ export const PatternStudioWizard: React.FC<PatternStudioWizardProps> = ({ projec
               garmentType={formData.garmentType}
               occasion={formData.occasion || null}
               style={formData.style || null}
+              aiProvider={formData.aiProvider}
             />
           )}
 
@@ -161,6 +165,15 @@ export const PatternStudioWizard: React.FC<PatternStudioWizardProps> = ({ projec
             onNext={handleNextOrGenerate}
           />
         </div>
+
+        {(currentStep === 4 || currentStep === 7) && (
+          <AiModelSelector
+            providers={selectableProviders?.providers ?? []}
+            value={formData.aiProvider}
+            onChange={(provider) => updateField('aiProvider', provider)}
+            disabled={isGenerating}
+          />
+        )}
       </main>
     </div>
   );
