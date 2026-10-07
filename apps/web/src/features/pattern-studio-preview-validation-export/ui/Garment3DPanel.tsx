@@ -3,6 +3,8 @@
 import React, { useEffect, useMemo, useRef, useState } from 'react';
 import dynamic from 'next/dynamic';
 import { Pause, Play, RotateCcw } from 'lucide-react';
+import type { ViewName, ViewRequest } from './Garment3DViewer';
+import { WebGlBoundary } from './WebGlBoundary';
 import type { PatternPieceDto } from '@angaly/types';
 import { buildGarmentModel, type FitStatus } from '../utils/garment3d/garment-model';
 
@@ -32,15 +34,6 @@ const STATUS_LABELS: Record<FitStatus, { label: string; className: string }> = {
 
 const ANIMATION_MS = 2400;
 
-const supportsWebGl = (): boolean => {
-  try {
-    const canvas = document.createElement('canvas');
-    return Boolean(canvas.getContext('webgl2') ?? canvas.getContext('webgl'));
-  } catch {
-    return false;
-  }
-};
-
 const prefersReducedMotion = (): boolean =>
   typeof window !== 'undefined' && window.matchMedia?.('(prefers-reduced-motion: reduce)').matches === true;
 
@@ -54,10 +47,10 @@ export const Garment3DPanel: React.FC<Garment3DPanelProps> = ({
   const [isPlaying, setIsPlaying] = useState(false);
   const [showMannequin, setShowMannequin] = useState(true);
   const [transparent, setTransparent] = useState(false);
-  const [webGl, setWebGl] = useState<boolean | null>(null);
+  const [viewRequest, setViewRequest] = useState<ViewRequest | null>(null);
+  const [viewerKey, setViewerKey] = useState(0);
+  const [contextLost, setContextLost] = useState(false);
   const frame = useRef<number | null>(null);
-
-  useEffect(() => setWebGl(supportsWebGl()), []);
 
   const result = useMemo(
     () => buildGarmentModel(pieces, garmentType, measurements),
@@ -86,6 +79,20 @@ export const Garment3DPanel: React.FC<Garment3DPanelProps> = ({
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [isPlaying]);
 
+  const requestView = (view: ViewName): void => {
+    setViewRequest((previous) => ({ view, nonce: (previous?.nonce ?? 0) + 1 }));
+  };
+
+  // Blender numpad habits: 1 front, Ctrl+1 / 9 back, 3 side, 7 top, Home or 5 reset.
+  const handleStageKey = (event: React.KeyboardEvent<HTMLDivElement>): void => {
+    const views: Record<string, ViewName> = { '1': 'front', '3': 'side', '7': 'top', '9': 'back', Home: 'reset' };
+    const view = event.ctrlKey && event.key === '1' ? 'back' : views[event.key];
+    if (view) {
+      event.preventDefault();
+      requestView(view);
+    }
+  };
+
   const handlePlay = (): void => {
     if (prefersReducedMotion()) {
       setAssembly((value) => (value >= 1 ? 0 : 1));
@@ -109,22 +116,32 @@ export const Garment3DPanel: React.FC<Garment3DPanelProps> = ({
 
   return (
     <div className="flex-1 min-h-[440px] bg-[#041329] border border-[#C5B190]/30 rounded-xl p-4 sm:p-6 flex flex-col gap-4">
-      <div className="relative h-[380px] rounded-lg overflow-hidden border border-[#C5B190]/20" data-testid="garment-3d-stage">
-        {webGl === false ? (
-          <div className="h-full flex items-center justify-center p-6 text-center text-sm text-[#D8D3C8]">
-            Votre navigateur ne permet pas l’affichage 3D (WebGL indisponible). La vue 2D reste disponible.
-          </div>
-        ) : webGl === true ? (
+      <div
+        className="relative h-[420px] rounded-lg overflow-hidden border border-[#C5B190]/20 focus:outline-none focus:ring-1 focus:ring-[#C5B190]"
+        data-testid="garment-3d-stage"
+        tabIndex={0}
+        onKeyDown={handleStageKey}
+      >
+        <WebGlBoundary
+          key={viewerKey}
+          forceError={contextLost}
+          onRetry={() => {
+            setContextLost(false);
+            setViewerKey((k) => k + 1);
+          }}
+        >
           <Garment3DViewer
             model={model}
             assembly={assembly}
             showMannequin={showMannequin}
             transparent={transparent}
             selectedPieceId={selectedPieceId}
+            viewRequest={viewRequest}
+            onContextLost={() => setContextLost(true)}
           />
-        ) : null}
+        </WebGlBoundary>
         <p className="pointer-events-none absolute bottom-2 left-3 text-[11px] text-[#D8D3C8]/60">
-          Glisser pour tourner · molette pour zoomer
+          Clic milieu ou glisser : tourner · Maj + glisser ou clic droit : déplacer · molette : zoomer
         </p>
       </div>
 
@@ -149,6 +166,27 @@ export const Garment3DPanel: React.FC<Garment3DPanelProps> = ({
           <RotateCcw className="w-3.5 h-3.5" />
           Éclater
         </button>
+
+        <div role="group" aria-label="Vues" className="flex items-center gap-1">
+          {(
+            [
+              ['front', 'Face'],
+              ['back', 'Dos'],
+              ['side', 'Côté'],
+              ['top', 'Dessus'],
+              ['reset', 'Recentrer'],
+            ] as Array<[ViewName, string]>
+          ).map(([view, label]) => (
+            <button
+              key={view}
+              type="button"
+              onClick={() => requestView(view)}
+              className="px-2.5 py-1.5 rounded-lg bg-[#0C2650] border border-[#C5B190]/30 text-[#C5B190] hover:border-[#C5B190]"
+            >
+              {label}
+            </button>
+          ))}
+        </div>
 
         <label className="flex items-center gap-2 grow min-w-[180px]">
           <span className="whitespace-nowrap">Assemblage</span>

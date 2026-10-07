@@ -136,3 +136,14 @@ Un sélecteur d'onglets (`PreviewModeTabs`) pilote la zone centrale :
 Optimisations 3D : rendu à la demande (`frameloop="demand"`, une image par interaction), DPR plafonné à 1,5,
 maillages de quelques centaines de sommets, libération GPU des géométries, chargement différé, repli si WebGL
 indisponible. Vêtements pris en charge : robe, jupe, chemise, veste, costume (pantalon/autre : message explicatif).
+
+### Navigation 3D « façon Blender » et robustesse WebGL (2026-10-07)
+
+- **Navigation** (`OrbitControls` de drei, inertie activée) : clic milieu ou glisser = tourner, Maj + glisser ou clic
+  droit = déplacer, molette = zoom vers le curseur ; tactile : 1 doigt tourne, 2 doigts déplacent/zooment.
+  Gizmo d'axes cliquable (comme Blender), boutons Face / Dos / Côté / Dessus / Recentrer et raccourcis pavé numérique
+  quand la scène a le focus : `1` face, `Ctrl+1` ou `9` dos, `3` côté, `7` dessus, `Home` recentrer.
+- **WebGL** : plus de contexte « sonde » jetable (il fuyait et épuisait la limite de ~16 contextes du navigateur,
+  d'où un faux « WebGL indisponible »). Le démarrage réel est protégé par `WebGlBoundary` : en cas d'échec, message
+  actionnable (accélération matérielle, extensions anti-canvas), erreur technique et bouton « Réessayer » ; perte de
+  contexte GPU gérée de même. Résolution adaptative pendant les interactions (`AdaptiveDpr`).

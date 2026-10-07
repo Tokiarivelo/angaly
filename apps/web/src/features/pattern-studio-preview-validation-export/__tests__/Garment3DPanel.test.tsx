@@ -1,18 +1,33 @@
-import { fireEvent, render, screen, waitFor } from '@testing-library/react';
+import { fireEvent, render, screen } from '@testing-library/react';
 import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest';
 import type { PatternPieceDto } from '@angaly/types';
 
 // three.js/WebGL cannot run in jsdom: the viewer is replaced by a probe that exposes its props.
+const viewerBehaviour = { shouldThrow: false };
+
 vi.mock('next/dynamic', () => ({
   default: () =>
-    function ViewerProbe(props: { assembly: number; showMannequin: boolean; transparent: boolean }) {
+    function ViewerProbe(props: {
+      assembly: number;
+      showMannequin: boolean;
+      transparent: boolean;
+      viewRequest: { view: string; nonce: number } | null;
+      onContextLost?: () => void;
+    }) {
+      if (viewerBehaviour.shouldThrow) throw new Error('Error creating WebGL context.');
       return (
         <div
           data-testid="viewer-probe"
           data-assembly={props.assembly}
           data-mannequin={String(props.showMannequin)}
           data-transparent={String(props.transparent)}
-        />
+          data-view={props.viewRequest?.view ?? ''}
+          data-nonce={props.viewRequest?.nonce ?? 0}
+        >
+          <button type="button" onClick={() => props.onContextLost?.()}>
+            lose-context
+          </button>
+        </div>
       );
     },
 }));
@@ -38,13 +53,12 @@ const pieces = [
 ];
 const measurements = { TOUR_POITRINE: 88, TOUR_TAILLE: 68, TOUR_BASSIN: 94, LONGUEUR_DOS: 40 };
 
-const setWebGl = (available: boolean) => {
-  vi.spyOn(HTMLCanvasElement.prototype, 'getContext').mockImplementation((() =>
-    available ? ({} as WebGL2RenderingContext) : null) as never);
-};
-
 describe('Garment3DPanel', () => {
-  beforeEach(() => setWebGl(true));
+  beforeEach(() => {
+    viewerBehaviour.shouldThrow = false;
+    // three.js logs the error it throws; keep the test output readable.
+    vi.spyOn(console, 'error').mockImplementation(() => undefined);
+  });
   afterEach(() => vi.restoreAllMocks());
 
   it('renders the viewer assembled by default, with the fit report from the real pieces', async () => {
@@ -91,11 +105,65 @@ describe('Garment3DPanel', () => {
     expect(screen.getByTestId('garment-3d-unsupported')).toBeInTheDocument();
   });
 
-  it('falls back gracefully when WebGL is unavailable', async () => {
-    setWebGl(false);
+  it('does not probe WebGL with a throw-away canvas context (probes leak contexts)', async () => {
+    const getContext = vi.spyOn(HTMLCanvasElement.prototype, 'getContext');
+    render(<Garment3DPanel pieces={pieces} garmentType="JUPE" measurements={measurements} selectedPieceId={null} />);
+    await screen.findByTestId('viewer-probe');
+    expect(getContext).not.toHaveBeenCalled();
+  });
+
+  it('shows an actionable fallback when the 3D context cannot be created, and retries on demand', async () => {
+    viewerBehaviour.shouldThrow = true;
     render(<Garment3DPanel pieces={pieces} garmentType="JUPE" measurements={measurements} selectedPieceId={null} />);
 
-    await waitFor(() => expect(screen.getByText(/WebGL indisponible/)).toBeInTheDocument());
+    const fallback = await screen.findByTestId('webgl-fallback');
+    expect(fallback).toHaveTextContent('accélération matérielle');
+    expect(fallback).toHaveTextContent('Error creating WebGL context.');
     expect(screen.queryByTestId('viewer-probe')).not.toBeInTheDocument();
+
+    viewerBehaviour.shouldThrow = false;
+    fireEvent.click(screen.getByRole('button', { name: 'Réessayer' }));
+    expect(await screen.findByTestId('viewer-probe')).toBeInTheDocument();
+  });
+
+  it('recovers from a lost GPU context', async () => {
+    render(<Garment3DPanel pieces={pieces} garmentType="JUPE" measurements={measurements} selectedPieceId={null} />);
+    fireEvent.click(await screen.findByRole('button', { name: 'lose-context' }));
+
+    expect(screen.getByTestId('webgl-fallback')).toHaveTextContent('contexte graphique 3D a été perdu');
+    fireEvent.click(screen.getByRole('button', { name: 'Réessayer' }));
+    expect(await screen.findByTestId('viewer-probe')).toBeInTheDocument();
+  });
+
+  it('snaps to preset views from the buttons, re-applying the same view on every click', async () => {
+    render(<Garment3DPanel pieces={pieces} garmentType="JUPE" measurements={measurements} selectedPieceId={null} />);
+    await screen.findByTestId('viewer-probe');
+
+    fireEvent.click(screen.getByRole('button', { name: 'Dessus' }));
+    let probe = screen.getByTestId('viewer-probe');
+    expect(probe.getAttribute('data-view')).toBe('top');
+    const first = Number(probe.getAttribute('data-nonce'));
+
+    fireEvent.click(screen.getByRole('button', { name: 'Dessus' }));
+    probe = screen.getByTestId('viewer-probe');
+    expect(Number(probe.getAttribute('data-nonce'))).toBe(first + 1);
+  });
+
+  it('supports Blender numpad shortcuts on the 3D stage', async () => {
+    render(<Garment3DPanel pieces={pieces} garmentType="JUPE" measurements={measurements} selectedPieceId={null} />);
+    await screen.findByTestId('viewer-probe');
+    const stage = screen.getByTestId('garment-3d-stage');
+    const view = () => screen.getByTestId('viewer-probe').getAttribute('data-view');
+
+    fireEvent.keyDown(stage, { key: '3' });
+    expect(view()).toBe('side');
+    fireEvent.keyDown(stage, { key: '7' });
+    expect(view()).toBe('top');
+    fireEvent.keyDown(stage, { key: '1', ctrlKey: true });
+    expect(view()).toBe('back');
+    fireEvent.keyDown(stage, { key: '1' });
+    expect(view()).toBe('front');
+    fireEvent.keyDown(stage, { key: 'Home' });
+    expect(view()).toBe('reset');
   });
 });

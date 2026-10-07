@@ -203,7 +203,7 @@ const buildHalfStrips = (
 };
 
 /** Arm/sleeve axis tilt away from vertical, shared with the mannequin arms. */
-export const SLEEVE_TILT = (16 * Math.PI) / 180;
+export const SLEEVE_TILT = (22 * Math.PI) / 180;
 const SLEEVE_RADIAL = 20;
 
 const buildSleeve = (

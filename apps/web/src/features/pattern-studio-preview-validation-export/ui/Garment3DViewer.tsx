@@ -1,8 +1,8 @@
 'use client';
 
-import React, { useEffect, useMemo } from 'react';
+import React, { useEffect, useMemo, useRef } from 'react';
 import { Canvas, useThree } from '@react-three/fiber';
-import { OrbitControls } from '@react-three/drei';
+import { AdaptiveDpr, GizmoHelper, GizmoViewport, OrbitControls } from '@react-three/drei';
 import * as THREE from 'three';
 import { SLEEVE_TILT, type GarmentModel, type PanelMeshData } from '../utils/garment3d/garment-model';
 import { loftRings } from '../utils/garment3d/body-model';
@@ -16,7 +16,26 @@ interface Garment3DViewerProps {
   transparent: boolean;
   /** Highlights the panel(s) built from this pattern piece. */
   selectedPieceId: string | null;
+  /** Snaps the camera to a preset view (numpad-style); a new `nonce` re-applies the same view. */
+  viewRequest: ViewRequest | null;
+  onContextLost?: (() => void) | undefined;
 }
+
+export type ViewName = 'front' | 'back' | 'side' | 'top' | 'reset';
+export interface ViewRequest {
+  view: ViewName;
+  nonce: number;
+}
+
+const VIEW_DISTANCE = 3.3;
+const VIEW_TARGET = new THREE.Vector3(0, 0.88, 0);
+const VIEW_POSITIONS: Record<ViewName, [number, number, number]> = {
+  front: [0, VIEW_TARGET.y, VIEW_DISTANCE],
+  back: [0, VIEW_TARGET.y, -VIEW_DISTANCE],
+  side: [VIEW_DISTANCE, VIEW_TARGET.y, 0],
+  top: [0, VIEW_TARGET.y + VIEW_DISTANCE, 0.001],
+  reset: [0, 1.0, VIEW_DISTANCE],
+};
 
 const EXPLODE_DISTANCE = 0.3;
 const ZONE_COLORS: Record<PanelMeshData['zone'], string> = {
@@ -39,6 +58,27 @@ const Invalidator: React.FC<{ signal: unknown[] }> = ({ signal }) => {
   const invalidate = useThree((state) => state.invalidate);
   // eslint-disable-next-line react-hooks/exhaustive-deps
   useEffect(() => invalidate(), signal);
+  return null;
+};
+
+/** Applies a preset view to the camera and the (default) orbit controls. */
+const CameraRig: React.FC<{ request: ViewRequest | null }> = ({ request }) => {
+  const camera = useThree((state) => state.camera);
+  const controls = useThree((state) => state.controls) as { target: THREE.Vector3; update: () => void } | null;
+  const invalidate = useThree((state) => state.invalidate);
+
+  useEffect(() => {
+    if (!request) return;
+    const [x, y, z] = VIEW_POSITIONS[request.view];
+    camera.position.set(x, y, z);
+    if (controls) {
+      controls.target.copy(VIEW_TARGET);
+      controls.update();
+    }
+    camera.lookAt(VIEW_TARGET);
+    invalidate();
+  }, [request, camera, controls, invalidate]);
+
   return null;
 };
 
@@ -175,14 +215,26 @@ export const Garment3DViewer: React.FC<Garment3DViewerProps> = ({
   showMannequin,
   transparent,
   selectedPieceId,
+  viewRequest,
+  onContextLost,
 }) => {
+  const lost = useRef(onContextLost);
+  lost.current = onContextLost;
+
   return (
     <Canvas
       frameloop="demand"
       dpr={[1, 1.5]}
-      camera={{ position: [0, 1.0, 3.3], fov: 32, near: 0.1, far: 20 }}
+      camera={{ position: [0, 1.0, VIEW_DISTANCE], fov: 32, near: 0.1, far: 30 }}
       gl={{ antialias: true, powerPreference: 'high-performance' }}
       aria-label="Prévisualisation 3D du patron assemblé sur un mannequin"
+      onCreated={({ gl }) => {
+        // A lost context (GPU reset, too many contexts) must not leave a frozen black canvas.
+        gl.domElement.addEventListener('webglcontextlost', (event) => {
+          event.preventDefault();
+          lost.current?.();
+        });
+      }}
     >
       <color attach="background" args={['#041329']} />
       <hemisphereLight args={['#FFFFFF', '#1B2B4A', 0.9]} />
@@ -200,14 +252,33 @@ export const Garment3DViewer: React.FC<Garment3DViewerProps> = ({
         />
       ))}
 
+      {/*
+        Blender-style navigation: middle-drag (or left-drag) orbits, Shift+drag or right-drag pans,
+        wheel zooms toward the cursor, damping for smooth inertia. Touch: 1 finger orbits, 2 pan/zoom.
+      */}
       <OrbitControls
         makeDefault
         target={[0, 0.88, 0]}
-        enablePan={false}
-        minDistance={1.3}
-        maxDistance={6}
-        maxPolarAngle={Math.PI * 0.62}
+        enableDamping
+        dampingFactor={0.12}
+        enablePan
+        screenSpacePanning
+        zoomToCursor
+        rotateSpeed={0.9}
+        panSpeed={0.9}
+        minDistance={0.8}
+        maxDistance={8}
+        mouseButtons={{ LEFT: THREE.MOUSE.ROTATE, MIDDLE: THREE.MOUSE.ROTATE, RIGHT: THREE.MOUSE.PAN }}
+        touches={{ ONE: THREE.TOUCH.ROTATE, TWO: THREE.TOUCH.DOLLY_PAN }}
       />
+
+      {/* Click an axis to snap the view, like Blender's navigation gizmo. */}
+      <GizmoHelper alignment="bottom-right" margin={[56, 56]}>
+        <GizmoViewport axisColors={['#E0605A', '#7FC47F', '#6A9AE0']} labelColor="#041329" />
+      </GizmoHelper>
+
+      <AdaptiveDpr pixelated />
+      <CameraRig request={viewRequest} />
       <Invalidator signal={[assembly, showMannequin, transparent, selectedPieceId, model]} />
     </Canvas>
   );
