@@ -20,10 +20,9 @@ export class EstimateMissingMeasurementsUseCase {
     estimation: PatternMeasurementEstimationResponse;
     isIndicativeOnly: boolean;
   }> {
-    let credentials = request.provider;
-    if (!credentials) {
-      credentials = await this.providerResolver.resolveCredentials(AiUsage.MEASUREMENT_ESTIMATION);
-    }
+    const credentials =
+      request.provider ??
+      (await this.providerResolver.resolveCredentials(AiUsage.MEASUREMENT_ESTIMATION));
 
     const modelPreference =
       request.modelPreference ??

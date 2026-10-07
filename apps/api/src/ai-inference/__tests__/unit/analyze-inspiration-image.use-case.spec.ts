@@ -1,3 +1,4 @@
+/* eslint-disable @typescript-eslint/unbound-method -- jest.Mocked ports are asserted on directly */
 import { createHash } from 'node:crypto';
 import type { InspirationAnalysisResponse } from '@angaly/types';
 import { AnalyzeInspirationImageUseCase } from '../../application/use-cases/analyze-inspiration-image.use-case';

@@ -4,6 +4,10 @@ import { SendAssistantMessageUseCase } from '../../application/use-cases/send-as
 import { GetConversationHistoryUseCase } from '../../application/use-cases/get-conversation-history.use-case';
 import { AssistantMessageDto } from '../../application/dtos/assistant-message.dto';
 
+interface AuthenticatedRequest {
+  user: { id: string };
+}
+
 @UseGuards(JwtAuthGuard)
 @Controller('ai-inference/assistant')
 export class AiAssistantController {
@@ -13,7 +17,7 @@ export class AiAssistantController {
   ) {}
 
   @Post('messages')
-  async sendMessage(@Request() req: any, @Body() dto: AssistantMessageDto) {
+  async sendMessage(@Request() req: AuthenticatedRequest, @Body() dto: AssistantMessageDto) {
     // user ID mapping to customer ID should normally happen via a service.
     // Assuming req.user.customer.id exists or we pass userId for now.
     // Based on schema, AIConversation uses customerId. We mock or assume customerId here.
@@ -29,7 +33,7 @@ export class AiAssistantController {
   }
 
   @Get('conversations')
-  async getHistory(@Request() req: any, @Query('patternProjectId') patternProjectId?: string) {
+  async getHistory(@Request() req: AuthenticatedRequest, @Query('patternProjectId') patternProjectId?: string) {
     const customerId = req.user.id;
     return this.getConversationHistory.execute(customerId, patternProjectId);
   }

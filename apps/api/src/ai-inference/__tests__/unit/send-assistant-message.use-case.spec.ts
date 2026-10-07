@@ -1,4 +1,5 @@
-import { Test, TestingModule } from '@nestjs/testing';
+import type { TestingModule } from '@nestjs/testing';
+import { Test } from '@nestjs/testing';
 import { SendAssistantMessageUseCase } from '../../application/use-cases/send-assistant-message.use-case';
 import { AI_CONVERSATION_REPOSITORY } from '../../domain/repositories/ai-conversation.repository';
 import { AiServiceHttpClient } from '../../infrastructure/services/ai-service-http-client';

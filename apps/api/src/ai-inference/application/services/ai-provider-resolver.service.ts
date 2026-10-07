@@ -50,7 +50,7 @@ export class AiProviderResolverService {
       const catalogEntry = findCatalogEntry(providerId);
       const config = await this.providerConfigRepo.findByProvider(providerId);
 
-      if (!config || !config.enabled) {
+      if (!config?.enabled) {
         this.logger.warn(
           `Fournisseur "${providerId}" pour l'usage "${usage}" non configuré ou désactivé. Repli par défaut.`,
         );
@@ -61,9 +61,9 @@ export class AiProviderResolverService {
       if (catalogEntry?.requiresApiKey && config.apiKeyCipher) {
         try {
           apiKey = await this.cipher.decrypt(config.apiKeyCipher);
-        } catch (decryptErr: any) {
+        } catch (decryptErr: unknown) {
           this.logger.error(
-            `Échec du déchiffrement de la clé API pour "${providerId}": ${decryptErr.message}`,
+            `Échec du déchiffrement de la clé API pour "${providerId}": ${decryptErr instanceof Error ? decryptErr.message : String(decryptErr)}`,
           );
           return undefined;
         }
@@ -75,9 +75,9 @@ export class AiProviderResolverService {
         apiKey,
         baseUrl: config.baseUrl ?? undefined,
       };
-    } catch (err: any) {
+    } catch (err: unknown) {
       this.logger.error(
-        `Erreur lors de la résolution du fournisseur IA pour l'usage "${usage}": ${err.message}`,
+        `Erreur lors de la résolution du fournisseur IA pour l'usage "${usage}": ${err instanceof Error ? err.message : String(err)}`,
       );
       return undefined;
     }

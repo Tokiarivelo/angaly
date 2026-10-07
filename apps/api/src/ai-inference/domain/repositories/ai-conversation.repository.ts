@@ -1,4 +1,4 @@
-import { AIConversationMessage } from '../entities/ai-conversation-message.entity';
+import type { AIConversationMessage } from '../entities/ai-conversation-message.entity';
 
 export interface IAIConversationRepository {
   createMessage(

@@ -1,4 +1,5 @@
-import { Test, TestingModule } from '@nestjs/testing';
+import type { TestingModule } from '@nestjs/testing';
+import { Test } from '@nestjs/testing';
 import { AiProviderId, AiProviderStatus, AiUsage } from '@angaly/types';
 import { AiProviderResolverService } from '../../application/services/ai-provider-resolver.service';
 import { GetAiModelSettingUseCase } from '../../../admin-ai-settings/application/use-cases/get-ai-model-setting.use-case';

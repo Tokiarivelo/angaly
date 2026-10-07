@@ -1,7 +1,8 @@
-import { Test, TestingModule } from '@nestjs/testing';
+import type { TestingModule } from '@nestjs/testing';
+import { Test } from '@nestjs/testing';
 import { SuggestPatternParametersUseCase } from '../../application/use-cases/suggest-pattern-parameters.use-case';
 import { AiServiceHttpClient } from '../../infrastructure/services/ai-service-http-client';
-import { PatternAiSuggestionRequest, PatternAiSuggestionResponse } from '@angaly/types';
+import type { PatternAiSuggestionRequest, PatternAiSuggestionResponse } from '@angaly/types';
 import { AiProviderResolverService } from '../../application/services/ai-provider-resolver.service';
 import { AnalyzeInspirationImageUseCase } from '../../application/use-cases/analyze-inspiration-image.use-case';
 

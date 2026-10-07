@@ -1,4 +1,4 @@
-import { AIConversationRole } from '@angaly/database';
+import type { AIConversationRole } from '@angaly/database';
 
 export class AIConversationMessage {
   constructor(
