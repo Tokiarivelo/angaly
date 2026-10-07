@@ -184,7 +184,17 @@ Toutes les photographies (créations, ateliers, collections, blog) sont stockée
 
 ---
 
-## 6. Communication WhatsApp & Contact Client
+## 6. Chiffrement des clés API Fournisseurs IA (`AI_KEYS_ENCRYPTION_KEY`)
+
+Utilisé par `apps/api/src/admin-ai-settings/infrastructure/crypto/aes-gcm-secret-cipher.service.ts` pour chiffrer les clés secrètes des fournisseurs d'intelligence artificielle externes (Anthropic, OpenAI, Mistral, Groq...) au repos dans PostgreSQL via AES-256-GCM.
+
+| Variable | Format | Description |
+| --- | --- | --- |
+| `AI_KEYS_ENCRYPTION_KEY` | Clé secrète de 32 octets encodée en base64 (`openssl rand -base64 32`) | Clé de chiffrement AES-256-GCM. Indispensable pour la sauvegarde sécurisée et le déchiffrement à la volée des clés tierces. |
+
+---
+
+## 7. Communication WhatsApp & Contact Client
 
 | Variable | Exemple | Description |
 | --- | --- | --- |
@@ -192,7 +202,7 @@ Toutes les photographies (créations, ateliers, collections, blog) sont stockée
 
 ---
 
-## 7. Notifications — canal email (`SMTP_*`)
+## 8. Notifications — canal email (`SMTP_*`)
 
 Utilisé par `apps/api/src/notifications/infrastructure/services/email-channel.adapter.ts`
 (module `notifications`, Phase 3) pour l'envoi d'emails transactionnels (rendez-vous confirmé,

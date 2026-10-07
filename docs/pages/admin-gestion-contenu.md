@@ -52,27 +52,33 @@ Protégée par middleware + guard NestJS : rôle `MANAGER` ou `ADMIN` uniquement
 ```
 apps/web/src/features/admin-gestion-contenu/
   ui/
-    AdminContentPage.tsx        → layout 2 colonnes (liste + éditeur), avertit avant de perdre des modifications non enregistrées (voir Points d'attention)
-    SectionsList.tsx            → colonne gauche : pages/sections + statut (pill), squelette de chargement
-    SectionEditorForm.tsx       → colonne droite : formulaire par section, aperçu scopé (useWatch), signale son état "modifié" au parent
+    AdminContentPage.tsx        → layout 2 colonnes (liste + éditeur), bouton "Atelier de Templates", avertit avant de perdre des modifications
+    SectionsList.tsx            → colonne gauche : pages/sections + statut (pill), bouton "+ Ajouter une section", squelette de chargement
+    SectionEditorForm.tsx       → colonne droite : formulaire par section, aperçu haute couture, signale son état "modifié" au parent
     LocaleTabs.tsx               → onglets Français / Malagasy
-    VersionHistoryDrawer.tsx     → tiroir d'historique des versions — Radix Dialog (focus-trap + Échap, voir Points d'attention)
-    PreviewToggle.tsx
+    VersionHistoryDrawer.tsx     → tiroir d'historique des versions — Radix Dialog
+    PreviewToggle.tsx            → sélecteur d'aperçu haute couture (Composant réel / Contexte Accueil, format Ordinateur / Mobile)
+    TemplateAtelierModal.tsx     → Atelier de Gabarits & Composants Réutilisables (galerie presets, configurateur, ajout à la page)
+    components/                  → Moteurs de rendu haute couture en situation réelle (Hero, Éditorial, Grille, Étapes, CTA, Quote, Galerie, FAQ)
   hooks/
     useSectionsList.ts           → liste des PageSection groupées par page, `staleTime` 30s
-    useSectionEditor.ts          → charge une section, gère le formulaire (react-hook-form),
-                                    bascule brouillon/publié, appelle save/publish, expose `availableLocales`
+    useSectionEditor.ts          → charge une section, gère le formulaire, bascule brouillon/publié
     useSectionVersionHistory.ts  → liste + action "Restaurer"
+    useTemplateAtelier.ts        → gestion de l'Atelier de templates, presets et création de sections
   api/
-    page-sections.api.ts         → useSectionsQuery, useSectionQuery, useSaveDraftMutation,
-                                    usePublishMutation, useRestoreVersionMutation
+    page-sections.api.ts         → endpoints CMS et mutation de création de brouillon
   schemas/
-    section-editor.schema.ts     → Zod, champs dynamiques selon les champs remplis de la section
+    section-editor.schema.ts     → Zod, validation
   consts/
     queryKeys.ts
+    section-catalog.const.ts     → catalogue fixe des sections du site
+    template-catalog.const.ts    → presets haute couture du Template Atelier
+  types/
+    template.types.ts            → types de composants et gabarits CMS
   __tests__/
     useSectionEditor.test.ts, useSectionsList.test.ts, SectionEditorForm.test.tsx,
-    AdminContentPage.test.tsx, VersionHistoryDrawer.test.tsx
+    AdminContentPage.test.tsx, VersionHistoryDrawer.test.tsx, TemplateAtelierModal.test.tsx,
+    PreviewToggle.test.tsx, useTemplateAtelier.test.ts
   index.ts
 ```
 

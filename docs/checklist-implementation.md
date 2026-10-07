@@ -122,7 +122,8 @@ phase n'a pas été traitée en session dédiée (voir `.cursor/rules/006-phase-
 - [x] ✅ **sur-mesure-process** — Page process Sur Mesure (7 sections), vérifiée contre
       l'écran Stitch réel via `agy` — plusieurs écarts avec `stitch-prompts/
       11-sur-mesure-process.md` corrigés (timeline sans description, grille mobile 2×4,
-      galerie à 4 pièces exactes, pas de bandeau CTA sticky mobile) — voir
+      galerie à 4 pièces exactes, pas de bandeau CTA sticky mobile). Médias MinIO seedés et
+      connectés (hero, galerie 4 pièces, avatar témoignage) éliminant tout appel externe Unsplash — voir
       `docs/pages/sur-mesure-process.md` "Points d'attention"
 - [x] ✅ **demande-sur-mesure** — Formulaire de demande (3 étapes)
 - [x] ✅ **devis** — Consultation d'un devis
@@ -248,11 +249,14 @@ phase n'a pas été traitée en session dédiée (voir `.cursor/rules/006-phase-
 
 ## 🗂️ PHASE 6 — Admin (back-office) (3 pages, 2 modules) — ✅ 3/3 pages, 2/2 modules
 
-### Pages
-- [x] ✅ **admin-gestion-contenu** — Éditeur de contenu par page/section (session 2026-09-16, harmonisation Haute Couture et alignement maquette Stitch `9551b85b467f43269d36e086dcc036b2` session 2026-10-01)
+- [x] ✅ **admin-gestion-contenu** — Éditeur de contenu par page/section (session 2026-09-16, harmonisation Haute Couture et alignement maquette Stitch `9551b85b467f43269d36e086dcc036b2` session 2026-10-01, Atelier de Templates & Gabarits réutilisables + refonte aperçus fidélité réelle landing page session 2026-10-02)
 - [x] ✅ **admin-mediatheque** — Médiathèque (MinIO) (session 2026-09-16, harmonisation Haute Couture et alignement maquette Stitch `f7fa235d11dc4832b4d6362bf321c6d3` session 2026-10-01)
 - [x] ✅ **admin-projets-creation** — Suivi et avancement des projets de création sur mesure (session 2026-10-01), maquette Stitch « ANGALY Back-office — Projets de création » (`fadeaeb5cacf4d0088c20bde4d9c0f29`), route `/projets-creation` (spec §53, §67)
-  - [x] ✅ Assignation d'une couturière + page détail `/projets-creation/:id` + historique des étapes (2026-10-01) — ⚠️ écran Stitch « Détail projet » non généré (timeout), à vérifier
+  - [x] ✅ Création d'un nouveau projet sur mesure (formulaire admin) + route `/projets-creation/nouveau` + endpoints backend (`POST /admin/creation-projects`, lookup clientes & devis) (2026-10-02) — spécifié dans `stitch-prompts/32-admin-nouveau-projet-sur-mesure.md`, bouton « Nouveau Projet Sur Mesure » branché
+  - [x] ✅ Espace Atelier par étape (6 étapes : Consultation, Conception, Patron, Confection, Essayage, Terminée) avec notes d'atelier (`POST/DELETE :id/notes`), médias & documents (`POST/DELETE :id/media`, upload MinIO), bouton d'avancement rapide à l'étape suivante, et illumination des routes imbriquées dans `AdminSidebar` (2026-10-02)
+  - [x] ✅ Synchronisation et persistance de l'étape dans les paramètres d'URL (`?step=...` / `?stage=...`) lors du rafraîchissement ou partage de lien (2026-10-02)
+  - [x] ✅ Génération de patron géométrique assisté par IA dans l'étape Patron (`POST /admin/creation-projects/:id/generate-pattern`), intégration `@angaly/pattern-engine` et suggestions IA, modale `CreationProjectAiPatternModal` avec canevas vectoriel SVG, nomenclature et sauvegarde automatique (2026-10-02)
+
 
 ### Modules backend
 - [x] ✅ **users** — Gestion des comptes staff (Couturière/Manager/Admin), RBAC (spec §68/§83)
@@ -286,10 +290,14 @@ phase n'a pas été traitée en session dédiée (voir `.cursor/rules/006-phase-
 > `admin-mediatheque` (relations `Media` jamais connectées par `confirm-upload`/
 > `upload-media-buffer`) est **corrigé** (session 2026-09-19, voir `docs/features/media.md`).
 
-### Hors périmètre spec — ajouté le 2026-09-15
-- [x] ✅ **admin-ai-settings** — `/dashboard` + `/ai-settings` (routes réelles, `(admin)` est un
+### Hors périmètre spec — ajouté le 2026-09-15, étendu le 2026-10-02 (Multi-fournisseurs)
+- [x] ✅ **admin-ai-settings (fournisseurs multiples)** — `/dashboard` + `/ai-settings` (routes réelles, `(admin)` est un
       route group Next.js sans préfixe d'URL), choix du modèle IA pour l'estimation de
-      mesures (voir `docs/features/ai-model-settings.md`, `docs/pages/admin-ai-settings.md`).
-      Module backend `admin-ai-settings` distinct des 2 modules ci-dessus (`users`, `content`,
-      passés à ✅ le 2026-09-16) — ce n'est **pas** une avancée de la Phase 6 spec, seulement
-      un shell admin minimal pour cette seule fonctionnalité.
+      mesures et suggestions de patron (voir `docs/features/ai-providers.md`, `docs/pages/admin-ai-settings.md`).
+      - [x] ✅ Maquette Stitch écran principal `996ac3c27a3b4a099126604d383203ad` + tiroir de connexion `acd304bc8fcf48fb900733db616f49c4`, arbitrage des 5 points de copy (session 2026-10-02).
+      - [x] ✅ Données & Types partagés : migration Prisma `20261002134653_add_ai_provider_configs`, `@angaly/types`, `AI_KEYS_ENCRYPTION_KEY` (AES-256-GCM) dans `.env.example`/`.env` (session 2026-10-02).
+      - [x] ✅ Clean Architecture Backend API : use cases `ListAiProviders`, `UpsertAiProvider` (chiffrement AES-256-GCM + validation SSRF), `RemoveAiProvider`, `TestAiProvider`, `UpdateAiRouting`, service `AesGcmSecretCipher`, endpoints `/admin/ai-settings/providers` et `/admin/ai-settings` avec Swagger et RBAC Admin, 42 tests unitaires & intégration réussis (session 2026-10-02).
+      - [x] ✅ Inférence Multi-fournisseur `apps/ai-service` (FastAPI) : abstractions `LlmProvider`, adaptateurs Anthropic, Gemini, OpenAI-compatible (OpenAI, Mistral, Groq, OpenRouter, DeepSeek, Together, Cerebras, Meta Muse, Ollama/Custom), validation SSRF stricte avec blocage IPs de métadonnées cloud (`169.254.169.254`) et hôtes privés, endpoint `POST /v1/providers/test` avec mesure de latence en temps réel, 42 tests pytest réussis (95% de couverture) (session 2026-10-02).
+      - [x] ✅ Intégration `apps/api` `ai-inference` : service `AiProviderResolverService` avec déchiffrement à la volée des clés API, routage dynamique par usage (`MEASUREMENT_ESTIMATION` et `PATTERN_SUGGESTION`), chaîne de repli automatique vers `LOCAL_STATISTICAL` (ANSUR II) ou Gemini en dur, 26 tests Jest réussis (session 2026-10-02).
+      - [x] ✅ Frontend Haute Couture `apps/web` (`/admin/ai-settings`) : composants `ActiveModelSection`, `ConnectedProviderCard`, `ProviderCatalogGrid`, `ActiveModelSummary`, `EngineGuaranteeBanner`, `ConnectProviderDrawer` (tiroir avec masquage de clé, validation, test de connexion direct), hooks react-query (`useAiProviders`, `useAiRouting`, `useUpdateAiRouting`, `useUpsertAiProvider`, `useRemoveAiProvider`, `useTestAiProvider`), 17 tests Vitest réussis et 0 erreur de typecheck (session 2026-10-02).
+

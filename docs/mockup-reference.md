@@ -88,10 +88,10 @@ ML dans ce repo). `pattern-studio-wizard` a aussi reçu un sélecteur de taille 
 | Page (slug)                | Fiche                                     | Prompt Stitch                                          | Écran Stitch (titre)                    | Section spéc | Statut |
 | ---------------------------- | -------------------------------------------- | ----------------------------------------------------------- | ------------------------------------------ | ------------- | ------ |
 | admin-gestion-contenu           | `docs/pages/admin-gestion-contenu.md`        | `stitch-prompts/31-admin-gestion-contenu-mediatheque.md`      | ANGALY Back-office — Gestion de contenu     | §67           | ✅     |
-| admin-mediatheque                 | `docs/pages/admin-mediatheque.md`            | `stitch-prompts/31-admin-gestion-contenu-mediatheque.md`      | ANGALY Back-office — Médiathèque             | §67, §76      | ✅     |
-| admin-projets-creation           | `docs/pages/admin-projets-creation.md`       | (écran généré directement dans Stitch, pas de prompt)          | ANGALY Back-office — Projets de création    | §53, §67      | ✅     |
+| admin-projets-creation           | `docs/pages/admin-projets-creation.md`       | (écran liste généré directement dans Stitch) + `stitch-prompts/32-admin-nouveau-projet-sur-mesure.md` (formulaire nouveau projet) | ANGALY Back-office — Projets de création / Nouveau projet sur mesure | §53, §67 | ✅ |
+| admin-ai-settings (fournisseurs) | `docs/pages/admin-ai-settings.md` | `stitch-prompts/33-admin-ai-settings-fournisseurs.md` (plan : `docs/features/ai-providers.md`) | ANGALY Back-office — Paramètres IA Pattern Studio (`996ac3c27a3b4a099126604d383203ad`) + Tiroir Connecter Fournisseur (`acd304bc8fcf48fb900733db616f49c4`) | — | ✅ |
 
-*(Mise à jour 2026-10-01 : vérification StitchMCP effectuée pour les écrans `9551b85b467f43269d36e086dcc036b2` et `f7fa235d11dc4832b4d6362bf321c6d3` ; intégration et harmonisation graphique complètes selon la charte ANGALY Haute Couture).*
+*(Mise à jour 2026-10-01 : vérification StitchMCP effectuée pour les écrans `9551b85b467f43269d36e086dcc036b2` et `f7fa235d11dc4832b4d6362bf321c6d3` ; intégration et harmonisation graphique complètes selon la charte ANGALY Haute Couture. Mise à jour 2026-10-02 : vérification StitchMCP pour `stitch-prompts/32-admin-nouveau-projet-sur-mesure.md` — implémentation complète de `/projets-creation/nouveau` ; vérification StitchMCP pour `stitch-prompts/33-admin-ai-settings-fournisseurs.md` — écran principal `996ac3c27a3b4a099126604d383203ad` et tiroir de connexion `acd304bc8fcf48fb900733db616f49c4` générés, validés et implémentés de bout en bout avec tests).*
 
 ---
 
