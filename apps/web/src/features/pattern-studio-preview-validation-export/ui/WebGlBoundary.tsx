@@ -46,7 +46,9 @@ export class WebGlBoundary extends React.Component<WebGlBoundaryProps, WebGlBoun
         <p className="max-w-md text-xs leading-relaxed">
           Vérifiez que l’accélération matérielle est activée (Chrome : Paramètres → Système), fermez les onglets 3D
           inutiles, et désactivez les extensions qui bloquent WebGL/canvas (ex. protection anti-pistage de Brave ou
-          Firefox). La vue 2D reste disponible.
+          Firefox). Si l’erreur mentionne « GL_VENDOR = Disabled » : fermez Chrome complètement puis relancez-le ; sinon
+          ouvrez chrome://flags, réglez « Choose ANGLE graphics backend » sur OpenGL et activez « Override software
+          rendering list », puis relancez. Contrôle : chrome://gpu. La vue 2D reste disponible.
         </p>
         {this.state.message !== null && (
           <code className="max-w-md text-[10px] text-[#C5B190]/80 break-words">{this.state.message}</code>
