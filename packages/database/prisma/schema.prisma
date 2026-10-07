@@ -1065,3 +1065,17 @@ model PageSectionVersion {
   @@index([pageSectionId])
   @@map("page_section_versions")
 }
+
+/// Cache of the vision analysis of an inspiration photo, keyed on the SHA-256 of the original bytes:
+/// the same photo is never sent to a vision model twice. See docs/features/ai-inference.md.
+model InspirationAnalysis {
+  id               String   @id @default(cuid())
+  imageHash        String   @unique
+  features         Json
+  suggestedCutType String?
+  confidence       Float
+  modelVersion     String
+  createdAt        DateTime @default(now())
+
+  @@map("inspiration_analyses")
+}
