@@ -218,6 +218,11 @@ export const apiClient = {
   get: <T>(path: string) => request<T>(path, { method: 'GET' }),
   post: <T>(path: string, body?: unknown) =>
     request<T>(path, { method: 'POST', ...(body !== undefined && { body: JSON.stringify(body) }) }),
+  put: <T>(path: string, body?: unknown) =>
+    request<T>(path, {
+      method: 'PUT',
+      ...(body !== undefined && { body: JSON.stringify(body) }),
+    }),
   patch: <T>(path: string, body?: unknown) =>
     request<T>(path, {
       method: 'PATCH',

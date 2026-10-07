@@ -4,6 +4,7 @@ import { useFeaturedCreations } from '../hooks/useFeaturedCreations';
 import { useHomeContent } from '../hooks/useHomeContent';
 import { AteliersTeaser } from './AteliersTeaser';
 import { CategoriesSection } from './CategoriesSection';
+import { DynamicSection } from './DynamicSection';
 import { HeroSection } from './HeroSection';
 import { JournalTeaser } from './JournalTeaser';
 import { LaUneSection } from './LaUneSection';
@@ -33,6 +34,11 @@ export function HomePage() {
         </h2>
         <TestimonialsCarousel />
       </section>
+
+      {/* Dynamic Custom Sections added via Template Atelier */}
+      {content.customSections?.map((section) => (
+        <DynamicSection key={section.sectionKey} section={section} />
+      ))}
 
       <AteliersTeaser content={content.ateliersTeaser} />
       <JournalTeaser content={content.journalTeaser} />

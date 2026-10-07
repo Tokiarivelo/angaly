@@ -85,3 +85,9 @@ export const fetchSectionVersions = (pageSectionId: string): Promise<PageSection
 
 export const restoreSectionVersion = (pageSectionId: string, versionId: string): Promise<PageSectionDto> =>
   apiClient.post<PageSectionDto>(`/api/content/sections/${pageSectionId}/versions/${versionId}/restore`, {});
+
+export const createSectionDraft = (
+  page: string,
+  sectionKey: string,
+  input: SaveSectionDraftInput,
+): Promise<PageSectionDto> => saveSectionDraft(page, sectionKey, input);

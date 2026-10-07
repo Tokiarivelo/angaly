@@ -1,7 +1,9 @@
 'use client';
 
 import React, { useEffect, useMemo, useState } from 'react';
+import { useQueryClient } from '@tanstack/react-query';
 import { Locale } from '@angaly/types';
+import { Sparkles } from 'lucide-react';
 
 import { useSectionEditor } from '../hooks/useSectionEditor';
 import { useSectionsList } from '../hooks/useSectionsList';
@@ -10,6 +12,10 @@ import { mergeSectionCatalog } from '../utils/merge-section-catalog';
 import { SectionsList } from './SectionsList';
 import { SectionEditorForm } from './SectionEditorForm';
 import { VersionHistoryDrawer } from './VersionHistoryDrawer';
+import { TemplateAtelierModal } from './TemplateAtelierModal';
+import { createSectionDraft } from '../api/page-sections.api';
+import type { AddSectionPayload } from '../types/template.types';
+import { SECTION_GROUPS_KEY, sectionKey as getSectionQueryKey } from '../consts/queryKeys';
 
 interface AdminContentPageProps {
   /** Optional deep-link, e.g. `?page=accueil&section=hero` (docs/pages/admin-gestion-contenu.md). */
@@ -21,6 +27,7 @@ const UNSAVED_CHANGES_WARNING =
   'Des modifications non enregistrées seront perdues. Continuer ?';
 
 export const AdminContentPage: React.FC<AdminContentPageProps> = ({ initialPage, initialSectionKey }) => {
+  const queryClient = useQueryClient();
   const { data: groups, isLoading: isLoadingGroups } = useSectionsList();
   const [selected, setSelected] = useState<{ page: string; sectionKey: string } | null>(
     initialPage && initialSectionKey ? { page: initialPage, sectionKey: initialSectionKey } : null,
@@ -28,6 +35,9 @@ export const AdminContentPage: React.FC<AdminContentPageProps> = ({ initialPage,
   const [activeLocale, setActiveLocale] = useState<Locale>(Locale.FR);
   const [historyOpen, setHistoryOpen] = useState(false);
   const [isFormDirty, setIsFormDirty] = useState(false);
+  const [atelierOpen, setAtelierOpen] = useState(false);
+  const [atelierInitialPage, setAtelierInitialPage] = useState<string | undefined>(undefined);
+  const [isAddingSection, setIsAddingSection] = useState(false);
 
   const pages = useMemo(() => mergeSectionCatalog(groups ?? []), [groups]);
 
@@ -60,6 +70,36 @@ export const AdminContentPage: React.FC<AdminContentPageProps> = ({ initialPage,
     setActiveLocale(locale);
   }
 
+  function openAtelier(page?: string) {
+    if (!confirmDiscardIfDirty()) return;
+    setAtelierInitialPage(page ?? selected?.page ?? 'accueil');
+    setAtelierOpen(true);
+  }
+
+  async function handleAddSection(payload: AddSectionPayload) {
+    try {
+      setIsAddingSection(true);
+      await createSectionDraft(payload.page, payload.sectionKey, {
+        locale: Locale.FR,
+        titleText: payload.titleText,
+        subtitleText: payload.subtitleText,
+        bodyText: payload.bodyText,
+        ctaPrimaryLabel: payload.ctaPrimaryLabel,
+        ctaSecondaryLabel: payload.ctaSecondaryLabel,
+        dataJson: payload.dataJson,
+      });
+
+      await queryClient.invalidateQueries({ queryKey: SECTION_GROUPS_KEY });
+      await queryClient.invalidateQueries({ queryKey: getSectionQueryKey(payload.page, payload.sectionKey) });
+
+      setSelected({ page: payload.page, sectionKey: payload.sectionKey });
+      setActiveLocale(Locale.FR);
+      setAtelierOpen(false);
+    } finally {
+      setIsAddingSection(false);
+    }
+  }
+
   return (
     <div className="space-y-6">
       <div className="border-b border-angaly-border pb-6 flex flex-col sm:flex-row sm:items-end justify-between gap-4">
@@ -71,6 +111,15 @@ export const AdminContentPage: React.FC<AdminContentPageProps> = ({ initialPage,
             Modifiez les textes et images affichés sur le site public.
           </p>
         </div>
+
+        <button
+          type="button"
+          onClick={() => openAtelier()}
+          className="flex items-center gap-2 px-4 py-2.5 bg-angaly-navy text-white hover:bg-angaly-navy-blue transition-colors rounded-sm text-xs font-semibold uppercase tracking-wider shadow-sm"
+        >
+          <Sparkles size={16} className="text-angaly-champagne" />
+          <span>Atelier de Templates</span>
+        </button>
       </div>
 
       <div className="flex flex-col lg:flex-row bg-white border border-angaly-border rounded-sm shadow-sm overflow-hidden">
@@ -80,6 +129,7 @@ export const AdminContentPage: React.FC<AdminContentPageProps> = ({ initialPage,
             isLoading={isLoadingGroups}
             selected={selected}
             onSelect={selectSection}
+            onOpenAtelier={openAtelier}
           />
         </div>
 
@@ -116,6 +166,15 @@ export const AdminContentPage: React.FC<AdminContentPageProps> = ({ initialPage,
         isLoading={history.isLoading}
         onRestore={(versionId) => history.restore.mutate(versionId)}
         isRestoring={history.restore.isPending}
+      />
+
+      <TemplateAtelierModal
+        isOpen={atelierOpen}
+        onClose={() => setAtelierOpen(false)}
+        pages={pages}
+        initialPage={atelierInitialPage}
+        onAddSection={handleAddSection}
+        isAdding={isAddingSection}
       />
     </div>
   );

@@ -67,12 +67,15 @@ export const AdminSidebar: React.FC = () => {
       <nav className="flex-1 overflow-y-auto px-0 [scrollbar-width:thin] [scrollbar-color:#18375D_#061938]">
         <ul className="space-y-1">
           {visibleItems.map((item) => {
-            const isActive = pathname === item.href;
+            const isActive =
+              pathname === item.href ||
+              (item.href !== '/' && Boolean(pathname?.startsWith(`${item.href}/`)));
             const Icon = item.icon;
             return (
               <li key={item.href}>
                 <Link
                   href={item.href}
+                  aria-current={isActive ? 'page' : undefined}
                   className={`px-6 py-3.5 flex items-center gap-4 font-sans text-sm tracking-wide uppercase font-medium duration-300 ease-in-out w-full border-l-2 ${
                     isActive
                       ? 'text-[#C5B190] bg-[#0C2650] border-[#936C3E]'

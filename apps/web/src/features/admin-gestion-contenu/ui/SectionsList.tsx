@@ -1,7 +1,7 @@
 'use client';
 
 import React from 'react';
-import { FileText } from 'lucide-react';
+import { FileText, Plus } from 'lucide-react';
 import { ContentStatus } from '@angaly/types';
 
 import { Skeleton } from '@/components/ui/skeleton';
@@ -12,6 +12,7 @@ interface SectionsListProps {
   isLoading: boolean;
   selected: { page: string; sectionKey: string } | null;
   onSelect: (page: string, sectionKey: string) => void;
+  onOpenAtelier?: ((page?: string) => void) | undefined;
 }
 
 /**
@@ -34,7 +35,7 @@ function statusLabel(status: ContentStatus | null): string {
   return status === ContentStatus.PUBLISHED ? 'Publié' : 'Brouillon';
 }
 
-export const SectionsList: React.FC<SectionsListProps> = ({ pages, isLoading, selected, onSelect }) => {
+export const SectionsList: React.FC<SectionsListProps> = ({ pages, isLoading, selected, onSelect, onOpenAtelier }) => {
   if (isLoading) {
     return (
       <div className="p-4 space-y-3">
@@ -53,17 +54,41 @@ export const SectionsList: React.FC<SectionsListProps> = ({ pages, isLoading, se
 
   return (
     <div className="flex flex-col h-full">
-      <div className="p-4 border-b border-angaly-border bg-angaly-ivory/60 flex justify-between items-center sticky top-0 z-10">
-        <h2 className="text-xs font-bold uppercase tracking-widest text-angaly-navy">Arborescence</h2>
-        <span className="text-[11px] text-angaly-slate font-medium">
-          {totalSections} sections
-        </span>
+      <div className="p-4 border-b border-angaly-border bg-angaly-ivory/60 flex flex-col gap-2.5 sticky top-0 z-10">
+        <div className="flex justify-between items-center">
+          <h2 className="text-xs font-bold uppercase tracking-widest text-angaly-navy">Arborescence</h2>
+          <span className="text-[11px] text-angaly-slate font-medium">
+            {totalSections} sections
+          </span>
+        </div>
+        {onOpenAtelier && (
+          <button
+            type="button"
+            onClick={() => onOpenAtelier(selected?.page)}
+            className="w-full flex items-center justify-center gap-1.5 py-1.5 px-3 bg-angaly-navy text-white hover:bg-angaly-navy-blue transition-colors rounded-sm text-xs font-semibold uppercase tracking-wider shadow-xs"
+          >
+            <Plus size={14} />
+            <span>Ajouter une section</span>
+          </button>
+        )}
       </div>
 
       <nav aria-label="Pages et sections" className="divide-y divide-angaly-border overflow-y-auto">
         {pages.map((group) => (
           <div key={group.page} className="py-2.5">
-            <p className="px-4 text-[11px] uppercase tracking-wider text-angaly-navy font-bold mb-1.5">{group.label}</p>
+            <div className="px-4 mb-1.5 flex items-center justify-between">
+              <p className="text-[11px] uppercase tracking-wider text-angaly-navy font-bold">{group.label}</p>
+              {onOpenAtelier && (
+                <button
+                  type="button"
+                  onClick={() => onOpenAtelier(group.page)}
+                  title={`Ajouter une section à ${group.label}`}
+                  className="text-angaly-slate hover:text-angaly-gold p-0.5 rounded-sm transition-colors"
+                >
+                  <Plus size={13} />
+                </button>
+              )}
+            </div>
             {group.sections.map((section) => {
               const isActive = selected?.page === group.page && selected.sectionKey === section.sectionKey;
               return (

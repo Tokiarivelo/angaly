@@ -26,6 +26,7 @@ export interface HomeContent {
   ateliersTeaser: { headline: string };
   journalTeaser: { headline: string };
   newsletter: { headline: string };
+  customSections: PublicPageSectionDto[];
 }
 
 /**
@@ -33,6 +34,7 @@ export interface HomeContent {
  * Media URLs are automatically updated with live MinIO media when the media API resolves.
  */
 const DEFAULT_HOME_CONTENT: HomeContent = {
+  customSections: [],
   hero: {
     eyebrow: 'MAISON DE COUTURE — MADAGASCAR',
     headline: 'ANGALY',
@@ -202,9 +204,22 @@ function applyCmsSections(base: HomeContent, sections: PublicPageSectionDto[] | 
   const newsletter = byKey.get('newsletter');
   const univers = byKey.get('univers');
   const surMesure = byKey.get('sur-mesure');
+  const KNOWN_KEYS = new Set([
+    'hero',
+    'maison',
+    'pattern-studio',
+    'la-une',
+    'ateliers',
+    'journal',
+    'newsletter',
+    'univers',
+    'sur-mesure',
+  ]);
+  const customSections = (sections ?? []).filter((section) => !KNOWN_KEYS.has(section.sectionKey));
 
   return {
     ...base,
+    customSections,
     hero: {
       ...base.hero,
       eyebrow: extractEyebrow(hero?.dataJson) ?? base.hero.eyebrow,

@@ -327,6 +327,8 @@ export const SectionEditorForm: React.FC<SectionEditorFormProps> = ({
                 image={image}
                 definition={definition}
                 publicHref={pageDefinition?.route}
+                page={page}
+                sectionKey={sectionKey}
               />
             </div>
           </div>

@@ -52,7 +52,7 @@ const SUR_MESURE_CONTENT: SurMesureContent = {
   hero: {
     title: 'Sur Mesure',
     subtitle: 'Votre idée, façonnée avec précision, entièrement pour vous.',
-    imageUrl: 'https://images.unsplash.com/photo-1487412947147-5cebf100ffc2?w=1600&q=80',
+    imageUrl: 'http://localhost:9000/customers/cmtwrh5xr0024pc20vg0kvbah/52814960-1959-48c1-a6a6-e21c0c8be992.jpg',
   },
   whyChoose: {
     items: [
@@ -80,22 +80,22 @@ const SUR_MESURE_CONTENT: SurMesureContent = {
     title: 'Quelques réalisations sur mesure',
     items: [
       {
-        imageUrl: 'https://images.unsplash.com/photo-1566174053879-31528523f8ae?w=1000&q=80',
+        imageUrl: 'http://localhost:9000/creations/cmtrlefj5000kpc9sg5u0ozdd/c8c5b418-7b4d-4f5f-9a1a-73a24b1dfd89.jpg',
         title: 'Robe de Soirée Velours',
         label: 'Création Exclusive',
       },
       {
-        imageUrl: 'https://images.unsplash.com/photo-1595777457583-95e059d581b8?w=1000&q=80',
+        imageUrl: 'http://localhost:9000/creations/cmtrlefid000apc9sftyj7f4g/2dff4a60-6d6d-40f1-b9a4-61a6ae965dde.jpg',
         title: 'Robe Éternelle',
         label: 'Broderie Artisanale',
       },
       {
-        imageUrl: 'https://images.unsplash.com/photo-1490481651871-ab68de25d43d?w=1000&q=80',
+        imageUrl: 'http://localhost:9000/products/cmu4xejyd005apcatanjv7tuh/8756a619-106e-4b9f-bfce-e087ed0f9f67.jpg',
         title: 'Chemisier Soie et Dentelle',
         label: 'Ligne Couture',
       },
       {
-        imageUrl: 'https://images.unsplash.com/photo-1509631179647-0177331693ae?w=1000&q=80',
+        imageUrl: 'http://localhost:9000/creations/cmtrlefiy000ipc9sxhh8bqf7/c5292ab8-72ae-4b65-a030-40f52012d037.jpg',
         title: 'Costume Tailleur Laine',
         label: 'Savoir-Faire Tailleur',
       },
@@ -106,7 +106,7 @@ const SUR_MESURE_CONTENT: SurMesureContent = {
       "L'expérience ANGALY est incomparable. De la première esquisse à l'essayage final, j'ai ressenti un dévouement absolu à la perfection. Ma robe sur mesure est bien plus qu'un vêtement, c'est une œuvre d'art qui me ressemble.",
     name: 'Éléonore de V.',
     role: 'Cliente Sur Mesure, Paris',
-    imageUrl: 'https://images.unsplash.com/photo-1544005313-94ddf0286df2?w=400&q=80',
+    imageUrl: 'http://localhost:9000/avatars/cmtvb71a3001apc7h44gs55f3/3bbe9376-e4e6-4c5f-b960-8afadc034bdd.jpg',
   },
   faq: {
     title: 'Questions fréquentes',
