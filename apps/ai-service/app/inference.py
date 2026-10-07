@@ -47,6 +47,18 @@ def _size_chart_context() -> str:
     return "\n".join(lines)
 
 
+def _learned_context(request: PatternAiSuggestionRequest) -> str:
+    """Compact French summary of the atelier's own history, or 'Aucune' when there is none."""
+    learned = request.learned_preferences
+    if not learned or not (learned.cut_types or learned.details):
+        return "Aucune"
+    cuts = ", ".join(f"{cut} ({round(share * 100)} %)" for cut, share in learned.cut_types.items())
+    details = ", ".join(
+        f"{key}={d.value} ({round(d.share * 100)} %)" for key, d in learned.details.items()
+    )
+    return f"{learned.sample_size} projets similaires — coupes choisies : {cuts or 'n/a'} ; détails fréquents : {details or 'n/a'}"
+
+
 def suggest_pattern_parameters(
     request: PatternAiSuggestionRequest,
 ) -> PatternAiSuggestionResponse:
@@ -68,6 +80,9 @@ def suggest_pattern_parameters(
     Choisis suggestedCutType strictement parmi cette liste : {", ".join(KNOWN_CUT_TYPES)}.
     Propose des détails de construction pertinents (manches, col, longueur, etc.) dans
     suggestedDetails.
+    Historique réel de l'atelier (tendance observée, à privilégier si cohérente avec la demande,
+    sans l'imposer) : {_learned_context(request)}
+
     Caractéristiques visuelles extraites de la photo d'inspiration (à respecter si présentes) :
     {request.inspiration_features or 'Aucune'}
     """

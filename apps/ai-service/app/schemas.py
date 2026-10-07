@@ -45,6 +45,20 @@ class TestProviderResponse(BaseModel):
     model_config = {"populate_by_name": True}
 
 
+class LearnedDetail(BaseModel):
+    value: str
+    share: float
+
+
+class LearnedPreferences(BaseModel):
+    """What clients of the atelier actually built/exported for similar projects. Shares are 0..1."""
+    sample_size: int = Field(..., alias="sampleSize")
+    cut_types: dict[str, float] = Field(default_factory=dict, alias="cutTypes")
+    details: dict[str, LearnedDetail] = Field(default_factory=dict)
+
+    model_config = {"populate_by_name": True}
+
+
 class PatternAiSuggestionRequest(BaseModel):
     garment_type: str = Field(..., alias="garmentType")
     occasion: str | None = None
@@ -54,6 +68,8 @@ class PatternAiSuggestionRequest(BaseModel):
     # Compact attributes extracted once from the photo (see analyze-inspiration) — replaces the
     # image in the prompt so the suggestion call stays text-only and cheap.
     inspiration_features: dict[str, str] | None = Field(default=None, alias="inspirationFeatures")
+    # Aggregated choices of past atelier projects (see LearnedPreferences in @angaly/types).
+    learned_preferences: LearnedPreferences | None = Field(default=None, alias="learnedPreferences")
     provider: ProviderCredentials | None = None
 
     model_config = {"populate_by_name": True}

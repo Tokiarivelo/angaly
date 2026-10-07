@@ -81,3 +81,42 @@ def test_suggest_parameters_uses_features_instead_of_image(mock_anthropic) -> No
     prompt = create.call_args.kwargs["messages"][0]["content"]
     assert "col bateau" in prompt
     assert body["detectedInspirationFeatures"] == {"neckline": "col bateau"}
+
+
+@patch("app.services.providers.anthropic_provider.anthropic.Anthropic")
+def test_suggest_parameters_prompt_includes_learned_atelier_history(mock_anthropic) -> None:
+    create = mock_anthropic.return_value.messages.create
+    create.return_value = MagicMock(
+        content=[MagicMock(text='{"suggestedCutType": "EVASEE", "suggestedDetails": {}, "confidence": 0.7, "modelVersion": "x"}')]
+    )
+    client.post(
+        "/v1/pattern/suggest-parameters",
+        json={
+            "garmentType": "ROBE",
+            "measurements": {},
+            "learnedPreferences": {
+                "sampleSize": 12,
+                "cutTypes": {"EVASEE": 0.7},
+                "details": {"encolure": {"value": "bateau", "share": 0.8}},
+            },
+            "provider": PROVIDER,
+        },
+    )
+    prompt = create.call_args.kwargs["messages"][0]["content"]
+    assert "12 projets similaires" in prompt
+    assert "EVASEE (70 %)" in prompt
+    assert "encolure=bateau (80 %)" in prompt
+
+
+@patch("app.services.providers.anthropic_provider.anthropic.Anthropic")
+def test_suggest_parameters_prompt_without_history(mock_anthropic) -> None:
+    create = mock_anthropic.return_value.messages.create
+    create.return_value = MagicMock(
+        content=[MagicMock(text='{"suggestedCutType": "DROITE", "suggestedDetails": {}, "confidence": 0.7, "modelVersion": "x"}')]
+    )
+    client.post(
+        "/v1/pattern/suggest-parameters",
+        json={"garmentType": "ROBE", "measurements": {}, "provider": PROVIDER},
+    )
+    assert "Historique réel de l'atelier" in create.call_args.kwargs["messages"][0]["content"]
+    assert "Aucune" in create.call_args.kwargs["messages"][0]["content"]
