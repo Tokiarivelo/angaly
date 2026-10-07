@@ -154,7 +154,7 @@ export class GenerateCreationProjectAiPatternUseCase {
           style: dto.style ?? null,
           occasion: null,
           measurements: finalMeasurements,
-          inspirationImageUrl: null,
+          inspirationImageUrl: dto.inspirationImageUrl ?? null,
         });
 
         aiSuggestion = {

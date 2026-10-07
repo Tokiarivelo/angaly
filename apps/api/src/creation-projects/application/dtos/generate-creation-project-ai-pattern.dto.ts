@@ -1,5 +1,5 @@
 import { ApiProperty, ApiPropertyOptional } from '@nestjs/swagger';
-import { IsBoolean, IsIn, IsObject, IsOptional, IsString } from 'class-validator';
+import { IsBoolean, IsIn, IsObject, IsOptional, IsString, IsUrl } from 'class-validator';
 import type { CreationProjectGarmentType } from '@angaly/types';
 
 export const VALID_GARMENT_TYPES: readonly CreationProjectGarmentType[] = [
@@ -24,6 +24,15 @@ export class GenerateCreationProjectAiPatternDto {
   })
   garmentType!: CreationProjectGarmentType;
 
+
+  @ApiPropertyOptional({
+    description:
+      "URL d'une photo d'inspiration (média MinIO). Analysée une seule fois (cache par empreinte) puis utilisée sous forme de texte.",
+    example: 'https://cdn.angaly.test/creations/robe-inspiration.jpg',
+  })
+  @IsOptional()
+  @IsUrl({ require_tld: false })
+  inspirationImageUrl?: string;
 
   @ApiPropertyOptional({
     description: 'Coupe souhaitée (ex: DROITE, EVASEE, SIRENE, TRAPEZE)',

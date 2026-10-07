@@ -667,6 +667,8 @@ export interface GenerateCreationProjectAiPatternInput {
   details?: Record<string, string> | undefined;
   measurements?: Record<string, number> | undefined;
   requestAiSuggestion?: boolean | undefined;
+  /** Photo d'inspiration (URL MinIO) : lue une seule fois par un modèle de vision, puis mise en cache. */
+  inspirationImageUrl?: string | undefined;
   saveMedia?: boolean | undefined;
   addNote?: boolean | undefined;
 }

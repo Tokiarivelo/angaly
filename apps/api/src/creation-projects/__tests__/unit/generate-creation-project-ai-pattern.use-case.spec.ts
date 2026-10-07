@@ -137,6 +137,36 @@ describe('GenerateCreationProjectAiPatternUseCase', () => {
     expect(repository.addStageNote).toHaveBeenCalledTimes(1);
   });
 
+  it('forwards the inspiration photo URL to the AI suggestion', async () => {
+    repository.findById.mockResolvedValue(mockProject);
+    suggestPatternParametersUseCase.execute.mockResolvedValue({
+      suggestion: {
+        suggestedCutType: 'EVASEE',
+        suggestedDetails: {},
+        confidence: 0.9,
+        modelVersion: 'v1',
+        detectedInspirationFeatures: { neckline: 'col bateau' },
+      },
+      isIndicativeOnly: false,
+    });
+    generatePatternPiecesUseCase.execute.mockResolvedValue({
+      pieces: mockPieces,
+      warnings: [],
+      metadata: { engineVersion: '0.1.0', generatedAt: new Date().toISOString() },
+    });
+
+    await useCase.execute('proj-1', {
+      garmentType: 'ROBE',
+      inspirationImageUrl: 'https://cdn.angaly.test/a.jpg',
+      saveMedia: false,
+      addNote: false,
+    });
+
+    expect(suggestPatternParametersUseCase.execute).toHaveBeenCalledWith(
+      expect.objectContaining({ inspirationImageUrl: 'https://cdn.angaly.test/a.jpg' }),
+    );
+  });
+
   it('throws NotFoundException when project is not found', async () => {
     repository.findById.mockResolvedValue(null);
 
