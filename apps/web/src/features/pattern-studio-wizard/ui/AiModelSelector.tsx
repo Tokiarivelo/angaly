@@ -16,7 +16,18 @@ export const AiModelSelector: React.FC<AiModelSelectorProps> = ({
   onChange,
   disabled = false,
 }) => {
-  if (providers.length === 0) return null;
+  if (providers.length === 0) {
+    // Never silently absent: tell the user which model is used when the list cannot be offered.
+    return (
+      <p
+        data-testid="ai-model-automatic"
+        className="mt-4 px-1 inline-flex items-center gap-1.5 text-xs text-[#D8D3C8]/80"
+      >
+        <Cpu className="w-3.5 h-3.5 text-[#C5B190]" aria-hidden="true" />
+        Modèle IA : automatique (réglage de l’atelier)
+      </p>
+    );
+  }
 
   return (
     <div className="mt-4 flex flex-col sm:flex-row sm:items-center gap-2 sm:gap-3 px-1">

@@ -10,9 +10,10 @@ const providers = [
 ];
 
 describe('AiModelSelector', () => {
-  it('renders nothing when no provider is selectable', () => {
-    const { container } = render(<AiModelSelector providers={[]} value={undefined} onChange={vi.fn()} />);
-    expect(container).toBeEmptyDOMElement();
+  it('tells the atelier default is used when no provider can be offered', () => {
+    render(<AiModelSelector providers={[]} value={undefined} onChange={vi.fn()} />);
+    expect(screen.getByTestId('ai-model-automatic')).toHaveTextContent('automatique');
+    expect(screen.queryByRole('combobox')).not.toBeInTheDocument();
   });
 
   it('offers automatic routing plus each provider and reports the choice', async () => {
