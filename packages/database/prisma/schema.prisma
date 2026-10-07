@@ -151,6 +151,32 @@ enum AiMeasurementModel {
   LOCAL_STATISTICAL
 }
 
+enum AiProviderId {
+  ANTHROPIC
+  GEMINI
+  OPENAI
+  META_MUSE
+  MISTRAL
+  GROQ
+  OPENROUTER
+  DEEPSEEK
+  TOGETHER
+  CEREBRAS
+  CUSTOM_OPENAI
+  LOCAL_STATISTICAL
+}
+
+enum AiProviderStatus {
+  UNTESTED
+  OK
+  INVALID
+}
+
+enum AiUsage {
+  MEASUREMENT_ESTIMATION
+  PATTERN_SUGGESTION
+}
+
 enum FavoriteEntityType {
   CREATION
   PRODUCT
@@ -210,6 +236,8 @@ model User {
   assignedAppointments       Appointment[]               @relation("AppointmentAssignee")
   assignedCreationProjects   CreationProject[]           @relation("CreationProjectAssignee")
   creationProjectStageEvents CreationProjectStageEvent[]
+  creationProjectStageNotes  CreationProjectStageNote[]
+  creationProjectStageMedia  CreationProjectStageMedia[]
   reviewedPatternVersions    PatternVersion[]            @relation("PatternVersionReviewer")
   uploadedMedia              Media[]
   pageSectionEdits           PageSectionVersion[]
@@ -218,6 +246,7 @@ model User {
   refreshTokens              RefreshToken[]
   passwordResetTokens        PasswordResetToken[]
   aiModelSettingEdits        AiModelSetting[]
+  aiProviderConfigEdits      AiProviderConfig[]
 
   @@index([email])
   @@index([role])
@@ -578,6 +607,8 @@ model CreationProject {
   creation    Creation?                   @relation(fields: [creationId], references: [id])
   assignedTo  User?                       @relation("CreationProjectAssignee", fields: [assignedToId], references: [id], onDelete: SetNull)
   stageEvents CreationProjectStageEvent[]
+  stageNotes  CreationProjectStageNote[]
+  stageMedia  CreationProjectStageMedia[]
 
   @@index([customerId, createdAt])
   @@index([stage])
@@ -599,6 +630,43 @@ model CreationProjectStageEvent {
 
   @@index([projectId, createdAt])
   @@map("creation_project_stage_events")
+}
+
+/// Notes d'atelier par étape d'un projet de création sur mesure.
+model CreationProjectStageNote {
+  id        String               @id @default(cuid())
+  projectId String
+  stage     CreationProjectStage
+  content   String
+  authorId  String?
+  createdAt DateTime             @default(now())
+  updatedAt DateTime             @updatedAt
+
+  project CreationProject @relation(fields: [projectId], references: [id], onDelete: Cascade)
+  author  User?           @relation(fields: [authorId], references: [id], onDelete: SetNull)
+
+  @@index([projectId, stage, createdAt])
+  @@map("creation_project_stage_notes")
+}
+
+/// Fichiers médias et documents par étape d'un projet de création sur mesure.
+model CreationProjectStageMedia {
+  id           String               @id @default(cuid())
+  projectId    String
+  stage        CreationProjectStage
+  url          String
+  title        String?
+  fileName     String?
+  mimeType     String?
+  sizeBytes    Int?
+  uploadedById String?
+  createdAt    DateTime             @default(now())
+
+  project    CreationProject @relation(fields: [projectId], references: [id], onDelete: Cascade)
+  uploadedBy User?           @relation(fields: [uploadedById], references: [id], onDelete: SetNull)
+
+  @@index([projectId, stage, createdAt])
+  @@map("creation_project_stage_media")
 }
 
 // ============================================================
@@ -733,19 +801,43 @@ model AIConversation {
 }
 
 /// Singleton row (fixed id "singleton") — admin-controlled choice of AI backend
-/// for measurement estimation. Read by `ai-inference` on every generation that
-/// needs to estimate missing measurements; written only via the ADMIN-only
-/// `/admin/ai-settings` endpoint. See docs/features/ai-model-settings.md.
+/// for measurement estimation and pattern suggestions. Read by `ai-inference` on every generation that
+/// needs to estimate missing measurements or suggest pattern parameters; written only via the ADMIN-only
+/// `/admin/ai-settings` endpoint. See docs/features/ai-providers.md.
 model AiModelSetting {
-  id               String             @id @default("singleton")
-  measurementModel AiMeasurementModel @default(GEMINI)
-  updatedById      String?
-  updatedAt        DateTime           @updatedAt
-  createdAt        DateTime           @default(now())
+  id                         String             @id @default("singleton")
+  measurementModel           AiMeasurementModel @default(GEMINI)
+  measurementProvider        AiProviderId       @default(GEMINI)
+  patternSuggestionProvider  AiProviderId       @default(GEMINI)
+  updatedById                String?
+  updatedAt                  DateTime           @updatedAt
+  createdAt                  DateTime           @default(now())
 
   updatedBy User? @relation(fields: [updatedById], references: [id])
 
   @@map("ai_model_settings")
+}
+
+/// Configuration persisted per AI provider (API key encrypted with AES-256-GCM, model, status, latency).
+/// Specified in docs/features/ai-providers.md.
+model AiProviderConfig {
+  id            String           @id @default(cuid())
+  provider      AiProviderId     @unique
+  model         String
+  baseUrl       String?
+  apiKeyCipher  String?
+  apiKeyLast4   String?
+  status        AiProviderStatus @default(UNTESTED)
+  lastTestedAt  DateTime?
+  lastLatencyMs Int?
+  enabled       Boolean          @default(true)
+  updatedById   String?
+  updatedAt     DateTime         @updatedAt
+  createdAt     DateTime         @default(now())
+
+  updatedBy User? @relation(fields: [updatedById], references: [id])
+
+  @@map("ai_provider_configs")
 }
 
 // ============================================================

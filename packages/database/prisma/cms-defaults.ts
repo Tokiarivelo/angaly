@@ -255,10 +255,10 @@ export const CMS_DEFAULT_SECTIONS: CmsDefaultSection[] = [
     titleText: 'Quelques réalisations sur mesure',
     dataJson: {
       items: [
-        { title: 'Robe de Soirée Velours', label: 'Création Exclusive', imageUrl: 'https://images.unsplash.com/photo-1566174053879-31528523f8ae?w=1000&q=80' },
-        { title: 'Robe Éternelle', label: 'Broderie Artisanale', imageUrl: 'https://images.unsplash.com/photo-1595777457583-95e059d581b8?w=1000&q=80' },
-        { title: 'Chemisier Soie et Dentelle', label: 'Ligne Couture', imageUrl: 'https://images.unsplash.com/photo-1490481651871-ab68de25d43d?w=1000&q=80' },
-        { title: 'Costume Tailleur Laine', label: 'Savoir-Faire Tailleur', imageUrl: 'https://images.unsplash.com/photo-1509631179647-0177331693ae?w=1000&q=80' },
+        { title: 'Robe de Soirée Velours', label: 'Création Exclusive', imageUrl: 'http://localhost:9000/creations/cmtrlefj5000kpc9sg5u0ozdd/c8c5b418-7b4d-4f5f-9a1a-73a24b1dfd89.jpg' },
+        { title: 'Robe Éternelle', label: 'Broderie Artisanale', imageUrl: 'http://localhost:9000/creations/cmtrlefid000apc9sftyj7f4g/2dff4a60-6d6d-40f1-b9a4-61a6ae965dde.jpg' },
+        { title: 'Chemisier Soie et Dentelle', label: 'Ligne Couture', imageUrl: 'http://localhost:9000/products/cmu4xejyd005apcatanjv7tuh/8756a619-106e-4b9f-bfce-e087ed0f9f67.jpg' },
+        { title: 'Costume Tailleur Laine', label: 'Savoir-Faire Tailleur', imageUrl: 'http://localhost:9000/creations/cmtrlefiy000ipc9sxhh8bqf7/c5292ab8-72ae-4b65-a030-40f52012d037.jpg' },
       ],
     },
   }),
@@ -416,16 +416,62 @@ export const CMS_DEFAULT_SECTIONS: CmsDefaultSection[] = [
   }),
 ];
 
-/** Create-only insert of every default section (a row that already exists — possibly edited — is left untouched). */
+/** Create-only insert of every default section (a row that already exists — possibly edited — is left untouched, except resolving missing media/MinIO URLs for sur-mesure). */
 export async function seedCmsDefaults(prisma: PrismaClient, updatedById: string | null = null): Promise<{ created: number; skipped: number }> {
   let created = 0;
   let skipped = 0;
+
+  // Resolve media for sur-mesure if existing in database
+  const heroMedia = await prisma.media.findFirst({
+    where: { altText: { contains: 'étoffes de soie' } },
+  }) ?? await prisma.media.findFirst({
+    where: { altText: { contains: 'Robe de mariée' } },
+  });
+
+  const testimonialMedia = await prisma.media.findFirst({
+    where: { entityType: 'CUSTOMER_AVATAR' },
+  });
+
   for (const section of CMS_DEFAULT_SECTIONS) {
     const where = { page_sectionKey_locale: { page: section.page, sectionKey: section.sectionKey, locale: section.locale } };
-    if (await prisma.pageSection.findUnique({ where })) {
+    const existing = await prisma.pageSection.findUnique({ where });
+
+    if (existing) {
+      // If sur-mesure realisations contains legacy unsplash URLs, update with MinIO URLs
+      if (section.page === 'sur-mesure' && section.sectionKey === 'realisations') {
+        const existingDataStr = JSON.stringify(existing.dataJson ?? {});
+        if (existingDataStr.includes('unsplash.com') && section.dataJson) {
+          await prisma.pageSection.update({
+            where,
+            data: { dataJson: section.dataJson as never },
+          });
+        }
+      }
+      // If sur-mesure hero or temoignage has missing mediaId, link it
+      if (section.page === 'sur-mesure' && section.sectionKey === 'hero' && !existing.mediaId && heroMedia) {
+        await prisma.pageSection.update({
+          where,
+          data: { mediaId: heroMedia.id },
+        });
+      }
+      if (section.page === 'sur-mesure' && section.sectionKey === 'temoignage' && !existing.mediaId && testimonialMedia) {
+        await prisma.pageSection.update({
+          where,
+          data: { mediaId: testimonialMedia.id },
+        });
+      }
+
       skipped += 1;
       continue;
     }
+
+    let mediaId: string | null = null;
+    if (section.page === 'sur-mesure' && section.sectionKey === 'hero') {
+      mediaId = heroMedia?.id ?? null;
+    } else if (section.page === 'sur-mesure' && section.sectionKey === 'temoignage') {
+      mediaId = testimonialMedia?.id ?? null;
+    }
+
     await prisma.pageSection.create({
       data: {
         page: section.page,
@@ -438,6 +484,7 @@ export async function seedCmsDefaults(prisma: PrismaClient, updatedById: string 
         ctaSecondaryLabel: section.ctaSecondaryLabel ?? null,
         ...(section.dataJson ? { dataJson: section.dataJson as never } : {}),
         status: section.status,
+        mediaId,
         updatedById,
       },
     });

@@ -1901,6 +1901,28 @@ async function main() {
       ctaPrimaryLabel: 'Prendre rendez-vous',
       status: ContentStatus.PUBLISHED,
     },
+    // --- Page Sections (Sur Mesure) ---------------------------------------------------
+    {
+      page: 'sur-mesure',
+      sectionKey: 'hero',
+      locale: Locale.FR,
+      titleText: 'Sur Mesure',
+      subtitleText: 'Votre idée, façonnée avec précision, entièrement pour vous.',
+      status: ContentStatus.PUBLISHED,
+      photo: 'http://localhost:9000/customers/cmtwrh5xr0024pc20vg0kvbah/52814960-1959-48c1-a6a6-e21c0c8be992.jpg',
+      photoAlt: 'Atelier de couture Angaly à Madagascar, étoffes de soie drapées à la lumière dorée',
+    },
+    {
+      page: 'sur-mesure',
+      sectionKey: 'temoignage',
+      locale: Locale.FR,
+      bodyText:
+        "L'expérience ANGALY est incomparable. De la première esquisse à l'essayage final, j'ai ressenti un dévouement absolu à la perfection. Ma robe sur mesure est bien plus qu'un vêtement, c'est une œuvre d'art qui me ressemble.",
+      dataJson: { name: 'Éléonore de V.', role: 'Cliente Sur Mesure, Paris' },
+      status: ContentStatus.PUBLISHED,
+      photo: 'http://localhost:9000/avatars/cmtvb71a3001apc7h44gs55f3/3bbe9376-e4e6-4c5f-b960-8afadc034bdd.jpg',
+      photoAlt: 'Éléonore de V. — Cliente Sur Mesure',
+    },
   ];
 
   const createdPageSections = new Map<string, { id: string }>();
@@ -2287,15 +2309,31 @@ async function downloadPhoto(photoSource: string): Promise<Buffer> {
     photoSource.startsWith('http://') || photoSource.startsWith('https://')
       ? photoSource
       : `https://images.unsplash.com/photo-${photoSource}?w=1600&q=80&fm=jpg`;
-  const response = await fetch(url, {
-    headers: {
-      'User-Agent': 'Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/120.0.0.0 Safari/537.36',
-    },
-  });
-  if (!response.ok) {
-    throw new Error(`Échec du téléchargement de la photo ${photoSource} : ${String(response.status)}`);
+
+  try {
+    const response = await fetch(url, {
+      signal: AbortSignal.timeout(5000),
+      headers: {
+        'User-Agent': 'Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/120.0.0.0 Safari/537.36',
+      },
+    });
+    if (response.ok) {
+      return Buffer.from(await response.arrayBuffer());
+    }
+  } catch (error) {
+    // If external fetch fails (e.g. offline/network firewall), try to fallback to an existing MinIO photo
+    try {
+      const fallbackUrl = 'http://localhost:9000/customers/cmtwrh5xr0024pc20vg0kvbah/52814960-1959-48c1-a6a6-e21c0c8be992.jpg';
+      const fallbackRes = await fetch(fallbackUrl);
+      if (fallbackRes.ok) {
+        return Buffer.from(await fallbackRes.arrayBuffer());
+      }
+    } catch {
+      // ignore
+    }
+    throw new Error(`Échec du téléchargement de la photo ${photoSource} : ${error instanceof Error ? error.message : String(error)}`);
   }
-  return Buffer.from(await response.arrayBuffer());
+  throw new Error(`Échec du téléchargement de la photo ${photoSource}`);
 }
 
 async function attachPhoto(
