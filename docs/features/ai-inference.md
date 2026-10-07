@@ -164,6 +164,32 @@ URL (média MinIO) → fetchOriginal (HTTPS, ≤10 Mo, image/*)
   n'empêche pas la suggestion (dégradation sans photo).
 - Variables : `INSPIRATION_IMAGE_MAX_PX` (1024), `INSPIRATION_IMAGE_MAX_BYTES` (10485760).
 
+## Choix du modèle dans Pattern Studio
+
+`GET /ai-inference/selectable-providers` (tout utilisateur connecté) renvoie le modèle local + les fournisseurs
+activés dont le dernier test n'a pas échoué, avec uniquement `{provider, name, model}` (jamais de clé ni d'URL),
+et le choix par défaut de l'atelier. Le wizard (`/pattern-studio/wizard/:id`, étapes Coupe et Mesures) affiche
+« Modèle IA » : « Automatique » (réglage de l'atelier) ou un fournisseur. Le choix (`aiProvider`) est envoyé à
+`POST /ai-inference/pattern-suggestions` et à `POST /pattern-projects/:id/generate` (estimation des mesures
+manquantes). Un choix inutilisable retombe sur le routage par défaut (`AiProviderResolverService.resolveSelected`).
+La géométrie reste produite par `pattern-engine` : le modèle propose et estime, il ne trace pas.
+
+## Apprentissage automatique (boucle de retour)
+
+Pas d'entraînement de modèle : agrégation déterministe de ce que les clients **génèrent et exportent**.
+
+1. Génération réussie → `PatternLearningRecord` (1 ligne par projet : type, occasion, style, coupe, détails,
+   `outcome = GENERATED`, rafraîchie à chaque regénération). Export du patron → `outcome = EXPORTED`.
+2. À chaque suggestion, `PatternLearningService` agrège les 300 derniers projets du même vêtement : poids 1
+   (généré) / 3 (exporté), ×2 si même style ou occasion. Seuil : ≥ 5 d'évidence pondérée, part ≥ 30 %.
+3. Le résumé (`learnedPreferences`) est ajouté au prompt de l'ai-service (« historique réel de l'atelier »).
+4. Si l'IA est injoignable, la suggestion vient de l'historique (`learned-history-1`, confiance ≤ 0,45 donc
+   toujours « indicative ») au lieu d'une coupe fixe.
+
+Garde-fous : l'enregistrement est best-effort (jamais bloquant) ; l'historique n'influence que la suggestion,
+jamais la géométrie (ADR-005) ; aucune donnée personnelle (ni client, ni mesures) n'est stockée dans ces lignes.
+À étudier : apprendre aussi des corrections de mesures estimées, et des refus lors de la revue d'atelier.
+
 ## Points d'attention
 
 - **Une suggestion n'est jamais la source de vérité** (ADR-005) : `confidence` proche de 0 ou

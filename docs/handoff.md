@@ -133,3 +133,13 @@ Modifications locales vérifiées et prêtes :
   brancher l'upload de photo côté UI Pattern Studio / projet de création (passer l'URL MinIO en `inspirationImageUrl`) ;
   envisager un modèle de vision dédié (Haiku / Gemini Flash) distinct du modèle de suggestion ; nettoyer les erreurs ESLint
   historiques de `ai-inference`.
+
+## 2026-10-07 (suite) — Choix du modèle + apprentissage
+
+- Fait : sélecteur « Modèle IA » dans le wizard (étapes 4 et 7) ; `GET /ai-inference/selectable-providers` ;
+  `aiProvider` sur suggestions et génération ; table `pattern_learning_records` (migration `20261007150000`,
+  appliquée en local) ; `PatternLearningService` + repli sur l'historique ; photo d'inspiration dans la modale IA
+  des projets de création ; lint des fichiers de production d'`ai-inference`.
+- Tests : api `jest src/ai-inference src/patterns` ✓, web `vitest src/features/pattern-studio-wizard` ✓, ai-service pytest 48 ✓.
+- À faire : vérifier visuellement le sélecteur sur la maquette Stitch (non consultée) ; apprendre des corrections de
+  mesures ; `ai-assistant.controller` lit `req.user.id` alors que le payload JWT expose `sub` (bug probable existant).
