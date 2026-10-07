@@ -118,3 +118,16 @@ export interface AiProviderModelsResponse {
   source: 'remote' | 'fallback';
   message?: string | undefined;
 }
+
+/** Fournisseur proposé à l'utilisateur dans Pattern Studio (jamais de clé ni d'URL interne) */
+export interface SelectableAiProvider {
+  provider: AiProviderId;
+  name: string;
+  model: string;
+}
+
+/** Fournisseurs sélectionnables + choix par défaut de l'atelier (`null` = repli automatique) */
+export interface SelectableAiProvidersResponse {
+  providers: SelectableAiProvider[];
+  defaultProvider: AiProviderId | null;
+}

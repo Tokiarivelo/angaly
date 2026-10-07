@@ -782,7 +782,16 @@ export interface PatternAiSuggestionRequest {
   inspirationImageUrl: string | null;
   /** Compact attributes already extracted from the photo — avoids re-sending the image. */
   inspirationFeatures?: Record<string, string> | null;
+  /** Observed atelier choices for similar projects — grounds the suggestion, never geometry. */
+  learnedPreferences?: LearnedPreferences | null;
   provider?: ProviderCredentials;
+}
+
+/** Aggregated from past generated/exported patterns (see PatternLearningRecord). Shares are 0..1. */
+export interface LearnedPreferences {
+  sampleSize: number;
+  cutTypes: Record<string, number>;
+  details: Record<string, { value: string; share: number }>;
 }
 
 /** apps/api → apps/ai-service: one downscaled inspiration photo (base64 stays on the internal network). */
