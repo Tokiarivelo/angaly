@@ -18,6 +18,11 @@ import { AiInspirationController } from './presentation/controllers/ai-inspirati
 import { AiPatternSuggestionsController } from './presentation/controllers/ai-pattern-suggestions.controller';
 import { AiAvailableModelsController } from './presentation/controllers/ai-available-models.controller';
 
+import { INSPIRATION_ANALYSIS_REPOSITORY } from './domain/repositories/inspiration-analysis.repository';
+import { INSPIRATION_IMAGE_PREPROCESSOR } from './domain/services/inspiration-image-preprocessor.service';
+import { PrismaInspirationAnalysisRepository } from './infrastructure/repositories/prisma-inspiration-analysis.repository';
+import { SharpInspirationImagePreprocessor } from './infrastructure/services/sharp-inspiration-image-preprocessor';
+import { AnalyzeInspirationImageUseCase } from './application/use-cases/analyze-inspiration-image.use-case';
 import { AiProviderResolverService } from './application/services/ai-provider-resolver.service';
 
 @Module({
@@ -33,8 +38,11 @@ import { AiProviderResolverService } from './application/services/ai-provider-re
       provide: AI_CONVERSATION_REPOSITORY,
       useClass: PrismaAIConversationRepository,
     },
+    { provide: INSPIRATION_ANALYSIS_REPOSITORY, useClass: PrismaInspirationAnalysisRepository },
+    { provide: INSPIRATION_IMAGE_PREPROCESSOR, useClass: SharpInspirationImagePreprocessor },
     AiServiceHttpClient,
     AiProviderResolverService,
+    AnalyzeInspirationImageUseCase,
     SuggestPatternParametersUseCase,
     EstimateMissingMeasurementsUseCase,
     SendAssistantMessageUseCase,

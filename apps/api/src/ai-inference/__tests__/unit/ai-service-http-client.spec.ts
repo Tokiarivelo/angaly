@@ -169,4 +169,19 @@ describe('AiServiceHttpClient', () => {
       expect(result).toEqual({ measurementEstimation: ['GEMINI'] });
     });
   });
+
+  it('analyzeInspiration posts the downscaled image and degrades to a zero-confidence fallback', async () => {
+    const analysis = { features: { neckline: 'col bateau' }, suggestedCutType: 'EVASEE', confidence: 0.8, modelVersion: 'v1' };
+    fetchMock.mockResolvedValueOnce({ ok: true, json: () => Promise.resolve(analysis) });
+
+    await expect(client.analyzeInspiration({ imageBase64: 'abc', mimeType: 'image/jpeg' })).resolves.toEqual(analysis);
+    expect(fetchMock).toHaveBeenCalledWith(
+      expect.stringContaining('/v1/pattern/analyze-inspiration'),
+      expect.objectContaining({ method: 'POST' }),
+    );
+
+    fetchMock.mockResolvedValueOnce({ ok: false, status: 500 });
+    const fallback = await client.analyzeInspiration({ imageBase64: 'abc', mimeType: 'image/jpeg' });
+    expect(fallback).toMatchObject({ confidence: 0, modelVersion: 'fallback-0.0.0', features: {} });
+  });
 });

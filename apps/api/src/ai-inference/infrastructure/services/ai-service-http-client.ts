@@ -2,6 +2,8 @@ import { Injectable, Logger } from '@nestjs/common';
 import { ConfigService } from '@nestjs/config';
 import {
   AvailableModelsResponse,
+  InspirationAnalysisRequest,
+  InspirationAnalysisResponse,
   PatternAiSuggestionRequest,
   PatternAiSuggestionResponse,
   PatternMeasurementEstimationRequest,
@@ -48,6 +50,27 @@ export class AiServiceHttpClient {
         confidence: 0,
         modelVersion: 'fallback-0.0.0',
       };
+    }
+  }
+
+  async analyzeInspiration(request: InspirationAnalysisRequest): Promise<InspirationAnalysisResponse> {
+    try {
+      const response = await fetch(`${this.baseUrl}/v1/pattern/analyze-inspiration`, {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify(request),
+        // Vision calls are slower than text-only ones.
+        signal: AbortSignal.timeout(Math.max(this.timeoutMs, 20000)),
+      });
+
+      if (!response.ok) {
+        throw new Error(`AI service responded with status ${response.status}`);
+      }
+
+      return (await response.json()) as InspirationAnalysisResponse;
+    } catch (error) {
+      this.logger.error(`Failed to analyze inspiration image: ${error instanceof Error ? error.message : String(error)}`);
+      return { features: {}, suggestedCutType: null, confidence: 0, modelVersion: 'fallback-0.0.0' };
     }
   }
 

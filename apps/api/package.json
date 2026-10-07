@@ -36,7 +36,8 @@
     "pdf-lib": "^1.17.1",
     "prisma": "^6.5.0",
     "reflect-metadata": "^0.2.2",
-    "rxjs": "^7.8.1"
+    "rxjs": "^7.8.1",
+    "sharp": "0.34.5"
   },
   "devDependencies": {
     "@angaly/eslint-config": "workspace:*",
