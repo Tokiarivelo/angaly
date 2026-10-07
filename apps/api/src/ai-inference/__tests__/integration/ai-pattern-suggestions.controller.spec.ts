@@ -8,11 +8,13 @@ import request from 'supertest';
 import { ACCESS_TOKEN_SERVICE } from '../../../auth/domain/services/access-token.service';
 import { JwtAuthGuard } from '../../../auth/presentation/guards/jwt-auth.guard';
 import { SuggestPatternParametersUseCase } from '../../application/use-cases/suggest-pattern-parameters.use-case';
+import { AiProviderResolverService } from '../../application/services/ai-provider-resolver.service';
 import { AiPatternSuggestionsController } from '../../presentation/controllers/ai-pattern-suggestions.controller';
 
 describe('AiPatternSuggestionsController (integration)', () => {
   let app: INestApplication;
   const suggestPatternParametersUseCase = { execute: jest.fn() };
+  const providerResolver = { resolveSelected: jest.fn() };
   const accessTokenService = { sign: jest.fn(), verify: jest.fn() };
 
   beforeAll(async () => {
@@ -20,6 +22,7 @@ describe('AiPatternSuggestionsController (integration)', () => {
       controllers: [AiPatternSuggestionsController],
       providers: [
         { provide: SuggestPatternParametersUseCase, useValue: suggestPatternParametersUseCase },
+        { provide: AiProviderResolverService, useValue: providerResolver },
         JwtAuthGuard,
         { provide: ACCESS_TOKEN_SERVICE, useValue: accessTokenService },
       ],
@@ -29,6 +32,7 @@ describe('AiPatternSuggestionsController (integration)', () => {
     app.useGlobalPipes(new ValidationPipe({ whitelist: true, forbidNonWhitelisted: true, transform: true }));
     await app.init();
     accessTokenService.verify.mockReturnValue({ sub: 'user-1', role: 'CLIENT' });
+    providerResolver.resolveSelected.mockResolvedValue(undefined);
   });
 
   afterAll(async () => {
@@ -37,6 +41,7 @@ describe('AiPatternSuggestionsController (integration)', () => {
 
   afterEach(() => {
     jest.clearAllMocks();
+    providerResolver.resolveSelected.mockResolvedValue(undefined);
     accessTokenService.verify.mockReturnValue({ sub: 'user-1', role: 'CLIENT' });
   });
 
@@ -76,5 +81,33 @@ describe('AiPatternSuggestionsController (integration)', () => {
       .expect(400);
 
     expect(suggestPatternParametersUseCase.execute).not.toHaveBeenCalled();
+  });
+
+  it('uses the AI provider chosen in the wizard when it is usable', async () => {
+    const credentials = { provider: 'ANTHROPIC', model: 'claude-haiku-4-5-20251001', apiKey: 'k' };
+    providerResolver.resolveSelected.mockResolvedValue(credentials);
+    suggestPatternParametersUseCase.execute.mockResolvedValue({
+      suggestion: { suggestedCutType: 'DROITE', suggestedDetails: {}, detectedInspirationFeatures: null, confidence: 0.8, modelVersion: 'm' },
+      isIndicativeOnly: false,
+    });
+
+    await request(server())
+      .post('/ai-inference/pattern-suggestions')
+      .set('Authorization', 'Bearer valid-token')
+      .send({ garmentType: 'ROBE', measurements: {}, aiProvider: 'ANTHROPIC' })
+      .expect(201);
+
+    expect(providerResolver.resolveSelected).toHaveBeenCalledWith('ANTHROPIC', 'PATTERN_SUGGESTION');
+    expect(suggestPatternParametersUseCase.execute).toHaveBeenCalledWith(
+      expect.objectContaining({ provider: credentials }),
+    );
+  });
+
+  it('rejects an unknown aiProvider value with 400', async () => {
+    await request(server())
+      .post('/ai-inference/pattern-suggestions')
+      .set('Authorization', 'Bearer valid-token')
+      .send({ garmentType: 'ROBE', measurements: {}, aiProvider: 'NOPE' })
+      .expect(400);
   });
 });

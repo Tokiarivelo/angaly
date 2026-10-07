@@ -4,12 +4,14 @@ import { SuggestPatternParametersUseCase } from '../../application/use-cases/sug
 import { AiServiceHttpClient } from '../../infrastructure/services/ai-service-http-client';
 import type { PatternAiSuggestionRequest, PatternAiSuggestionResponse } from '@angaly/types';
 import { AiProviderResolverService } from '../../application/services/ai-provider-resolver.service';
+import { PatternLearningService } from '../../application/services/pattern-learning.service';
 import { AnalyzeInspirationImageUseCase } from '../../application/use-cases/analyze-inspiration-image.use-case';
 
 describe('SuggestPatternParametersUseCase', () => {
   let useCase: SuggestPatternParametersUseCase;
   let aiClient: AiServiceHttpClient;
   const analyzeInspirationImage = { execute: jest.fn() };
+  const patternLearning = { buildPreferences: jest.fn() };
 
   beforeEach(async () => {
     const mockAiClient = {
@@ -25,6 +27,7 @@ describe('SuggestPatternParametersUseCase', () => {
         { provide: AiServiceHttpClient, useValue: mockAiClient },
         { provide: AiProviderResolverService, useValue: mockProviderResolver },
         { provide: AnalyzeInspirationImageUseCase, useValue: analyzeInspirationImage },
+        { provide: PatternLearningService, useValue: patternLearning },
       ],
     }).compile();
 
@@ -32,7 +35,10 @@ describe('SuggestPatternParametersUseCase', () => {
     aiClient = module.get<AiServiceHttpClient>(AiServiceHttpClient);
   });
 
-  beforeEach(() => analyzeInspirationImage.execute.mockReset());
+  beforeEach(() => {
+    analyzeInspirationImage.execute.mockReset();
+    patternLearning.buildPreferences.mockReset().mockResolvedValue(null);
+  });
 
   it('should return valid suggestion and flag as indicative if confidence is low', async () => {
     const request: PatternAiSuggestionRequest = {
@@ -136,5 +142,59 @@ describe('SuggestPatternParametersUseCase', () => {
     await useCase.execute({ ...baseRequest, inspirationFeatures: { sleeves: 'longues' } });
 
     expect(analyzeInspirationImage.execute).not.toHaveBeenCalled();
+  });
+
+  const learned = {
+    sampleSize: 12,
+    cutTypes: { EVASEE: 0.7, SIRENE: 0.3 },
+    details: { encolure: { value: 'bateau', share: 0.8 } },
+  };
+
+  it('grounds the AI suggestion on what the atelier clients actually built', async () => {
+    patternLearning.buildPreferences.mockResolvedValue(learned);
+    const spy = jest.spyOn(aiClient, 'suggestPatternParameters').mockResolvedValue(okResponse);
+
+    await useCase.execute({ ...baseRequest, inspirationImageUrl: null, occasion: 'Mariage', style: 'Classique' });
+
+    expect(patternLearning.buildPreferences).toHaveBeenCalledWith('ROBE', {
+      occasion: 'Mariage',
+      style: 'Classique',
+    });
+    expect(spy).toHaveBeenCalledWith(expect.objectContaining({ learnedPreferences: learned }));
+  });
+
+  it('falls back on the learned history when the AI is unreachable', async () => {
+    patternLearning.buildPreferences.mockResolvedValue(learned);
+    jest.spyOn(aiClient, 'suggestPatternParameters').mockResolvedValue({
+      suggestedCutType: 'DROITE',
+      suggestedDetails: {},
+      detectedInspirationFeatures: null,
+      confidence: 0,
+      modelVersion: 'fallback-0.0.0',
+    });
+
+    const result = await useCase.execute({ ...baseRequest, inspirationImageUrl: null });
+
+    expect(result.suggestion).toMatchObject({
+      suggestedCutType: 'EVASEE',
+      suggestedDetails: { encolure: 'bateau' },
+      confidence: 0.45,
+      modelVersion: 'learned-history-1',
+    });
+    expect(result.isIndicativeOnly).toBe(true);
+  });
+
+  it('keeps the plain fallback when there is no history yet', async () => {
+    jest.spyOn(aiClient, 'suggestPatternParameters').mockResolvedValue({
+      suggestedCutType: 'DROITE',
+      suggestedDetails: {},
+      detectedInspirationFeatures: null,
+      confidence: 0,
+      modelVersion: 'fallback-0.0.0',
+    });
+
+    const result = await useCase.execute({ ...baseRequest, inspirationImageUrl: null });
+
+    expect(result.suggestion.modelVersion).toBe('fallback-0.0.0');
   });
 });

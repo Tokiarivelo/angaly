@@ -23,6 +23,12 @@ import { INSPIRATION_IMAGE_PREPROCESSOR } from './domain/services/inspiration-im
 import { PrismaInspirationAnalysisRepository } from './infrastructure/repositories/prisma-inspiration-analysis.repository';
 import { SharpInspirationImagePreprocessor } from './infrastructure/services/sharp-inspiration-image-preprocessor';
 import { AnalyzeInspirationImageUseCase } from './application/use-cases/analyze-inspiration-image.use-case';
+import { PATTERN_LEARNING_REPOSITORY } from './domain/repositories/pattern-learning.repository';
+import { PrismaPatternLearningRepository } from './infrastructure/repositories/prisma-pattern-learning.repository';
+import { PatternLearningService } from './application/services/pattern-learning.service';
+import { RecordPatternLearningUseCase } from './application/use-cases/record-pattern-learning.use-case';
+import { ListSelectableAiProvidersUseCase } from './application/use-cases/list-selectable-ai-providers.use-case';
+import { AiSelectableProvidersController } from './presentation/controllers/ai-selectable-providers.controller';
 import { AiProviderResolverService } from './application/services/ai-provider-resolver.service';
 
 @Module({
@@ -32,6 +38,7 @@ import { AiProviderResolverService } from './application/services/ai-provider-re
     AiInspirationController,
     AiPatternSuggestionsController,
     AiAvailableModelsController,
+    AiSelectableProvidersController,
   ],
   providers: [
     {
@@ -40,6 +47,10 @@ import { AiProviderResolverService } from './application/services/ai-provider-re
     },
     { provide: INSPIRATION_ANALYSIS_REPOSITORY, useClass: PrismaInspirationAnalysisRepository },
     { provide: INSPIRATION_IMAGE_PREPROCESSOR, useClass: SharpInspirationImagePreprocessor },
+    { provide: PATTERN_LEARNING_REPOSITORY, useClass: PrismaPatternLearningRepository },
+    PatternLearningService,
+    RecordPatternLearningUseCase,
+    ListSelectableAiProvidersUseCase,
     AiServiceHttpClient,
     AiProviderResolverService,
     AnalyzeInspirationImageUseCase,
@@ -53,6 +64,7 @@ import { AiProviderResolverService } from './application/services/ai-provider-re
     AiProviderResolverService,
     SuggestPatternParametersUseCase,
     EstimateMissingMeasurementsUseCase,
+    RecordPatternLearningUseCase,
   ],
 })
 export class AiInferenceModule {}

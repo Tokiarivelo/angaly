@@ -17,6 +17,9 @@ import {
 import { PatternVersionEntity } from '../../domain/entities/pattern-version.entity';
 import { GeneratePatternPiecesUseCase } from '../../../pattern-engine/application/use-cases/generate-pattern-pieces.use-case';
 import { GetMeasurementProfileUseCase } from '../../../measurements/application/use-cases/get-measurement-profile.use-case';
+import { AiUsage } from '@angaly/types';
+import { AiProviderResolverService } from '../../../ai-inference/application/services/ai-provider-resolver.service';
+import { RecordPatternLearningUseCase } from '../../../ai-inference/application/use-cases/record-pattern-learning.use-case';
 import { EstimateMissingMeasurementsUseCase } from '../../../ai-inference/application/use-cases/estimate-missing-measurements.use-case';
 import { GeneratePatternVersionDto } from '../dtos/generate-pattern-version.dto';
 import { type GarmentType, PatternEngineValidationError } from '@angaly/pattern-engine';
@@ -42,6 +45,8 @@ export class GeneratePatternVersionUseCase {
     private readonly generatePatternPiecesUseCase: GeneratePatternPiecesUseCase,
     private readonly getMeasurementProfileUseCase: GetMeasurementProfileUseCase,
     private readonly estimateMissingMeasurementsUseCase: EstimateMissingMeasurementsUseCase,
+    private readonly providerResolver: AiProviderResolverService,
+    private readonly recordPatternLearning: RecordPatternLearningUseCase,
   ) {}
 
   async execute(
@@ -89,11 +94,18 @@ export class GeneratePatternVersionUseCase {
         throw new UnprocessableEntityException(error.message);
       }
 
+      // The user's model choice (if usable) wins over the atelier default routing.
+      const selectedProvider = await this.providerResolver.resolveSelected(
+        dto?.aiProvider,
+        AiUsage.MEASUREMENT_ESTIMATION,
+      );
+
       const { estimation } = await this.estimateMissingMeasurementsUseCase.execute({
         garmentType,
         gender: null,
         knownMeasurements: measurements,
         requiredKeys: error.missingMeasurementKeys,
+        ...(selectedProvider ? { provider: selectedProvider } : {}),
       });
 
       if (Object.keys(estimation.estimatedMeasurements).length === 0) {
@@ -164,6 +176,16 @@ export class GeneratePatternVersionUseCase {
     // Mettre à jour le statut du projet
     await this.projectRepository.update(projectId, {
       status: 'GENERATED',
+    });
+
+    // Learning loop (best-effort): remember what was actually built for similar future projects.
+    await this.recordPatternLearning.recordGenerated({
+      patternProjectId: projectId,
+      garmentType,
+      occasion: project.occasion,
+      style: project.style,
+      cutType: parameters.cutType,
+      details: parameters.details,
     });
 
     return version;

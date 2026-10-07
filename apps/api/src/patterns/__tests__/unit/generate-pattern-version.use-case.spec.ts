@@ -14,6 +14,8 @@ describe('GeneratePatternVersionUseCase', () => {
   let mockGeneratePiecesUseCase: jest.Mocked<GeneratePatternPiecesUseCase>;
   let mockGetMeasurementProfileUseCase: jest.Mocked<GetMeasurementProfileUseCase>;
   let mockEstimateMissingMeasurementsUseCase: jest.Mocked<EstimateMissingMeasurementsUseCase>;
+  let mockProviderResolver: { resolveSelected: jest.Mock };
+  let mockRecordLearning: { recordGenerated: jest.Mock };
 
   const mockProject = PatternProjectEntity.create({
     id: 'proj-1',
@@ -94,12 +96,17 @@ describe('GeneratePatternVersionUseCase', () => {
       }),
     } as any;
 
+    mockProviderResolver = { resolveSelected: jest.fn().mockResolvedValue(undefined) };
+    mockRecordLearning = { recordGenerated: jest.fn().mockResolvedValue(undefined) };
+
     useCase = new GeneratePatternVersionUseCase(
       mockProjectRepo,
       mockVersionRepo,
       mockGeneratePiecesUseCase,
       mockGetMeasurementProfileUseCase,
       mockEstimateMissingMeasurementsUseCase,
+      mockProviderResolver as any,
+      mockRecordLearning as any,
     );
   });
 
@@ -247,6 +254,39 @@ describe('GeneratePatternVersionUseCase', () => {
     expect(mockGeneratePiecesUseCase.execute).toHaveBeenCalledTimes(2);
     expect(version.generatedByAI).toBe(true);
     expect((version.parametersJson as any).estimatedMeasurementKeys).toEqual(['TOUR_BASSIN']);
+  });
+
+  it('uses the AI provider chosen by the user for the measurement estimation', async () => {
+    const { PatternEngineValidationError } = await import('@angaly/pattern-engine');
+    mockGeneratePiecesUseCase.execute
+      .mockRejectedValueOnce(new PatternEngineValidationError('Missing', ['TOUR_BASSIN']))
+      .mockResolvedValueOnce({ pieces: [], warnings: [], metadata: { engineVersion: '0.1.0' } } as any);
+    const credentials = { provider: 'ANTHROPIC', model: 'claude-haiku-4-5-20251001', apiKey: 'k' };
+    mockProviderResolver.resolveSelected.mockResolvedValue(credentials);
+    mockEstimateMissingMeasurementsUseCase.execute.mockResolvedValueOnce({
+      estimation: {
+        estimatedMeasurements: { TOUR_BASSIN: 95 },
+        estimatedKeys: ['TOUR_BASSIN'],
+        confidence: 0.4,
+        modelVersion: 'x',
+      },
+      isIndicativeOnly: true,
+    });
+
+    await useCase.execute('proj-1', 'cust-1', { aiProvider: 'ANTHROPIC' as any });
+
+    expect(mockProviderResolver.resolveSelected).toHaveBeenCalledWith('ANTHROPIC', 'MEASUREMENT_ESTIMATION');
+    expect(mockEstimateMissingMeasurementsUseCase.execute).toHaveBeenCalledWith(
+      expect.objectContaining({ provider: credentials }),
+    );
+  });
+
+  it('records the generated choices for the learning loop', async () => {
+    await useCase.execute('proj-1', 'cust-1');
+
+    expect(mockRecordLearning.recordGenerated).toHaveBeenCalledWith(
+      expect.objectContaining({ patternProjectId: 'proj-1', garmentType: 'ROBE' }),
+    );
   });
 
   it('rejects with the original error if AI estimation returns nothing usable', async () => {

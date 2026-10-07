@@ -40,46 +40,72 @@ export class AiProviderResolverService {
         return undefined;
       }
 
-      if (providerId === AiProviderId.LOCAL_STATISTICAL) {
-        return {
-          provider: AiProviderId.LOCAL_STATISTICAL,
-          model: 'ansur2-ridge-v1',
-        };
-      }
-
-      const catalogEntry = findCatalogEntry(providerId);
-      const config = await this.providerConfigRepo.findByProvider(providerId);
-
-      if (!config?.enabled) {
-        this.logger.warn(
-          `Fournisseur "${providerId}" pour l'usage "${usage}" non configuré ou désactivé. Repli par défaut.`,
-        );
-        return undefined;
-      }
-
-      let apiKey: string | undefined;
-      if (catalogEntry?.requiresApiKey && config.apiKeyCipher) {
-        try {
-          apiKey = await this.cipher.decrypt(config.apiKeyCipher);
-        } catch (decryptErr: unknown) {
-          this.logger.error(
-            `Échec du déchiffrement de la clé API pour "${providerId}": ${decryptErr instanceof Error ? decryptErr.message : String(decryptErr)}`,
-          );
-          return undefined;
-        }
-      }
-
-      return {
-        provider: providerId,
-        model: config.model,
-        apiKey,
-        baseUrl: config.baseUrl ?? undefined,
-      };
+      return await this.credentialsFor(providerId, usage);
     } catch (err: unknown) {
       this.logger.error(
         `Erreur lors de la résolution du fournisseur IA pour l'usage "${usage}": ${err instanceof Error ? err.message : String(err)}`,
       );
       return undefined;
     }
+  }
+
+  /**
+   * Resolves credentials for an explicitly chosen provider (Pattern Studio model picker).
+   * Returns undefined when the provider is not usable, so callers fall back to the atelier default.
+   */
+  async resolveSelected(
+    providerId: AiProviderId | undefined,
+    usage: AiUsage,
+  ): Promise<ProviderCredentials | undefined> {
+    if (!providerId) return undefined;
+    try {
+      return await this.credentialsFor(providerId, usage);
+    } catch (err: unknown) {
+      this.logger.error(
+        `Erreur lors de la résolution du fournisseur choisi "${providerId}": ${err instanceof Error ? err.message : String(err)}`,
+      );
+      return undefined;
+    }
+  }
+
+  private async credentialsFor(
+    providerId: AiProviderId,
+    usage: AiUsage,
+  ): Promise<ProviderCredentials | undefined> {
+    if (providerId === AiProviderId.LOCAL_STATISTICAL) {
+      return {
+        provider: AiProviderId.LOCAL_STATISTICAL,
+        model: 'ansur2-ridge-v1',
+      };
+    }
+
+    const catalogEntry = findCatalogEntry(providerId);
+    const config = await this.providerConfigRepo.findByProvider(providerId);
+
+    if (!config?.enabled) {
+      this.logger.warn(
+        `Fournisseur "${providerId}" pour l'usage "${usage}" non configuré ou désactivé. Repli par défaut.`,
+      );
+      return undefined;
+    }
+
+    let apiKey: string | undefined;
+    if (catalogEntry?.requiresApiKey && config.apiKeyCipher) {
+      try {
+        apiKey = await this.cipher.decrypt(config.apiKeyCipher);
+      } catch (decryptErr: unknown) {
+        this.logger.error(
+          `Échec du déchiffrement de la clé API pour "${providerId}": ${decryptErr instanceof Error ? decryptErr.message : String(decryptErr)}`,
+        );
+        return undefined;
+      }
+    }
+
+    return {
+      provider: providerId,
+      model: config.model,
+      apiKey,
+      baseUrl: config.baseUrl ?? undefined,
+    };
   }
 }

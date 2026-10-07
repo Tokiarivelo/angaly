@@ -11,6 +11,7 @@ describe('ExportPatternVersionUseCase', () => {
   let mockVersionRepo: jest.Mocked<IPatternVersionRepository>;
   let mockProjectRepo: jest.Mocked<IPatternProjectRepository>;
   let mockUploadMediaUseCase: jest.Mocked<UploadMediaBufferUseCase>;
+  let mockRecordLearning: { recordExported: jest.Mock };
 
   const mockProject = PatternProjectEntity.create({
     id: 'proj-1',
@@ -74,15 +75,19 @@ describe('ExportPatternVersionUseCase', () => {
       } as any),
     } as any;
 
+    mockRecordLearning = { recordExported: jest.fn().mockResolvedValue(undefined) };
+
     useCase = new ExportPatternVersionUseCase(
       mockVersionRepo,
       mockProjectRepo,
       mockUploadMediaUseCase,
+      mockRecordLearning as any,
     );
   });
 
   it('exports pattern into requested format when validated', async () => {
     const result = await useCase.execute('ver-1', 'cust-1', 'PDF_A4');
+    expect(mockRecordLearning.recordExported).toHaveBeenCalledWith('proj-1');
 
     expect(result.format).toBe('PDF_A4');
     expect(result.mediaId).toBe('media-1');

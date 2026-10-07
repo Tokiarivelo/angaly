@@ -16,6 +16,7 @@ import {
 } from '../../domain/repositories/pattern-project.repository';
 import { PatternExportEntity } from '../../domain/entities/pattern-export.entity';
 import { PatternExportFormat } from '../../domain/value-objects/pattern-status.vo';
+import { RecordPatternLearningUseCase } from '../../../ai-inference/application/use-cases/record-pattern-learning.use-case';
 import { UploadMediaBufferUseCase } from '../../../media/application/use-cases/upload-media-buffer.use-case';
 
 @Injectable()
@@ -26,6 +27,7 @@ export class ExportPatternVersionUseCase {
     @Inject(PATTERN_PROJECT_REPOSITORY)
     private readonly projectRepository: IPatternProjectRepository,
     private readonly uploadMediaBufferUseCase: UploadMediaBufferUseCase,
+    private readonly recordPatternLearning: RecordPatternLearningUseCase,
   ) {}
 
   async execute(
@@ -91,6 +93,9 @@ export class ExportPatternVersionUseCase {
         status: 'EXPORTED',
       });
     }
+
+    // An exported patron is the strongest signal that the choices were right.
+    await this.recordPatternLearning.recordExported(project.id);
 
     return patternExport;
   }

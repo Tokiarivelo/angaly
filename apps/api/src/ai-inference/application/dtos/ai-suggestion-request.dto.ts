@@ -1,4 +1,5 @@
-import { IsString, IsOptional, IsObject, IsUrl } from 'class-validator';
+import { IsString, IsOptional, IsObject, IsUrl, IsEnum } from 'class-validator';
+import { AiProviderId } from '@angaly/types';
 
 export class AiSuggestionRequestDto {
   @IsString()
@@ -18,4 +19,9 @@ export class AiSuggestionRequestDto {
   @IsOptional()
   @IsUrl()
   inspirationImageUrl?: string;
+
+  /** Fournisseur choisi dans Pattern Studio ; absent = réglage par défaut de l'atelier. */
+  @IsOptional()
+  @IsEnum(AiProviderId)
+  aiProvider?: AiProviderId;
 }

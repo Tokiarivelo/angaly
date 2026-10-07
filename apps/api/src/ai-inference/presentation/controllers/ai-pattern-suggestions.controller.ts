@@ -1,6 +1,8 @@
 import { Controller, Post, Body, UseGuards } from '@nestjs/common';
 import { JwtAuthGuard } from '../../../auth/presentation/guards/jwt-auth.guard';
 import { SuggestPatternParametersUseCase } from '../../application/use-cases/suggest-pattern-parameters.use-case';
+import { AiUsage } from '@angaly/types';
+import { AiProviderResolverService } from '../../application/services/ai-provider-resolver.service';
 import { AiSuggestionRequestDto } from '../../application/dtos/ai-suggestion-request.dto';
 
 /**
@@ -12,16 +14,26 @@ import { AiSuggestionRequestDto } from '../../application/dtos/ai-suggestion-req
 @UseGuards(JwtAuthGuard)
 @Controller('ai-inference/pattern-suggestions')
 export class AiPatternSuggestionsController {
-  constructor(private readonly suggestPatternParameters: SuggestPatternParametersUseCase) {}
+  constructor(
+    private readonly suggestPatternParameters: SuggestPatternParametersUseCase,
+    private readonly providerResolver: AiProviderResolverService,
+  ) {}
 
   @Post()
   async suggest(@Body() dto: AiSuggestionRequestDto) {
+    // An unusable choice resolves to undefined → the atelier's default routing applies.
+    const provider = await this.providerResolver.resolveSelected(
+      dto.aiProvider,
+      AiUsage.PATTERN_SUGGESTION,
+    );
+
     return this.suggestPatternParameters.execute({
       garmentType: dto.garmentType,
       occasion: dto.occasion ?? null,
       style: dto.style ?? null,
       measurements: dto.measurements ?? {},
       inspirationImageUrl: dto.inspirationImageUrl ?? null,
+      ...(provider ? { provider } : {}),
     });
   }
 }

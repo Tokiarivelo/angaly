@@ -1,8 +1,14 @@
 import { Injectable, Logger } from '@nestjs/common';
 import { AiServiceHttpClient } from '../../infrastructure/services/ai-service-http-client';
-import { AiUsage, PatternAiSuggestionRequest, PatternAiSuggestionResponse } from '@angaly/types';
+import {
+  AiUsage,
+  type LearnedPreferences,
+  PatternAiSuggestionRequest,
+  PatternAiSuggestionResponse,
+} from '@angaly/types';
 import { ConfidenceScore } from '../../domain/value-objects/confidence-score.vo';
 import { AiProviderResolverService } from '../services/ai-provider-resolver.service';
+import { PatternLearningService } from '../services/pattern-learning.service';
 import { AnalyzeInspirationImageUseCase } from './analyze-inspiration-image.use-case';
 
 @Injectable()
@@ -11,6 +17,7 @@ export class SuggestPatternParametersUseCase {
     private readonly aiClient: AiServiceHttpClient,
     private readonly providerResolver: AiProviderResolverService,
     private readonly analyzeInspirationImage: AnalyzeInspirationImageUseCase,
+    private readonly patternLearning: PatternLearningService,
   ) {}
 
   private readonly logger = new Logger(SuggestPatternParametersUseCase.name);
@@ -37,12 +44,25 @@ export class SuggestPatternParametersUseCase {
       }
     }
 
-    const suggestion = await this.aiClient.suggestPatternParameters({
+    // What the atelier's clients actually built for similar projects (never blocks the suggestion).
+    const learnedPreferences =
+      request.learnedPreferences ??
+      (await this.patternLearning
+        .buildPreferences(request.garmentType, { occasion: request.occasion, style: request.style })
+        .catch(() => null));
+
+    let suggestion = await this.aiClient.suggestPatternParameters({
       ...request,
       inspirationImageUrl: null,
       inspirationFeatures,
+      learnedPreferences,
       provider,
     });
+
+    // The AI is unreachable: fall back on the atelier's own history rather than a blind default.
+    if (suggestion.confidence === 0 && suggestion.modelVersion.startsWith('fallback')) {
+      suggestion = this.suggestFromLearning(suggestion, learnedPreferences);
+    }
 
     // Evaluate confidence score
     const confidence = new ConfidenceScore(suggestion.confidence);
@@ -54,6 +74,25 @@ export class SuggestPatternParametersUseCase {
     return {
       suggestion,
       isIndicativeOnly,
+    };
+  }
+
+  private suggestFromLearning(
+    fallback: PatternAiSuggestionResponse,
+    learned: LearnedPreferences | null,
+  ): PatternAiSuggestionResponse {
+    const best = Object.entries(learned?.cutTypes ?? {}).sort((a, b) => b[1] - a[1])[0];
+    if (!learned || !best) return fallback;
+
+    return {
+      ...fallback,
+      suggestedCutType: best[0],
+      suggestedDetails: Object.fromEntries(
+        Object.entries(learned.details).map(([key, { value }]) => [key, value]),
+      ),
+      // Capped under the 0.5 indicative threshold: a statistical habit, not a reasoned proposal.
+      confidence: Math.min(0.45, best[1]),
+      modelVersion: 'learned-history-1',
     };
   }
 }
