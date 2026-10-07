@@ -12,14 +12,18 @@ from .schemas import (
     PatternAiSuggestionResponse,
     PatternMeasurementEstimationRequest,
     PatternMeasurementEstimationResponse,
+    ProviderCredentials,
+    TestProviderRequest,
+    TestProviderResponse,
 )
+from .services.providers import SsrfValidationError, get_llm_provider, validate_provider_base_url
 
 logger = logging.getLogger("angaly.ai_service")
 
 app = FastAPI(
     title="ANGALY AI Service",
-    description="Deep-learning assistance for Angaly Pattern Studio.",
-    version="0.1.0-foundation",
+    description="Deep-learning assistance for Angaly Pattern Studio with multi-provider LLM support.",
+    version="0.2.0-multi-provider",
 )
 
 
@@ -36,6 +40,61 @@ def available_models() -> AvailableModelsResponse:
     if is_local_model_available("FEMME") or is_local_model_available("HOMME"):
         options.append("LOCAL_STATISTICAL")
     return AvailableModelsResponse(measurementEstimation=options)
+
+
+@app.post(
+    "/v1/providers/test",
+    response_model=TestProviderResponse,
+    response_model_by_alias=True,
+)
+def test_provider(payload: TestProviderRequest) -> TestProviderResponse:
+    """Tests connectivity to an external or self-hosted AI provider (Anthropic, Gemini, OpenAI, etc.).
+    Called by NestJS admin-ai-settings during provider setup or manual health checks.
+    """
+    provider_id = (payload.provider or "").upper()
+    if provider_id == "LOCAL_STATISTICAL":
+        return TestProviderResponse(
+            provider=payload.provider,
+            status="OK",
+            latencyMs=5,
+            message="Modèle statistique local (ANSUR II) opérationnel.",
+        )
+
+    try:
+        # Validate base_url for SSRF
+        validate_provider_base_url(payload.base_url)
+
+        credentials = ProviderCredentials(
+            provider=payload.provider,
+            model=payload.model,
+            apiKey=payload.api_key,
+            baseUrl=payload.base_url,
+        )
+        provider = get_llm_provider(credentials)
+        success, latency_ms, message = provider.test_connection()
+
+        return TestProviderResponse(
+            provider=payload.provider,
+            status="OK" if success else "INVALID",
+            latencyMs=latency_ms,
+            message=message,
+        )
+    except SsrfValidationError as ssrf_err:
+        logger.warning("SSRF validation rejected provider baseUrl: %s", ssrf_err)
+        return TestProviderResponse(
+            provider=payload.provider,
+            status="INVALID",
+            latencyMs=0,
+            message=f"Sécurité réseau (SSRF) : {ssrf_err}",
+        )
+    except Exception as exc:
+        logger.warning("Provider test failed: %s", exc)
+        return TestProviderResponse(
+            provider=payload.provider,
+            status="INVALID",
+            latencyMs=0,
+            message=f"Échec du test de connexion : {exc}",
+        )
 
 
 @app.post(

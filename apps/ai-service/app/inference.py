@@ -1,13 +1,11 @@
-"""Inference layer — AI model integration via Gemini API.
-Uses google-genai to provide structured suggestions for Pattern Studio.
+"""Inference layer — AI model integration via Multi-Provider LLM architecture.
+Supports Anthropic, Gemini, OpenAI, Mistral, Groq, OpenRouter, and custom endpoints.
+Specified in docs/features/ai-providers.md §6.
 """
 
 from __future__ import annotations
 
 import logging
-
-from google import genai
-from google.genai import types
 
 from .local_model import LOCAL_MODEL_VERSION, estimate_with_local_model, is_local_model_available
 from .schemas import (
@@ -16,16 +14,17 @@ from .schemas import (
     PatternMeasurementEstimationRequest,
     PatternMeasurementEstimationResponse,
 )
+from .services.providers import get_llm_provider
+from .services.providers.gemini_provider import GeminiProvider
 from .size_charts import CHARTS, MEASUREMENT_KEYS, find_closest_entry
 
 logger = logging.getLogger("angaly.ai_service")
 
-# Uses Gemini Flash as the LLM for pattern suggestions
+# Default Gemini Flash model version
 GEMINI_MODEL_VERSION = "gemini-2.5-flash"
 _model_loaded = True
 
-# Coupes reconnues côté Pattern Studio (apps/web/.../consts/cuts.const.ts) —
-# le prompt contraint la suggestion à cette liste pour rester exploitable.
+# Coupes reconnues côté Pattern Studio (apps/web/.../consts/cuts.const.ts)
 KNOWN_CUT_TYPES = ["DROITE", "EVASEE", "SIRENE", "PRINCESSE", "AJUSTEE", "OVERSIZE"]
 
 
@@ -49,10 +48,8 @@ def suggest_pattern_parameters(
     request: PatternAiSuggestionRequest,
 ) -> PatternAiSuggestionResponse:
     """Suggests PatternParameters (packages/pattern-engine) from measurements
-    and style choices using the Gemini LLM.
+    and style choices using the configured LLM provider.
     """
-    client = genai.Client()  # Assumes GEMINI_API_KEY is in environment
-
     prompt = f"""
     Tu es un(e) modéliste expert(e) chez 'Angaly', une maison de couture sur-mesure.
     Propose des paramètres de patron pour un vêtement.
@@ -74,21 +71,19 @@ def suggest_pattern_parameters(
     """
 
     try:
-        response = client.models.generate_content(
-            model=GEMINI_MODEL_VERSION,
-            contents=prompt,
-            config=types.GenerateContentConfig(
-                response_mime_type="application/json",
-                response_schema=PatternAiSuggestionResponse,
-            ),
-        )
+        if request.provider:
+            provider = get_llm_provider(request.provider)
+            model_ver = request.provider.model
+        else:
+            provider = GeminiProvider(model=GEMINI_MODEL_VERSION)
+            model_ver = GEMINI_MODEL_VERSION
 
-        result = PatternAiSuggestionResponse.model_validate_json(response.text)
-        result.model_version = GEMINI_MODEL_VERSION
+        result = provider.generate_json(prompt, PatternAiSuggestionResponse)
+        result.model_version = model_ver
 
         if result.suggested_cut_type not in KNOWN_CUT_TYPES:
             logger.warning(
-                "Gemini suggested an unknown cutType %r, falling back to DROITE",
+                "LLM suggested an unknown cutType %r, falling back to DROITE",
                 result.suggested_cut_type,
             )
             result.suggested_cut_type = "DROITE"
@@ -97,8 +92,8 @@ def suggest_pattern_parameters(
             result.detected_inspiration_features = None
 
         return result
-    except Exception:
-        logger.exception("suggest_pattern_parameters failed, returning fallback suggestion")
+    except Exception as exc:
+        logger.exception("suggest_pattern_parameters failed: %s, returning fallback suggestion", exc)
         return PatternAiSuggestionResponse(
             suggestedCutType="DROITE",
             suggestedDetails={},
@@ -124,7 +119,13 @@ def estimate_missing_measurements(
             estimatedMeasurements={}, estimatedKeys=[], confidence=1.0, modelVersion="no-op"
         )
 
-    if request.model_preference == "LOCAL_STATISTICAL":
+    # Check local statistical model preference
+    is_local_pref = (
+        request.model_preference == "LOCAL_STATISTICAL"
+        or (request.provider and request.provider.provider.upper() == "LOCAL_STATISTICAL")
+    )
+
+    if is_local_pref:
         if is_local_model_available(request.gender):
             try:
                 estimated, confidence = estimate_with_local_model(
@@ -137,15 +138,14 @@ def estimate_missing_measurements(
                     modelVersion=LOCAL_MODEL_VERSION,
                 )
             except Exception:
-                logger.exception("Local model estimation failed, falling back to Gemini")
+                logger.exception("Local model estimation failed, falling back to LLM")
         else:
             logger.warning(
-                "LOCAL_STATISTICAL requested but no artifact available for gender=%r — falling back to Gemini",
+                "LOCAL_STATISTICAL requested but no artifact available for gender=%r — falling back to LLM",
                 request.gender,
             )
 
     try:
-        client = genai.Client()
         prompt = f"""
         Tu es un(e) modéliste expert(e) chez 'Angaly'. Un projet de patron pour un
         vêtement de type {request.garment_type} a des mesures manquantes.
@@ -163,16 +163,17 @@ def estimate_missing_measurements(
         recopie ces mêmes clés dans estimatedKeys, et donne un confidence bas (< 0.5)
         car il s'agit d'une estimation, jamais d'une mesure réelle.
         """
-        response = client.models.generate_content(
-            model=GEMINI_MODEL_VERSION,
-            contents=prompt,
-            config=types.GenerateContentConfig(
-                response_mime_type="application/json",
-                response_schema=PatternMeasurementEstimationResponse,
-            ),
-        )
-        result = PatternMeasurementEstimationResponse.model_validate_json(response.text)
-        result.model_version = GEMINI_MODEL_VERSION
+
+        if request.provider and request.provider.provider.upper() != "LOCAL_STATISTICAL":
+            provider = get_llm_provider(request.provider)
+            model_ver = request.provider.model
+        else:
+            provider = GeminiProvider(model=GEMINI_MODEL_VERSION)
+            model_ver = GEMINI_MODEL_VERSION
+
+        result = provider.generate_json(prompt, PatternMeasurementEstimationResponse)
+        result.model_version = model_ver
+
         # Keep only the keys we were actually asked for — never let the LLM
         # smuggle in ungrounded extra keys.
         result.estimated_measurements = {
@@ -180,8 +181,8 @@ def estimate_missing_measurements(
         }
         result.estimated_keys = list(result.estimated_measurements.keys())
         return result
-    except Exception:
-        logger.exception("estimate_missing_measurements failed, using nearest size-chart entry")
+    except Exception as exc:
+        logger.exception("estimate_missing_measurements failed: %s, using nearest size-chart entry", exc)
         closest = find_closest_entry(request.gender, request.known_measurements)
         estimated = {k: closest[k] for k in required_keys if k in closest}
         return PatternMeasurementEstimationResponse(

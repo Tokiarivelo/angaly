@@ -1,13 +1,48 @@
 """Pydantic contracts for the AI service.
 
-Keep in sync with PatternAiSuggestionRequest/Response in
-packages/types/src/index.ts — that file is the source of truth for the shape
-the NestJS `ai-inference` module sends and expects.
+Keep in sync with PatternAiSuggestionRequest/Response and ProviderCredentials in
+packages/types/src/index.ts and packages/types/src/ai-providers.ts — that is the
+source of truth for the shape the NestJS `ai-inference` module sends and expects.
 """
 
 from __future__ import annotations
 
 from pydantic import BaseModel, Field
+
+
+class ProviderCredentials(BaseModel):
+    """Credentials and configuration for an external or custom LLM provider."""
+    provider: str
+    model: str
+    api_key: str | None = Field(default=None, alias="apiKey")
+    base_url: str | None = Field(default=None, alias="baseUrl")
+
+    model_config = {"populate_by_name": True}
+
+    def __repr__(self) -> str:
+        # Guarantee API keys are never exposed in log output or repr
+        masked = f"••••{self.api_key[-4:]}" if self.api_key and len(self.api_key) >= 4 else "***"
+        return f"ProviderCredentials(provider={self.provider!r}, model={self.model!r}, apiKey={masked!r}, baseUrl={self.base_url!r})"
+
+
+class TestProviderRequest(BaseModel):
+    """Payload sent by NestJS admin-ai-settings to test provider connectivity."""
+    provider: str
+    model: str
+    api_key: str | None = Field(default=None, alias="apiKey")
+    base_url: str | None = Field(default=None, alias="baseUrl")
+
+    model_config = {"populate_by_name": True}
+
+
+class TestProviderResponse(BaseModel):
+    """Response returned after running a connection test with the provider."""
+    provider: str
+    status: str  # "OK" | "INVALID"
+    latency_ms: int = Field(..., alias="latencyMs")
+    message: str | None = None
+
+    model_config = {"populate_by_name": True}
 
 
 class PatternAiSuggestionRequest(BaseModel):
@@ -16,6 +51,7 @@ class PatternAiSuggestionRequest(BaseModel):
     style: str | None = None
     measurements: dict[str, float] = Field(default_factory=dict)
     inspiration_image_url: str | None = Field(default=None, alias="inspirationImageUrl")
+    provider: ProviderCredentials | None = None
 
     model_config = {"populate_by_name": True}
 
@@ -55,9 +91,9 @@ class PatternMeasurementEstimationRequest(BaseModel):
     known_measurements: dict[str, float] = Field(default_factory=dict, alias="knownMeasurements")
     required_keys: list[str] = Field(default_factory=list, alias="requiredKeys")
     # 'GEMINI' (default) or 'LOCAL_STATISTICAL' — admin-controlled, see
-    # docs/features/ai-model-settings.md. Falls back to Gemini if the local
-    # model artifact isn't available.
+    # docs/features/ai-model-settings.md.
     model_preference: str = Field(default="GEMINI", alias="modelPreference")
+    provider: ProviderCredentials | None = None
 
     model_config = {"populate_by_name": True}
 
