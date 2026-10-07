@@ -48,7 +48,7 @@ export const AdminCreationProjectsPage: React.FC = () => {
         </div>
         <div>
           <Link
-            href={ROUTES.demandeSurMesure}
+            href={ROUTES.adminNewCreationProject}
             className="bg-[#061938] text-white px-5 py-2.5 font-headline uppercase text-xs tracking-widest hover:bg-[#0C2650] transition-colors inline-flex items-center gap-2 shadow-sm rounded-sm"
           >
             <Plus size={16} />

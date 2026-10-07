@@ -13,6 +13,7 @@ import {
 import { CreationProjectAssigneeCard } from './CreationProjectAssigneeCard';
 import { CreationProjectHistory } from './CreationProjectHistory';
 import { CreationProjectStageCard } from './CreationProjectStageCard';
+import { CreationProjectStageWorkspace } from './CreationProjectStageWorkspace';
 import { CreationProjectStepper } from './CreationProjectStepper';
 
 interface AdminCreationProjectDetailPageProps {
@@ -33,6 +34,20 @@ export const AdminCreationProjectDetailPage: React.FC<AdminCreationProjectDetail
     isUpdatingStage,
     assign,
     isAssigning,
+    nextStage,
+    goToNextStage,
+    selectedStage,
+    setSelectedStage,
+    addNote,
+    isAddingNote,
+    deleteNote,
+    isDeletingNote,
+    uploadStageMedia,
+    isUploadingMedia,
+    deleteMedia,
+    isDeletingMedia,
+    generateAiPattern,
+    isGeneratingAiPattern,
   } = useAdminCreationProject(projectId);
 
   return (
@@ -94,8 +109,39 @@ export const AdminCreationProjectDetailPage: React.FC<AdminCreationProjectDetail
           <div className="grid grid-cols-1 lg:grid-cols-3 gap-6">
             <div className="lg:col-span-2 space-y-6">
               <section className="bg-white border border-[#D9D4CA] rounded-sm p-6">
-                <CreationProjectStepper currentStage={project.stage} />
+                <CreationProjectStepper
+                  currentStage={project.stage}
+                  selectedStage={selectedStage}
+                  onSelectStage={setSelectedStage}
+                  nextStage={nextStage}
+                  onGoToNextStage={goToNextStage}
+                  isAdvancing={isUpdatingStage}
+                />
               </section>
+
+              {/* Espace Atelier : Notes et Médias par étape (Consultation, Conception, Patron, Confection, Essayage, Terminée) */}
+              <CreationProjectStageWorkspace
+                currentStage={project.stage}
+                selectedStage={selectedStage}
+                onSelectStage={setSelectedStage}
+                notes={project.stageNotes ?? []}
+                media={project.stageMedia ?? []}
+                onAddNote={(content) => addNote({ stage: selectedStage, content })}
+                isAddingNote={isAddingNote}
+                onDeleteNote={deleteNote}
+                isDeletingNote={isDeletingNote}
+                onUploadMedia={(file, title) => uploadStageMedia({ stage: selectedStage, file, title })}
+                isUploadingMedia={isUploadingMedia}
+                onDeleteMedia={deleteMedia}
+                isDeletingMedia={isDeletingMedia}
+                nextStage={nextStage}
+                onGoToNextStage={goToNextStage}
+                isAdvancing={isUpdatingStage}
+                onGenerateAiPattern={generateAiPattern}
+                isGeneratingAiPattern={isGeneratingAiPattern}
+                projectReference={project.reference}
+                projectTitle={project.title}
+              />
 
               <section className="bg-white border border-[#D9D4CA] rounded-sm p-6 space-y-3">
                 <h2 className="font-headline uppercase text-xs tracking-widest text-[#5C697A]">Informations</h2>
@@ -127,7 +173,7 @@ export const AdminCreationProjectDetailPage: React.FC<AdminCreationProjectDetail
                 <h2 className="font-headline uppercase text-xs tracking-widest text-[#5C697A]">
                   Historique des étapes
                 </h2>
-                <CreationProjectHistory events={project.stageHistory} />
+                <CreationProjectHistory events={project.stageHistory ?? []} />
               </section>
             </div>
 

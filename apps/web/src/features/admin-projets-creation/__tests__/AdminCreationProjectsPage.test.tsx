@@ -58,7 +58,7 @@ describe('AdminCreationProjectsPage', () => {
     ).toBeInTheDocument();
     expect(screen.getByRole('link', { name: /Nouveau Projet Sur Mesure/i })).toHaveAttribute(
       'href',
-      '/sur-mesure/demande',
+      '/projets-creation/nouveau',
     );
   });
 

@@ -29,20 +29,35 @@ const detail = (overrides: Partial<CreationProjectDetailDto> = {}): CreationProj
   ],
   createdAt: '2026-01-14T10:00:00.000Z',
   updatedAt: '2026-01-14T10:00:00.000Z',
+  stageNotes: [],
+  stageMedia: [],
   ...overrides,
 });
 
 describe('AdminCreationProjectDetailPage', () => {
   const assign = vi.fn();
   const updateStage = vi.fn();
+  const goToNextStage = vi.fn();
+  const setSelectedStage = vi.fn();
+  const addNote = vi.fn();
+  const deleteNote = vi.fn();
+  const addMedia = vi.fn();
+  const uploadStageMedia = vi.fn();
+  const deleteMedia = vi.fn();
 
   beforeEach(() => {
     vi.clearAllMocks();
     assign.mockResolvedValue(undefined);
     updateStage.mockResolvedValue(undefined);
+    goToNextStage.mockResolvedValue(undefined);
+    addNote.mockResolvedValue(undefined);
+    deleteNote.mockResolvedValue(undefined);
+    addMedia.mockResolvedValue(undefined);
+    uploadStageMedia.mockResolvedValue(undefined);
+    deleteMedia.mockResolvedValue(undefined);
   });
 
-  const setup = (project: CreationProjectDetailDto | undefined, extra: { isError?: boolean } = {}) => {
+  const setup = (project: CreationProjectDetailDto | undefined, extra: { isError?: boolean; selectedStage?: CreationProjectStage; nextStage?: CreationProjectStage | null } = {}) => {
     vi.mocked(useAdminCreationProject).mockReturnValue({
       project,
       isLoading: false,
@@ -54,11 +69,25 @@ describe('AdminCreationProjectDetailPage', () => {
       isUpdatingStage: false,
       assign,
       isAssigning: false,
+      nextStage: extra.nextStage !== undefined ? extra.nextStage : CreationProjectStage.CONFECTION,
+      goToNextStage,
+      selectedStage: extra.selectedStage ?? CreationProjectStage.PATRON,
+      setSelectedStage,
+      addNote,
+      isAddingNote: false,
+      deleteNote,
+      isDeletingNote: false,
+      addMedia,
+      isAddingMedia: false,
+      uploadStageMedia,
+      isUploadingMedia: false,
+      deleteMedia,
+      isDeletingMedia: false,
     } as unknown as ReturnType<typeof useAdminCreationProject>);
     render(<AdminCreationProjectDetailPage projectId="p-1" />);
   };
 
-  it('renders the project, its stepper, info and history', () => {
+  it('renders the project, its stepper, info, workspace and history', () => {
     setup(detail());
 
     expect(screen.getByRole('heading', { name: 'Robe de mariée dentelle ivoire' })).toBeInTheDocument();
@@ -69,6 +98,30 @@ describe('AdminCreationProjectDetailPage', () => {
     );
     expect(screen.getByText(/manager@angaly.mg/)).toBeInTheDocument();
     expect(screen.getByText('Non assignée', { selector: 'p' })).toBeInTheDocument();
+
+    // Check that stage workspace is rendered
+    expect(screen.getByRole('heading', { level: 3, name: 'Patron' })).toBeInTheDocument();
+    expect(screen.getByText(/Notes d'atelier/i)).toBeInTheDocument();
+    expect(screen.getByText(/Médias & Documents/i)).toBeInTheDocument();
+  });
+
+  it('calls goToNextStage when clicking the advance button in stepper bar', async () => {
+    setup(detail());
+
+    const advanceButton = screen.getByRole('button', { name: /Passer à l'étape suivante : Confection/i });
+    expect(advanceButton).toBeInTheDocument();
+    fireEvent.click(advanceButton);
+
+    await waitFor(() => expect(goToNextStage).toHaveBeenCalled());
+  });
+
+  it('allows switching stage tabs in workspace', () => {
+    setup(detail());
+
+    const essayageTab = screen.getByRole('tab', { name: /Essayage/i });
+    fireEvent.click(essayageTab);
+
+    expect(setSelectedStage).toHaveBeenCalledWith(CreationProjectStage.ESSAYAGE);
   });
 
   it('assigns the selected staff member', async () => {
@@ -99,3 +152,4 @@ describe('AdminCreationProjectDetailPage', () => {
     expect(screen.getByRole('alert')).toBeInTheDocument();
   });
 });
+
