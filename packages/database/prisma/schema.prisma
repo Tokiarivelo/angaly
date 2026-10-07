@@ -1079,3 +1079,27 @@ model InspirationAnalysis {
 
   @@map("inspiration_analyses")
 }
+
+enum PatternLearningOutcome {
+  GENERATED
+  EXPORTED
+}
+
+/// What clients actually built (one row per pattern project, refreshed on regeneration and upgraded to
+/// EXPORTED when the client exports the patron). Aggregated by `ai-inference` into "learned preferences"
+/// that ground future AI suggestions. Never feeds geometry (ADR-005). See docs/features/ai-inference.md.
+model PatternLearningRecord {
+  id               String                 @id @default(cuid())
+  patternProjectId String                 @unique
+  garmentType      String
+  occasion         String?
+  style            String?
+  cutType          String
+  details          Json
+  outcome          PatternLearningOutcome @default(GENERATED)
+  createdAt        DateTime               @default(now())
+  updatedAt        DateTime               @updatedAt
+
+  @@index([garmentType])
+  @@map("pattern_learning_records")
+}
