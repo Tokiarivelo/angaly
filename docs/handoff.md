@@ -122,3 +122,14 @@ Modifications locales vérifiées et prêtes :
 - **Clean Architecture NestJS** : Le `Domain` et l'`Application` n'importent jamais `@prisma/client` ni NestJS. Les repositories injectent des interfaces définies dans le domaine.
 - **Sécurité des secrets** : Les clés API des tiers sont chiffrées avec AES-256-GCM dans PostgreSQL (`apiKeyCipher`) et masquées à la sortie (`apiKeyMasked`, ex: `••••••••3f9a`). Seul `apps/api` possède la clé `AI_KEYS_ENCRYPTION_KEY`.
 - **SSRF** : Ne jamais autoriser une `baseUrl` pointant vers des réseaux privés ou des métadonnées cloud (`169.254.169.254`) sans validation par `SsrfValidator` (NestJS) et `validate_url_ssrf` (FastAPI).
+
+## 2026-10-07 — Pipeline photos d'inspiration (économie de tokens)
+
+- Fait : `AnalyzeInspirationImageUseCase` (download → SHA-256 → cache `inspiration_analyses` → sharp 1024 px JPEG →
+  `POST /v1/pattern/analyze-inspiration` → JSON compact), `suggest-pattern-parameters` en texte seul via
+  `inspirationFeatures`, vision Anthropic/Gemini/OpenAI-compatible (`generate_json_from_image`).
+- Tests : `pnpm --filter @angaly/api exec jest src/ai-inference src/admin-ai-settings` (92 ✓), `ai-service` pytest (46 ✓).
+- À faire : appliquer la migration `20261007120000_add_inspiration_analyses` (`pnpm --filter @angaly/database exec prisma migrate deploy`) ;
+  brancher l'upload de photo côté UI Pattern Studio / projet de création (passer l'URL MinIO en `inspirationImageUrl`) ;
+  envisager un modèle de vision dédié (Haiku / Gemini Flash) distinct du modèle de suggestion ; nettoyer les erreurs ESLint
+  historiques de `ai-inference`.

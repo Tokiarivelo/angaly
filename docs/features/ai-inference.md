@@ -138,6 +138,32 @@ interne (injection Nest, `AiInferenceModule` exporté et importé par `PatternsM
   `POST /v1/chat/assistant` côté `apps/ai-service` (ce n'était qu'un texte codé en dur
   auparavant).
 
+## Photos d'inspiration (pipeline économe en tokens)
+
+Le coût d'un appel vision dépend des **pixels**, pas de l'encodage (base64 ou URL : même nombre de
+tokens). On réduit donc les pixels et on ne paie l'image **qu'une fois par photo distincte** :
+
+```
+URL (média MinIO) → fetchOriginal (HTTPS, ≤10 Mo, image/*)
+  → SHA-256 des octets d'origine → cache `inspiration_analyses` ? → oui : JSON déjà extrait
+  → non : sharp (rotation EXIF, côté long ≤ 1024 px, JPEG q82) → ai-service
+          POST /v1/pattern/analyze-inspiration (1 image, ≤ 512 tokens de sortie)
+  → JSON compact {garmentType, neckline, sleeves, length, silhouette, waist, fabricLook, details}
+  → mis en cache (jamais en cas de repli `confidence = 0`)
+  → suggest-pattern-parameters travaille en TEXTE SEUL (`inspirationFeatures`)
+```
+
+- Cas d'usage : `AnalyzeInspirationImageUseCase` ; `SuggestPatternParametersUseCase` l'appelle quand
+  `inspirationImageUrl` est fourni, puis n'envoie plus l'image à l'ai-service.
+- L'image réduite n'est pas stockée (l'original est déjà dans MinIO via le module `media`) ; seul le JSON est
+  persisté (`InspirationAnalysis`, clé = hash).
+- Le modèle de vision est celui du fournisseur routé pour `PATTERN_SUGGESTION` (Anthropic, Gemini et
+  compatibles OpenAI) ; OpenAI reçoit `detail: "low"`. Choisir un modèle économique (Haiku, Gemini Flash)
+  dans `/admin/ai-settings` réduit encore le coût.
+- Les attributs sont descriptifs : jamais de géométrie (ADR-005). L'échec du téléchargement ou de l'analyse
+  n'empêche pas la suggestion (dégradation sans photo).
+- Variables : `INSPIRATION_IMAGE_MAX_PX` (1024), `INSPIRATION_IMAGE_MAX_BYTES` (10485760).
+
 ## Points d'attention
 
 - **Une suggestion n'est jamais la source de vérité** (ADR-005) : `confidence` proche de 0 ou

@@ -192,6 +192,16 @@ Utilisé par `apps/api/src/admin-ai-settings/infrastructure/crypto/aes-gcm-secre
 | --- | --- | --- |
 | `AI_KEYS_ENCRYPTION_KEY` | Clé secrète de 32 octets encodée en base64 (`openssl rand -base64 32`) | Clé de chiffrement AES-256-GCM. Indispensable pour la sauvegarde sécurisée et le déchiffrement à la volée des clés tierces. |
 
+### Photos d'inspiration (`INSPIRATION_IMAGE_*`)
+
+Utilisées par `apps/api/src/ai-inference/infrastructure/services/sharp-inspiration-image-preprocessor.ts`
+avant l'appel au modèle de vision (voir `docs/features/ai-inference.md`).
+
+| Variable | Défaut | Description |
+| --- | --- | --- |
+| `INSPIRATION_IMAGE_MAX_PX` | `1024` | Côté long (px) de la photo réduite envoyée au modèle de vision ; plus petit = moins de tokens. |
+| `INSPIRATION_IMAGE_MAX_BYTES` | `10485760` | Taille maximale (octets) acceptée au téléchargement d'une photo d'inspiration. |
+
 ---
 
 ## 7. Communication WhatsApp & Contact Client
