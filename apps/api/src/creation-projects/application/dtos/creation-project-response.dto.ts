@@ -15,6 +15,29 @@ export class CreationProjectStageEventResponseDto {
   @ApiProperty() createdAt!: string;
 }
 
+export class CreationProjectStageNoteResponseDto {
+  @ApiProperty() id!: string;
+  @ApiProperty() projectId!: string;
+  @ApiProperty({ enum: CreationProjectStage }) stage!: CreationProjectStage;
+  @ApiProperty() content!: string;
+  @ApiPropertyOptional({ nullable: true, type: String }) authorEmail!: string | null;
+  @ApiProperty() createdAt!: string;
+  @ApiProperty() updatedAt!: string;
+}
+
+export class CreationProjectStageMediaResponseDto {
+  @ApiProperty() id!: string;
+  @ApiProperty() projectId!: string;
+  @ApiProperty({ enum: CreationProjectStage }) stage!: CreationProjectStage;
+  @ApiProperty() url!: string;
+  @ApiPropertyOptional({ nullable: true, type: String }) title!: string | null;
+  @ApiPropertyOptional({ nullable: true, type: String }) fileName!: string | null;
+  @ApiPropertyOptional({ nullable: true, type: String }) mimeType!: string | null;
+  @ApiPropertyOptional({ nullable: true, type: Number }) sizeBytes!: number | null;
+  @ApiPropertyOptional({ nullable: true, type: String }) uploadedByEmail!: string | null;
+  @ApiProperty() createdAt!: string;
+}
+
 export class CreationProjectResponseDto {
   @ApiProperty() id!: string;
   @ApiProperty({ example: 'CRP-2026-0001' }) reference!: string;
@@ -35,4 +58,10 @@ export class CreationProjectResponseDto {
 export class CreationProjectDetailResponseDto extends CreationProjectResponseDto {
   @ApiProperty({ type: [CreationProjectStageEventResponseDto] })
   stageHistory!: CreationProjectStageEventResponseDto[];
+
+  @ApiProperty({ type: [CreationProjectStageNoteResponseDto] })
+  stageNotes!: CreationProjectStageNoteResponseDto[];
+
+  @ApiProperty({ type: [CreationProjectStageMediaResponseDto] })
+  stageMedia!: CreationProjectStageMediaResponseDto[];
 }

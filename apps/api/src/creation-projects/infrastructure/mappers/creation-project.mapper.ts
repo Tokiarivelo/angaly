@@ -20,6 +20,27 @@ export class CreationProjectMapper {
         createdAt: Date;
         changedBy: { email: string } | null;
       }>;
+      stageNotes?: Array<{
+        id: string;
+        projectId: string;
+        stage: string;
+        content: string;
+        createdAt: Date;
+        updatedAt: Date;
+        author?: { email: string } | null;
+      }>;
+      stageMedia?: Array<{
+        id: string;
+        projectId: string;
+        stage: string;
+        url: string;
+        title?: string | null;
+        fileName?: string | null;
+        mimeType?: string | null;
+        sizeBytes?: number | null;
+        createdAt: Date;
+        uploadedBy?: { email: string } | null;
+      }>;
     },
   ): CreationProjectEntity {
     const customerName = row.customer
@@ -47,6 +68,27 @@ export class CreationProjectMapper {
         toStage: event.toStage as CreationProjectStage,
         changedByEmail: event.changedBy?.email ?? null,
         createdAt: event.createdAt,
+      })),
+      stageNotes: row.stageNotes?.map((note) => ({
+        id: note.id,
+        projectId: note.projectId,
+        stage: note.stage as CreationProjectStage,
+        content: note.content,
+        authorEmail: note.author?.email ?? null,
+        createdAt: note.createdAt,
+        updatedAt: note.updatedAt,
+      })),
+      stageMedia: row.stageMedia?.map((media) => ({
+        id: media.id,
+        projectId: media.projectId,
+        stage: media.stage as CreationProjectStage,
+        url: media.url,
+        title: media.title ?? null,
+        fileName: media.fileName ?? null,
+        mimeType: media.mimeType ?? null,
+        sizeBytes: media.sizeBytes ?? null,
+        uploadedByEmail: media.uploadedBy?.email ?? null,
+        createdAt: media.createdAt,
       })),
       createdAt: row.createdAt,
       updatedAt: row.updatedAt,
@@ -79,6 +121,27 @@ export class CreationProjectMapper {
       toStage: event.toStage,
       changedByEmail: event.changedByEmail,
       createdAt: event.createdAt.toISOString(),
+    }));
+    dto.stageNotes = entity.stageNotes.map((note) => ({
+      id: note.id,
+      projectId: note.projectId,
+      stage: note.stage,
+      content: note.content,
+      authorEmail: note.authorEmail,
+      createdAt: note.createdAt.toISOString(),
+      updatedAt: note.updatedAt.toISOString(),
+    }));
+    dto.stageMedia = entity.stageMedia.map((media) => ({
+      id: media.id,
+      projectId: media.projectId,
+      stage: media.stage,
+      url: media.url,
+      title: media.title,
+      fileName: media.fileName,
+      mimeType: media.mimeType,
+      sizeBytes: media.sizeBytes,
+      uploadedByEmail: media.uploadedByEmail,
+      createdAt: media.createdAt.toISOString(),
     }));
     return dto;
   }

@@ -15,6 +15,29 @@ export interface CreationProjectStageEvent {
   createdAt: Date;
 }
 
+export interface CreationProjectStageNote {
+  id: string;
+  projectId: string;
+  stage: CreationProjectStage;
+  content: string;
+  authorEmail: string | null;
+  createdAt: Date;
+  updatedAt: Date;
+}
+
+export interface CreationProjectStageMedia {
+  id: string;
+  projectId: string;
+  stage: CreationProjectStage;
+  url: string;
+  title: string | null;
+  fileName: string | null;
+  mimeType: string | null;
+  sizeBytes: number | null;
+  uploadedByEmail: string | null;
+  createdAt: Date;
+}
+
 export interface CreationProjectProps {
   id: string;
   reference: string;
@@ -31,6 +54,8 @@ export interface CreationProjectProps {
   assignedTo?: CreationProjectAssignee | null;
   /** Renseigné uniquement par `findDetailById` (plus récent d'abord). */
   stageHistory?: CreationProjectStageEvent[];
+  stageNotes?: CreationProjectStageNote[];
+  stageMedia?: CreationProjectStageMedia[];
   createdAt: Date;
   updatedAt: Date;
 }
@@ -59,6 +84,8 @@ export class CreationProjectEntity {
   get completedAt(): Date | null { return this.props.completedAt; }
   get assignedTo(): CreationProjectAssignee | null { return this.props.assignedTo ?? null; }
   get stageHistory(): CreationProjectStageEvent[] { return this.props.stageHistory ?? []; }
+  get stageNotes(): CreationProjectStageNote[] { return this.props.stageNotes ?? []; }
+  get stageMedia(): CreationProjectStageMedia[] { return this.props.stageMedia ?? []; }
   get createdAt(): Date { return this.props.createdAt; }
   get updatedAt(): Date { return this.props.updatedAt; }
 

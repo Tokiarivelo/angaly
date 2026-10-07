@@ -47,6 +47,13 @@ describe('creation-projects use cases', () => {
     assign: jest.fn(),
     findAssignableStaff: jest.fn(),
     findAssignableStaffById: jest.fn(),
+    createAdminProject: jest.fn(),
+    findCustomers: jest.fn(),
+    findQuotes: jest.fn(),
+    addStageNote: jest.fn(),
+    deleteStageNote: jest.fn(),
+    addStageMedia: jest.fn(),
+    deleteStageMedia: jest.fn(),
   };
 
   beforeEach(() => {
