@@ -16,7 +16,24 @@ Lis docs/handoff.md et poursuis le travail selon les priorités définies.
 
 ---
 
-## 0. Dernière session (2026-10-08) — Phase 5b S1 + catalogue de mesures
+## 0 bis. Session 2026-10-08 (suite) — Phase 5b S2 livrée
+
+Moteur `0.2.0-fit` : `ease`, `lengths`, `fullness` et 5 mesures (`LONGUEUR_JUPE`, `HAUTEUR_TAILLE_SOL`,
+`LONGUEUR_DEVANT`, `HAUTEUR_BASSIN`, `HAUTEUR_FOURCHE`) modifient réellement les contours ; `CONFORT`/défauts
+= géométrie historique (95 tests existants inchangés). `warnings[]` géométriques ajoutés. Tests : moteur 131,
+API 1239, web verts, typecheck 10/10. Détail : `docs/features/pattern-engine.md`.
+
+⚠️ Après `git pull` : appliquer la migration `20261008130000` (`pnpm --filter @angaly/database db:migrate`),
+sinon toute lecture de projet échoue (colonne `parametersExtJson`).
+
+**Prochaine action : S3** — l'analyse photo remplit `ease/fullness/lengths` (prompt + `normalize_profile`
+bornage + fusion API client > photo > IA) et écran « Ajustements déduits de la photo » (consulter Stitch via
+`agy` avant JSX). Dette : brancher les mesures restantes du catalogue (sous-poitrine, hauteur de poitrine,
+carrures, cuisse…), migrer l'avertissement AUTRE dans la règle.
+
+---
+
+## 0. Session précédente (2026-10-08) — Phase 5b S1 + catalogue de mesures
 
 **Livré (S1)** : contrat de paramètres étendus (`ease`, `fullness`, `lengths`) + **catalogue de 31
 mesures** pour l'ajustement (`packages/types/src/pattern-fit.ts`).

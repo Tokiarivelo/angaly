@@ -146,10 +146,13 @@ export const CostumeRule: IPatternRule = {
     const tb = tourBassin * 10;
     const lg = Math.round(longueurJambe * 10 * resolveTrouserLengthFactor(parameters.details['longueur']));
 
-    const hauteurMontant = Math.round(tb / 4 + 20); // ~260mm
+    const hauteurMontant =
+      measurements['HAUTEUR_FOURCHE'] !== undefined
+        ? Math.round(measurements['HAUTEUR_FOURCHE'] * 10)
+        : Math.round(tb / 4 + 20); // ~260mm
     const hauteurGenou = Math.round(hauteurMontant + (lg - hauteurMontant) * 0.5);
 
-    const leg = resolveLegProfile(parameters.cutType);
+    const leg = resolveLegProfile(parameters.cutType, parameters.ease);
     const demiLargeurBasDevant = leg.halfHemMm; // Coupe droite tailleur par défaut
     const kneeFront = Math.round(demiLargeurBasDevant * leg.kneeRatio);
 

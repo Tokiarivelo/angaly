@@ -6,6 +6,9 @@
  * already used — so an unknown or missing cutType keeps the historical geometry.
  */
 
+import type { EaseLevel } from '../types';
+import { bodiceLengthFactor, fitSleeve, withEaseLeg, withEaseTop } from './fit';
+
 export interface CutProfile {
   bodiceDeltaMm: number;
   waistDeltaMm: number;
@@ -163,24 +166,31 @@ const CUFFLESS_SLEEVES = new Set(['SANS_MANCHES', 'COURTES', 'PAPILLON']);
 
 /** Everything a tailored top (chemise, veste, costume jacket) takes from the wizard's choices. */
 export function resolveTopAdjustments(
-  parameters: { cutType: string; details: Record<string, string> },
+  parameters: {
+    cutType: string;
+    details: Record<string, string>;
+    ease?: EaseLevel;
+    fullness?: { skirt?: number; sleeve?: number };
+    lengths?: { skirtPct?: number; sleevePct?: number; bodicePct?: number };
+  },
   defaultArmLengthMm: number,
 ): TopAdjustments {
   const profile = resolveCutProfile(parameters.cutType);
   const manches = parameters.details['manches']?.toUpperCase();
   const col = parameters.details['col']?.toUpperCase();
 
-  return {
+  const base: TopAdjustments = {
     bodiceDeltaMm: profile.bodiceDeltaMm,
     waistDeltaMm: profile.waistDeltaMm,
     hemDeltaMm: profile.hipDeltaMm + Math.round(profile.hemFlareMm * 0.5),
-    lengthFactor: resolveTopLengthFactor(parameters.details['longueur']),
+    lengthFactor: resolveTopLengthFactor(parameters.details['longueur']) * bodiceLengthFactor(parameters.lengths),
     neckline: resolveNecklineChoice(parameters.details),
-    sleeve: resolveSleeve(manches, defaultArmLengthMm),
-    sleeveless: manches === 'SANS_MANCHES',
+    sleeve: fitSleeve(resolveSleeve(manches, defaultArmLengthMm), parameters),
+    sleeveless: manches === 'SANS_MANCHES' || parameters.lengths?.sleevePct === 0,
     includeCollar: !(col && COLLARLESS.has(col)),
-    includeCuff: !(manches && CUFFLESS_SLEEVES.has(manches)),
+    includeCuff: !(manches && CUFFLESS_SLEEVES.has(manches)) && parameters.lengths?.sleevePct !== 0,
   };
+  return withEaseTop(base, parameters.ease);
 }
 
 export interface LegProfile {
@@ -202,7 +212,14 @@ const LEG_PROFILES: Record<string, LegProfile> = {
 };
 
 /** Trouser leg shape. Historical SLIM/LARGE keywords keep working for free-text cuts. */
-export function resolveLegProfile(cutType: string | null | undefined): LegProfile {
+export function resolveLegProfile(
+  cutType: string | null | undefined,
+  ease?: EaseLevel,
+): LegProfile {
+  return withEaseLeg(baseLegProfile(cutType), ease);
+}
+
+function baseLegProfile(cutType: string | null | undefined): LegProfile {
   const key = (cutType ?? '').toUpperCase();
   const exact = LEG_PROFILES[key];
   if (exact) return exact;

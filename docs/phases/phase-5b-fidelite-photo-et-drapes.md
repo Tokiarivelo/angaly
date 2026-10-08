@@ -1,6 +1,6 @@
 # Phase 5b — Fidélité photo, aisance paramétrique, blocs de drapé & modèle local
 
-**Statut : 🚧 S1 livrée (2026-10-08) ; S2 → S8 à faire.** Dépend de : Phase 4 (pattern-engine, wizard) et
+**Statut : 🚧 S1 et S2 livrées (2026-10-08) ; S3 → S8 à faire.** Dépend de : Phase 4 (pattern-engine, wizard) et
 Phase 5 (ai-inference, analyse de photo). Prolonge `docs/features/ai-inference.md`,
 `docs/features/pattern-engine.md`, `docs/features/patterns.md` et
 `docs/features/ai-training-data.md`.
@@ -116,7 +116,15 @@ API (PATCH/GET), migration.
 **Critères d'acceptation** : aucun test moteur existant ne change ; un paramètre hors bornes est rejeté (400) ;
 un projet sans paramètres étendus se génère identique à avant.
 
-### S2 — Aisance & proportions dans les règles du moteur
+### S2 — Aisance & proportions dans les règles du moteur  ✅ livrée 2026-10-08
+
+> **Livré** : `shared/fit.ts` (`resolveEaseProfile`, `resolveLengthMm`, composition coupe × aisance,
+> ampleur de jupe/manche, longueur de manche/corsage), branché dans les 8 règles ; mesures
+> `LONGUEUR_JUPE`, `HAUTEUR_TAILLE_SOL`, `LONGUEUR_DEVANT`, `HAUTEUR_BASSIN`, `HAUTEUR_FOURCHE`
+> consommées ; `warnings[]` géométriques (`geometry-checks.ts`) ; 36 tests (131 au total dans le
+> moteur). Écarts avec le plan : fichiers `ease-profile.ts`/`proportions.ts` fusionnés en `fit.ts` ;
+> l'avertissement « AUTRE » reste côté API ; les autres mesures du catalogue restent à brancher
+> (voir `docs/features/pattern-engine.md`).
 
 **But** : que `ease`, `fullness`, `lengths` modifient réellement les contours.
 

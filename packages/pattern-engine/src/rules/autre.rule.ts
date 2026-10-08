@@ -39,6 +39,7 @@ import type {
  * `apps/web` de la même façon que `parametersJson.estimatedMeasurementKeys` l'est déjà par
  * `PatternPreviewValidationPage.tsx`.
  */
+import { resolveEaseProfile } from '../shared/fit';
 const REQUIRED_MEASUREMENTS = ['TOUR_POITRINE', 'TOUR_TAILLE', 'LONGUEUR_DOS'];
 
 export const AutreRule: IPatternRule = {
@@ -48,7 +49,7 @@ export const AutreRule: IPatternRule = {
     return parameters.garmentType === 'AUTRE';
   },
   computePieces(
-    _parameters: PatternParameters,
+    parameters: PatternParameters,
     measurements: MeasurementSet,
   ): PatternPieceGeometry[] {
     const tourPoitrine = measurements['TOUR_POITRINE'] ?? 90;
@@ -62,7 +63,7 @@ export const AutreRule: IPatternRule = {
     // Bloc rectangulaire neutre : demi-largeur = le plus large de poitrine/taille + aisance
     // minimale, hauteur = torse complet approximatif. Aucune forme d'emmanchure, de col ou de
     // pince — volontairement générique, à retravailler entièrement selon le cahier des charges.
-    const largeur = Math.round(Math.max(tp, tt) / 4 + 20);
+    const largeur = Math.round(Math.max(tp, tt) / 4 + 20 + resolveEaseProfile(parameters.ease).bustDeltaMm);
     const hauteur = Math.round(lg * 2);
 
     const blocBaseDevant: PatternPieceGeometry = {

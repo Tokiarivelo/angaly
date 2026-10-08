@@ -11,6 +11,13 @@ import {
   resolveSleeve,
 } from '../shared/cut-profile';
 import { sleevePiece } from '../shared/shapes';
+import {
+  bodiceLengthFactor,
+  fitSleeve,
+  resolveLengthMm,
+  skirtFullnessExtraMm,
+  withEase,
+} from '../shared/fit';
 
 /**
  * ROBE_MARIEE — construction dédiée, distincte de `robe.rule.ts`.
@@ -60,13 +67,13 @@ export const RobeMarieeRule: IPatternRule = {
     const tp = tourPoitrine * 10;
     const tt = tourTaille * 10;
     const tb = tourBassin * 10;
-    const lgDos = longueurDos * 10;
+    const lgDos = Math.round(longueurDos * 10 * bodiceLengthFactor(parameters.lengths));
     const traine = longueurTraine * 10;
 
     // Choix du wizard (voir shared/cut-profile.ts) : DROITE = construction historique de la règle.
-    const profile = resolveCutProfile(parameters.cutType);
+    const profile = withEase(resolveCutProfile(parameters.cutType), parameters.ease);
     const neck = resolveNecklineChoice(parameters.details);
-    const sleeve = resolveSleeve(parameters.details['manches']);
+    const sleeve = fitSleeve(resolveSleeve(parameters.details['manches']), parameters);
 
     // Bustier structuré — aisance minimale (~5mm), maintien par la structure/baleinage.
     // L'écart de coupe se répartit entre devant (60 %), côté (40 %) et dos (100 %).
@@ -81,12 +88,20 @@ export const RobeMarieeRule: IPatternRule = {
     const hauteurBustierDos = lgDos;
 
     // Jupe devant : longueur au sol (~1000mm), jupe dos : jupe devant + traîne.
-    const longueurJupeDevant = resolveSkirtLengthMm(parameters.details['longueur']) ?? 1000;
+    // LONGUEUR_JUPE, sinon HAUTEUR_TAILLE_SOL (robe au sol sur mesure), sinon le choix du wizard.
+    const mesureLongueurJupe = measurements['LONGUEUR_JUPE'] ?? measurements['HAUTEUR_TAILLE_SOL'];
+    const longueurJupeDevant = resolveLengthMm(
+      mesureLongueurJupe !== undefined
+        ? mesureLongueurJupe * 10
+        : (resolveSkirtLengthMm(parameters.details['longueur']) ?? 1000),
+      parameters.lengths?.skirtPct,
+      [300, 1600],
+    );
     const longueurJupeDos = longueurJupeDevant + traine;
     const largeurJupeDevant = tb / 4 + 20 + profile.hipDeltaMm; // Aisance légèrement plus ample pour l'ampleur bal
     const largeurJupeCote = tb / 4 + profile.hipDeltaMm;
     const largeurJupeDos = tb / 4 - 5 + profile.hipDeltaMm;
-    const flare = profile.hemFlareMm;
+    const flare = profile.hemFlareMm + skirtFullnessExtraMm(parameters.fullness, largeurJupeDevant);
     // Sirène : le fourreau reste près du corps jusqu'au genou avant de s'évaser.
     const kneePoint = (width: number, length: number) =>
       profile.fishtail ? [{ x: width * 0.9, y: length * 0.55 }] : [];

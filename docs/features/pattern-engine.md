@@ -163,6 +163,49 @@ l'identique) :
   `20261008130000_add_pattern_project_parameters_ext`), `PATCH /api/pattern-projects/:id` →
   400 « Paramètres étendus invalides » ; `{}` ou `null` = retour aux défauts. Revalidé à la
   génération et enregistré dans `parametersJson.parameters`.
-- **S1 ne change aucun contour** : les règles ignorent encore ces champs (S2 : `ease-profile.ts`,
-  `proportions.ts`, `warnings[]`). Le moteur n'importe pas `@angaly/types` ; les types sont
-  recopiés structurellement dans `types.ts`.
+- Le moteur n'importe pas `@angaly/types` ; les types sont recopiés structurellement dans `types.ts`.
+
+## Aisance, proportions et mesures dans les règles (Phase 5b S2, engine `0.2.0-fit`)
+
+Code : `src/shared/fit.ts` (+ `geometry-checks.ts`). Principe : **chaque paramètre absent ou neutre
+(`CONFORT`, 100 %, ampleur 1) reproduit la géométrie historique au millimètre.**
+
+**Aisance** — `delta_final = delta_coupe + delta_aisance` (mm par quart de corps ; la coupe donne la
+silhouette, l'aisance le confort) :
+
+| `ease` | poitrine | taille | bassin | emmanchure |
+|--------|----------|--------|--------|------------|
+| `AJUSTE` | −20 | −15 | −15 | −10 |
+| `CONFORT` | 0 | 0 | 0 | 0 |
+| `AMPLE` | +30 | +25 | +30 | +15 |
+
+Appliquée à robe, jupe, pantalon, veste, chemise, costume (veste + pantalon), robe de mariée et
+« autre » (largeur du bloc, poitrine seulement). Test de monotonie AJUSTE < CONFORT < AMPLE sur les 8.
+
+**Longueurs / ampleur**
+- `lengths.skirtPct` : longueur de jupe (robe, jupe, mariée), bornée 300–1500 mm (1600 mariée).
+- `fullness.skirt` : largeur d'ourlet ajoutée = `(ampleur − 1) × largeur de hanche du panneau`
+  (1 = rien ; s'ajoute à l'évasement de la coupe).
+- `lengths.sleevePct` (0 = pas de manche, ni poignet) et `fullness.sleeve` (× largeur de tête de manche).
+- `lengths.bodicePct` : hauteur du corsage / longueur de veste, chemise, costume.
+
+**Mesures consommées** (si présentes ; sinon comportement historique) :
+
+| Mesure | Effet |
+|--------|-------|
+| `LONGUEUR_JUPE` | longueur de jupe (prioritaire sur le détail `longueur`) — jupe, robe, mariée |
+| `HAUTEUR_TAILLE_SOL` | longueur de jupe de la robe de mariée (si pas de `LONGUEUR_JUPE`) |
+| `LONGUEUR_DEVANT` | hauteur du corsage devant de la robe |
+| `HAUTEUR_BASSIN` | ligne de bassin de la jupe |
+| `HAUTEUR_FOURCHE` | hauteur de fourche du pantalon et du costume |
+| `LONGUEUR_BRAS` | inchangé (déjà utilisé) |
+
+**Pas encore consommées** (catalogue seulement) : tour sous-poitrine, hauteur de poitrine, carrures,
+largeur d'épaule, écart des pointes, tour de cuisse/genou/cheville, entrejambe, tour de bras/poignet,
+profondeur et tour d'emmanchure, tour de cou. À brancher quand un bloc de construction les exige
+(pinces de poitrine, emmanchure ajustée, jambe ajustée).
+
+**Garde-fous** — `PatternEngine.generate()` renvoie maintenant `warnings[]` : contour non fermé,
+coordonnées non finies, surface < 25 cm², contour auto-sécant. Un test balaie vêtement × coupe × aisance
+(avec ampleur et longueurs extrêmes) et exige zéro avertissement. L'avertissement « AUTRE » reste
+ajouté côté API (`generate-pattern-version.use-case.ts`) — à migrer dans la règle.

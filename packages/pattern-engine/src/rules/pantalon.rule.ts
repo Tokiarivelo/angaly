@@ -28,11 +28,15 @@ export const PantalonRule: IPatternRule = {
     const lg = Math.round(longueurJambe * 10 * resolveTrouserLengthFactor(parameters.details['longueur']));
 
     // Ligne d'enfourchure (hauteur montant) et genou
-    const hauteurMontant = Math.round(tb / 4 + 20); // ~260mm
+    // HAUTEUR_FOURCHE (taille → assise) si mesurée, sinon proportion du bassin (~260mm).
+    const hauteurMontant =
+      measurements['HAUTEUR_FOURCHE'] !== undefined
+        ? Math.round(measurements['HAUTEUR_FOURCHE'] * 10)
+        : Math.round(tb / 4 + 20);
     const hauteurGenou = Math.round(hauteurMontant + (lg - hauteurMontant) * 0.5); // ~630mm
 
     // Forme de jambe selon la coupe choisie (voir shared/cut-profile.ts)
-    const leg = resolveLegProfile(parameters.cutType);
+    const leg = resolveLegProfile(parameters.cutType, parameters.ease);
     const demiLargeurBasDevant = leg.halfHemMm; // Standard 200mm bas
     const kneeFront = Math.round(demiLargeurBasDevant * leg.kneeRatio);
 

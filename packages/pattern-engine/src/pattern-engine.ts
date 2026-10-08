@@ -8,7 +8,9 @@ import {
   PatternEngineValidationError,
 } from './types';
 
-const ENGINE_VERSION = '0.1.0-foundation';
+import { checkPieceGeometry } from './shared/geometry-checks';
+
+const ENGINE_VERSION = '0.2.0-fit';
 
 /**
  * Deterministic orchestrator: picks the registered rule matching the requested
@@ -52,7 +54,7 @@ export class PatternEngine implements IPatternEngine {
 
     return {
       pieces,
-      warnings: [],
+      warnings: checkPieceGeometry(pieces),
       metadata: {
         engineVersion: ENGINE_VERSION,
         generatedAt: new Date().toISOString(),

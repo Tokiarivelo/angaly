@@ -5,6 +5,7 @@ import type {
   PatternPieceGeometry,
 } from '../types';
 import { resolveCutProfile, resolveSkirtLengthMm } from '../shared/cut-profile';
+import { resolveLengthMm, skirtFullnessExtraMm, withEase } from '../shared/fit';
 
 // Pour une jupe de base, il nous faut au minimum :
 const REQUIRED_MEASUREMENTS = ['TOUR_TAILLE', 'TOUR_BASSIN', 'LONGUEUR_DOS'];
@@ -26,21 +27,29 @@ export const JupeRule: IPatternRule = {
     // Valeurs de base en mm
     const tt = tourTaille * 10;
     const tb = tourBassin * 10;
-    const lg = resolveSkirtLengthMm(parameters.details['longueur']) ?? longueur * 10;
-    const profile = resolveCutProfile(parameters.cutType);
+    const baseLength =
+      measurements['LONGUEUR_JUPE'] !== undefined
+        ? measurements['LONGUEUR_JUPE'] * 10
+        : (resolveSkirtLengthMm(parameters.details['longueur']) ?? longueur * 10);
+    const lg = resolveLengthMm(baseLength, parameters.lengths?.skirtPct, [300, 1500]);
+    const profile = withEase(resolveCutProfile(parameters.cutType), parameters.ease);
 
     // Calculs simplifiés (base jupe droite)
     // Devant: quart du tour de bassin + 1cm d'aisance
     const largeurDevant = tb / 4 + 10 + profile.hipDeltaMm;
     const largeurTailleDevant = tt / 4 + 10 + 20 + profile.waistDeltaMm; // + pince de 2cm
-    const hemDevant = largeurDevant + profile.hemFlareMm;
+    const hemDevant = largeurDevant + profile.hemFlareMm + skirtFullnessExtraMm(parameters.fullness, largeurDevant);
 
     // Dos: quart du tour de bassin - 1cm d'aisance
     const largeurDos = tb / 4 - 10 + profile.hipDeltaMm;
     const largeurTailleDos = tt / 4 - 10 + 30 + profile.waistDeltaMm; // + pince de 3cm
-    const hemDos = largeurDos + profile.hemFlareMm;
+    const hemDos = largeurDos + profile.hemFlareMm + skirtFullnessExtraMm(parameters.fullness, largeurDos);
 
-    const hipDepth = Math.min(200, lg / 2);
+    // HAUTEUR_BASSIN (taille → point le plus fort du bassin) si mesurée, sinon 20 cm.
+    const hipDepth =
+      measurements['HAUTEUR_BASSIN'] !== undefined
+        ? Math.min(measurements['HAUTEUR_BASSIN'] * 10, lg - 50)
+        : Math.min(200, lg / 2);
 
     const devant: PatternPieceGeometry = {
       name: 'Devant',

@@ -11,6 +11,13 @@ import {
   resolveSleeve,
 } from '../shared/cut-profile';
 import { skirtOutline, sleevePiece } from '../shared/shapes';
+import {
+  bodiceLengthFactor,
+  fitSleeve,
+  resolveLengthMm,
+  skirtFullnessExtraMm,
+  withEase,
+} from '../shared/fit';
 
 const REQUIRED_MEASUREMENTS = ['TOUR_POITRINE', 'TOUR_TAILLE', 'TOUR_BASSIN', 'LONGUEUR_DOS'];
 
@@ -31,28 +38,38 @@ export const RobeRule: IPatternRule = {
     const tourBassin = measurements['TOUR_BASSIN'] ?? 95;
     const longueurDos = measurements['LONGUEUR_DOS'] ?? 40;
 
-    const profile = resolveCutProfile(parameters.cutType);
+    const profile = withEase(resolveCutProfile(parameters.cutType), parameters.ease);
     const neckline = resolveNeckline(parameters.details);
     const tp = tourPoitrine * 10;
     const tt = tourTaille * 10;
     const tb = tourBassin * 10;
-    const lgDos = longueurDos * 10;
+    const lgDos = Math.round(longueurDos * 10 * bodiceLengthFactor(parameters.lengths));
+    const lgDevantMesure =
+      measurements['LONGUEUR_DEVANT'] !== undefined
+        ? Math.round(measurements['LONGUEUR_DEVANT'] * 10 * bodiceLengthFactor(parameters.lengths))
+        : undefined;
 
     // Dimensions corsage
     const largeurCorsageDevant = tp / 4 + 20 + profile.bodiceDeltaMm; // 2cm aisance (DROITE)
     const largeurTailleDevant = tt / 4 + 20 + profile.waistDeltaMm;
-    const hauteurCorsageDevant = lgDos + 40;
+    const hauteurCorsageDevant = lgDevantMesure ?? lgDos + 40; // LONGUEUR_DEVANT mesurée si fournie
 
     const largeurCorsageDos = tp / 4 - 10 + profile.bodiceDeltaMm;
     const largeurTailleDos = tt / 4 - 10 + profile.waistDeltaMm;
     const hauteurCorsageDos = lgDos;
 
     // Dimensions jupe
-    const longueurJupe = resolveSkirtLengthMm(parameters.details['longueur']) ?? 650; // 65cm par défaut
+    const longueurJupe = resolveLengthMm(
+      measurements['LONGUEUR_JUPE'] !== undefined
+        ? measurements['LONGUEUR_JUPE'] * 10
+        : (resolveSkirtLengthMm(parameters.details['longueur']) ?? 650), // 65cm par défaut
+      parameters.lengths?.skirtPct,
+      [300, 1500],
+    );
     const largeurJupeDevant = tb / 4 + 15 + profile.hipDeltaMm;
     const largeurJupeDos = tb / 4 - 10 + profile.hipDeltaMm;
-    const hemDevant = largeurJupeDevant + profile.hemFlareMm;
-    const hemDos = largeurJupeDos + profile.hemFlareMm;
+    const hemDevant = largeurJupeDevant + profile.hemFlareMm + skirtFullnessExtraMm(parameters.fullness, largeurJupeDevant);
+    const hemDos = largeurJupeDos + profile.hemFlareMm + skirtFullnessExtraMm(parameters.fullness, largeurJupeDos);
 
     const corsageDevant: PatternPieceGeometry = {
       name: 'Corsage Devant',
@@ -112,9 +129,12 @@ export const RobeRule: IPatternRule = {
 
     const pieces = [corsageDevant, corsageDos, jupeDevant, jupeDos];
 
-    const sleeve = resolveSleeve(
-      parameters.details['manches'],
-      measurements['LONGUEUR_BRAS'] !== undefined ? measurements['LONGUEUR_BRAS'] * 10 : undefined,
+    const sleeve = fitSleeve(
+      resolveSleeve(
+        parameters.details['manches'],
+        measurements['LONGUEUR_BRAS'] !== undefined ? measurements['LONGUEUR_BRAS'] * 10 : undefined,
+      ),
+      parameters,
     );
     if (sleeve) {
       pieces.push(sleevePiece('Manche', tp, sleeve));
