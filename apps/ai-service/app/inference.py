@@ -132,7 +132,7 @@ def analyze_inspiration(request: InspirationAnalysisRequest) -> InspirationAnaly
     prompt = build_taxonomy_prompt() + (
         "\n\nRéponds avec : features, profile "
         "(isGarment, garmentType, occasion, style, cutType, details, constructionMethod, presentation, "
-        "constructionNotes, fit), confidence (0..1)."
+        "constructionNotes, fit, drapeBlocks), confidence (0..1)."
     )
     try:
         image_bytes = base64.b64decode(request.image_base64, validate=True)

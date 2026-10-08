@@ -30,9 +30,14 @@ def test_prompt_lists_every_vocabulary_value() -> None:
 
 def test_few_shot_examples_are_valid_against_the_taxonomy() -> None:
     for example in FEW_SHOT_EXAMPLES:
-        assert normalize_profile(example["profile"]) == {
-            **example["profile"],
-            "details": example["profile"]["details"],
+        profile = example["profile"]
+        # Blocks carry a per-block `certainty` in the model's answer; normalisation consumes it.
+        blocks = [{k: v for k, v in b.items() if k != "certainty"} for b in profile.get("drapeBlocks") or []]
+        assert normalize_profile(profile) == {
+            "drapeBlocks": None,
+            **profile,
+            "details": profile["details"],
+            **({"drapeBlocks": blocks} if blocks else {}),
         }
 
 

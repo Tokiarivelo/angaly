@@ -3,7 +3,7 @@
 // Enums mirror packages/database/prisma/schema.prisma 1:1 — keep both in sync.
 
 import type { ProviderCredentials } from './ai-providers';
-import type { GarmentFit, PatternExtParameters } from './pattern-fit';
+import type { DrapeBlock, GarmentFit, PatternExtParameters } from './pattern-fit';
 
 // ============================================================
 // Enums
@@ -824,6 +824,11 @@ export interface GarmentProfile {
   constructionNotes?: string | null;
   /** Ease / fullness / lengths read from the photo (bounded, certain values only). Absent on older analyses. */
   fit?: GarmentFit | null;
+  /**
+   * Deterministic drape blocks the photo suggests (S5). Only validated blocks survive; anything else
+   * stays in `constructionNotes` as mannequin advice.
+   */
+  drapeBlocks?: DrapeBlock[] | null;
 }
 
 /** What the photo analysis found, stored on the pattern project so generation can use it. */

@@ -10,6 +10,7 @@ import {
   type PatternExtParameters,
 } from '@angaly/types';
 import { effectiveFit, fitControlsFor, type FitChange } from '../../utils/fit-parameters';
+import { DrapeBlocksEditor } from './DrapeBlocksEditor';
 
 interface FitAdjustmentsProps {
   garmentType: string;
@@ -215,6 +216,13 @@ export const FitAdjustments: React.FC<FitAdjustmentsProps> = ({ garmentType, val
           />
         )}
       </div>
+
+      <DrapeBlocksEditor
+        garmentType={garmentType}
+        value={value?.drape}
+        suggested={suggested?.drape}
+        onChange={(spec) => onChange({ field: 'drape', value: spec })}
+      />
     </div>
   );
 };

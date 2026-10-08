@@ -1,6 +1,6 @@
 # Phase 5b — Fidélité photo, aisance paramétrique, blocs de drapé & modèle local
 
-**Statut : 🚧 S1 à S4 livrées (2026-10-08) ; S5 → S8 à faire.** Dépend de : Phase 4 (pattern-engine, wizard) et
+**Statut : 🚧 S1 à S5 livrées (2026-10-08) ; S6 → S8 à faire.** Dépend de : Phase 4 (pattern-engine, wizard) et
 Phase 5 (ai-inference, analyse de photo). Prolonge `docs/features/ai-inference.md`,
 `docs/features/pattern-engine.md`, `docs/features/patterns.md` et
 `docs/features/ai-training-data.md`.
@@ -223,7 +223,16 @@ interface DrapeSpec { blocks: DrapeBlock[] }
 `fullness` ↑ ⇒ largeur ↑ ; non-régression ; snapshot visuel SVG (golden files).
 **Acceptation** : pour chaque bloc, les pièces s'exportent (PDF/SVG) sans erreur ; couverture ≥ 80 %.
 
-### S5 — Drapé avancé, mannequin & sélection de bloc par l'IA
+### S5 — Drapé avancé, mannequin & sélection de bloc par l'IA  ✅ livrée 2026-10-08
+
+> **Livré** : `TRAIN`, `OVERSKIRT`, `DRAPED_BODICE`, `ASYMMETRIC_HEM` (manches ballon/papillon = détails + `fullness.sleeve`) ;
+> sélection de blocs par l'IA validée (`drapeBlocks`, ai-service + API, anti-dérive) ; arbre de décision (table de vérité
+> testée) ; fiche de moulage (5 sections, bornée) ; UI « Drapé et volumes » ; panneau « À savoir » sur l'aperçu (les
+> avertissements moteur n'étaient affichés nulle part jusqu'ici). Critères d'acceptation vérifiés par test : robe de mariée à
+> traîne → base + bloc `TRAIN` + fiche ; sari → `MANNEQUIN_ONLY`, aucun bloc, avertissement « moulage requis ».
+> **Écarts** : fiche déterministe plutôt que générée par IA ; pas d'ajout de la fiche au PDF (l'export API est un gabarit) ;
+> maquette Stitch non consultée pour les nouveaux blocs UI ; `OVERSKIRT`/`TRAIN` sur robe non ajustés à la largeur réelle du
+> bloc de jupe (approximation sur l'ourlet dos).
 
 **But** : couvrir les drapés usuels de la mode de cérémonie et décider **quand** renvoyer au mannequin.
 

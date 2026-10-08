@@ -1,8 +1,10 @@
 import {
   EASE_LEVELS,
+  DRAPE_BLOCK_LABELS,
   EASE_LEVEL_LABELS,
   FABRIC_BEHAVIOR_LABELS,
   listPatternExtKeys,
+  type DrapeSpec,
   type GarmentProfile,
   type PatternExtKey,
   mergePatternExtParameters,
@@ -13,6 +15,7 @@ import {
 
 export type FitChange =
   | { field: 'ease'; value: EaseLevel | null }
+  | { field: 'drape'; value: DrapeSpec | null }
   | { field: 'fullness.skirt' | 'fullness.sleeve' | 'lengths.skirtPct' | 'lengths.sleevePct' | 'lengths.bodicePct'; value: number | null };
 
 /** Which adjustments make sense for a garment (a trouser has no skirt length, a skirt has no sleeve). */
@@ -42,9 +45,13 @@ export function applyFitChange(
     ...(current?.ease ? { ease: current.ease } : {}),
     ...(current?.fullness ? { fullness: { ...current.fullness } } : {}),
     ...(current?.lengths ? { lengths: { ...current.lengths } } : {}),
+    ...(current?.drape ? { drape: { blocks: [...current.drape.blocks] } } : {}),
   };
 
-  if (change.field === 'ease') {
+  if (change.field === 'drape') {
+    if (change.value === null) delete draft.drape;
+    else draft.drape = change.value;
+  } else if (change.field === 'ease') {
     if (change.value === null) delete draft.ease;
     else if ((EASE_LEVELS as readonly string[]).includes(change.value)) draft.ease = change.value;
   } else {
@@ -62,8 +69,13 @@ export function applyFitChange(
 
 /** What the photo analysis suggests (validated again here), or `undefined` for a non-garment / no fit. */
 export function suggestedFitFrom(profile: GarmentProfile | null | undefined): PatternExtParameters | undefined {
-  if (!profile?.isGarment || !profile.fit) return undefined;
-  const { value } = validatePatternExtParameters(profile.fit);
+  if (!profile?.isGarment) return undefined;
+  // Same rule as the API: a free drape (DRAPING) never gets deterministic blocks.
+  const blocks = profile.constructionMethod === 'DRAPING' ? [] : (profile.drapeBlocks ?? []);
+  const { value } = validatePatternExtParameters({
+    ...profile.fit,
+    ...(blocks.length > 0 ? { drape: { blocks } } : {}),
+  });
   return listPatternExtKeys(value).length > 0 ? value : undefined;
 }
 
@@ -103,6 +115,12 @@ export function buildFitRows(profile: GarmentProfile | null | undefined): Array<
     {
       label: 'Longueur du buste',
       value: suggested?.lengths?.bodicePct !== undefined ? `${suggested.lengths.bodicePct} %` : undefined,
+    },
+    {
+      label: 'Drapé suggéré',
+      value: suggested?.drape?.blocks.length
+        ? suggested.drape.blocks.map((b) => DRAPE_BLOCK_LABELS[b.kind]).join(', ')
+        : undefined,
     },
     {
       label: 'Tissu',

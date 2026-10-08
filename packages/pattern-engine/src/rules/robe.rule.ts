@@ -11,7 +11,16 @@ import {
   resolveSleeve,
 } from '../shared/cut-profile';
 import { skirtOutline, sleevePiece } from '../shared/shapes';
-import { buildSkirtBlock, computeCowlNeck, resolveDrape, wrapFrontPiece } from '../blocks';
+import {
+  asymmetricHemPieces,
+  buildOverskirtPiece,
+  buildSkirtBlock,
+  buildTrainPiece,
+  computeCowlNeck,
+  drapeBodicePiece,
+  resolveDrape,
+  wrapFrontPiece,
+} from '../blocks';
 import {
   bodiceLengthFactor,
   fitSleeve,
@@ -30,6 +39,12 @@ export const RobeRule: IPatternRule = {
     // ROBE_MARIEE has its own dedicated rule (robe-mariee.rule.ts) with structured-bodice
     // ease and a train — ROBE alone no longer falls back to accepting it.
     return parameters.garmentType === 'ROBE';
+  },
+  warnings(parameters: PatternParameters): string[] {
+    const drape = resolveDrape(parameters);
+    return drape.hem && drape.skirt?.kind === 'CIRCLE_SKIRT'
+      ? ['Ourlet asymétrique ignoré : le bord d\'une jupe cercle est un arc, il ne se décale pas.']
+      : [];
   },
   computePieces(
     parameters: PatternParameters,
@@ -152,7 +167,11 @@ export const RobeRule: IPatternRule = {
         : [jupeDevant, jupeDos]),
     ];
     if (drape.wrap) pieces = wrapFrontPiece(pieces, 'Corsage Devant', drape.wrap);
+    if (drape.bodice) pieces = drapeBodicePiece(pieces, 'Corsage Devant', drape.bodice);
+    if (drape.hem) pieces = asymmetricHemPieces(pieces, ['Jupe'], drape.hem);
     if (drape.cowl) pieces.push(computeCowlNeck(neckline.widthMm, drape.cowl.depthMm));
+    if (drape.overskirt) pieces.push(buildOverskirtPiece(drape.overskirt, waistCircumference, longueurJupe));
+    if (drape.train) pieces.push(buildTrainPiece(drape.train, Math.max(500, Math.round(2 * hemDos))));
 
     const sleeve = fitSleeve(
       resolveSleeve(

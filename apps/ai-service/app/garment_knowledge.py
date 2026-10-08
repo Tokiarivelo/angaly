@@ -176,6 +176,63 @@ Ajustements (`fit`, optionnel — omets tout champ dont tu n'es pas SÛR ; mieux
 - Ne donne jamais de valeur hors des bornes ci-dessus. Si le vêtement est porté, ne confonds pas les plis
   du corps en mouvement avec l'ampleur du tissu."""
 
+# --- Drape blocks ------------------------------------------------------------------------------
+# Deterministic blocks the pattern-engine can build (packages/pattern-engine/src/blocks). The model only
+# NAMES one and gives bounded numbers; anything else stays a mannequin note. Mirrors
+# DRAPE_BLOCK_KINDS / DRAPE_BOUNDS / DRAPE_BLOCKS_BY_GARMENT in packages/types/src/pattern-fit.ts.
+
+DRAPE_BLOCK_KINDS: dict[str, str] = {
+    "GATHERED_SKIRT": "jupe froncée : rectangle de tissu froncé à la taille (fullness = tissu / largeur finie)",
+    "PLEATED_SKIRT": "jupe plissée régulièrement : plis plats (KNIFE) ou plis creux (BOX), nombre et profondeur",
+    "CIRCLE_SKIRT": "jupe cercle : quart (0.25), demi (0.5) ou cercle complet (1) ; tombé en ondulations régulières",
+    "WRAP_FRONT": "devant portefeuille : un pan croise sur l'autre (overlapMm = croisement, side = pan du dessus)",
+    "COWL_NECK": "col bénitier : encolure qui retombe en plis souples, taillée dans le biais (depthMm = profondeur)",
+    "TRAIN": "traîne derrière la jupe (lengthMm au-delà de l'ourlet)",
+    "OVERSKIRT": "surjupe asymétrique qui croise la jupe d'un côté (lengthPct = longueur en % de la jupe)",
+    "DRAPED_BODICE": "bustier/corsage à plis drapés sur un côté (pleats = nombre de plis)",
+    "ASYMMETRIC_HEM": "ourlet plus long d'un côté (dropMm = différence de longueur)",
+}
+
+# name -> (min, max, step)
+DRAPE_BOUNDS: dict[str, tuple[float, float, float]] = {
+    "gatheredFullness": (1.25, 4.0, 0.25),
+    "pleats": (4.0, 60.0, 1.0),
+    "pleatDepthMm": (10.0, 80.0, 1.0),
+    "wrapOverlapMm": (40.0, 250.0, 1.0),
+    "cowlDepthMm": (60.0, 300.0, 1.0),
+    "trainLengthMm": (200.0, 1200.0, 10.0),
+    "overskirtLengthPct": (50.0, 100.0, 1.0),
+    "bodicePleats": (3.0, 12.0, 1.0),
+    "hemDropMm": (100.0, 500.0, 10.0),
+}
+
+CIRCLE_FRACTIONS = (0.25, 0.5, 1)
+MAX_DRAPE_BLOCKS = 6
+_SKIRT_BLOCKS = {"GATHERED_SKIRT", "PLEATED_SKIRT", "CIRCLE_SKIRT"}
+
+_ALL_BLOCKS = set(DRAPE_BLOCK_KINDS)
+DRAPE_BLOCKS_BY_GARMENT: dict[str, set[str]] = {
+    "JUPE": {"GATHERED_SKIRT", "PLEATED_SKIRT", "CIRCLE_SKIRT", "WRAP_FRONT", "TRAIN", "OVERSKIRT", "ASYMMETRIC_HEM"},
+    "ROBE": _ALL_BLOCKS,
+    "ROBE_MARIEE": _ALL_BLOCKS,
+}
+
+DRAPE_GUIDE = """\
+Blocs de drapé (`drapeBlocks`, optionnel) — réservé aux plis RÉGULIERS que le moteur sait tracer à plat :
+- Propose un bloc seulement si tu le reconnais nettement : fronces régulières → GATHERED_SKIRT, plis
+  réguliers → PLEATED_SKIRT, tombé en ondulations circulaires → CIRCLE_SKIRT, pan croisé sur le devant →
+  WRAP_FRONT, encolure qui retombe en plis → COWL_NECK, traîne → TRAIN, couche asymétrique par-dessus la
+  jupe → OVERSKIRT, plis drapés sur le buste → DRAPED_BODICE, ourlet plus long d'un côté → ASYMMETRIC_HEM.
+- Chaque bloc : {"kind": ..., <paramètres numériques dans les bornes>, "certainty": "HIGH" | "MEDIUM"}.
+  Paramètres : GATHERED_SKIRT.fullness (1.25–4) ; PLEATED_SKIRT.pleats (4–60), depthMm (10–80), type
+  KNIFE|BOX ; CIRCLE_SKIRT.fraction (0.25, 0.5 ou 1) ; WRAP_FRONT.overlapMm (40–250), side LEFT|RIGHT ;
+  COWL_NECK.depthMm (60–300) ; TRAIN.lengthMm (200–1200) ; OVERSKIRT.lengthPct (50–100), side ;
+  DRAPED_BODICE.pleats (3–12), side ; ASYMMETRIC_HEM.dropMm (100–500), side.
+- Un seul bloc de jupe (froncée/plissée/cercle), chaque bloc au plus une fois, 6 blocs maximum.
+- Drapé libre (sari, lamba, drapé grec, plis impossibles à tracer à plat) : AUCUN bloc, mets constructionMethod
+  à DRAPING et décris-le dans constructionNotes — un bloc ne remplace jamais un moulage sur mannequin.
+- Dans le doute, n'en propose pas : le conseil de moulage suffit."""
+
 DECISION_PROCEDURE = """\
 Procédure (suis-la dans l'ordre) :
 1. Est-ce une photo où un vêtement est le sujet principal (porté, sur cintre, mannequin, à plat,
@@ -202,7 +259,8 @@ Procédure (suis-la dans l'ordre) :
    Si le vêtement est porté ou sur mannequin, les plis visibles peuvent venir de la pose : ne conclus
    DRAPING que si le drapé est structurel (le tissu serait impossible à tracer à plat).
 9. fit : applique le guide « Ajustements » ci-dessous ; omets `fit` (null) si rien n'est lisible.
-10. confidence : 0.9+ si tout est net, 0.5–0.7 si cadrage partiel ou flou, <0.4 si tu devines."""
+10. drapeBlocks : applique le guide « Blocs de drapé » ; omets-les (null) dans le doute ou pour un drapé libre.
+11. confidence : 0.9+ si tout est net, 0.5–0.7 si cadrage partiel ou flou, <0.4 si tu devines."""
 
 # Worked examples (textual few-shot — no images, they only calibrate vocabulary and restraint).
 FEW_SHOT_EXAMPLES: list[dict[str, Any]] = [
@@ -224,6 +282,7 @@ FEW_SHOT_EXAMPLES: list[dict[str, Any]] = [
                 "fabricBehavior": "RIGIDE",
                 "certainty": {"ease": "HIGH", "fullness.skirt": "MEDIUM"},
             },
+            "drapeBlocks": [{"kind": "TRAIN", "lengthMm": 900, "certainty": "HIGH"}],
         },
     },
     {
@@ -259,6 +318,9 @@ FEW_SHOT_EXAMPLES: list[dict[str, Any]] = [
                 "fabricBehavior": "FLUIDE",
                 "certainty": {"fullness.skirt": "HIGH", "lengths.skirtPct": "MEDIUM"},
             },
+            "drapeBlocks": [
+                {"kind": "PLEATED_SKIRT", "pleats": 24, "depthMm": 25, "type": "KNIFE", "certainty": "HIGH"}
+            ],
         },
     },
     {
@@ -331,6 +393,8 @@ def build_taxonomy_prompt() -> str:
         parts.append(_format_vocab(f"details.{group} :", options))
     parts.append(DECISION_PROCEDURE)
     parts.append(FIT_GUIDE)
+    parts.append(_format_vocab("drapeBlocks.kind :", DRAPE_BLOCK_KINDS))
+    parts.append(DRAPE_GUIDE)
     examples = "\n".join(
         f"- Scène : {ex['scene']}\n  profile : {json.dumps(ex['profile'], ensure_ascii=False)}"
         for ex in FEW_SHOT_EXAMPLES
@@ -422,6 +486,90 @@ def normalize_fit(raw: Any, garment_type: str, details: dict[str, str]) -> dict[
     return result
 
 
+def _bounded(name: str, value: Any) -> float | None:
+    """Same rule as `_fit_number` for drape parameters: aberrant ⇒ reject, mild overshoot ⇒ clamp."""
+    if isinstance(value, bool) or not isinstance(value, (int, float)) or not math.isfinite(value):
+        return None
+    low, high, step = DRAPE_BOUNDS[name]
+    if value > high * 2 or value < 0 or (low > 0 and value < low / 2):
+        logger.warning("drape.%s=%r rejected: aberrant (bounds %s..%s)", name, value, low, high)
+        return None
+    if value < low or value > high:
+        logger.warning("drape.%s=%r clamped to bounds %s..%s", name, value, low, high)
+        value = min(high, max(low, value))
+    return _round_to_step(float(value), step)
+
+
+def _side(value: Any) -> str | None:
+    side = value.strip().upper() if isinstance(value, str) else None
+    return side if side in {"LEFT", "RIGHT"} else None
+
+
+def _drape_block(raw: dict[str, Any]) -> dict[str, Any] | None:
+    kind = _pick(raw.get("kind"), DRAPE_BLOCK_KINDS)
+    if kind is None:
+        return None
+    certainty = raw.get("certainty")
+    if not isinstance(certainty, str) or certainty.strip().upper() not in _CERTAINTY_KEPT:
+        return None  # "if in doubt, leave it out"
+    if kind == "GATHERED_SKIRT":
+        fullness = _bounded("gatheredFullness", raw.get("fullness"))
+        return {"kind": kind, "fullness": fullness} if fullness is not None else None
+    if kind == "PLEATED_SKIRT":
+        pleats = _bounded("pleats", raw.get("pleats"))
+        depth = _bounded("pleatDepthMm", raw.get("depthMm"))
+        pleat_type = raw.get("type").strip().upper() if isinstance(raw.get("type"), str) else None
+        if pleats is None or depth is None or pleat_type not in {"KNIFE", "BOX"}:
+            return None
+        return {"kind": kind, "pleats": pleats, "depthMm": depth, "type": pleat_type}
+    if kind == "CIRCLE_SKIRT":
+        fraction = raw.get("fraction")
+        if isinstance(fraction, bool) or fraction not in CIRCLE_FRACTIONS:
+            return None
+        return {"kind": kind, "fraction": fraction}
+    if kind == "WRAP_FRONT":
+        overlap, side = _bounded("wrapOverlapMm", raw.get("overlapMm")), _side(raw.get("side"))
+        return {"kind": kind, "overlapMm": overlap, "side": side} if overlap is not None and side else None
+    if kind == "COWL_NECK":
+        depth = _bounded("cowlDepthMm", raw.get("depthMm"))
+        return {"kind": kind, "depthMm": depth} if depth is not None else None
+    if kind == "TRAIN":
+        length = _bounded("trainLengthMm", raw.get("lengthMm"))
+        return {"kind": kind, "lengthMm": length} if length is not None else None
+    if kind == "OVERSKIRT":
+        pct, side = _bounded("overskirtLengthPct", raw.get("lengthPct")), _side(raw.get("side"))
+        return {"kind": kind, "lengthPct": pct, "side": side} if pct is not None and side else None
+    if kind == "DRAPED_BODICE":
+        pleats, side = _bounded("bodicePleats", raw.get("pleats")), _side(raw.get("side"))
+        return {"kind": kind, "pleats": pleats, "side": side} if pleats is not None and side else None
+    drop, side = _bounded("hemDropMm", raw.get("dropMm")), _side(raw.get("side"))
+    return {"kind": kind, "dropMm": drop, "side": side} if drop is not None and side else None
+
+
+def normalize_drape_blocks(raw: Any, garment_type: str, construction: str | None) -> list[dict[str, Any]] | None:
+    """Keeps only certain, in-range, garment-relevant blocks. A free drape (DRAPING) gets none: a block
+    never replaces a mannequin moulding. Nothing valid ⇒ None (the note stays as mannequin advice)."""
+    if not isinstance(raw, list) or construction == "DRAPING":
+        return None
+    allowed = DRAPE_BLOCKS_BY_GARMENT.get(garment_type, set())
+    blocks: list[dict[str, Any]] = []
+    seen: set[str] = set()
+    has_skirt = False
+    for item in raw[: MAX_DRAPE_BLOCKS * 2]:
+        if len(blocks) >= MAX_DRAPE_BLOCKS:
+            break
+        block = _drape_block(item) if isinstance(item, dict) else None
+        if block is None or block["kind"] not in allowed or block["kind"] in seen:
+            continue
+        if block["kind"] in _SKIRT_BLOCKS:
+            if has_skirt:
+                continue
+            has_skirt = True
+        seen.add(block["kind"])
+        blocks.append(block)
+    return blocks or None
+
+
 def normalize_profile(raw: dict[str, Any] | None) -> dict[str, Any]:
     """Keeps only taxonomy-valid values. Not a garment ⇒ everything else is emptied."""
     empty: dict[str, Any] = {
@@ -435,6 +583,7 @@ def normalize_profile(raw: dict[str, Any] | None) -> dict[str, Any]:
         "presentation": None,
         "constructionNotes": None,
         "fit": None,
+        "drapeBlocks": None,
     }
     if not raw or raw.get("isGarment") is not True:
         return empty
@@ -469,4 +618,5 @@ def normalize_profile(raw: dict[str, Any] | None) -> dict[str, Any]:
         # Notes only make sense when part of the garment is draped.
         "constructionNotes": notes if construction in {"DRAPING", "MIXED"} else None,
         "fit": normalize_fit(raw.get("fit"), garment_type, details),
+        "drapeBlocks": normalize_drape_blocks(raw.get("drapeBlocks"), garment_type, construction),
     }

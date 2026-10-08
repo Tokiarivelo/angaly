@@ -550,6 +550,10 @@ export const DRAPE_BLOCK_KINDS = [
   'CIRCLE_SKIRT',
   'WRAP_FRONT',
   'COWL_NECK',
+  'TRAIN',
+  'OVERSKIRT',
+  'DRAPED_BODICE',
+  'ASYMMETRIC_HEM',
 ] as const;
 export type DrapeBlockKind = (typeof DRAPE_BLOCK_KINDS)[number];
 
@@ -559,7 +563,22 @@ export const DRAPE_BLOCK_LABELS: Record<DrapeBlockKind, string> = {
   CIRCLE_SKIRT: 'Jupe cercle',
   WRAP_FRONT: 'Devant portefeuille',
   COWL_NECK: 'Col bénitier',
+  TRAIN: 'Traîne',
+  OVERSKIRT: 'Surjupe asymétrique',
+  DRAPED_BODICE: 'Bustier drapé',
+  ASYMMETRIC_HEM: 'Ourlet asymétrique',
 };
+
+/** Which blocks make sense for which garment (the rules only implement these combinations). */
+export const DRAPE_BLOCKS_BY_GARMENT: Partial<Record<FitGarmentType, readonly DrapeBlockKind[]>> = {
+  JUPE: ['GATHERED_SKIRT', 'PLEATED_SKIRT', 'CIRCLE_SKIRT', 'WRAP_FRONT', 'TRAIN', 'OVERSKIRT', 'ASYMMETRIC_HEM'],
+  ROBE: DRAPE_BLOCK_KINDS,
+  ROBE_MARIEE: DRAPE_BLOCK_KINDS,
+};
+
+export function drapeBlockKindsFor(garment: string | null | undefined): readonly DrapeBlockKind[] {
+  return DRAPE_BLOCKS_BY_GARMENT[(garment ?? '').toUpperCase() as FitGarmentType] ?? [];
+}
 
 /** Skirt blocks replace the skirt panels, so at most one of them per garment. */
 export const SKIRT_DRAPE_KINDS: readonly DrapeBlockKind[] = ['GATHERED_SKIRT', 'PLEATED_SKIRT', 'CIRCLE_SKIRT'];
@@ -570,17 +589,25 @@ export const DRAPE_BOUNDS = {
   pleatDepthMm: { min: 10, max: 80, step: 1 },
   wrapOverlapMm: { min: 40, max: 250, step: 1 },
   cowlDepthMm: { min: 60, max: 300, step: 1 },
+  trainLengthMm: { min: 200, max: 1200, step: 10 },
+  overskirtLengthPct: { min: 50, max: 100, step: 1 },
+  bodicePleats: { min: 3, max: 12, step: 1 },
+  hemDropMm: { min: 100, max: 500, step: 10 },
 } as const satisfies Record<string, NumericBounds>;
 
 export const CIRCLE_FRACTIONS = [0.25, 0.5, 1] as const;
-export const MAX_DRAPE_BLOCKS = 3;
+export const MAX_DRAPE_BLOCKS = 6;
 
 export type DrapeBlock =
   | { kind: 'GATHERED_SKIRT'; fullness: number }
   | { kind: 'PLEATED_SKIRT'; pleats: number; depthMm: number; type: 'KNIFE' | 'BOX' }
   | { kind: 'CIRCLE_SKIRT'; fraction: 0.25 | 0.5 | 1 }
   | { kind: 'WRAP_FRONT'; overlapMm: number; side: 'LEFT' | 'RIGHT' }
-  | { kind: 'COWL_NECK'; depthMm: number };
+  | { kind: 'COWL_NECK'; depthMm: number }
+  | { kind: 'TRAIN'; lengthMm: number }
+  | { kind: 'OVERSKIRT'; lengthPct: number; side: 'LEFT' | 'RIGHT' }
+  | { kind: 'DRAPED_BODICE'; pleats: number; side: 'LEFT' | 'RIGHT' }
+  | { kind: 'ASYMMETRIC_HEM'; dropMm: number; side: 'LEFT' | 'RIGHT' };
 
 export interface DrapeSpec {
   blocks: DrapeBlock[];
@@ -688,6 +715,8 @@ function validateDrapeSpec(input: unknown, issues: PatternExtIssue[]): DrapeSpec
     issues.push({ path: 'drape', message: 'drape doit être { blocks: [...] }.' });
     return undefined;
   }
+  // An explicit empty list is a real choice: "no drape blocks", which beats a photo suggestion.
+  if (rawBlocks.length === 0) return { blocks: [] };
   if (rawBlocks.length > MAX_DRAPE_BLOCKS) {
     issues.push({ path: 'drape.blocks', message: `Au plus ${MAX_DRAPE_BLOCKS} blocs de drapé.` });
   }
@@ -765,6 +794,48 @@ function validateDrapeSpec(input: unknown, issues: PatternExtIssue[]): DrapeSpec
         else if (b['depthMm'] === undefined) issues.push({ path: `${path}.depthMm`, message: 'depthMm est requis.' });
         break;
       }
+      case 'TRAIN': {
+        const lengthMm = num('lengthMm', DRAPE_BOUNDS.trainLengthMm);
+        if (lengthMm !== undefined) block = { kind, lengthMm };
+        else if (b['lengthMm'] === undefined) issues.push({ path: `${path}.lengthMm`, message: 'lengthMm est requis.' });
+        break;
+      }
+      case 'OVERSKIRT': {
+        const lengthPct = num('lengthPct', DRAPE_BOUNDS.overskirtLengthPct);
+        const side = b['side'];
+        if (side !== 'LEFT' && side !== 'RIGHT') {
+          issues.push({ path: `${path}.side`, message: 'side doit valoir LEFT ou RIGHT.' });
+        } else if (lengthPct !== undefined) {
+          block = { kind, lengthPct, side };
+        } else if (b['lengthPct'] === undefined) {
+          issues.push({ path: `${path}.lengthPct`, message: 'lengthPct est requis.' });
+        }
+        break;
+      }
+      case 'DRAPED_BODICE': {
+        const pleats = num('pleats', DRAPE_BOUNDS.bodicePleats);
+        const side = b['side'];
+        if (side !== 'LEFT' && side !== 'RIGHT') {
+          issues.push({ path: `${path}.side`, message: 'side doit valoir LEFT ou RIGHT.' });
+        } else if (pleats !== undefined) {
+          block = { kind, pleats, side };
+        } else if (b['pleats'] === undefined) {
+          issues.push({ path: `${path}.pleats`, message: 'pleats est requis.' });
+        }
+        break;
+      }
+      case 'ASYMMETRIC_HEM': {
+        const dropMm = num('dropMm', DRAPE_BOUNDS.hemDropMm);
+        const side = b['side'];
+        if (side !== 'LEFT' && side !== 'RIGHT') {
+          issues.push({ path: `${path}.side`, message: 'side doit valoir LEFT ou RIGHT.' });
+        } else if (dropMm !== undefined) {
+          block = { kind, dropMm, side };
+        } else if (b['dropMm'] === undefined) {
+          issues.push({ path: `${path}.dropMm`, message: 'dropMm est requis.' });
+        }
+        break;
+      }
     }
     if (block) {
       blocks.push(block);
@@ -821,7 +892,7 @@ export function listPatternExtKeys(ext: PatternExtParameters | null | undefined)
   if (ext.lengths?.skirtPct !== undefined) keys.push('lengths.skirtPct');
   if (ext.lengths?.sleevePct !== undefined) keys.push('lengths.sleevePct');
   if (ext.lengths?.bodicePct !== undefined) keys.push('lengths.bodicePct');
-  if (ext.drape) keys.push('drape');
+  if (ext.drape && ext.drape.blocks.length > 0) keys.push('drape');
   return keys;
 }
 
@@ -841,7 +912,8 @@ export function mergePatternExtParameters(
       value.ease = valid.ease;
       origin['ease'] = index;
     }
-    // Drape is one indivisible choice: the first source that has any valid block wins as a whole.
+    // Drape is one indivisible choice: the first source that has one wins as a whole — including an
+    // explicit empty list ("no blocks"), which beats a photo suggestion.
     if (valid.drape && value.drape === undefined) {
       value.drape = valid.drape;
       origin['drape'] = index;
@@ -860,3 +932,49 @@ export function mergePatternExtParameters(
   });
   return { value, origin };
 }
+
+// ============================================================
+// Construction approach & mannequin sheet (Phase 5b S5)
+// ============================================================
+
+/**
+ * Best way to build the garment, decided from the photo's construction method and the blocks the engine
+ * could apply:
+ *  - FLAT_FULL: structured piece, complete flat pattern;
+ *  - FLAT_WITH_BLOCKS: regular drape (gathers, pleats, circle, wrap…) built flat with drape blocks;
+ *  - FLAT_BASE_PLUS_MANNEQUIN: fitted base flat + free parts (train, cascade…) draped on a mannequin;
+ *  - MANNEQUIN_ONLY: free drape (sari, lamba, Greek) — moulding on a mannequin, flat pattern limited to
+ *    lining / base block.
+ */
+export type ConstructionApproach =
+  | 'FLAT_FULL'
+  | 'FLAT_WITH_BLOCKS'
+  | 'FLAT_BASE_PLUS_MANNEQUIN'
+  | 'MANNEQUIN_ONLY';
+
+export const CONSTRUCTION_APPROACH_LABELS: Record<ConstructionApproach, string> = {
+  FLAT_FULL: 'Patron à plat complet',
+  FLAT_WITH_BLOCKS: 'Patron à plat avec blocs de drapé',
+  FLAT_BASE_PLUS_MANNEQUIN: 'Base à plat + moulage sur mannequin',
+  MANNEQUIN_ONLY: 'Moulage sur mannequin',
+};
+
+export const MANNEQUIN_SHEET_SECTION_IDS = ['ZONES', 'GRAIN', 'FABRIC', 'STEPS', 'CAUTIONS'] as const;
+export type MannequinSheetSectionId = (typeof MANNEQUIN_SHEET_SECTION_IDS)[number];
+
+export interface MannequinSheetSection {
+  id: MannequinSheetSectionId;
+  title: string;
+  body: string;
+}
+
+/** Draping sheet handed to the couturière when part (or all) of the garment is moulded on a mannequin. */
+export interface MannequinSheet {
+  approach: Extract<ConstructionApproach, 'FLAT_BASE_PLUS_MANNEQUIN' | 'MANNEQUIN_ONLY'>;
+  title: string;
+  sections: MannequinSheetSection[];
+  /** Indicative only — always to be confirmed by the couturière. */
+  indicative: true;
+}
+
+export const MANNEQUIN_SHEET_LIMITS = { sectionChars: 700, totalChars: 3500 } as const;

@@ -48,7 +48,12 @@ export type DrapeBlock =
   | { kind: 'PLEATED_SKIRT'; pleats: number; depthMm: number; type: 'KNIFE' | 'BOX' }
   | { kind: 'CIRCLE_SKIRT'; fraction: 0.25 | 0.5 | 1 }
   | { kind: 'WRAP_FRONT'; overlapMm: number; side: 'LEFT' | 'RIGHT' }
-  | { kind: 'COWL_NECK'; depthMm: number };
+  | { kind: 'COWL_NECK'; depthMm: number }
+  // Lot 2 (S5)
+  | { kind: 'TRAIN'; lengthMm: number }
+  | { kind: 'OVERSKIRT'; lengthPct: number; side: 'LEFT' | 'RIGHT' }
+  | { kind: 'DRAPED_BODICE'; pleats: number; side: 'LEFT' | 'RIGHT' }
+  | { kind: 'ASYMMETRIC_HEM'; dropMm: number; side: 'LEFT' | 'RIGHT' };
 
 export interface DrapeSpec {
   blocks: DrapeBlock[];

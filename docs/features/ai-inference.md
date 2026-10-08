@@ -239,3 +239,21 @@ revalidée par `validatePatternExtParameters` ; les clés prises à la photo son
 **Web** : la fiche (étape Inspiration) liste les ajustements en lecture seule ; l'étape Mesures préremplit les
 curseurs avec la suggestion (« Suggéré par l'IA — modifiable ») ; toucher un curseur enregistre le choix du client
 (qui prime), *Réinitialiser* revient à la suggestion.
+
+## Blocs de drapé suggérés par la photo (Phase 5b S5)
+
+`GarmentProfile.drapeBlocks` : liste de blocs `{ kind, …paramètres }` que le modèle propose en plus de `fit`.
+Chaque bloc porte un `certainty` (HIGH|MEDIUM) consommé par `normalize_drape_blocks` (ai-service) qui :
+- ignore un bloc sans certitude, de type inconnu, avec un paramètre manquant, non numérique ou aberrant (> 2 × la
+  borne haute) ; ramène un dépassement modéré à la borne (log) ; arrondit au pas ;
+- retire les blocs non applicables au vêtement (`DRAPE_BLOCKS_BY_GARMENT`) et garde **un seul bloc de jupe**, un bloc
+  par type, 6 au plus ;
+- **n'en donne aucun pour un drapé libre** (`constructionMethod = DRAPING`) : un bloc ne remplace jamais un moulage ;
+- ce qui est écarté reste dans `constructionNotes` (conseil mannequin) — rien n'est perdu.
+
+L'API refait la même validation (`mergePatternExtParameters`) et applique : choix du client (drapé entier) > photo.
+Les bornes/types sont recopiés depuis `packages/types/src/pattern-fit.ts` avec un test anti-dérive
+(`apps/ai-service/tests/test_drape_blocks.py`).
+**Web** : étape Mesures → « Drapé et volumes » (cases à cocher + réglages, pré-cochées par la photo, « Suggéré par l'IA —
+modifiable », *Réinitialiser*) ; fiche vêtement → ligne « Drapé suggéré » ; page d'aperçu → panneau « À savoir sur ce patron »
+(avertissements — qui n'étaient affichés nulle part —, approche de construction, métrage, fiche de moulage).

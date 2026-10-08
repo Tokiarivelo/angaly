@@ -19,7 +19,16 @@ import {
   skirtFullnessExtraMm,
   withEase,
 } from '../shared/fit';
-import { buildSkirtBlock, computeCowlNeck, resolveDrape, wrapFrontPiece } from '../blocks';
+import {
+  asymmetricHemPieces,
+  buildOverskirtPiece,
+  buildSkirtBlock,
+  buildTrainPiece,
+  computeCowlNeck,
+  drapeBodicePiece,
+  resolveDrape,
+  wrapFrontPiece,
+} from '../blocks';
 
 /**
  * ROBE_MARIEE — construction dédiée, distincte de `robe.rule.ts`.
@@ -58,12 +67,19 @@ export const RobeMarieeRule: IPatternRule = {
   },
   warnings(parameters: PatternParameters): string[] {
     const drape = resolveDrape(parameters);
-    return drape.skirt
-      ? [
-          'Bloc de jupe sur robe de mariée : la traîne et le jupon ne sont pas inclus dans ce bloc ' +
-            '(à ajouter séparément).',
-        ]
-      : [];
+    const notes: string[] = [];
+    if (drape.skirt) {
+      notes.push(
+        drape.train
+          ? 'Bloc de jupe sur robe de mariée : le jupon n\'est pas inclus dans ce bloc (à ajouter séparément).'
+          : 'Bloc de jupe sur robe de mariée : la traîne et le jupon ne sont pas inclus dans ce bloc ' +
+              '(ajoutez un bloc Traîne, le jupon se fait séparément).',
+      );
+    }
+    if (drape.hem && drape.skirt?.kind === 'CIRCLE_SKIRT') {
+      notes.push("Ourlet asymétrique ignoré : le bord d'une jupe cercle est un arc, il ne se décale pas.");
+    }
+    return notes;
   },
   computePieces(
     parameters: PatternParameters,
@@ -79,7 +95,9 @@ export const RobeMarieeRule: IPatternRule = {
     const tt = tourTaille * 10;
     const tb = tourBassin * 10;
     const lgDos = Math.round(longueurDos * 10 * bodiceLengthFactor(parameters.lengths));
-    const traine = longueurTraine * 10;
+    const drape = resolveDrape(parameters);
+    // Un bloc TRAIN fixe la longueur de traîne (prioritaire sur LONGUEUR_TRAINE).
+    const traine = drape.train ? drape.train.lengthMm : longueurTraine * 10;
 
     // Choix du wizard (voir shared/cut-profile.ts) : DROITE = construction historique de la règle.
     const profile = withEase(resolveCutProfile(parameters.cutType), parameters.ease);
@@ -292,7 +310,6 @@ export const RobeMarieeRule: IPatternRule = {
     // Blocs de drapé (S4). Un bloc de jupe remplace tous les panneaux de jupe (la traîne n'y est pas
     // incluse — elle viendra d'un bloc dédié, voir warnings) ; le portefeuille croise le bustier ;
     // le col bénitier ajoute une pièce taillée dans le biais.
-    const drape = resolveDrape(parameters);
     let pieces: PatternPieceGeometry[] = [
       bustierDevant,
       bustierCote,
@@ -302,7 +319,12 @@ export const RobeMarieeRule: IPatternRule = {
         : [jupeDevant, jupeCote, jupeDosTraine, jupon]),
     ];
     if (drape.wrap) pieces = wrapFrontPiece(pieces, 'Bustier Devant (Princesse)', drape.wrap);
+    if (drape.bodice) pieces = drapeBodicePiece(pieces, 'Bustier Devant (Princesse)', drape.bodice);
+    if (drape.hem) pieces = asymmetricHemPieces(pieces, ['Jupe'], drape.hem);
     if (drape.cowl) pieces.push(computeCowlNeck(neck?.widthMm ?? 80, drape.cowl.depthMm));
+    if (drape.overskirt) pieces.push(buildOverskirtPiece(drape.overskirt, tt + 40 + 4 * profile.waistDeltaMm, longueurJupeDevant));
+    // With a skirt block the built-in train is gone: a TRAIN block adds it back as its own piece.
+    if (drape.train && drape.skirt) pieces.push(buildTrainPiece(drape.train, Math.max(500, Math.round(2 * (largeurJupeDos + flare)))));
     if (sleeve) {
       pieces.push(sleevePiece('Manche', tp, sleeve, 'Dentelle, Organza ou Mikado', 10, measurements));
     }

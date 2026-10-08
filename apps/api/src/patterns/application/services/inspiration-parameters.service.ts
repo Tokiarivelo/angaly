@@ -58,7 +58,12 @@ export class InspirationParametersService {
 
     // Per key: the customer's explicit choice wins, the photo only fills what is still empty.
     // Both sources are re-validated (bounds, types): an invalid value is skipped, never clamped.
-    const photoFit = profile?.isGarment ? profile.fit : null;
+    // A free drape (DRAPING) never gets deterministic blocks: they cannot replace a mannequin moulding.
+    const photoBlocks =
+      profile?.isGarment && profile.constructionMethod !== 'DRAPING' ? (profile.drapeBlocks ?? []) : [];
+    const photoFit = profile?.isGarment
+      ? { ...profile.fit, ...(photoBlocks.length > 0 ? { drape: { blocks: photoBlocks } } : {}) }
+      : null;
     const { value: ext, origin } = mergePatternExtParameters(project.parametersExt, photoFit);
     const extKeysFromPhoto = listPatternExtKeys(ext).filter((key) => origin[key] === 1);
 

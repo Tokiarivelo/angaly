@@ -268,7 +268,7 @@ describe('validatePatternExtParameters — drape blocks (S4)', () => {
     expect(drape(...Array.from({ length: 4 }, () => ({ kind: 'COWL_NECK', depthMm: 100 }))).issues.length).toBeGreaterThan(0);
     expect(validatePatternExtParameters({ drape: 'x' }).issues).toHaveLength(1);
     expect(validatePatternExtParameters({ drape: { blocks: 'x' } }).issues).toHaveLength(1);
-    expect(validatePatternExtParameters({ drape: { blocks: [] } })).toEqual({ value: {}, issues: [] });
+    expect(validatePatternExtParameters({ drape: { blocks: [] } })).toEqual({ value: { drape: { blocks: [] } }, issues: [] });
     expect(validatePatternExtParameters({ drape: { blocks: [42] } }).issues).toHaveLength(1);
   });
 
@@ -281,5 +281,16 @@ describe('validatePatternExtParameters — drape blocks (S4)', () => {
     expect(value.drape?.blocks).toEqual([{ kind: 'COWL_NECK', depthMm: 100 }]);
     expect(origin['drape']).toBe(1);
     expect(listPatternExtKeys(value)).toEqual(['ease', 'drape']);
+  });
+
+  it('an explicit empty drape beats a photo suggestion; an all-invalid one does not', () => {
+    const suggestion = { drape: { blocks: [{ kind: 'TRAIN', lengthMm: 900 }] } } as never;
+    const none = mergePatternExtParameters({ drape: { blocks: [] } }, suggestion);
+    expect(none.value.drape).toEqual({ blocks: [] });
+    expect(none.origin['drape']).toBe(0);
+    expect(listPatternExtKeys(none.value)).toEqual([]);
+
+    const invalid = mergePatternExtParameters({ drape: { blocks: [{ kind: 'TRAIN', lengthMm: 99999 }] } } as never, suggestion);
+    expect(invalid.value.drape?.blocks).toEqual([{ kind: 'TRAIN', lengthMm: 900 }]);
   });
 });

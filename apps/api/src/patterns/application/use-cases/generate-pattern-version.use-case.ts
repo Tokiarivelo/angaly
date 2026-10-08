@@ -26,6 +26,8 @@ import {
 } from '@angaly/types';
 import { AiProviderResolverService } from '../../../ai-inference/application/services/ai-provider-resolver.service';
 import { InspirationParametersService } from '../services/inspiration-parameters.service';
+import { decideConstructionApproach } from '../services/construction-approach';
+import { buildMannequinSheet } from '../services/mannequin-sheet';
 import { SuggestPatternParametersUseCase } from '../../../ai-inference/application/use-cases/suggest-pattern-parameters.use-case';
 import { RecordPatternLearningUseCase } from '../../../ai-inference/application/use-cases/record-pattern-learning.use-case';
 import { EstimateMissingMeasurementsUseCase } from '../../../ai-inference/application/use-cases/estimate-missing-measurements.use-case';
@@ -171,6 +173,16 @@ export class GeneratePatternVersionUseCase {
     const draping = this.inspirationParameters.drapingAdvice(analysis?.profile);
     if (draping) warnings.push(draping.warning);
 
+    // Best way to build it (flat / flat + blocks / flat base + mannequin / mannequin only) and, when
+    // part of it is moulded, the draping sheet handed to the couturière.
+    const construction = decideConstructionApproach(analysis?.profile, merged.ext);
+    const mannequinSheet = buildMannequinSheet({
+      approach: construction.approach,
+      profile: analysis?.profile,
+      ext: merged.ext,
+      flatYardageMm: generationResult.metadata?.yardage?.lengthMm,
+    });
+
     const versionId = randomUUID();
     const piecesData = generationResult.pieces.map((piece) => ({
       name: piece.name,
@@ -192,6 +204,9 @@ export class GeneratePatternVersionUseCase {
         measurements,
         estimatedMeasurementKeys,
         warnings,
+        constructionApproach: construction.approach,
+        constructionApproachReason: construction.reason,
+        mannequinSheet,
         inspiration: analysis
           ? {
               observations: analysis.features,

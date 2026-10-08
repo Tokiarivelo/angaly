@@ -252,3 +252,38 @@ Limites : pas encore de sélection de bloc par l'IA ni d'écran de choix (S5) ; 
 encore un gabarit (`export-pattern-version.use-case.ts`), donc l'export des pièces de blocs n'est pas testé de
 bout en bout — l'aperçu web et les tests moteur valident la fermeture, l'absence d'auto-intersection et la
 symétrie des contours.
+
+## Blocs de drapé avancés — lot 2 (Phase 5b S5, engine `0.4.0-drape-advanced`)
+
+| Bloc | Paramètres (bornes) | Construction | Pièces / effet |
+|------|---------------------|--------------|----------------|
+| `TRAIN` | `lengthMm` 200–1200 (pas 10) | demi-ellipse suspendue à un bord droit (largeur d'attache = ourlet dos, ≥ 50 cm), 33 points | « Traîne (demi-ellipse) » ; sur la **robe de mariée sans bloc de jupe**, il fixe la longueur de la traîne existante (prioritaire sur `LONGUEUR_TRAINE`) |
+| `OVERSKIRT` | `lengthPct` 50–100, `side` | panneau asymétrique : haut = 60 % de la taille, bas = 1,8 × le haut, coin haut de l'ourlet à 70 % | « Surjupe asymétrique (gauche/droite) » |
+| `DRAPED_BODICE` | `pleats` 3–12, `side` | +18 mm de tissu par pli sur la couture côté du devant + un repère par pli | devant du corsage / bustier (et ses variantes croisées) renommé « — drapé (plis à …) » |
+| `ASYMMETRIC_HEM` | `dropMm` 100–500 (pas 10), `side` | l'ourlet s'allonge linéairement du milieu (0) vers le côté (`dropMm`), bande de 10 % du bas seulement | panneaux de jupe ; **ignoré** (avertissement) pour une jupe cercle |
+
+Manches ballon / papillon : ce ne sont **pas** des blocs — ce sont les détails `manches = BALLON | PAPILLON`, réglés par
+`fullness.sleeve` (S2). Applicabilité par vêtement (`DRAPE_BLOCKS_BY_GARMENT`) : jupe = froncée, plissée, cercle,
+portefeuille, traîne, surjupe, ourlet ; robe et robe de mariée = les 9 blocs ; les autres vêtements aucun.
+Jusqu'à 6 blocs ; un bloc de jupe max ; un bloc par type. Une liste **vide explicite** (`{ blocks: [] }`) est un
+choix valide (« aucun bloc ») qui l'emporte sur une suggestion de la photo.
+
+### Arbre de décision « meilleure approche » (`apps/api/.../construction-approach.ts`)
+
+| Méthode de construction (photo) | Blocs appliqués | Approche | Pièces plates |
+|---------------------------------|-----------------|----------|---------------|
+| `DRAPING` (sari, lamba, drapé grec) | aucun (jamais) | `MANNEQUIN_ONLY` | doublure / bloc de base seulement + avertissement « moulage requis » + fiche |
+| `MIXED` (base ajustée + drapé libre) | oui ou non | `FLAT_BASE_PLUS_MANNEQUIN` | base + blocs réguliers + fiche pour la partie libre |
+| `FLAT_PATTERN` ou inconnue | oui | `FLAT_WITH_BLOCKS` | patron complet avec blocs |
+| `FLAT_PATTERN` ou inconnue | non | `FLAT_FULL` | patron complet |
+
+Enregistré dans `parametersJson.constructionApproach` (+ `constructionApproachReason`). Table de vérité testée.
+
+### Fiche de moulage (`mannequin-sheet.ts`)
+Générée seulement pour `MANNEQUIN_ONLY` / `FLAT_BASE_PLUS_MANNEQUIN`, stockée dans `parametersJson.mannequinSheet`,
+affichée sur la page d'aperçu. **Cinq sections obligatoires** : zones à draper, sens du fil, quantité de tissu estimée,
+étapes d'épinglage, précautions. Contenu **déterministe** (règles + `constructionNotes` de la photo, déjà validées à 400
+caractères) : aucune phrase libre d'un modèle n'atteint la fiche. Bornes : 700 caractères par section, 3500 au total.
+Quantité de tissu : métrage indicatif du patron plat (`metadata.yardage`) + 40 % (mixte) ou × 1,6 (drapé intégral).
+> Écart avec le plan : le plan prévoyait un texte généré par l'IA puis validé ; la version livrée est déterministe
+> (traçable, sans coût ni hallucination). Un enrichissement par IA reste possible plus tard, derrière la même validation.

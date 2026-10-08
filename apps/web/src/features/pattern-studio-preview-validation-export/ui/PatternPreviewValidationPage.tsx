@@ -8,6 +8,8 @@ import { ProjectStatusHeader } from './ProjectStatusHeader';
 import { ReviewStatusTimeline } from './ReviewStatusTimeline';
 import { CorrectionNoteCard } from './CorrectionNoteCard';
 import { EstimatedMeasurementsBanner } from './EstimatedMeasurementsBanner';
+import { GenerationNoticesPanel } from './GenerationNoticesPanel';
+import { parseGenerationNotices } from '@/features/pattern-studio-wizard/utils/generation-notices';
 import { PatternPiecesSidebar } from './PatternPiecesSidebar';
 import { PatternPieceCanvas } from './PatternPieceCanvas';
 import { PatternLayoutOverview } from './PatternLayoutOverview';
@@ -129,6 +131,8 @@ export const PatternPreviewValidationPage: React.FC<PatternPreviewValidationPage
     return Array.isArray(raw) ? (raw as string[]) : [];
   }, [currentVersion]);
 
+  const notices = useMemo(() => parseGenerationNotices(currentVersion?.parametersJson), [currentVersion]);
+
   const measurements = useMemo(() => {
     const raw = currentVersion?.parametersJson?.['measurements'];
     return raw && typeof raw === 'object' ? (raw as Record<string, number>) : null;
@@ -165,6 +169,8 @@ export const PatternPreviewValidationPage: React.FC<PatternPreviewValidationPage
         <ReviewStatusTimeline status={status} />
 
         <EstimatedMeasurementsBanner estimatedKeys={estimatedMeasurementKeys} />
+
+        <GenerationNoticesPanel notices={notices} />
 
         {status === PatternStatus.CORRECTION_REQUIRED && (
           <CorrectionNoteCard

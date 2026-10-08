@@ -7,6 +7,8 @@ source of truth for the shape the NestJS `ai-inference` module sends and expects
 
 from __future__ import annotations
 
+from typing import Any
+
 from pydantic import BaseModel, Field
 
 
@@ -164,6 +166,8 @@ class GarmentProfile(BaseModel):
     construction_notes: str | None = Field(default=None, alias="constructionNotes")
     # Ease / fullness / lengths read from the photo — optional, only certain & in-range values survive.
     fit: GarmentFit | None = None
+    # Deterministic drape blocks the photo suggests (validated by `normalize_drape_blocks`).
+    drape_blocks: list[dict[str, Any]] | None = Field(default=None, alias="drapeBlocks")
 
     model_config = {"populate_by_name": True}
 

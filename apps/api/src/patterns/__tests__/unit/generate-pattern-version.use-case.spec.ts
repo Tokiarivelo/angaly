@@ -460,6 +460,52 @@ describe('GeneratePatternVersionUseCase', () => {
       expect(trace.fabricBehavior).toBe('FLUIDE');
     });
 
+    it('records the construction approach and a mannequin sheet for a mixed construction', async () => {
+      mockGeneratePiecesUseCase.execute.mockResolvedValueOnce({
+        pieces: [],
+        warnings: [],
+        metadata: { engineVersion: '0.3.0-drape', yardage: { fabricWidthMm: 1400, lengthMm: 3200, method: 'x' } },
+      } as any);
+      mockProjectRepo.findById.mockResolvedValueOnce(
+        analysedProject({
+          inspirationAnalysisJson: {
+            features: {},
+            profile: {
+              isGarment: true,
+              garmentType: 'ROBE',
+              occasion: null,
+              style: null,
+              cutType: 'EVASEE',
+              details: {},
+              constructionMethod: 'MIXED',
+              constructionNotes: 'Traîne à draper.',
+              drapeBlocks: [{ kind: 'TRAIN', lengthMm: 800 }],
+            },
+          },
+        }),
+      );
+
+      const version = await useCase.execute('proj-photo', 'cust-1');
+
+      const json = version.parametersJson as any;
+      expect(json.constructionApproach).toBe('FLAT_BASE_PLUS_MANNEQUIN');
+      expect(json.constructionApproachReason).toBeTruthy();
+      expect(json.mannequinSheet.sections.map((s: any) => s.id)).toEqual(['ZONES', 'GRAIN', 'FABRIC', 'STEPS', 'CAUTIONS']);
+      expect(json.mannequinSheet.sections[2].body).toContain('3,2 m');
+      expect(json.inspiration.extKeysFromPhoto).toContain('drape');
+      expect(mockGeneratePiecesUseCase.execute).toHaveBeenCalledWith(
+        expect.objectContaining({ drape: { blocks: [{ kind: 'TRAIN', lengthMm: 800 }] } }),
+        expect.any(Object),
+      );
+    });
+
+    it('a structured garment gets FLAT_FULL and no mannequin sheet', async () => {
+      const version = await useCase.execute('proj-1', 'cust-1');
+      const json = version.parametersJson as any;
+      expect(json.constructionApproach).toBe('FLAT_FULL');
+      expect(json.mannequinSheet).toBeNull();
+    });
+
     it('is unchanged for projects without a photo analysis', async () => {
       await useCase.execute('proj-1', 'cust-1');
       expect(mockSuggest.execute).not.toHaveBeenCalled();

@@ -11,7 +11,7 @@ import {
 import { checkPieceGeometry } from './shared/geometry-checks';
 import { estimateYardage } from './shared/yardage';
 
-const ENGINE_VERSION = '0.3.0-drape';
+const ENGINE_VERSION = '0.4.0-drape-advanced';
 
 /**
  * Deterministic orchestrator: picks the registered rule matching the requested
