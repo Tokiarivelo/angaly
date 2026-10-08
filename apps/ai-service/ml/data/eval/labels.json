@@ -1,30 +1,978 @@
 {
-  "_comment": "Étiquettes posées en regardant chaque image (assistant IA, NON validées par une couturière). Champs laissés vides quand ils ne sont pas visibles. À faire relire par l'atelier avant de s'y fier pour relever les seuils.",
-  "robe-005":  {"isGarment": true, "garmentType": "ROBE", "occasion": "SOIREE", "constructionMethod": "FLAT_PATTERN", "presentation": "SKETCH", "details": {"longueur": "SOL"}},
-  "robe-008":  {"isGarment": true, "garmentType": "ROBE", "occasion": "SOIREE", "constructionMethod": "FLAT_PATTERN", "presentation": "SKETCH", "details": {"longueur": "SOL"}},
-  "robe-009b": {"isGarment": true, "garmentType": "ROBE", "occasion": "SOIREE", "constructionMethod": "FLAT_PATTERN", "presentation": "SKETCH", "details": {"longueur": "SOL"}},
-  "robe-010b": {"isGarment": true, "garmentType": "ROBE", "occasion": "SOIREE", "constructionMethod": "FLAT_PATTERN", "presentation": "SKETCH", "details": {"manches": "SANS_MANCHES", "longueur": "SOL"}},
-  "jupe-001":  {"isGarment": true, "garmentType": "JUPE", "constructionMethod": "FLAT_PATTERN", "presentation": "FLAT"},
-  "jupe-002":  {"isGarment": true, "garmentType": "JUPE", "cutType": "EVASEE", "constructionMethod": "FLAT_PATTERN", "presentation": "FLAT"},
-  "jupe-003":  {"isGarment": true, "garmentType": "JUPE", "cutType": "EVASEE", "constructionMethod": "FLAT_PATTERN", "presentation": "SKETCH", "details": {"longueur": "MIDI"}},
-  "pantalon-007": {"isGarment": true, "garmentType": "PANTALON", "constructionMethod": "FLAT_PATTERN", "presentation": "FLAT"},
-  "pantalon-009b": {"isGarment": true, "garmentType": "PANTALON", "constructionMethod": "FLAT_PATTERN", "presentation": "WORN"},
-  "veste-001": {"isGarment": true, "garmentType": "VESTE", "constructionMethod": "FLAT_PATTERN", "presentation": "WORN", "details": {"manches": "LONGUES"}},
-  "veste-002": {"isGarment": true, "garmentType": "VESTE", "constructionMethod": "FLAT_PATTERN", "presentation": "WORN", "details": {"manches": "LONGUES", "fermeture": "BOUTONS"}},
-  "veste-003": {"isGarment": true, "garmentType": "VESTE", "cutType": "AJUSTEE", "constructionMethod": "FLAT_PATTERN", "presentation": "FLAT", "details": {"manches": "LONGUES", "fermeture": "BOUTONS"}},
-  "veste-006": {"isGarment": true, "garmentType": "VESTE", "constructionMethod": "FLAT_PATTERN", "presentation": "MANNEQUIN", "details": {"manches": "LONGUES", "fermeture": "BOUTONS"}},
-  "veste-007": {"isGarment": true, "garmentType": "VESTE", "constructionMethod": "FLAT_PATTERN", "presentation": "WORN", "details": {"manches": "LONGUES"}},
-  "chemise-004": {"isGarment": true, "garmentType": "CHEMISE", "constructionMethod": "FLAT_PATTERN", "presentation": "FLAT", "details": {"manches": "BALLON"}},
-  "chemise-007": {"isGarment": true, "garmentType": "CHEMISE", "constructionMethod": "FLAT_PATTERN", "presentation": "WORN", "details": {"manches": "COURTES", "col": "CHEMISIER"}},
-  "drape-001": {"isGarment": true, "garmentType": "AUTRE", "style": "TRADITIONNEL", "constructionMethod": "DRAPING", "presentation": "WORN", "constructionNotes": "Sari : tissu non coupé drapé autour du corps."},
-  "non-vetement-001": {"isGarment": false},
-  "non-vetement-002": {"isGarment": false},
-  "non-vetement-003": {"isGarment": false},
-  "non-vetement-004": {"isGarment": false},
-  "non-vetement-005": {"isGarment": false},
-  "non-vetement-006": {"isGarment": false},
-  "non-vetement-007": {"isGarment": false},
-  "non-vetement-008": {"isGarment": false},
-  "drape-003": {"isGarment": false},
-  "drape-005": {"isGarment": false}
+ "_comment": "Étiquettes posées en regardant chaque image (assistant IA, NON validées par une couturière). Champs laissés vides quand ils ne sont pas visibles. À faire relire par l'atelier avant de s'y fier pour relever les seuils.",
+ "robe-005": {
+  "isGarment": true,
+  "garmentType": "ROBE",
+  "occasion": "SOIREE",
+  "constructionMethod": "FLAT_PATTERN",
+  "presentation": "SKETCH",
+  "details": {
+   "longueur": "SOL"
+  }
+ },
+ "robe-008": {
+  "isGarment": true,
+  "garmentType": "ROBE",
+  "occasion": "SOIREE",
+  "constructionMethod": "FLAT_PATTERN",
+  "presentation": "SKETCH",
+  "details": {
+   "longueur": "SOL"
+  }
+ },
+ "robe-009b": {
+  "isGarment": true,
+  "garmentType": "ROBE",
+  "occasion": "SOIREE",
+  "constructionMethod": "FLAT_PATTERN",
+  "presentation": "SKETCH",
+  "details": {
+   "longueur": "SOL"
+  }
+ },
+ "robe-010b": {
+  "isGarment": true,
+  "garmentType": "ROBE",
+  "occasion": "SOIREE",
+  "constructionMethod": "FLAT_PATTERN",
+  "presentation": "SKETCH",
+  "details": {
+   "manches": "SANS_MANCHES",
+   "longueur": "SOL"
+  }
+ },
+ "jupe-001": {
+  "isGarment": true,
+  "garmentType": "JUPE",
+  "constructionMethod": "FLAT_PATTERN",
+  "presentation": "FLAT"
+ },
+ "jupe-002": {
+  "isGarment": true,
+  "garmentType": "JUPE",
+  "cutType": "EVASEE",
+  "constructionMethod": "FLAT_PATTERN",
+  "presentation": "FLAT"
+ },
+ "jupe-003": {
+  "isGarment": true,
+  "garmentType": "JUPE",
+  "cutType": "EVASEE",
+  "constructionMethod": "FLAT_PATTERN",
+  "presentation": "SKETCH",
+  "details": {
+   "longueur": "MIDI"
+  }
+ },
+ "pantalon-007": {
+  "isGarment": true,
+  "garmentType": "PANTALON",
+  "constructionMethod": "FLAT_PATTERN",
+  "presentation": "FLAT"
+ },
+ "pantalon-009b": {
+  "isGarment": true,
+  "garmentType": "PANTALON",
+  "constructionMethod": "FLAT_PATTERN",
+  "presentation": "WORN"
+ },
+ "veste-001": {
+  "isGarment": true,
+  "garmentType": "VESTE",
+  "constructionMethod": "FLAT_PATTERN",
+  "presentation": "WORN",
+  "details": {
+   "manches": "LONGUES"
+  }
+ },
+ "veste-002": {
+  "isGarment": true,
+  "garmentType": "VESTE",
+  "constructionMethod": "FLAT_PATTERN",
+  "presentation": "WORN",
+  "details": {
+   "manches": "LONGUES",
+   "fermeture": "BOUTONS"
+  }
+ },
+ "veste-003": {
+  "isGarment": true,
+  "garmentType": "VESTE",
+  "cutType": "AJUSTEE",
+  "constructionMethod": "FLAT_PATTERN",
+  "presentation": "FLAT",
+  "details": {
+   "manches": "LONGUES",
+   "fermeture": "BOUTONS"
+  }
+ },
+ "veste-006": {
+  "isGarment": true,
+  "garmentType": "VESTE",
+  "constructionMethod": "FLAT_PATTERN",
+  "presentation": "MANNEQUIN",
+  "details": {
+   "manches": "LONGUES",
+   "fermeture": "BOUTONS"
+  }
+ },
+ "veste-007": {
+  "isGarment": true,
+  "garmentType": "VESTE",
+  "constructionMethod": "FLAT_PATTERN",
+  "presentation": "WORN",
+  "details": {
+   "manches": "LONGUES"
+  }
+ },
+ "chemise-004": {
+  "isGarment": true,
+  "garmentType": "CHEMISE",
+  "constructionMethod": "FLAT_PATTERN",
+  "presentation": "FLAT",
+  "details": {
+   "manches": "BALLON"
+  }
+ },
+ "chemise-007": {
+  "isGarment": true,
+  "garmentType": "CHEMISE",
+  "constructionMethod": "FLAT_PATTERN",
+  "presentation": "WORN",
+  "details": {
+   "manches": "COURTES",
+   "col": "CHEMISIER"
+  }
+ },
+ "drape-001": {
+  "isGarment": true,
+  "garmentType": "AUTRE",
+  "style": "TRADITIONNEL",
+  "constructionMethod": "DRAPING",
+  "presentation": "WORN",
+  "constructionNotes": "Sari : tissu non coupé drapé autour du corps."
+ },
+ "non-vetement-001": {
+  "isGarment": false
+ },
+ "non-vetement-002": {
+  "isGarment": false
+ },
+ "non-vetement-003": {
+  "isGarment": false
+ },
+ "non-vetement-004": {
+  "isGarment": false
+ },
+ "non-vetement-005": {
+  "isGarment": false
+ },
+ "non-vetement-006": {
+  "isGarment": false
+ },
+ "non-vetement-007": {
+  "isGarment": false
+ },
+ "non-vetement-008": {
+  "isGarment": false
+ },
+ "drape-003": {
+  "isGarment": false
+ },
+ "drape-005": {
+  "isGarment": false
+ },
+ "robe-001m": {
+  "isGarment": true,
+  "garmentType": "ROBE",
+  "constructionMethod": "FLAT_PATTERN",
+  "presentation": "MANNEQUIN",
+  "details": {
+   "longueur": "SOL",
+   "manches": "COURTES"
+  }
+ },
+ "robe-004m": {
+  "isGarment": true,
+  "garmentType": "ROBE",
+  "constructionMethod": "FLAT_PATTERN",
+  "presentation": "MANNEQUIN",
+  "details": {
+   "longueur": "SOL",
+   "manches": "LONGUES"
+  }
+ },
+ "robe-003m": {
+  "isGarment": true,
+  "garmentType": "ROBE",
+  "constructionMethod": "FLAT_PATTERN",
+  "presentation": "MANNEQUIN",
+  "cutType": "PRINCESSE",
+  "details": {
+   "longueur": "SOL"
+  }
+ },
+ "robe-007m": {
+  "isGarment": true,
+  "garmentType": "ROBE",
+  "constructionMethod": "FLAT_PATTERN",
+  "presentation": "MANNEQUIN",
+  "cutType": "PRINCESSE",
+  "details": {
+   "longueur": "SOL",
+   "manches": "LONGUES"
+  }
+ },
+ "robe-009m": {
+  "isGarment": true,
+  "garmentType": "ROBE",
+  "constructionMethod": "FLAT_PATTERN",
+  "presentation": "MANNEQUIN",
+  "cutType": "PRINCESSE",
+  "details": {
+   "longueur": "SOL",
+   "manches": "BALLON"
+  }
+ },
+ "robe-010m": {
+  "isGarment": true,
+  "garmentType": "ROBE",
+  "constructionMethod": "FLAT_PATTERN",
+  "presentation": "MANNEQUIN",
+  "details": {
+   "longueur": "SOL",
+   "manches": "LONGUES"
+  }
+ },
+ "robe-013m": {
+  "isGarment": true,
+  "garmentType": "ROBE",
+  "constructionMethod": "FLAT_PATTERN",
+  "presentation": "MANNEQUIN",
+  "details": {
+   "longueur": "SOL",
+   "manches": "COURTES"
+  }
+ },
+ "robe-014m": {
+  "isGarment": true,
+  "garmentType": "ROBE",
+  "constructionMethod": "FLAT_PATTERN",
+  "presentation": "MANNEQUIN",
+  "details": {
+   "longueur": "SOL",
+   "manches": "LONGUES"
+  }
+ },
+ "robe-002m": {
+  "isGarment": true,
+  "garmentType": "ROBE",
+  "constructionMethod": "FLAT_PATTERN",
+  "presentation": "MANNEQUIN",
+  "details": {
+   "longueur": "SOL"
+  }
+ },
+ "robe-005m": {
+  "isGarment": true,
+  "garmentType": "ROBE",
+  "constructionMethod": "FLAT_PATTERN",
+  "presentation": "MANNEQUIN",
+  "details": {
+   "longueur": "SOL"
+  }
+ },
+ "robe-006m": {
+  "isGarment": true,
+  "garmentType": "ROBE",
+  "constructionMethod": "FLAT_PATTERN",
+  "presentation": "MANNEQUIN",
+  "details": {
+   "longueur": "SOL"
+  }
+ },
+ "robe-008m": {
+  "isGarment": true,
+  "garmentType": "ROBE",
+  "constructionMethod": "FLAT_PATTERN",
+  "presentation": "MANNEQUIN",
+  "details": {
+   "longueur": "SOL"
+  }
+ },
+ "robe-011m": {
+  "isGarment": true,
+  "garmentType": "ROBE",
+  "constructionMethod": "FLAT_PATTERN",
+  "presentation": "MANNEQUIN",
+  "details": {
+   "longueur": "SOL"
+  }
+ },
+ "robe-012m": {
+  "isGarment": true,
+  "garmentType": "ROBE",
+  "constructionMethod": "FLAT_PATTERN",
+  "presentation": "MANNEQUIN",
+  "details": {
+   "longueur": "SOL"
+  }
+ },
+ "mariee-001m": {
+  "isGarment": true,
+  "garmentType": "ROBE_MARIEE",
+  "constructionMethod": "FLAT_PATTERN",
+  "presentation": "MANNEQUIN",
+  "cutType": "PRINCESSE",
+  "occasion": "MARIAGE",
+  "details": {
+   "longueur": "SOL",
+   "manches": "LONGUES"
+  }
+ },
+ "mariee-002m": {
+  "isGarment": true,
+  "garmentType": "ROBE_MARIEE",
+  "constructionMethod": "FLAT_PATTERN",
+  "presentation": "MANNEQUIN",
+  "occasion": "MARIAGE",
+  "details": {
+   "longueur": "SOL",
+   "manches": "BALLON"
+  }
+ },
+ "mariee-003m": {
+  "isGarment": true,
+  "garmentType": "ROBE_MARIEE",
+  "constructionMethod": "FLAT_PATTERN",
+  "presentation": "MANNEQUIN",
+  "cutType": "PRINCESSE",
+  "occasion": "MARIAGE",
+  "details": {
+   "longueur": "SOL"
+  }
+ },
+ "mariee-004m": {
+  "isGarment": true,
+  "garmentType": "ROBE_MARIEE",
+  "constructionMethod": "FLAT_PATTERN",
+  "presentation": "MANNEQUIN",
+  "occasion": "MARIAGE",
+  "details": {
+   "longueur": "SOL",
+   "manches": "LONGUES"
+  }
+ },
+ "mariee-005m": {
+  "isGarment": true,
+  "garmentType": "ROBE_MARIEE",
+  "constructionMethod": "FLAT_PATTERN",
+  "presentation": "MANNEQUIN",
+  "cutType": "PRINCESSE",
+  "occasion": "MARIAGE",
+  "details": {
+   "longueur": "SOL"
+  }
+ },
+ "mariee-006m": {
+  "isGarment": true,
+  "garmentType": "ROBE_MARIEE",
+  "constructionMethod": "FLAT_PATTERN",
+  "presentation": "MANNEQUIN",
+  "cutType": "PRINCESSE",
+  "occasion": "MARIAGE",
+  "details": {
+   "longueur": "SOL"
+  }
+ },
+ "mariee-007m": {
+  "isGarment": true,
+  "garmentType": "ROBE_MARIEE",
+  "constructionMethod": "FLAT_PATTERN",
+  "presentation": "MANNEQUIN",
+  "occasion": "MARIAGE",
+  "details": {
+   "longueur": "SOL",
+   "manches": "COURTES"
+  }
+ },
+ "mariee-008m": {
+  "isGarment": true,
+  "garmentType": "ROBE_MARIEE",
+  "constructionMethod": "FLAT_PATTERN",
+  "presentation": "MANNEQUIN",
+  "occasion": "MARIAGE",
+  "details": {
+   "longueur": "SOL",
+   "manches": "BALLON"
+  }
+ },
+ "mariee-009m": {
+  "isGarment": true,
+  "garmentType": "ROBE_MARIEE",
+  "constructionMethod": "FLAT_PATTERN",
+  "presentation": "MANNEQUIN",
+  "cutType": "PRINCESSE",
+  "occasion": "MARIAGE",
+  "details": {
+   "longueur": "SOL"
+  }
+ },
+ "mariee-010m": {
+  "isGarment": true,
+  "garmentType": "ROBE_MARIEE",
+  "constructionMethod": "FLAT_PATTERN",
+  "presentation": "MANNEQUIN",
+  "cutType": "PRINCESSE",
+  "occasion": "MARIAGE",
+  "details": {
+   "longueur": "SOL",
+   "manches": "LONGUES"
+  }
+ },
+ "mariee-011m": {
+  "isGarment": true,
+  "garmentType": "ROBE_MARIEE",
+  "constructionMethod": "FLAT_PATTERN",
+  "presentation": "MANNEQUIN",
+  "occasion": "MARIAGE",
+  "details": {
+   "longueur": "SOL",
+   "manches": "COURTES"
+  }
+ },
+ "mariee-012m": {
+  "isGarment": true,
+  "garmentType": "ROBE_MARIEE",
+  "constructionMethod": "MIXED",
+  "presentation": "MANNEQUIN",
+  "occasion": "MARIAGE",
+  "details": {
+   "longueur": "SOL",
+   "manches": "LONGUES"
+  },
+  "drapeBlocks": [
+   {
+    "kind": "TRAIN",
+    "lengthMm": 600,
+    "certainty": "HIGH"
+   }
+  ]
+ },
+ "mariee-013m": {
+  "isGarment": true,
+  "garmentType": "ROBE_MARIEE",
+  "constructionMethod": "MIXED",
+  "presentation": "MANNEQUIN",
+  "occasion": "MARIAGE",
+  "details": {
+   "longueur": "SOL",
+   "manches": "LONGUES"
+  },
+  "drapeBlocks": [
+   {
+    "kind": "TRAIN",
+    "lengthMm": 600,
+    "certainty": "HIGH"
+   }
+  ]
+ },
+ "mariee-014m": {
+  "isGarment": true,
+  "garmentType": "ROBE_MARIEE",
+  "constructionMethod": "MIXED",
+  "presentation": "MANNEQUIN",
+  "occasion": "MARIAGE",
+  "details": {
+   "longueur": "SOL",
+   "manches": "COURTES"
+  },
+  "drapeBlocks": [
+   {
+    "kind": "TRAIN",
+    "lengthMm": 600,
+    "certainty": "HIGH"
+   }
+  ]
+ },
+ "veste-001m": {
+  "isGarment": true,
+  "garmentType": "VESTE",
+  "constructionMethod": "FLAT_PATTERN",
+  "presentation": "MANNEQUIN",
+  "details": {
+   "manches": "COURTES"
+  }
+ },
+ "veste-002m": {
+  "isGarment": true,
+  "garmentType": "VESTE",
+  "constructionMethod": "FLAT_PATTERN",
+  "presentation": "MANNEQUIN",
+  "details": {
+   "manches": "LONGUES"
+  }
+ },
+ "veste-004m": {
+  "isGarment": true,
+  "garmentType": "VESTE",
+  "constructionMethod": "FLAT_PATTERN",
+  "presentation": "MANNEQUIN",
+  "details": {
+   "manches": "LONGUES"
+  }
+ },
+ "veste-005m": {
+  "isGarment": true,
+  "garmentType": "VESTE",
+  "constructionMethod": "FLAT_PATTERN",
+  "presentation": "FLAT",
+  "details": {
+   "manches": "LONGUES",
+   "fermeture": "BOUTONS"
+  }
+ },
+ "veste-007m": {
+  "isGarment": true,
+  "garmentType": "VESTE",
+  "constructionMethod": "FLAT_PATTERN",
+  "presentation": "MANNEQUIN",
+  "details": {
+   "manches": "LONGUES"
+  }
+ },
+ "veste-008m": {
+  "isGarment": true,
+  "garmentType": "VESTE",
+  "constructionMethod": "FLAT_PATTERN",
+  "presentation": "MANNEQUIN",
+  "details": {
+   "manches": "LONGUES"
+  }
+ },
+ "veste-009m": {
+  "isGarment": true,
+  "garmentType": "VESTE",
+  "constructionMethod": "FLAT_PATTERN",
+  "presentation": "MANNEQUIN",
+  "details": {
+   "manches": "LONGUES",
+   "fermeture": "BOUTONS"
+  }
+ },
+ "veste-010m": {
+  "isGarment": true,
+  "garmentType": "VESTE",
+  "constructionMethod": "FLAT_PATTERN",
+  "presentation": "FLAT",
+  "details": {
+   "manches": "LONGUES"
+  }
+ },
+ "veste-011m": {
+  "isGarment": true,
+  "garmentType": "VESTE",
+  "constructionMethod": "FLAT_PATTERN",
+  "presentation": "MANNEQUIN",
+  "details": {
+   "manches": "LONGUES"
+  }
+ },
+ "veste-012m": {
+  "isGarment": true,
+  "garmentType": "VESTE",
+  "constructionMethod": "FLAT_PATTERN",
+  "presentation": "FLAT",
+  "details": {
+   "manches": "LONGUES",
+   "fermeture": "BOUTONS"
+  }
+ },
+ "veste-013m": {
+  "isGarment": true,
+  "garmentType": "VESTE",
+  "constructionMethod": "FLAT_PATTERN",
+  "presentation": "MANNEQUIN",
+  "details": {
+   "manches": "LONGUES",
+   "fermeture": "BOUTONS"
+  }
+ },
+ "veste-006m": {
+  "isGarment": false
+ },
+ "costume-002m": {
+  "isGarment": true,
+  "garmentType": "COSTUME",
+  "constructionMethod": "FLAT_PATTERN",
+  "presentation": "MANNEQUIN",
+  "details": {
+   "manches": "LONGUES"
+  }
+ },
+ "costume-003m": {
+  "isGarment": true,
+  "garmentType": "COSTUME",
+  "constructionMethod": "FLAT_PATTERN",
+  "presentation": "MANNEQUIN",
+  "details": {
+   "manches": "LONGUES"
+  }
+ },
+ "costume-004m": {
+  "isGarment": true,
+  "garmentType": "COSTUME",
+  "constructionMethod": "FLAT_PATTERN",
+  "presentation": "MANNEQUIN",
+  "details": {
+   "manches": "LONGUES"
+  }
+ },
+ "costume-005m": {
+  "isGarment": true,
+  "garmentType": "COSTUME",
+  "constructionMethod": "FLAT_PATTERN",
+  "presentation": "MANNEQUIN",
+  "details": {
+   "manches": "LONGUES"
+  }
+ },
+ "costume-006m": {
+  "isGarment": true,
+  "garmentType": "COSTUME",
+  "constructionMethod": "FLAT_PATTERN",
+  "presentation": "MANNEQUIN",
+  "details": {
+   "manches": "LONGUES"
+  }
+ },
+ "costume-008m": {
+  "isGarment": true,
+  "garmentType": "COSTUME",
+  "constructionMethod": "FLAT_PATTERN",
+  "presentation": "MANNEQUIN",
+  "details": {
+   "manches": "LONGUES"
+  }
+ },
+ "chemise-002m": {
+  "isGarment": true,
+  "garmentType": "CHEMISE",
+  "constructionMethod": "FLAT_PATTERN",
+  "presentation": "FLAT",
+  "details": {
+   "manches": "LONGUES"
+  }
+ },
+ "chemise-003m": {
+  "isGarment": true,
+  "garmentType": "CHEMISE",
+  "constructionMethod": "FLAT_PATTERN",
+  "presentation": "FLAT",
+  "details": {
+   "manches": "LONGUES"
+  }
+ },
+ "chemise-004m": {
+  "isGarment": true,
+  "garmentType": "CHEMISE",
+  "constructionMethod": "FLAT_PATTERN",
+  "presentation": "FLAT",
+  "details": {
+   "manches": "LONGUES",
+   "col": "CHEMISIER"
+  }
+ },
+ "chemise-005m": {
+  "isGarment": true,
+  "garmentType": "CHEMISE",
+  "constructionMethod": "FLAT_PATTERN",
+  "presentation": "MANNEQUIN",
+  "details": {
+   "manches": "LONGUES"
+  }
+ },
+ "chemise-006m": {
+  "isGarment": true,
+  "garmentType": "CHEMISE",
+  "constructionMethod": "FLAT_PATTERN",
+  "presentation": "MANNEQUIN",
+  "details": {
+   "manches": "LONGUES"
+  }
+ },
+ "chemise-008m": {
+  "isGarment": true,
+  "garmentType": "CHEMISE",
+  "constructionMethod": "FLAT_PATTERN",
+  "presentation": "FLAT",
+  "details": {
+   "manches": "LONGUES",
+   "col": "CHEMISIER"
+  }
+ },
+ "chemise-009m": {
+  "isGarment": true,
+  "garmentType": "CHEMISE",
+  "constructionMethod": "FLAT_PATTERN",
+  "presentation": "FLAT",
+  "details": {
+   "manches": "LONGUES",
+   "col": "OFFICIER"
+  }
+ },
+ "chemise-010m": {
+  "isGarment": true,
+  "garmentType": "CHEMISE",
+  "constructionMethod": "FLAT_PATTERN",
+  "presentation": "MANNEQUIN",
+  "details": {
+   "manches": "LONGUES",
+   "col": "OFFICIER"
+  }
+ },
+ "chemise-011m": {
+  "isGarment": true,
+  "garmentType": "CHEMISE",
+  "constructionMethod": "FLAT_PATTERN",
+  "presentation": "MANNEQUIN",
+  "details": {
+   "manches": "LONGUES",
+   "col": "OFFICIER"
+  }
+ },
+ "drape-002m": {
+  "isGarment": true,
+  "garmentType": "ROBE",
+  "constructionMethod": "FLAT_PATTERN",
+  "presentation": "MANNEQUIN",
+  "cutType": "DROITE",
+  "details": {
+   "longueur": "SOL",
+   "manches": "LONGUES"
+  }
+ },
+ "drape-004m": {
+  "isGarment": true,
+  "garmentType": "ROBE",
+  "constructionMethod": "FLAT_PATTERN",
+  "presentation": "MANNEQUIN",
+  "cutType": "DROITE",
+  "details": {
+   "longueur": "SOL",
+   "manches": "LONGUES"
+  }
+ },
+ "drape-005m": {
+  "isGarment": true,
+  "garmentType": "ROBE",
+  "constructionMethod": "FLAT_PATTERN",
+  "presentation": "MANNEQUIN",
+  "details": {
+   "longueur": "SOL",
+   "manches": "COURTES"
+  }
+ },
+ "drape-006m": {
+  "isGarment": true,
+  "garmentType": "ROBE",
+  "constructionMethod": "FLAT_PATTERN",
+  "presentation": "MANNEQUIN",
+  "details": {
+   "longueur": "SOL",
+   "manches": "COURTES"
+  }
+ },
+ "drape-007m": {
+  "isGarment": true,
+  "garmentType": "ROBE",
+  "constructionMethod": "FLAT_PATTERN",
+  "presentation": "MANNEQUIN",
+  "cutType": "DROITE",
+  "details": {
+   "longueur": "SOL",
+   "manches": "COURTES"
+  }
+ },
+ "drape-001m": {
+  "isGarment": true,
+  "garmentType": "ROBE",
+  "constructionMethod": "FLAT_PATTERN",
+  "presentation": "MANNEQUIN",
+  "details": {
+   "longueur": "SOL",
+   "manches": "LONGUES"
+  }
+ },
+ "drape-008m": {
+  "isGarment": true,
+  "garmentType": "AUTRE",
+  "constructionMethod": "FLAT_PATTERN",
+  "presentation": "MANNEQUIN"
+ },
+ "pantalon-001m": {
+  "isGarment": true,
+  "garmentType": "PANTALON",
+  "constructionMethod": "FLAT_PATTERN",
+  "presentation": "FLAT"
+ },
+ "pantalon-002m": {
+  "isGarment": true,
+  "garmentType": "PANTALON",
+  "constructionMethod": "FLAT_PATTERN",
+  "presentation": "FLAT"
+ },
+ "pantalon-003m": {
+  "isGarment": true,
+  "garmentType": "PANTALON",
+  "constructionMethod": "FLAT_PATTERN",
+  "presentation": "FLAT"
+ },
+ "pantalon-004m": {
+  "isGarment": true,
+  "garmentType": "PANTALON",
+  "constructionMethod": "FLAT_PATTERN",
+  "presentation": "FLAT"
+ },
+ "pantalon-005m": {
+  "isGarment": true,
+  "garmentType": "PANTALON",
+  "constructionMethod": "FLAT_PATTERN",
+  "presentation": "FLAT"
+ },
+ "pantalon-006m": {
+  "isGarment": true,
+  "garmentType": "PANTALON",
+  "constructionMethod": "FLAT_PATTERN",
+  "presentation": "FLAT"
+ },
+ "pantalon-007m": {
+  "isGarment": true,
+  "garmentType": "PANTALON",
+  "constructionMethod": "FLAT_PATTERN",
+  "presentation": "MANNEQUIN"
+ },
+ "pantalon-008m": {
+  "isGarment": true,
+  "garmentType": "COSTUME",
+  "constructionMethod": "FLAT_PATTERN",
+  "presentation": "MANNEQUIN",
+  "details": {
+   "manches": "LONGUES"
+  }
+ },
+ "jupe-004m": {
+  "isGarment": true,
+  "garmentType": "JUPE",
+  "constructionMethod": "FLAT_PATTERN",
+  "presentation": "FLAT"
+ },
+ "jupe-005m": {
+  "isGarment": true,
+  "garmentType": "JUPE",
+  "constructionMethod": "FLAT_PATTERN",
+  "presentation": "MANNEQUIN",
+  "cutType": "EVASEE"
+ },
+ "jupe-001m": {
+  "isGarment": false
+ },
+ "jupe-002m": {
+  "isGarment": false
+ },
+ "jupe-003m": {
+  "isGarment": false
+ },
+ "autre-001m": {
+  "isGarment": true,
+  "garmentType": "AUTRE",
+  "constructionMethod": "FLAT_PATTERN",
+  "presentation": "MANNEQUIN"
+ },
+ "autre-002m": {
+  "isGarment": true,
+  "garmentType": "AUTRE",
+  "constructionMethod": "FLAT_PATTERN",
+  "presentation": "MANNEQUIN"
+ },
+ "autre-003m": {
+  "isGarment": true,
+  "garmentType": "AUTRE",
+  "constructionMethod": "FLAT_PATTERN",
+  "presentation": "MANNEQUIN"
+ },
+ "autre-004m": {
+  "isGarment": true,
+  "garmentType": "AUTRE",
+  "constructionMethod": "FLAT_PATTERN",
+  "presentation": "FLAT"
+ },
+ "autre-005m": {
+  "isGarment": true,
+  "garmentType": "AUTRE",
+  "constructionMethod": "FLAT_PATTERN",
+  "presentation": "MANNEQUIN"
+ },
+ "autre-006m": {
+  "isGarment": true,
+  "garmentType": "AUTRE",
+  "constructionMethod": "FLAT_PATTERN",
+  "presentation": "MANNEQUIN"
+ },
+ "autre-007m": {
+  "isGarment": true,
+  "garmentType": "AUTRE",
+  "constructionMethod": "FLAT_PATTERN",
+  "presentation": "MANNEQUIN"
+ },
+ "autre-008m": {
+  "isGarment": true,
+  "garmentType": "AUTRE",
+  "constructionMethod": "FLAT_PATTERN",
+  "presentation": "MANNEQUIN"
+ },
+ "autre-009m": {
+  "isGarment": true,
+  "garmentType": "AUTRE",
+  "constructionMethod": "FLAT_PATTERN",
+  "presentation": "MANNEQUIN"
+ },
+ "autre-010m": {
+  "isGarment": true,
+  "garmentType": "AUTRE",
+  "constructionMethod": "FLAT_PATTERN",
+  "presentation": "MANNEQUIN"
+ },
+ "autre-011m": {
+  "isGarment": true,
+  "garmentType": "AUTRE",
+  "constructionMethod": "FLAT_PATTERN",
+  "presentation": "FLAT"
+ },
+ "autre-012m": {
+  "isGarment": true,
+  "garmentType": "ROBE",
+  "constructionMethod": "FLAT_PATTERN",
+  "presentation": "MANNEQUIN",
+  "details": {
+   "longueur": "SOL",
+   "manches": "LONGUES"
+  }
+ },
+ "autre-013m": {
+  "isGarment": true,
+  "garmentType": "ROBE",
+  "constructionMethod": "FLAT_PATTERN",
+  "presentation": "MANNEQUIN",
+  "cutType": "PRINCESSE",
+  "details": {
+   "longueur": "SOL"
+  }
+ },
+ "autre-014m": {
+  "isGarment": true,
+  "garmentType": "AUTRE",
+  "constructionMethod": "FLAT_PATTERN",
+  "presentation": "MANNEQUIN"
+ }
 }

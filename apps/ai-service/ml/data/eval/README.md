@@ -26,18 +26,28 @@ Copier un `report.json` validé en `baseline.json` (hors dépôt ou versionné) 
 qui se dégrade de plus de `--tolerance` (0,02 par défaut).
 
 ## Constitution actuelle (2026-10-08) — jeu de départ, à enrichir
-`manifest.jsonl` contient 27 entrées (17 vêtements, 10 non-vêtements) issues de **Wikimedia Commons**
-(licences domaine public / CC0 / CC-BY / CC-BY-SA seulement ; auteur, page source et licence dans `source`/`license`).
+`manifest.jsonl` : **116 entrées** (102 vêtements, 14 non-vêtements) — 26 robes, 14 robes de mariée (3 avec traîne →
+`MIXED` + bloc `TRAIN`), 16 vestes, 11 chemises, 9 pantalons, 7 costumes, 5 jupes, 14 « autre » (capes, ensembles).
+Sources (toutes à licence libre, auteur + page + licence dans `source`/`license`) :
+- **The Met Open Access** (CC0, département Costume Institute) — 89 photos de musée propres : mannequin ou à plat,
+  fond neutre, catégorie confirmée par le catalogue du musée. `fetch_met_photos.py`.
+- **Wikimedia Commons** (domaine public / CC0 / CC-BY / CC-BY-SA, jamais NC) — 27 photos plus bruitées (portées,
+  croquis, étalages, non-vêtements). `fetch_eval_photos.py`.
 ```bash
 cd apps/ai-service
+.venv/bin/python -m ml.scripts.fetch_met_photos --out ~/angaly-eval-met --per-tag 14
 .venv/bin/python ml/scripts/fetch_eval_photos.py --out ~/angaly-eval-images --per-category 12
 # étiqueter dans labels.json (regarder chaque image), puis :
-.venv/bin/python -m ml.scripts.build_eval_manifest ~/angaly-eval-images   # copie les images dans ~/angaly-eval-set
+.venv/bin/python -m ml.scripts.build_eval_manifest ~/angaly-eval-images ~/angaly-eval-met   # → ~/angaly-eval-set
 make eval.photo IMAGES=~/angaly-eval-set
 ```
-**Limites à connaître** : (1) les étiquettes ont été posées par un assistant IA en regardant les images, pas par une
-couturière — à faire valider avant de relever les seuils ; (2) Commons contient peu de photos de couture « propres »
-(beaucoup de détails, d'expositions, de gravures) : il manque des mariées exploitables, des costumes, des drapés
-nets et toute valeur `fit`/`drapeBlocks` ; (3) aucune clé de fournisseur n'était configurée, la seule exécution
-faite est un prédicteur constant (« toujours ROBE ») qui sert de **plancher** : garmentType 23,5 %, faux positifs 100 %.
-Toute baseline réelle doit battre ce plancher.
+**Limites à connaître**
+1. Les étiquettes ont été posées par un assistant IA en regardant les images (le type de vêtement des photos du Met
+   est confirmé par le catalogue) — pas par une couturière : à faire valider avant de relever les seuils.
+2. **Biais fort** : 89 photos sont des vêtements européens/américains du XVIIIᵉ–début XXᵉ siècle, sur mannequin de
+   musée (68 % `MANNEQUIN`). Peu de photos portées, aucune tenue contemporaine ni malgache. Ce jeu mesure surtout la
+   reconnaissance de la forme ; il **ne remplace pas** les photos de l'atelier (§11), qui doivent le compléter.
+3. Étiquettes `fit`/`drapeBlocks` : seulement les 3 traînes visibles ; aucune ampleur/longueur en % (non mesurable
+   à l'œil sans référence) → les MAE `fit.*` restent « n/a » tant que l'atelier n'a pas étiqueté.
+4. Aucune clé de fournisseur n'était configurée : seul le prédicteur constant (« toujours ROBE ») a été exécuté ;
+   il sert de **plancher** (voir le rapport). Toute baseline réelle doit le battre.
