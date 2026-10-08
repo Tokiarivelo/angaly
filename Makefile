@@ -280,6 +280,17 @@ test.api: ## ⚙️  Run backend tests (Jest)
 test.ai: ## 🤖 Run ai-service tests (pytest) — requires make install.ai first
 	cd apps/ai-service && .venv/bin/pytest
 
+.PHONY: eval.photo
+eval.photo: ## 📊 Photo-analysis fidelity report on the golden set (IMAGES=dir | PREDICTIONS=file.jsonl, BASELINE=file, FAIL=1)
+	cd apps/ai-service && .venv/bin/python -m app.evaluation \
+		$(if $(PREDICTIONS),--predictions $(PREDICTIONS),--images $(IMAGES)) \
+		$(if $(BASELINE),--baseline $(BASELINE)) $(if $(FAIL),--fail-on-findings)
+
+.PHONY: eval.patterns
+eval.patterns: ## 📐 Pattern fidelity (predicted vs labelled profile): CASES=cases.json
+	$(PNPM) --filter @angaly/pattern-engine build
+	node packages/pattern-engine/scripts/eval-patterns.mjs $(CASES)
+
 .PHONY: test.e2e
 test.e2e: ## 🎭 Run frontend E2E tests (Playwright) — requires api + db running
 	$(PNPM) --filter @angaly/web test:e2e

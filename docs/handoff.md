@@ -53,10 +53,12 @@ fiche de moulage, UI « Drapé et volumes », panneau « À savoir sur ce patron
 (201 tests), ai-service 101 tests, API verte. ⚠️ Stitch non consulté (UI drapé + panneau) ; la fiche n'est pas dans le PDF
 (export API = gabarit).
 
-**Prochaine action : S6** — jeu de référence (golden set 100–200 photos étiquetées, MinIO `ml-eval`, manifeste versionné
-`apps/ai-service/ml/data/eval/manifest.jsonl`), métriques d'analyse (exactitude par champ, F1, MAE ease/fullness/lengths, taux
-de rejet) et de patron (distance de contours), `make eval.photo`, job CI, tableau de bord admin. Les photos viennent de
-l'atelier : question ouverte §11 (source/licence) à trancher avant.
+**S6 (outillage) livrée.** Évaluation : `apps/ai-service/app/evaluation/` + `make eval.photo` (rapport MD/JSON, seuils,
+régressions), `packages/pattern-engine/src/eval/fidelity.ts` + `make eval.patterns` (IoU/Hausdorff par pièce). Manifeste vide
+(`ml/data/eval/manifest.jsonl`) : il faut les 100–200 photos étiquetées de l'atelier (§11 source/licence), une baseline par
+fournisseur, un job CI (aucune CI dans le dépôt), le tableau de bord admin. Tests : ai-service 118 (95,7 %), engine 209.
+**Prochaine action : S7** (entraînement local) seulement quand le jeu de référence existe ; sinon S8 (visualisation/RGPD).
+(Ancien texte S6 :) jeu de référence, métriques, `make eval.photo`, job CI, tableau de bord admin.
 (Ancien texte S5 :) — drapé avancé (traîne, surjupe, manches ballon/papillon via `fullness.sleeve`,
 bustier drapé, ourlet asymétrique), sélection de bloc par l'IA validée (`drapeBlocks` dans le profil),
 arbre de décision « meilleure approche », fiche de moulage mannequin ; UI de choix (consulter Stitch avant JSX).

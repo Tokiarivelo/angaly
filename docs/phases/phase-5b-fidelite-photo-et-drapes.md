@@ -1,6 +1,6 @@
 # Phase 5b — Fidélité photo, aisance paramétrique, blocs de drapé & modèle local
 
-**Statut : 🚧 S1 à S5 livrées (2026-10-08) ; S6 → S8 à faire.** Dépend de : Phase 4 (pattern-engine, wizard) et
+**Statut : 🚧 S1 à S5 livrées, S6 livrée côté outillage (2026-10-08) ; photos réelles, S7 et S8 à faire.** Dépend de : Phase 4 (pattern-engine, wizard) et
 Phase 5 (ai-inference, analyse de photo). Prolonge `docs/features/ai-inference.md`,
 `docs/features/pattern-engine.md`, `docs/features/patterns.md` et
 `docs/features/ai-training-data.md`.
@@ -261,7 +261,16 @@ dans l'aperçu/export et ajoutée au PDF.
 **Acceptation** : une photo de robe de mariée à traîne produit base + bloc `TRAIN` + fiche mannequin ; une photo de sari produit
 l'avertissement « moulage requis » sans pièces trompeuses.
 
-### S6 — Jeu de référence & métriques de fidélité
+### S6 — Jeu de référence & métriques de fidélité  🟡 outillage livré 2026-10-08
+
+> **Livré** : `apps/ai-service/app/evaluation/` (manifeste validé par `normalize_profile`, provenance + licence
+> obligatoires ; métriques `isGarment`, exactitude par champ, F1 par classe, MAE `fit.*`, F1 blocs de drapé,
+> taux de rejet par la validation, latence, par catégorie ; seuils `thresholds.json` ; détection de régression
+> contre une baseline ; rapport `report.md` + `report.json` ; CLI `python -m app.evaluation`, `make eval.photo`).
+> Métriques de patron : `packages/pattern-engine/src/eval/fidelity.ts` (IoU rastérisé + Hausdorff normalisé par
+> pièce, taux d'échec moteur, temps ; `make eval.patterns CASES=…`). Doc : `apps/ai-service/ml/data/eval/README.md`.
+> **Reste** : les 100–200 photos étiquetées (question ouverte §11 : source/licence), la baseline chiffrée par
+> fournisseur (puis relever les seuils), le job CI (le dépôt n'a aucune CI aujourd'hui), le tableau de bord admin.
 
 **But** : savoir si on s'améliore.
 

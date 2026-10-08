@@ -257,3 +257,12 @@ Les bornes/types sont recopiés depuis `packages/types/src/pattern-fit.ts` avec 
 **Web** : étape Mesures → « Drapé et volumes » (cases à cocher + réglages, pré-cochées par la photo, « Suggéré par l'IA —
 modifiable », *Réinitialiser*) ; fiche vêtement → ligne « Drapé suggéré » ; page d'aperçu → panneau « À savoir sur ce patron »
 (avertissements — qui n'étaient affichés nulle part —, approche de construction, métrage, fiche de moulage).
+
+
+## Évaluation hors ligne (Phase 5b S6)
+
+`make eval.photo IMAGES=<dossier>` (ou `PREDICTIONS=<fichier.jsonl>` hors ligne) compare les profils prédits au
+jeu de référence `apps/ai-service/ml/data/eval/manifest.jsonl` (images hors dépôt, MinIO `ml-eval`) et écrit
+`report.md` / `report.json` (exactitude par champ, F1, MAE ajustements, blocs de drapé, taux de rejet, latence).
+`BASELINE=…` signale les régressions, `FAIL=1` rend le contrôle bloquant. Fidélité du patron lui-même :
+`make eval.patterns CASES=cases.json` (IoU + Hausdorff normalisé par pièce). Détails : `ml/data/eval/README.md`.

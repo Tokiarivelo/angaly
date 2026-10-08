@@ -1,0 +1,3 @@
+# Golden set manifest (Phase 5b S6) — one JSON object per line, versioned in git. Images are NOT in the repo:
+# they live in the MinIO bucket `ml-eval` (mirror them to a local folder, see ml/data/eval/README.md).
+# {"id":"robe-001","imagePath":"robes/robe-001.jpg","source":"atelier","license":"fournie par l'atelier","category":"robe","expected":{"isGarment":true,"garmentType":"ROBE","cutType":"EVASEE","details":{"manches":"LONGUES"},"constructionMethod":"FLAT_PATTERN","presentation":"WORN"}}

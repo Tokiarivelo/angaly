@@ -1,0 +1,14 @@
+{
+  "_comment": "Seuils initiaux volontairement bas : à relever après la première baseline chiffrée (S6). Chemins = clés du report.json séparées par '/'.",
+  "min": {
+    "garmentDetection/recall": 0.85,
+    "garmentDetection/precision": 0.85,
+    "fieldAccuracy/garmentType/accuracy": 0.7,
+    "f1/garmentType/macroF1": 0.6
+  },
+  "max": {
+    "garmentDetection/falsePositiveRate": 0.1,
+    "validationRejection/rate": 0.3,
+    "analysisFailureRate": 0.1
+  }
+}

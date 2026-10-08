@@ -23,3 +23,18 @@ export { CostumeRule } from './rules/costume.rule';
 export { RobeMarieeRule } from './rules/robe-mariee.rule';
 export { AutreRule } from './rules/autre.rule';
 
+export {
+  comparePatterns,
+  contourIoU,
+  createDefaultEngine,
+  evaluateFidelityCase,
+  normalizedHausdorff,
+  summarizeFidelity,
+} from './eval/fidelity';
+export type {
+  FidelityCase,
+  FidelityResult,
+  FidelitySummary,
+  PatternComparison,
+  PieceFidelity,
+} from './eval/fidelity';
