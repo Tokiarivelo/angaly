@@ -91,6 +91,9 @@ export class AiRoutingSettingResponseDto implements AiRoutingSetting {
   @ApiProperty({ enum: AiProviderId, example: AiProviderId.GEMINI })
   patternSuggestionProvider!: AiProviderId;
 
+  @ApiProperty({ enum: AiProviderId, isArray: true, example: [AiProviderId.ANTHROPIC] })
+  patternSuggestionFallbacks!: AiProviderId[];
+
   @ApiProperty({ example: '2026-10-02T12:00:00.000Z' })
   updatedAt!: string;
 

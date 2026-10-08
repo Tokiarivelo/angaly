@@ -71,6 +71,7 @@ describe('AiSettingsPage', () => {
   const mockRouting: AiRoutingSetting = {
     measurementProvider: AiProviderId.ANTHROPIC,
     patternSuggestionProvider: AiProviderId.ANTHROPIC,
+    patternSuggestionFallbacks: [],
     updatedAt: '2026-10-02T10:00:00Z',
     updatedById: 'admin-1',
   };

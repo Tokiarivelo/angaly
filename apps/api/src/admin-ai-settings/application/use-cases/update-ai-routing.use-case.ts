@@ -35,9 +35,21 @@ export class UpdateAiRoutingUseCase {
       );
     }
 
+    if (dto.patternSuggestionFallbacks) {
+      for (const provider of dto.patternSuggestionFallbacks) {
+        if (provider === AiProviderId.LOCAL_STATISTICAL) {
+          throw new BadRequestException(
+            'Le modèle local ne sait pas lire une photo : il ne peut pas servir de repli pour l’analyse.',
+          );
+        }
+        await this.validateProvider(provider, 'le repli de l’analyse de photo');
+      }
+    }
+
     return this.routingRepository.updateRouting({
       measurementProvider: dto.measurementProvider,
       patternSuggestionProvider: dto.patternSuggestionProvider,
+      patternSuggestionFallbacks: dto.patternSuggestionFallbacks,
       measurementModel: dto.measurementModel,
       updatedById: userId,
     });

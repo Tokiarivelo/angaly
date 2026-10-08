@@ -208,8 +208,8 @@ export const InspirationStep: React.FC<InspirationStepProps> = ({
         >
           <AlertTriangle className="w-4 h-4 shrink-0 mt-0.5" />
           <span>
-            L’analyse IA n’a pas pu être réalisée pour cette photo (modèle IA sélectionné non
-            configuré ou service indisponible). Aucune étape n’a été pré-remplie : poursuivez manuellement ou
+            L’analyse IA n’a pas pu être réalisée pour cette photo (modèle IA sélectionné et modèles de
+            repli non configurés ou indisponibles). Aucune étape n’a été pré-remplie : poursuivez manuellement ou
             choisissez un autre modèle IA ci-dessous puis changez la photo.
           </span>
         </div>

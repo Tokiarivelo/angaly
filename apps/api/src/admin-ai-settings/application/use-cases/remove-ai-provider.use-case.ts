@@ -33,7 +33,8 @@ export class RemoveAiProviderUseCase {
     const routing = await this.routingRepository.get();
     if (
       routing.measurementProvider === providerId ||
-      routing.patternSuggestionProvider === providerId
+      routing.patternSuggestionProvider === providerId ||
+      routing.patternSuggestionFallbacks.includes(providerId)
     ) {
       throw new BadRequestException(
         'Impossible de supprimer ce fournisseur car il est actuellement actif pour l’atelier. Modifiez d’abord l’affectation du modèle actif.',

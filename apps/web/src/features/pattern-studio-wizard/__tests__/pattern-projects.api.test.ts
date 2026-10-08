@@ -106,6 +106,8 @@ describe('analyzeInspirationPhoto', () => {
       detectedFeatures: { silhouette: 'Évasée' },
       profile: PROFILE,
       confidence: 0.82,
+      usedFallback: false,
+      modelUsed: null,
     });
   });
 

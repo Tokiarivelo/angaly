@@ -77,6 +77,8 @@ export interface UpsertAiProviderDto {
 export interface AiRoutingSetting {
   measurementProvider: AiProviderId;
   patternSuggestionProvider: AiProviderId;
+  /** Ordered backups tried when the primary model fails to analyse a photo (never LOCAL_STATISTICAL). */
+  patternSuggestionFallbacks: AiProviderId[];
   updatedAt: string;
   updatedById: string | null;
 }
@@ -85,6 +87,7 @@ export interface AiRoutingSetting {
 export interface UpdateAiRoutingDto {
   measurementProvider?: AiProviderId | undefined;
   patternSuggestionProvider?: AiProviderId | undefined;
+  patternSuggestionFallbacks?: AiProviderId[] | undefined;
 }
 
 /** Identifiants envoyés à apps/ai-service via le réseau interne pour un appel */
@@ -124,6 +127,8 @@ export interface SelectableAiProvider {
   provider: AiProviderId;
   name: string;
   model: string;
+  /** false = cannot read a photo (local statistical model): the server falls back to a vision model. */
+  readsPhotos: boolean;
 }
 
 /** Fournisseurs sélectionnables + choix par défaut de l'atelier (`null` = repli automatique) */

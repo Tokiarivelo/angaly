@@ -7,6 +7,7 @@ export interface UpdateAiRoutingData {
   measurementModel?: MeasurementModelPreference;
   measurementProvider?: AiProviderId;
   patternSuggestionProvider?: AiProviderId;
+  patternSuggestionFallbacks?: AiProviderId[];
   updatedById: string;
 }
 

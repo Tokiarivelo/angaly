@@ -38,6 +38,7 @@ export class ListSelectableAiProvidersUseCase {
         provider: local.id,
         name: local.name,
         model: local.defaultModel,
+        readsPhotos: false,
       });
     }
 
@@ -45,7 +46,7 @@ export class ListSelectableAiProvidersUseCase {
       if (!config.enabled || config.status === AiProviderStatus.INVALID) continue;
       const entry = findCatalogEntry(config.provider);
       if (!entry || entry.id === AiProviderId.LOCAL_STATISTICAL) continue;
-      providers.push({ provider: config.provider, name: entry.name, model: config.model });
+      providers.push({ provider: config.provider, name: entry.name, model: config.model, readsPhotos: true });
     }
 
     return { providers, defaultProvider: setting.patternSuggestionProvider ?? null };

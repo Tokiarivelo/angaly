@@ -54,6 +54,9 @@ export class PrismaAiModelSettingRepository implements IAiModelSettingRepository
     if (data.patternSuggestionProvider !== undefined) {
       updatePayload.patternSuggestionProvider = data.patternSuggestionProvider;
     }
+    if (data.patternSuggestionFallbacks !== undefined) {
+      updatePayload.patternSuggestionFallbacks = data.patternSuggestionFallbacks;
+    }
     if (data.measurementModel !== undefined) {
       updatePayload.measurementModel = data.measurementModel;
       if (data.measurementProvider === undefined) {
@@ -81,6 +84,7 @@ export class PrismaAiModelSettingRepository implements IAiModelSettingRepository
     measurementModel: string;
     measurementProvider?: string;
     patternSuggestionProvider?: string;
+    patternSuggestionFallbacks?: string[];
     updatedById: string | null;
     updatedAt: Date;
     createdAt: Date;
@@ -93,6 +97,7 @@ export class PrismaAiModelSettingRepository implements IAiModelSettingRepository
       row.createdAt,
       (row.measurementProvider as AiProviderId) ?? AiProviderId.GEMINI,
       (row.patternSuggestionProvider as AiProviderId) ?? AiProviderId.GEMINI,
+      (row.patternSuggestionFallbacks as AiProviderId[] | undefined) ?? [],
     );
   }
 }

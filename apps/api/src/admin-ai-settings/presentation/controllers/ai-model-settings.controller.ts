@@ -36,6 +36,7 @@ export class AiModelSettingsController {
       measurementModel: setting.measurementModel,
       measurementProvider: setting.measurementProvider,
       patternSuggestionProvider: setting.patternSuggestionProvider,
+      patternSuggestionFallbacks: setting.patternSuggestionFallbacks,
       updatedAt: setting.updatedAt.toISOString(),
       updatedById: setting.updatedById,
     };
@@ -53,6 +54,7 @@ export class AiModelSettingsController {
       measurementModel: setting.measurementModel,
       measurementProvider: setting.measurementProvider,
       patternSuggestionProvider: setting.patternSuggestionProvider,
+      patternSuggestionFallbacks: setting.patternSuggestionFallbacks,
       updatedAt: setting.updatedAt.toISOString(),
       updatedById: setting.updatedById,
     };

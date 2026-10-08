@@ -14,6 +14,7 @@ describe('useAiRouting', () => {
     const mockRouting: AiRoutingSetting = {
       measurementProvider: AiProviderId.LOCAL_STATISTICAL,
       patternSuggestionProvider: AiProviderId.GEMINI,
+      patternSuggestionFallbacks: [],
       updatedAt: new Date().toISOString(),
       updatedById: 'admin-1',
     };

@@ -49,6 +49,7 @@ export const AiModelSelector: React.FC<AiModelSelectorProps> = ({
         {providers.map((p) => (
           <option key={p.provider} value={p.provider}>
             {p.name} — {p.model}
+            {p.readsPhotos === false ? ' (mesures — photos lues par un modèle de repli)' : ''}
           </option>
         ))}
       </select>

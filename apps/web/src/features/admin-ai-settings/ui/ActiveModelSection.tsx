@@ -4,6 +4,7 @@ import React from 'react';
 import { Cpu, ShieldCheck, Zap } from 'lucide-react';
 import { AiProviderId, type AiProviderCatalogEntry, type AiProviderConfigView, type AiRoutingSetting } from '@angaly/types';
 import { useUpdateAiRouting } from '../hooks/useUpdateAiRouting';
+import { moveFallback, toggleFallback, MAX_FALLBACKS } from '../utils/fallback-order';
 
 interface ActiveModelSectionProps {
   routing?: AiRoutingSetting | undefined;
@@ -42,6 +43,9 @@ export const ActiveModelSection: React.FC<ActiveModelSectionProps> = ({
     const val = e.target.value as AiProviderId;
     updateRouting.mutate({ patternSuggestionProvider: val });
   };
+
+  const fallbacks = routing?.patternSuggestionFallbacks ?? [];
+  const nameOf = (id: AiProviderId) => catalog.find((c) => c.id === id)?.name ?? id;
 
   return (
     <section className="bg-white border border-[#D9D4CA] rounded-sm p-6 shadow-sm relative">
@@ -134,12 +138,87 @@ export const ActiveModelSection: React.FC<ActiveModelSectionProps> = ({
         </div>
       </div>
 
+      {/* Fallbacks for photo analysis */}
+      <div className="mt-6 pt-5 border-t border-[#D9D4CA]/70 space-y-3" data-testid="fallback-section">
+        <div>
+          <h3 className="text-xs font-semibold uppercase tracking-wider text-[#061938]">
+            Modèles de repli pour l&apos;analyse de photo
+          </h3>
+          <p className="text-[11px] text-[#5C697A] leading-relaxed mt-1">
+            Si le modèle choisi échoue ou ne sait pas lire une photo (le modèle local ne lit que les mesures),
+            ces modèles sont essayés dans l&apos;ordre. {MAX_FALLBACKS} au maximum.
+          </p>
+        </div>
+        {patternOptions.length === 0 ? (
+          <p className="text-[11px] text-[#8A877F]">Connectez d&apos;abord un fournisseur externe.</p>
+        ) : (
+          <ul className="grid grid-cols-1 sm:grid-cols-2 gap-2">
+            {patternOptions.map((opt) => {
+              const checked = fallbacks.includes(opt.id);
+              const rank = fallbacks.indexOf(opt.id);
+              return (
+                <li
+                  key={opt.id}
+                  className="flex items-center justify-between gap-2 bg-[#F6F2E9]/60 border border-[#D9D4CA] rounded-sm px-3 py-2"
+                >
+                  <label className="flex items-center gap-2 text-xs text-[#061938] cursor-pointer">
+                    <input
+                      type="checkbox"
+                      checked={checked}
+                      disabled={isLoading || updateRouting.isPending || (!checked && fallbacks.length >= MAX_FALLBACKS)}
+                      onChange={() =>
+                        updateRouting.mutate({ patternSuggestionFallbacks: toggleFallback(fallbacks, opt.id) })
+                      }
+                    />
+                    <span>{opt.name}</span>
+                    {checked && (
+                      <span className="text-[10px] font-semibold text-[#936C3E]">#{rank + 1}</span>
+                    )}
+                  </label>
+                  {checked && (
+                    <span className="flex gap-1">
+                      <button
+                        type="button"
+                        aria-label={`Monter ${opt.name}`}
+                        disabled={rank === 0 || updateRouting.isPending}
+                        onClick={() =>
+                          updateRouting.mutate({ patternSuggestionFallbacks: moveFallback(fallbacks, opt.id, -1) })
+                        }
+                        className="px-1.5 text-xs text-[#5C697A] disabled:opacity-30"
+                      >
+                        ▲
+                      </button>
+                      <button
+                        type="button"
+                        aria-label={`Descendre ${opt.name}`}
+                        disabled={rank === fallbacks.length - 1 || updateRouting.isPending}
+                        onClick={() =>
+                          updateRouting.mutate({ patternSuggestionFallbacks: moveFallback(fallbacks, opt.id, 1) })
+                        }
+                        className="px-1.5 text-xs text-[#5C697A] disabled:opacity-30"
+                      >
+                        ▼
+                      </button>
+                    </span>
+                  )}
+                </li>
+              );
+            })}
+          </ul>
+        )}
+        {fallbacks.length > 0 && (
+          <p className="text-[11px] text-[#5C697A]">
+            Ordre : {fallbacks.map(nameOf).join(' → ')}
+          </p>
+        )}
+      </div>
+
       {/* Reassurance Footer */}
       <div className="mt-6 pt-4 border-t border-[#D9D4CA]/70 flex flex-col sm:flex-row sm:items-center justify-between gap-3 text-[11px] text-[#5C697A]">
         <div className="flex items-center gap-2 text-[#46745A]">
           <ShieldCheck className="w-4 h-4 shrink-0 text-[#46745A]" />
           <span>
-            <strong>Repli automatique :</strong> Modèle statistique local (ANSUR II) si l&apos;API distante est indisponible.
+            <strong>Repli automatique :</strong> modèles de repli ci-dessus pour les photos ; modèle statistique local (ANSUR II) pour les mesures.
           </span>
         </div>
         <div className="flex items-center gap-1.5 text-[#8A877F] shrink-0">

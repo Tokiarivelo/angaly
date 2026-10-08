@@ -28,7 +28,8 @@ describe('ListSelectableAiProvidersUseCase', () => {
       AiProviderId.ANTHROPIC,
       AiProviderId.GEMINI,
     ]);
+    expect(result.providers.map((p) => p.readsPhotos)).toEqual([false, true, true]);
     expect(result.defaultProvider).toBe(AiProviderId.GEMINI);
-    expect(Object.keys(result.providers[1]!).sort()).toEqual(['model', 'name', 'provider']);
+    expect(Object.keys(result.providers[1]!).sort()).toEqual(['model', 'name', 'provider', 'readsPhotos']);
   });
 });

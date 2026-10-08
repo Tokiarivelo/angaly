@@ -143,6 +143,9 @@ export interface InspirationAnalysis {
   /** Wizard-ready classification; null when the analysis is unavailable. */
   profile: GarmentProfile | null;
   confidence: number;
+  /** The chosen model could not answer (e.g. local model: no vision) and a fallback model did. */
+  usedFallback?: boolean;
+  modelUsed?: string | null;
 }
 
 export const analyzeInspirationPhoto = async (
@@ -158,6 +161,8 @@ export const analyzeInspirationPhoto = async (
       profile: GarmentProfile | null;
       confidence: number;
       isIndicativeOnly: boolean;
+      usedFallback?: boolean;
+      modelUsed?: string | null;
     }>('/api/ai-inference/inspiration-analysis', {
       inspirationImageUrl: imageUrl,
       ...(aiProvider ? { aiProvider } : {}),
@@ -167,6 +172,8 @@ export const analyzeInspirationPhoto = async (
       detectedFeatures: res.detectedInspirationFeatures ?? {},
       profile: res.profile ?? null,
       confidence: res.confidence,
+      usedFallback: res.usedFallback ?? false,
+      modelUsed: res.modelUsed ?? null,
     };
   } catch {
     // No invented analysis: the customer simply fills the following steps by hand.

@@ -11,5 +11,6 @@ export class AiModelSetting {
     public readonly createdAt: Date,
     public readonly measurementProvider: AiProviderId = AiProviderId.GEMINI,
     public readonly patternSuggestionProvider: AiProviderId = AiProviderId.GEMINI,
+    public readonly patternSuggestionFallbacks: AiProviderId[] = [],
   ) {}
 }

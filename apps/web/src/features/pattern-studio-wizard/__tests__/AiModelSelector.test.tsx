@@ -5,8 +5,8 @@ import { AiProviderId } from '@angaly/types';
 import { AiModelSelector } from '../ui/AiModelSelector';
 
 const providers = [
-  { provider: AiProviderId.LOCAL_STATISTICAL, name: 'Modèle statistique local', model: 'ansur2-ridge-v1' },
-  { provider: AiProviderId.ANTHROPIC, name: 'Claude (Anthropic)', model: 'claude-sonnet-5-5' },
+  { provider: AiProviderId.LOCAL_STATISTICAL, name: 'Modèle statistique local', model: 'ansur2-ridge-v1', readsPhotos: false },
+  { provider: AiProviderId.ANTHROPIC, name: 'Claude (Anthropic)', model: 'claude-sonnet-5-5', readsPhotos: true },
 ];
 
 describe('AiModelSelector', () => {

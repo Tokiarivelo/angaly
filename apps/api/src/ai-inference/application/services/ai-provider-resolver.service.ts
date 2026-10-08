@@ -50,6 +50,28 @@ export class AiProviderResolverService {
   }
 
   /**
+   * Backup models for photo analysis, in the admin's order. Providers that are disabled, not
+   * configured or unable to read a photo (local statistical) are skipped — never an error.
+   */
+  async resolveFallbackChain(usage: AiUsage): Promise<ProviderCredentials[]> {
+    try {
+      const setting = await this.getAiModelSetting.execute();
+      const chain: ProviderCredentials[] = [];
+      for (const providerId of setting.patternSuggestionFallbacks ?? []) {
+        if (providerId === AiProviderId.LOCAL_STATISTICAL) continue;
+        const credentials = await this.credentialsFor(providerId, usage);
+        if (credentials) chain.push(credentials);
+      }
+      return chain;
+    } catch (err: unknown) {
+      this.logger.error(
+        `Erreur lors de la résolution des modèles de repli : ${err instanceof Error ? err.message : String(err)}`,
+      );
+      return [];
+    }
+  }
+
+  /**
    * Resolves credentials for an explicitly chosen provider (Pattern Studio model picker).
    * Returns undefined when the provider is not usable, so callers fall back to the atelier default.
    */

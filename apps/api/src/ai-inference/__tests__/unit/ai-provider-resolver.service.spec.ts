@@ -126,4 +126,34 @@ describe('AiProviderResolverService', () => {
     const creds = await service.resolveCredentials(AiUsage.PATTERN_SUGGESTION);
     expect(creds).toBeUndefined();
   });
+
+  describe('resolveFallbackChain', () => {
+    const config = (provider: AiProviderId, enabled: boolean) =>
+      new AiProviderConfigEntity('cfg', provider, `${provider}-m`, null, null, null, AiProviderStatus.OK, null, null, enabled, null, new Date(), new Date());
+
+    it('returns the configured backups in order, skipping disabled, local and unknown ones', async () => {
+      getAiModelSetting.execute.mockResolvedValue(
+        new AiModelSetting('singleton', 'GEMINI', null, new Date(), new Date(), AiProviderId.GEMINI, AiProviderId.GEMINI, [
+          AiProviderId.LOCAL_STATISTICAL,
+          AiProviderId.OPENAI,
+          AiProviderId.GROQ,
+          AiProviderId.ANTHROPIC,
+        ]),
+      );
+      providerRepo.findByProvider.mockImplementation((id: AiProviderId) =>
+        Promise.resolve(
+          id === AiProviderId.OPENAI ? config(id, true) : id === AiProviderId.GROQ ? config(id, false) : config(id, true),
+        ),
+      );
+
+      const chain = await service.resolveFallbackChain(AiUsage.PATTERN_SUGGESTION);
+
+      expect(chain.map((c) => c.provider)).toEqual([AiProviderId.OPENAI, AiProviderId.ANTHROPIC]);
+    });
+
+    it('returns an empty chain when the setting cannot be read', async () => {
+      getAiModelSetting.execute.mockRejectedValue(new Error('db down'));
+      await expect(service.resolveFallbackChain(AiUsage.PATTERN_SUGGESTION)).resolves.toEqual([]);
+    });
+  });
 });

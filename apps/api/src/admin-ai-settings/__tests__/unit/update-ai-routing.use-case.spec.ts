@@ -125,4 +125,29 @@ describe('UpdateAiRoutingUseCase', () => {
     expect(result.measurementProvider).toBe(AiProviderId.ANTHROPIC);
     expect(result.patternSuggestionProvider).toBe(AiProviderId.ANTHROPIC);
   });
+
+  it('rejects the local model as a photo fallback (it cannot read images)', async () => {
+    await expect(
+      useCase.execute({ patternSuggestionFallbacks: [AiProviderId.LOCAL_STATISTICAL] }, 'admin-1'),
+    ).rejects.toThrow('ne sait pas lire une photo');
+    expect(routingRepo.updateRouting).not.toHaveBeenCalled();
+  });
+
+  it('rejects an unconfigured fallback and saves a valid ordered list', async () => {
+    configRepo.findByProvider.mockResolvedValueOnce(null);
+    await expect(
+      useCase.execute({ patternSuggestionFallbacks: [AiProviderId.OPENAI] }, 'admin-1'),
+    ).rejects.toThrow(BadRequestException);
+
+    const enabled = { enabled: true } as never;
+    configRepo.findByProvider.mockResolvedValue(enabled);
+    routingRepo.updateRouting.mockResolvedValue({} as never);
+    await useCase.execute(
+      { patternSuggestionFallbacks: [AiProviderId.OPENAI, AiProviderId.ANTHROPIC] },
+      'admin-1',
+    );
+    expect(routingRepo.updateRouting).toHaveBeenCalledWith(
+      expect.objectContaining({ patternSuggestionFallbacks: [AiProviderId.OPENAI, AiProviderId.ANTHROPIC] }),
+    );
+  });
 });

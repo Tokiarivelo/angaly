@@ -48,7 +48,7 @@ export class AiInspirationController {
           `Chosen model ${dto.aiProvider} is not usable (disabled/not configured) — using the atelier settings instead`,
         );
       }
-      const analysis = await this.analyzeInspirationImage.execute(
+      const { analysis, attempts } = await this.analyzeInspirationImage.executeWithAttempts(
         dto.inspirationImageUrl,
         provider,
       );
@@ -61,6 +61,10 @@ export class AiInspirationController {
         detectedInspirationFeatures: analysis.features,
         profile,
         confidence: analysis.confidence,
+        modelUsed: attempts.find((a) => a.outcome === 'OK') ? analysis.modelVersion : null,
+        /** The chosen model could not answer (no vision / error) and another one did. */
+        usedFallback: attempts.some((a) => a.outcome !== 'OK') && attempts.some((a) => a.outcome === 'OK'),
+        attempts,
         isIndicativeOnly:
           analysis.confidence < 0.5 ||
           analysis.modelVersion.startsWith('fallback') ||
@@ -77,6 +81,9 @@ export class AiInspirationController {
         detectedInspirationFeatures: {},
         profile: null,
         confidence: 0,
+        modelUsed: null,
+        usedFallback: false,
+        attempts: [],
         isIndicativeOnly: true,
       };
     }

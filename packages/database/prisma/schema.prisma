@@ -813,6 +813,8 @@ model AiModelSetting {
   measurementModel           AiMeasurementModel @default(GEMINI)
   measurementProvider        AiProviderId       @default(GEMINI)
   patternSuggestionProvider  AiProviderId       @default(GEMINI)
+  /// Ordered backups tried when the chosen/default provider fails to analyse a photo (never LOCAL_STATISTICAL).
+  patternSuggestionFallbacks AiProviderId[]     @default([])
   updatedById                String?
   updatedAt                  DateTime           @updatedAt
   createdAt                  DateTime           @default(now())

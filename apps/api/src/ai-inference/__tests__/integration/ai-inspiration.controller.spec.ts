@@ -13,7 +13,7 @@ import { AiInspirationController } from '../../presentation/controllers/ai-inspi
 
 describe('AiInspirationController (integration)', () => {
   let app: INestApplication;
-  const analyzeInspirationImage = { execute: jest.fn() };
+  const analyzeInspirationImage = { executeWithAttempts: jest.fn() };
   const providerResolver = { resolveSelected: jest.fn() };
   const accessTokenService = { sign: jest.fn(), verify: jest.fn() };
 
@@ -57,12 +57,15 @@ describe('AiInspirationController (integration)', () => {
   };
 
   it('POST /ai-inference/inspiration-analysis returns the wizard-ready garment profile', async () => {
-    analyzeInspirationImage.execute.mockResolvedValue({
+    analyzeInspirationImage.executeWithAttempts.mockResolvedValue({
+      analysis: {
       features: { silhouette: 'Ajustée' },
       profile,
       suggestedCutType: 'SIRENE',
       confidence: 0.8,
       modelVersion: 'gemini-2.5-flash',
+    },
+      attempts: [{ provider: 'X', model: 'm', outcome: 'OK' }],
     });
 
     const response = await request(server())
@@ -71,7 +74,7 @@ describe('AiInspirationController (integration)', () => {
       .send({ inspirationImageUrl: 'https://cdn.angaly.test/inspiration.jpg' })
       .expect(201);
 
-    expect(analyzeInspirationImage.execute).toHaveBeenCalledWith(
+    expect(analyzeInspirationImage.executeWithAttempts).toHaveBeenCalledWith(
       'https://cdn.angaly.test/inspiration.jpg',
       undefined,
     );
@@ -80,18 +83,41 @@ describe('AiInspirationController (integration)', () => {
       detectedInspirationFeatures: { silhouette: 'Ajustée' },
       profile,
       isIndicativeOnly: false,
+      usedFallback: false,
+      attempts: [{ provider: 'X', model: 'm', outcome: 'OK' }],
     });
+  });
+
+  it('reports that a fallback model answered when the first one could not', async () => {
+    analyzeInspirationImage.executeWithAttempts.mockResolvedValue({
+      analysis: { features: {}, profile, suggestedCutType: null, confidence: 0.8, modelVersion: 'gpt-4o-mini' },
+      attempts: [
+        { provider: 'LOCAL_STATISTICAL', model: 'ansur2-ridge-v1', outcome: 'SKIPPED_NO_VISION' },
+        { provider: 'OPENAI', model: 'gpt-4o-mini', outcome: 'OK' },
+      ],
+    });
+
+    const response = await request(server())
+      .post('/ai-inference/inspiration-analysis')
+      .set('Authorization', 'Bearer valid-token')
+      .send({ inspirationImageUrl: 'https://cdn.angaly.test/inspiration.jpg', aiProvider: 'LOCAL_STATISTICAL' })
+      .expect(201);
+
+    expect(response.body).toMatchObject({ usedFallback: true, modelUsed: 'gpt-4o-mini' });
   });
 
   it('analyses the photo with the model chosen in the wizard', async () => {
     const credentials = { provider: 'ANTHROPIC', model: 'claude-haiku-4-5-20251001', apiKey: 'k' };
     providerResolver.resolveSelected.mockResolvedValue(credentials);
-    analyzeInspirationImage.execute.mockResolvedValue({
+    analyzeInspirationImage.executeWithAttempts.mockResolvedValue({
+      analysis: {
       features: {},
       profile,
       suggestedCutType: null,
       confidence: 0.8,
       modelVersion: 'claude-haiku-4-5-20251001',
+    },
+      attempts: [{ provider: 'X', model: 'm', outcome: 'OK' }],
     });
 
     await request(server())
@@ -101,14 +127,14 @@ describe('AiInspirationController (integration)', () => {
       .expect(201);
 
     expect(providerResolver.resolveSelected).toHaveBeenCalledWith('ANTHROPIC', 'PATTERN_SUGGESTION');
-    expect(analyzeInspirationImage.execute).toHaveBeenCalledWith(
+    expect(analyzeInspirationImage.executeWithAttempts).toHaveBeenCalledWith(
       'https://cdn.angaly.test/inspiration.jpg',
       credentials,
     );
   });
 
   it('degrades to an empty indicative answer when the photo cannot be analysed', async () => {
-    analyzeInspirationImage.execute.mockRejectedValue(new Error('image unreachable'));
+    analyzeInspirationImage.executeWithAttempts.mockRejectedValue(new Error('image unreachable'));
 
     const response = await request(server())
       .post('/ai-inference/inspiration-analysis')
@@ -120,12 +146,15 @@ describe('AiInspirationController (integration)', () => {
   });
 
   it('accepts a local MinIO URL without a TLD (http://localhost:9000/…) in development', async () => {
-    analyzeInspirationImage.execute.mockResolvedValue({
+    analyzeInspirationImage.executeWithAttempts.mockResolvedValue({
+      analysis: {
       features: {},
       profile,
       suggestedCutType: null,
       confidence: 0.8,
       modelVersion: 'm',
+    },
+      attempts: [{ provider: 'X', model: 'm', outcome: 'OK' }],
     });
 
     await request(server())
@@ -142,6 +171,6 @@ describe('AiInspirationController (integration)', () => {
       .send({ inspirationImageUrl: 'not-a-url' })
       .expect(400);
 
-    expect(analyzeInspirationImage.execute).not.toHaveBeenCalled();
+    expect(analyzeInspirationImage.executeWithAttempts).not.toHaveBeenCalled();
   });
 });
