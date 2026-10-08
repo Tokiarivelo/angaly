@@ -8,12 +8,25 @@ import { SLEEVE_TILT, type GarmentModel, type PanelMeshData } from '../utils/gar
 import { loftRings } from '../utils/garment3d/body-model';
 import { bodyLandmarks, bodyScale } from '../utils/garment3d/body-model';
 
+import {
+  createContouredLimbGeometry,
+  createCoutureFootGeometry,
+  createCoutureHandGeometry,
+  createCoutureHeadGeometry,
+  createHairGeometry,
+} from '../utils/garment3d/mannequin-mesh';
+import { ringAt } from '../utils/garment3d/body-model';
+import { buildHairShell, fitHumanBody, morphFor } from '../utils/garment3d/human-body';
+import { useHumanBase } from './useHumanBase';
+
 interface Garment3DViewerProps {
   model: GarmentModel;
   /** 0 = panels exploded around the mannequin, 1 = assembled. */
   assembly: number;
   showMannequin: boolean;
   transparent: boolean;
+  /** Hand tool: dragging with the left button / one finger moves the scene instead of rotating it. */
+  panMode?: boolean;
   /** Highlights the panel(s) built from this pattern piece. */
   selectedPieceId: string | null;
   /** Snaps the camera to a preset view (numpad-style); a new `nonce` re-applies the same view. */
@@ -39,11 +52,11 @@ const VIEW_POSITIONS: Record<ViewName, [number, number, number]> = {
 
 const EXPLODE_DISTANCE = 0.3;
 const ZONE_COLORS: Record<PanelMeshData['zone'], string> = {
-  bodice: '#C5B190',
-  torso: '#C5B190',
-  skirt: '#7F95B8',
-  legs: '#7F95B8',
-  sleeve: '#B08A5B',
+  bodice: '#18375D',
+  torso: '#18375D',
+  skirt: '#0C2650',
+  legs: '#061938',
+  sleeve: '#1E4574',
 };
 
 /** Disposes a geometry when it is replaced or the viewer unmounts (GPU memory). */
@@ -85,8 +98,9 @@ const CameraRig: React.FC<{ request: ViewRequest | null }> = ({ request }) => {
 
 const Torso: React.FC<{ model: GarmentModel }> = ({ model }) => {
   const skin = model.body.skin;
+
   const geometry = useGeometry(() => {
-    const mesh = loftRings(model.torsoRings, 40);
+    const mesh = loftRings(model.torsoRings, 48);
     const g = new THREE.BufferGeometry();
     g.setAttribute('position', new THREE.BufferAttribute(mesh.positions, 3));
     g.setIndex(new THREE.BufferAttribute(mesh.indices, 1));
@@ -96,19 +110,20 @@ const Torso: React.FC<{ model: GarmentModel }> = ({ model }) => {
 
   return (
     <mesh geometry={geometry}>
-      <meshStandardMaterial color={skin} roughness={0.9} metalness={0} />
+      <meshStandardMaterial color={skin} roughness={0.55} metalness={0.0} />
     </mesh>
   );
 };
 
-/** Cylinder between two points (arms, legs). */
-const Limb: React.FC<{
+/** Anatomically contoured limb segment (arms, legs). */
+const SculptedLimbMesh: React.FC<{
   from: [number, number, number];
   to: [number, number, number];
   radiusTop: number;
   radiusBottom: number;
+  limbType: 'upperArm' | 'forearm' | 'thigh' | 'calf' | 'neck';
   color: string;
-}> = ({ from, to, radiusTop, radiusBottom, color }) => {
+}> = ({ from, to, radiusTop, radiusBottom, limbType, color }) => {
   const { position, quaternion, length } = useMemo(() => {
     const a = new THREE.Vector3(...from);
     const b = new THREE.Vector3(...to);
@@ -120,87 +135,194 @@ const Limb: React.FC<{
     };
   }, [from, to]);
 
+  const geometry = useGeometry(
+    () => createContouredLimbGeometry(radiusTop, radiusBottom, length, limbType),
+    [radiusTop, radiusBottom, length, limbType],
+  );
+
   return (
-    <mesh position={position} quaternion={quaternion}>
-      <cylinderGeometry args={[radiusTop, radiusBottom, length, 18]} />
-      <meshStandardMaterial color={color} roughness={0.9} />
+    <mesh position={position} quaternion={quaternion} geometry={geometry}>
+      <meshStandardMaterial color={color} roughness={0.55} metalness={0.0} />
     </mesh>
+  );
+};
+
+
+/** Scanned-quality human body (CC0 MakeHuman mesh) fitted to the customer's measurements. */
+const Person: React.FC<{ model: GarmentModel; base: NonNullable<ReturnType<typeof useHumanBase>> }> = ({ model, base }) => {
+  const { body } = model;
+  const s = bodyScale(body);
+  const fit = useMemo(
+    () => fitHumanBody(base, body, model.torsoRings, morphFor(body, model.templateId)),
+    [base, body, model.torsoRings, model.templateId],
+  );
+  const geometry = useGeometry(() => {
+    const g = new THREE.BufferGeometry();
+    g.setAttribute('position', new THREE.BufferAttribute(fit.positions, 3));
+    g.setIndex(new THREE.BufferAttribute(base.indices, 1));
+    g.computeVertexNormals();
+    return g;
+  }, [fit, base]);
+  const hairGeometry = useGeometry(() => {
+    const hair = buildHairShell(fit.positions, base.indices, body);
+    const g = new THREE.BufferGeometry();
+    g.setAttribute('position', new THREE.BufferAttribute(hair.positions, 3));
+    g.setIndex(new THREE.BufferAttribute(hair.indices, 1));
+    g.computeVertexNormals();
+    return g;
+  }, [fit, base, body]);
+
+  return (
+    <group>
+      <mesh position={[0, 0.001, 0.02 * s]} rotation={[-Math.PI / 2, 0, 0]}>
+        <circleGeometry args={[0.34 * s, 48]} />
+        <meshBasicMaterial color="#020B17" transparent opacity={0.45} />
+      </mesh>
+      <mesh geometry={geometry}>
+        <meshPhysicalMaterial color={body.skin} roughness={0.62} metalness={0} sheen={0.6} sheenRoughness={0.5} sheenColor="#F2C9B0" />
+      </mesh>
+      <mesh geometry={hairGeometry}>
+        <meshStandardMaterial color="#2B1E18" roughness={0.7} metalness={0.05} side={THREE.DoubleSide} />
+      </mesh>
+    </group>
   );
 };
 
 const radiusOf = (circumference: number): number => circumference / (2 * Math.PI);
 
-/** Mannequin whose limbs, neck, head and stature come from the measurements / chosen morphology. */
+/** Real 3D person with anatomical proportions, lifelike facial planes, styled hair, and natural posture. */
 const Mannequin: React.FC<{ model: GarmentModel }> = ({ model }) => {
   const { body } = model;
   const landmarks = bodyLandmarks(body);
   const s = bodyScale(body);
-  const shoulder = model.torsoRings[1]!;
+  const shoulder = ringAt(model.torsoRings, landmarks.shoulderY);
   const armEndY = landmarks.shoulderY - Math.cos(SLEEVE_TILT) * body.armLength;
   const armEndX = Math.sin(SLEEVE_TILT) * body.armLength;
-  const elbow = 0.55; // fraction of the arm where the forearm starts
-  const legX = Math.max(0.085 * s, radiusOf(body.thigh) * 0.95);
+  const elbow = 0.55; // fraction of arm length where forearm starts
+  const legX = Math.max(0.088 * s, radiusOf(body.thigh) * 0.95);
   const kneeY = (landmarks.crotchY + landmarks.ankleY) / 2;
   const skin = body.skin;
   const neckR = radiusOf(body.neck);
-  const headY = landmarks.napeY + 0.02 + body.headRadius * 1.15;
+  const headY = landmarks.napeY + 0.08 * s + body.headRadius * 0.85;
+
+  const headGeometry = useGeometry(() => createCoutureHeadGeometry(body.headRadius), [body.headRadius]);
+  const hairGeometry = useGeometry(() => createHairGeometry(body.headRadius), [body.headRadius]);
+  const footGeometry = useGeometry(() => createCoutureFootGeometry(s), [s]);
+  const leftHandGeometry = useGeometry(() => createCoutureHandGeometry(s, 1), [s]);
+  const rightHandGeometry = useGeometry(() => createCoutureHandGeometry(s, -1), [s]);
 
   return (
     <group>
       <Torso model={model} />
-      <Limb
-        from={[0, landmarks.napeY - 0.01, 0.005]}
-        to={[0, landmarks.napeY + 0.07 * s, 0.015]}
-        radiusTop={neckR * 0.92}
-        radiusBottom={neckR}
+
+      {/* Natural ground contact shadow beneath feet on the floor */}
+      <mesh position={[0, 0.001, 0.02 * s]} rotation={[-Math.PI / 2, 0, 0]}>
+        <circleGeometry args={[0.34 * s, 48]} />
+        <meshBasicMaterial color="#020B17" transparent opacity={0.45} />
+      </mesh>
+
+      {/* Graceful contoured neck */}
+      <SculptedLimbMesh
+        from={[0, landmarks.napeY - 0.01, 0.008]}
+        to={[0, landmarks.napeY + 0.08 * s, 0.018]}
+        radiusTop={neckR * 0.88}
+        radiusBottom={neckR * 0.98}
+        limbType="neck"
         color={skin}
       />
-      <mesh position={[0, headY, 0.012]} scale={[0.88, 1.15, 1]}>
-        <sphereGeometry args={[body.headRadius, 24, 18]} />
-        <meshStandardMaterial color={skin} roughness={0.9} />
+
+      {/* Realistic Head with Sculpted Facial Anatomy */}
+      <mesh position={[0, headY, 0.018]} geometry={headGeometry}>
+        <meshStandardMaterial color={skin} roughness={0.55} metalness={0.0} />
       </mesh>
+
+      {/* Styled Hair Coiffure */}
+      <mesh position={[0, headY, 0.018]} geometry={hairGeometry}>
+        <meshStandardMaterial color="#2B1E18" roughness={0.48} metalness={0.08} />
+      </mesh>
+
       {[1, -1].map((side) => {
         const sx = side * (shoulder.a + 0.012);
         const ex = sx + side * armEndX * elbow;
         const ey = landmarks.shoulderY - 0.01 - Math.cos(SLEEVE_TILT) * body.armLength * elbow;
         const wx = side * (shoulder.a + 0.012 + armEndX);
+        const isLeft = side === 1;
+
         return (
           <React.Fragment key={side}>
-            <Limb
+            {/* Shoulder deltoid articulation cap */}
+            <mesh position={[sx, landmarks.shoulderY - 0.01, 0.004]}>
+              <sphereGeometry args={[radiusOf(body.upperArm) * 1.02, 32, 24]} />
+              <meshStandardMaterial color={skin} roughness={0.55} metalness={0.0} />
+            </mesh>
+
+            {/* Contoured Upper Arm */}
+            <SculptedLimbMesh
               from={[sx, landmarks.shoulderY - 0.01, 0]}
               to={[ex, ey, 0]}
               radiusTop={radiusOf(body.upperArm)}
-              radiusBottom={radiusOf(body.upperArm) * 0.8}
+              radiusBottom={radiusOf(body.upperArm) * 0.82}
+              limbType="upperArm"
               color={skin}
             />
-            <Limb
+
+            {/* Elbow joint */}
+            <mesh position={[ex, ey, 0]}>
+              <sphereGeometry args={[radiusOf(body.upperArm) * 0.80, 28, 20]} />
+              <meshStandardMaterial color={skin} roughness={0.55} metalness={0.0} />
+            </mesh>
+
+            {/* Contoured Forearm */}
+            <SculptedLimbMesh
               from={[ex, ey, 0]}
               to={[wx, armEndY, 0]}
-              radiusTop={radiusOf(body.upperArm) * 0.78}
+              radiusTop={radiusOf(body.upperArm) * 0.82}
               radiusBottom={radiusOf(body.wrist)}
+              limbType="forearm"
               color={skin}
             />
-            <mesh position={[wx, armEndY - 0.035 * s, 0]} scale={[0.8, 1.4, 0.55]}>
-              <sphereGeometry args={[0.04 * s, 14, 10]} />
-              <meshStandardMaterial color={skin} roughness={0.9} />
+
+            {/* Realistic Human Hand with Sculpted Fingers */}
+            <mesh
+              position={[wx, armEndY, 0]}
+              rotation={[0, 0, -side * SLEEVE_TILT]}
+              geometry={isLeft ? leftHandGeometry : rightHandGeometry}
+            >
+              <meshStandardMaterial color={skin} roughness={0.55} metalness={0.0} />
             </mesh>
-            <Limb
+
+            {/* Contoured Thigh */}
+            <SculptedLimbMesh
               from={[side * legX, landmarks.crotchY, 0]}
               to={[side * legX * 0.95, kneeY, 0]}
               radiusTop={radiusOf(body.thigh)}
               radiusBottom={radiusOf(body.knee)}
+              limbType="thigh"
               color={skin}
             />
-            <Limb
+
+            {/* Knee patella joint */}
+            <mesh position={[side * legX * 0.95, kneeY, 0.004]}>
+              <sphereGeometry args={[radiusOf(body.knee) * 0.96, 28, 20]} />
+              <meshStandardMaterial color={skin} roughness={0.55} metalness={0.0} />
+            </mesh>
+
+            {/* Contoured Calf & Shin */}
+            <SculptedLimbMesh
               from={[side * legX * 0.95, kneeY, 0]}
               to={[side * legX * 0.9, landmarks.ankleY, 0]}
-              radiusTop={radiusOf(body.knee) * 0.96}
+              radiusTop={radiusOf(body.knee) * 0.98}
               radiusBottom={radiusOf(body.ankle)}
+              limbType="calf"
               color={skin}
             />
-            <mesh position={[side * legX * 0.9, landmarks.ankleY * 0.45, 0.05 * s]} scale={[0.9, 0.5, 2.2]}>
-              <sphereGeometry args={[0.04 * s, 14, 10]} />
-              <meshStandardMaterial color={skin} roughness={0.9} />
+
+            {/* Realistic Human Foot planted on the floor */}
+            <mesh
+              position={[side * legX * 0.9, 0, 0.02 * s]}
+              geometry={footGeometry}
+            >
+              <meshStandardMaterial color={skin} roughness={0.55} metalness={0.0} />
             </mesh>
           </React.Fragment>
         );
@@ -241,20 +363,26 @@ const Panel: React.FC<{
       <mesh geometry={geometry}>
         <meshStandardMaterial
           color={ZONE_COLORS[panel.zone]}
-          emissive={highlighted ? '#C5B190' : '#000000'}
-          emissiveIntensity={highlighted ? 0.45 : 0}
-          roughness={0.75}
+          emissive={highlighted ? '#936C3E' : '#000000'}
+          emissiveIntensity={highlighted ? 0.6 : 0}
+          roughness={0.58}
+          metalness={0.08}
           side={THREE.DoubleSide}
           transparent={transparent}
-          opacity={transparent ? 0.5 : 1}
+          opacity={transparent ? 0.5 : 0.98}
           depthWrite={!transparent}
           polygonOffset
           polygonOffsetFactor={1}
           polygonOffsetUnits={1}
         />
       </mesh>
+      {/* Couture stitching seam line in delicate Champagne */}
       <lineSegments geometry={borderGeometry}>
-        <lineBasicMaterial color={highlighted ? '#FFFFFF' : '#041329'} />
+        <lineBasicMaterial
+          color={highlighted ? '#F6F2E9' : '#C5B190'}
+          transparent
+          opacity={0.85}
+        />
       </lineSegments>
     </group>
   );
@@ -265,10 +393,12 @@ export const Garment3DViewer: React.FC<Garment3DViewerProps> = ({
   assembly,
   showMannequin,
   transparent,
+  panMode = false,
   selectedPieceId,
   viewRequest,
   onContextLost,
 }) => {
+  const human = useHumanBase();
   const lost = useRef(onContextLost);
   lost.current = onContextLost;
 
@@ -288,11 +418,14 @@ export const Garment3DViewer: React.FC<Garment3DViewerProps> = ({
       }}
     >
       <color attach="background" args={['#041329']} />
-      <hemisphereLight args={['#FFFFFF', '#1B2B4A', 0.9]} />
-      <directionalLight position={[2.5, 3, 3]} intensity={1.4} />
-      <directionalLight position={[-2, 1.5, -2]} intensity={0.5} />
+      <ambientLight intensity={0.4} color="#E8E2D5" />
+      <hemisphereLight args={['#FFFFFF', '#061938', 0.85]} />
+      <directionalLight position={[3, 4, 3.5]} intensity={1.5} color="#FFF8EE" />
+      <directionalLight position={[-3, 2.5, 2.5]} intensity={0.75} color="#94A8C7" />
+      <directionalLight position={[0, 3.5, -3.5]} intensity={1.1} color="#F0E6D2" />
+      <directionalLight position={[0, -1, 1]} intensity={0.25} color="#C5B190" />
 
-      {showMannequin && <Mannequin model={model} />}
+      {showMannequin && (human ? <Person model={model} base={human} /> : <Mannequin model={model} />)}
       {model.panels.map((panel) => (
         <Panel
           key={panel.id}
@@ -304,7 +437,7 @@ export const Garment3DViewer: React.FC<Garment3DViewerProps> = ({
       ))}
 
       {/*
-        Blender-style navigation: middle-drag (or left-drag) orbits, Shift+drag or right-drag pans,
+        Blender-style navigation: middle-drag (or left-drag) orbits, Shift+drag or right-drag pans (the left button too with the hand tool),
         wheel zooms toward the cursor, damping for smooth inertia. Touch: 1 finger orbits, 2 pan/zoom.
       */}
       <OrbitControls
@@ -313,14 +446,18 @@ export const Garment3DViewer: React.FC<Garment3DViewerProps> = ({
         enableDamping
         dampingFactor={0.12}
         enablePan
+        mouseButtons={{
+          LEFT: panMode ? THREE.MOUSE.PAN : THREE.MOUSE.ROTATE,
+          MIDDLE: THREE.MOUSE.ROTATE,
+          RIGHT: THREE.MOUSE.PAN,
+        }}
+        touches={{ ONE: panMode ? THREE.TOUCH.PAN : THREE.TOUCH.ROTATE, TWO: THREE.TOUCH.DOLLY_PAN }}
         screenSpacePanning
         zoomToCursor
         rotateSpeed={0.9}
         panSpeed={0.9}
         minDistance={0.8}
         maxDistance={8}
-        mouseButtons={{ LEFT: THREE.MOUSE.ROTATE, MIDDLE: THREE.MOUSE.ROTATE, RIGHT: THREE.MOUSE.PAN }}
-        touches={{ ONE: THREE.TOUCH.ROTATE, TWO: THREE.TOUCH.DOLLY_PAN }}
       />
 
       {/* Click an axis to snap the view, like Blender's navigation gizmo. */}

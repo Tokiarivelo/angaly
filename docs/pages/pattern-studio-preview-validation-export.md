@@ -158,6 +158,28 @@ indisponible. Vêtements pris en charge : robe, jupe, chemise, veste, costume (p
   enfant 10 ans) ; chaque mesure fournie (poitrine, taille, bassin, cou, épaule, bras, poignet, cuisse, genou, cheville,
   longueur dos/bras, hauteur taille-sol → stature) **remplace** la valeur du gabarit, le reste vient de la morphologie. Tous les
   repères se mettent à l'échelle de la stature. La morphologie la plus proche est présélectionnée ; sélecteur « Morphologie ».
-- Mannequin amélioré : cou, tête, bras (coude), mains, cuisses/genoux/chevilles, pieds, teinte de peau par gabarit.
-- Limites : pas de modèle humain téléchargé (le procédural garde chaque dimension pilotée par les mesures) ; la chute du
-  tissu n'est pas simulée ; la maquette Stitch n'a pas été consultée pour le sélecteur.
+- **Corps humain réaliste & morphologie vivante** (`utils/garment3d/mannequin-mesh.ts`, `body-model.ts`, `Garment3DViewer.tsx`) :
+  remplacement de l'ancienne silhouette ovoïde rigide et des accessoires de mannequin (tige métallique d'atelier retirée,
+  collet en laiton supprimé, rubans d'atelier masqués sur le corps) par une silhouette humaine réelle posée sur le sol avec ombre de contact douce :
+  - Tête avec traits du visage anthropométriques sculptés : arête et ailes nasales, lèvres supérieure et inférieure avec arc de Cupidon, orbites oculaires et arcades sourcilières, pommettes, mâchoire définie, menton et oreilles avec hélice.
+  - Coiffure et chevelure sculptée contemporaine en volume (teinte espresso `#2B1E18`) encadrant le visage.
+  - Mains humaines avec éminence thénar (pouce), éminence hypothénar et 4 doigts distincts galbés en pose naturelle détendue.
+  - Pieds humains avec talon calcanéen, voûte plantaire, métatarses et orteils avec cambrure naturelle au contact du sol.
+  - Courbure sagittale en S $C^1$-continue (32 anneaux échantillonnés par interpolation cubique d'Hermite) avec lobes volumétriques mammaires bilatéraux (sillon intermammaire au sternum), cambrure fessière postérieure (sillon inter-fessier) et sillon vertébral dorsal.
+  - Matériau de peau humaine naturelle (`#E5CBB7` / `#D9BBA2`, `roughness: 0.55`, `metalness: 0.0`) avec reflets spéculaires doux et articulations anatomiques continues sans sphères disjointes.
+- **Rendu du porté et drapé gravitationnel des vêtements** (`garment-model.ts`, `Garment3DViewer.tsx`) :
+  grille haute résolution (48 rangées, 28 colonnes, 36 segments de jambes, 32 segments de manches), drapé caténaire sous gravité dont l'amplitude croît naturellement vers l'ourlet (`hangFactor = Math.pow(hangProgress, 1.35)`), amortie à 0 aux coutures latérales pour une continuité hermétique à 100 %, pli tailleur structuré sur les pantalons avec cassure sur le coup-de-pied, matières nobles de la palette signature Angaly (Bleu Royal `#18375D`, Bleu Nuit `#0C2650`, Navy `#061938`), surpiqûres couture Champagne `#C5B190`, éclairage studio 3 points (lumière clé chaude `#FFF8EE`, débouchage doux `#94A8C7`, contre-jour champagne `#F0E6D2`).
+
+## Corps humain réaliste (3D) — 2026-10-08
+
+- **Maillage** : `apps/web/public/models/human-base.glb` (≈2 Mo), construit par `apps/web/scripts/build-human-base.py` à partir
+  des *system assets* MakeHuman (maillage de base `hm08` + cibles macro), **explicitement publiés en CC0 en septembre 2020**
+  (https://github.com/makehumancommunity/makehuman). Aucun code AGPL n'est copié. Morphs : genre, poids ±, muscle, enfant.
+- **Ajustement aux mesures** : `utils/garment3d/human-body.ts` (pur, testé sur le vrai GLB) — morphs → recalage vertical sur les
+  repères du modèle → sections du buste/taille/bassin mises à la circonférence mesurée (périmètre de l'enveloppe convexe) et
+  tenues à l'intérieur de l'ellipse sur laquelle le vêtement est construit → épaules/bras (pose en A conservée, axe de manche
+  `SLEEVE_TILT` = 36° et `SLEEVE_DROP`) → jambes (facteur de tour ±10 % en 3 hauteurs, jambes ramenées sous le bassin) → cou.
+  Cheveux : coque `buildHairShell`. Repli automatique sur l'ancien mannequin procédural si le GLB ne se charge pas.
+- **Outil Main** (bouton « Main ») : le glisser gauche déplace le rendu au lieu de le faire tourner (clic droit / Maj inchangés).
+- Pantalon : les jambes enveloppent désormais le bassin depuis la taille (plus de bassin nu entre les jambes).
+- Limites : pose figée (A), pas de visage/yeux texturés, enfant = morph MakeHuman « child » (≈10 ans).

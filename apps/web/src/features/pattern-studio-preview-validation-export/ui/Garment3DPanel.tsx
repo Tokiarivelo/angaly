@@ -2,7 +2,7 @@
 
 import React, { useEffect, useMemo, useRef, useState } from 'react';
 import dynamic from 'next/dynamic';
-import { Pause, Play, RotateCcw } from 'lucide-react';
+import { Hand, Pause, Play, RotateCcw } from 'lucide-react';
 import type { ViewName, ViewRequest } from './Garment3DViewer';
 import { WebGlBoundary } from './WebGlBoundary';
 import type { PatternPieceDto } from '@angaly/types';
@@ -48,6 +48,8 @@ export const Garment3DPanel: React.FC<Garment3DPanelProps> = ({
   const [isPlaying, setIsPlaying] = useState(false);
   const [showMannequin, setShowMannequin] = useState(true);
   const [transparent, setTransparent] = useState(false);
+  // Hand tool: the left button moves the scene instead of rotating it.
+  const [panMode, setPanMode] = useState(false);
   const [viewRequest, setViewRequest] = useState<ViewRequest | null>(null);
   const [viewerKey, setViewerKey] = useState(0);
   const [contextLost, setContextLost] = useState(false);
@@ -138,13 +140,14 @@ export const Garment3DPanel: React.FC<Garment3DPanelProps> = ({
             assembly={assembly}
             showMannequin={showMannequin}
             transparent={transparent}
+            panMode={panMode}
             selectedPieceId={selectedPieceId}
             viewRequest={viewRequest}
             onContextLost={() => setContextLost(true)}
           />
         </WebGlBoundary>
         <p className="pointer-events-none absolute bottom-2 left-3 text-[11px] text-[#D8D3C8]/60">
-          Clic milieu ou glisser : tourner · Maj + glisser ou clic droit : déplacer · molette : zoomer
+          Glisser : tourner · outil Main, Maj + glisser ou clic droit : déplacer · molette : zoomer
         </p>
       </div>
 
@@ -168,6 +171,21 @@ export const Garment3DPanel: React.FC<Garment3DPanelProps> = ({
         >
           <RotateCcw className="w-3.5 h-3.5" />
           Éclater
+        </button>
+
+        <button
+          type="button"
+          aria-pressed={panMode}
+          onClick={() => setPanMode((v) => !v)}
+          title="Outil Main : glisser pour déplacer le rendu 3D"
+          className={`inline-flex items-center gap-1.5 px-3 py-1.5 rounded-lg border ${
+            panMode
+              ? 'bg-[#C5B190] text-[#041329] border-[#C5B190]'
+              : 'bg-[#0C2650] border-[#C5B190]/30 text-[#C5B190] hover:border-[#C5B190]'
+          }`}
+        >
+          <Hand className="w-3.5 h-3.5" />
+          Main
         </button>
 
         <div role="group" aria-label="Vues" className="flex items-center gap-1">

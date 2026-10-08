@@ -12,6 +12,7 @@ vi.mock('next/dynamic', () => ({
       assembly: number;
       showMannequin: boolean;
       transparent: boolean;
+      panMode?: boolean;
       viewRequest: { view: string; nonce: number } | null;
       onContextLost?: () => void;
     }) {
@@ -22,6 +23,7 @@ vi.mock('next/dynamic', () => ({
           data-assembly={props.assembly}
           data-mannequin={String(props.showMannequin)}
           data-transparent={String(props.transparent)}
+          data-pan={String(props.panMode)}
           data-view={props.viewRequest?.view ?? ''}
           data-nonce={props.viewRequest?.nonce ?? 0}
         >
@@ -117,6 +119,16 @@ describe('Garment3DPanel', () => {
     );
     expect(screen.queryByTestId('garment-3d-unsupported')).not.toBeInTheDocument();
     expect(screen.getByText(/enroulée autour du corps/)).toBeInTheDocument();
+  });
+
+  it('has a hand tool that switches the left button from orbiting to moving the scene', async () => {
+    render(<Garment3DPanel pieces={pieces} garmentType="JUPE" measurements={measurements} selectedPieceId={null} />);
+    const hand = await screen.findByRole('button', { name: 'Main' });
+    expect(hand).toHaveAttribute('aria-pressed', 'false');
+    expect(screen.getByTestId('viewer-probe').dataset['pan']).toBe('false');
+    await userEvent.click(hand);
+    expect(hand).toHaveAttribute('aria-pressed', 'true');
+    expect(screen.getByTestId('viewer-probe').dataset['pan']).toBe('true');
   });
 
   it('offers several morphologies, starting from the one closest to the measurements', async () => {

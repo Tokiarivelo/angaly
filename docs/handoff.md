@@ -16,6 +16,44 @@ Lis docs/handoff.md et poursuis le travail selon les priorités définies.
 
 ---
 
+## 0 ter. Session 2026-10-08 — Rendu 3D : Corps humain réaliste (Real Person 3D) & drapé haute couture
+
+**Demande utilisateur** : Remplacer l'apparence « patate » et l'esthétique mannequin par un véritable corps humain 3D réaliste et ultra-lisse (« make it like person but not like manequin, like real person 3d ») avec un drapé fluide des vêtements sous gravité.
+
+**Réalisations & architecture** :
+1. **Anatomie humaine réaliste & suppression des artefacts de mannequin** (`body-model.ts`, `mannequin-mesh.ts`, `Garment3DViewer.tsx`) :
+   - **Tête & Visage sculptés** (`createCoutureHeadGeometry`) : 40 tranches, 48 segments radiaux. Sculpture faciale anthropométrique avec nez réaliste (arête nasale, pointe, ailes narinaires), lèvres supérieure et inférieure avec arc de Cupidon et fente buccale, orbites oculaires et arcades sourcilières, pommettes zygomatiques, mâchoire définie, menton et oreilles latérales avec hélice anatomique.
+   - **Coiffure & Chevelure élégante** (`createHairGeometry`) : Chevelure sculptée contemporaine en volume sur la boîte crânienne (teinte châtain foncé/espresso `#2B1E18`), encadrant le visage avec une ligne frontale naturelle.
+   - **Mains & Doigts réalistes** (`createCoutureHandGeometry`) : Éminence thénar (pouce opposable), éminence hypothénar, voûte métacarpienne, et 4 doigts distincts sculptés avec sillons interdigitaux et cambrure naturelle détendue.
+   - **Pieds humains réalistes** (`createCoutureFootGeometry`) : Talon calcanéen, voûte plantaire médiale relevée, tête des métatarses au contact du sol, orteils avec hallux et cambrure naturelle.
+   - **Suppression intégrale du piédestal & accessoires de mannequin** : Retrait de la tige métallique dans l'entrejambe et du socle d'atelier ; la personne repose directement sur le sol avec une ombre de contact portée naturelle sous les pieds. Retrait du collet métallique en laiton du cou (le cou rejoint directement la tête). Retrait des rubans et coutures Stockman cousus sur la peau (torso lisse et vivant).
+   - **Peau & Articulations organiques** : Teinte de peau humaine naturelle (`#E5CBB7` pour les femmes, `#D9BBA2` pour les hommes) avec rugosité adoucie (`roughness: 0.55`, `metalness: 0.0`) pour un éclat naturel et des reflets spéculaires doux. Articulations (épaules, coudes, genoux) intégrées en continuité sans sphères disjointes façon poupée en bois.
+2. **Torso C1-lisse & lobes volumétriques** (`body-model.ts`) :
+   - Échantillonnage de 32 anneaux verticaux avec interpolation cubique d'Hermite (PCHIP) strictement décroissante et $C^1$-continue.
+   - Modulation de section transversale : seins bilatéraux à profils gaussiens centrés à $\pm 27,5^\circ$ avec sillon intermammaire naturel au sternum, cambrure fessière postérieure avec sillon inter-fessier, et sillon vertébral le long du rachis.
+3. **Drapé caténaire sous gravité & résolution du vêtement** (`garment-model.ts`) :
+   - Grille haute définition : 48 rangées, 28 colonnes (x2 faces), 36 segments de jambes, 32 segments de manches.
+   - Drapé gravitationnel : amplitude des godets et flûtes croissante avec la distance verticale depuis la ligne d'ancrage (`hangFactor = Math.pow(hangProgress, 1.35)`), amortie à 0 aux coutures d'assemblage (`sin(u * PI)`), garantissant une continuité hermétique à 100 % entre panneaux devant et dos.
+   - Pantalons : pli de repassage structuré devant et dos avec cassure naturelle de l'ourlet sur le coup-de-pied.
+4. **Validation & Qualité** :
+   - Vitest : 26/26 tests passants (`garment3d.test.ts`).
+   - TypeScript : 0 erreur (`pnpm --filter web typecheck`).
+
+---
+
+## 0 quater. Session 2026-10-08 — Corps 3D « vraie personne » (maillage CC0) + outil Main
+
+Remplace le mannequin procédural (section 0 ter, conservé comme repli) par le maillage MakeHuman CC0
+(`apps/web/public/models/human-base.glb`, script `apps/web/scripts/build-human-base.py`) ajusté aux mesures par
+`utils/garment3d/human-body.ts` (voir la fiche `docs/pages/pattern-studio-preview-validation-export.md`, section
+« Corps humain réaliste »). Ajouts : outil **Main** (déplacer le rendu), pantalon enveloppant le bassin,
+`SLEEVE_TILT` 36° + `SLEEVE_DROP`. Corrigé suite au retour utilisateur : liaison tête/cou, épaules, bras, cuisses/pieds, cheveux.
+Tests : 90 verts (`pnpm --filter @angaly/web exec vitest run src/features/pattern-studio-preview-validation-export`), tsc + eslint propres.
+Blender/Blender-MCP non utilisé (absent de la machine) ; pour régénérer le GLB : cloner MakeHuman et lancer le script.
+À faire : yeux/dents, textures de peau, pose réglable, vérifier visuellement manches/robes avec de vrais patrons.
+
+---
+
 ## 0 bis. Session 2026-10-08 (suite) — Phase 5b S2 livrée
 
 Moteur `0.2.0-fit` : `ease`, `lengths`, `fullness` et 5 mesures (`LONGUEUR_JUPE`, `HAUTEUR_TAILLE_SOL`,

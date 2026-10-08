@@ -249,3 +249,72 @@ describe('body templates', () => {
     expect(suggestTemplate({ TOUR_POITRINE: 108, TOUR_TAILLE: 92, TOUR_BASSIN: 114 })).toBe('FEMME_RONDE');
   });
 });
+
+describe('haute couture mannequin & garment aesthetics', () => {
+  it('shapes torso rings with anatomical sagittal curvature (bust forward, buttocks backward)', () => {
+    const body = readBodyMeasurements(measurements);
+    const rings = buildTorsoRings(body);
+    const landmarks = bodyLandmarks(body);
+
+    const bustRing = ringAt(rings, landmarks.bustY);
+    const hipRing = ringAt(rings, landmarks.hipY);
+
+    expect(bustRing.cz).toBeDefined();
+    expect(bustRing.cz!).toBeGreaterThan(0.015);
+    expect(hipRing.cz).toBeDefined();
+    expect(hipRing.cz!).toBeLessThan(-0.015);
+  });
+
+  it('generates high-definition sculptured couture head geometry with valid indices and normals', async () => {
+    const { createCoutureHeadGeometry } = await import('../utils/garment3d/mannequin-mesh');
+    const head = createCoutureHeadGeometry(0.095);
+    expect(head.getAttribute('position').count).toBeGreaterThan(100);
+    expect(head.getIndex()).not.toBeNull();
+    expect(head.getAttribute('normal')).toBeDefined();
+    head.computeBoundingBox();
+    const box = head.boundingBox!;
+    expect(box.max.y - box.min.y).toBeGreaterThan(0.15);
+  });
+
+  it('generates stylized couture hand and foot geometries', async () => {
+    const { createCoutureFootGeometry, createCoutureHandGeometry } = await import('../utils/garment3d/mannequin-mesh');
+    const handLeft = createCoutureHandGeometry(1.0, 1);
+    const handRight = createCoutureHandGeometry(1.0, -1);
+    expect(handLeft.getAttribute('position').count).toBeGreaterThan(50);
+    expect(handRight.getAttribute('position').count).toBeGreaterThan(50);
+
+    const foot = createCoutureFootGeometry(1.0);
+    expect(foot.getAttribute('position').count).toBeGreaterThan(10);
+    expect(foot.getIndex()).not.toBeNull();
+  });
+
+  it('generates contoured limbs with anatomical muscle curvature', async () => {
+    const { createContouredLimbGeometry } = await import('../utils/garment3d/mannequin-mesh');
+    const arm = createContouredLimbGeometry(0.045, 0.035, 0.28, 'upperArm');
+    const calf = createContouredLimbGeometry(0.06, 0.035, 0.38, 'calf');
+    expect(arm.getAttribute('position').count).toBeGreaterThan(100);
+    expect(calf.getAttribute('position').count).toBeGreaterThan(100);
+  });
+
+  it('builds Stockman Paris style markings (center seams and bust/waist ribbons)', async () => {
+    const { createAtelierRibbons } = await import('../utils/garment3d/mannequin-mesh');
+    const body = readBodyMeasurements(measurements);
+    const rings = buildTorsoRings(body);
+    const landmarks = bodyLandmarks(body);
+    const ribbons = createAtelierRibbons(rings, landmarks);
+
+    expect(ribbons.seamLines.getAttribute('position').count).toBeGreaterThan(0);
+    expect(ribbons.tapeLines.getAttribute('position').count).toBeGreaterThan(0);
+  });
+
+  it('generates styled hair coiffure geometry for realistic 3D human presence', async () => {
+    const { createHairGeometry } = await import('../utils/garment3d/mannequin-mesh');
+    const hair = createHairGeometry(0.095);
+    expect(hair.getAttribute('position').count).toBeGreaterThan(100);
+    expect(hair.getIndex()).not.toBeNull();
+    expect(hair.getAttribute('normal')).toBeDefined();
+    hair.computeBoundingBox();
+    const box = hair.boundingBox!;
+    expect(box.max.y - box.min.y).toBeGreaterThan(0.1);
+  });
+});

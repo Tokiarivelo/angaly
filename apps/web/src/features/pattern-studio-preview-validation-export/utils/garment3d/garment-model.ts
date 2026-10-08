@@ -11,7 +11,7 @@ import {
   type BodyMeasurements,
   type BodyRing,
 } from './body-model';
-import type { BodyTemplateId } from './body-templates';
+import { getBodyTemplate } from './body-templates';
 
 export type PanelRole = 'front' | 'back' | 'sleeve';
 export type GarmentZone = 'bodice' | 'skirt' | 'torso' | 'legs';
@@ -50,6 +50,8 @@ export interface GarmentModel {
   ignored: string[];
   /** True when no front/back pieces exist and the largest piece is wrapped around the body instead. */
   generic: boolean;
+  /** Morphology template the body was filled from (also picks the human mesh's gender/muscle). */
+  templateId: string;
 }
 
 export type GarmentModelResult =
@@ -106,8 +108,8 @@ export const rowExtent = (polygon: Point[], y: number): [number, number] | null 
   return min === Infinity ? null : [min, max];
 };
 
-const ROWS = 28;
-const COLUMNS = 14;
+const ROWS = 48;
+const COLUMNS = 28;
 const FLAT_EPSILON = 0.5;
 const STATUS_THRESHOLDS = { tight: 0, fitted: 4, comfortable: 10 };
 
@@ -170,7 +172,16 @@ const buildHalfStrips = (
   const indices: number[] = [];
   const border: number[] = [];
 
-  const rows: Array<{ y: number; x0: number; x1: number; a: number; b: number; half: number }> = [];
+  const rows: Array<{
+    y: number;
+    x0: number;
+    x1: number;
+    a: number;
+    b: number;
+    half: number;
+    cz: number;
+    excessEase: number;
+  }> = [];
   for (let i = 0; i <= ROWS; i += 1) {
     const flatY = panel.minY + FLAT_EPSILON + ((panel.maxY - panel.minY - 2 * FLAT_EPSILON) * i) / ROWS;
     const extent = rowExtent(panel.polygon, flatY) ?? [0, 0];
@@ -182,18 +193,53 @@ const buildHalfStrips = (
     const circumference = Math.max(total, bodyC * 1.012);
     const { a, b } = ellipseSemiAxes(circumference, bodyRing.b / bodyRing.a);
     const half = role === 'front' ? Math.PI * frontShare : Math.PI * (1 - frontShare);
-    rows.push({ y: worldY, x0: Math.max(0, extent[0]), x1: Math.max(extent[1], 1e-6), a, b, half });
+    const excessEase = Math.max(0, (circumference - bodyC) / circumference);
+    const cz = bodyRing.cz ?? 0;
+    rows.push({
+      y: worldY,
+      x0: Math.max(0, extent[0]),
+      x1: Math.max(extent[1], 1e-6),
+      a,
+      b,
+      half,
+      cz,
+      excessEase,
+    });
   }
+
+  const yTop = rows[0]!.y;
+  const yBottom = rows[rows.length - 1]!.y;
+  const drapeLength = Math.max(0.12, yTop - yBottom);
 
   for (const side of [1, -1]) {
     const base = positions.length / 3;
     for (const row of rows) {
+      const hangProgress = Math.max(0, Math.min(1, (yTop - row.y) / drapeLength));
+      // Catenary gravitational drape factor: fabric folds deepen towards the hem
+      const hangFactor = Math.pow(hangProgress, 1.35);
+
       for (let j = 0; j <= COLUMNS; j += 1) {
         const x = row.x0 + ((row.x1 - row.x0) * j) / COLUMNS;
         const u = x / row.x1;
         const phi =
           role === 'front' ? side * u * row.half : Math.PI - side * u * row.half;
-        positions.push(row.a * Math.sin(phi), row.y, row.b * Math.cos(phi));
+
+        // Elegant haute couture fabric draping and soft flutes when excess ease/flare is present:
+        let radMod = 1;
+        if (row.excessEase > 0.02) {
+          const fluteFreq = 7;
+          const fluteAmp = Math.min(0.045, row.excessEase * 0.06 * (0.25 + 0.75 * hangFactor));
+          // Wave smoothly dampens to 0 at the side seams (u=1) and center front/back (u=0):
+          const seamDamping = Math.sin(u * Math.PI);
+          const fluteWave = Math.sin(fluteFreq * u * Math.PI) + 0.22 * Math.sin(2 * fluteFreq * u * Math.PI);
+          radMod += fluteAmp * fluteWave * seamDamping;
+        }
+
+        const posX = row.a * Math.sin(phi) * radMod;
+        const posY = row.y;
+        const posZ = row.b * Math.cos(phi) * radMod + row.cz;
+
+        positions.push(posX, posY, posZ);
       }
     }
     for (let i = 0; i < ROWS; i += 1) {
@@ -223,10 +269,10 @@ const buildHalfStrips = (
   return { positions, indices, border };
 };
 
-const LEG_RADIAL = 20;
+const LEG_RADIAL = 36;
 
 /** Radius (m) of the mannequin's leg at height y — thigh at the crotch, knee, then ankle. */
-const bodyLegRadius = (body: BodyMeasurements, y: number): number => {
+export const bodyLegRadius = (body: BodyMeasurements, y: number): number => {
   const l = bodyLandmarks(body);
   const kneeY = (l.crotchY + l.ankleY) / 2;
   const t = (value: number) => value / (2 * Math.PI);
@@ -239,9 +285,11 @@ const buildLeg = (
   group: ZoneGroup,
   side: 1 | -1,
   body: BodyMeasurements,
+  rings: BodyRing[],
 ): { positions: number[]; indices: number[]; border: number[] } => {
   const panel = (group.front ?? group.back)!;
   const s = bodyScale(body);
+  const landmarks = bodyLandmarks(body);
   const positions: number[] = [];
   const indices: number[] = [];
   const ringStarts: number[] = [];
@@ -250,11 +298,24 @@ const buildLeg = (
     const y = group.topY - flatY / 1000;
     // Visual guard only, as for the torso: never narrower than the leg inside.
     const radius = Math.max(legCircumference(group, flatY) / (2 * Math.PI), bodyLegRadius(body, y) * 1.03);
-    const cx = side * Math.max(0.09 * s, radius * 0.95);
+    // Above the crotch the two legs together wrap the pelvis: each takes one half of the torso ellipse.
+    const torso = ringAt(rings, y);
+    const rise = Math.min(1, Math.max(0, (y - landmarks.crotchY) / (0.06 * s)));
+    const w = rise * rise * (3 - 2 * rise);
+    const lerp = (a: number, b: number) => a + (b - a) * w;
+    const halfA = torso.a * 1.02 * 0.5 + 0.01;
+    const cx = lerp(side * Math.max(0.09 * s, radius * 0.95), side * (torso.a * 1.02 * 0.5));
+    const cz = lerp(0, torso.cz ?? 0);
+    const semiX = lerp(radius * 0.95, halfA);
+    const semiZ = lerp(radius * 0.96, torso.b * 1.02);
     ringStarts.push(positions.length / 3);
     for (let j = 0; j < LEG_RADIAL; j += 1) {
       const t = (j / LEG_RADIAL) * Math.PI * 2;
-      positions.push(cx + radius * Math.sin(t), y, radius * Math.cos(t) * 0.92);
+      // Tailored trouser crease along front (t=0) and back (t=PI):
+      const creaseMod = 1 + 0.05 * Math.cos(2 * t) - 0.015 * Math.cos(4 * t);
+      // Gentle shoe instep hem break towards the cuff:
+      const hemBreak = Math.pow(i / ROWS, 2.5) * 0.007;
+      positions.push(cx + semiX * Math.sin(t), y, cz + semiZ * Math.cos(t) * creaseMod + hemBreak);
     }
   }
   for (let i = 0; i < ROWS; i += 1) {
@@ -283,8 +344,10 @@ const buildLeg = (
 };
 
 /** Arm/sleeve axis tilt away from vertical, shared with the mannequin arms. */
-export const SLEEVE_TILT = (22 * Math.PI) / 180;
-const SLEEVE_RADIAL = 20;
+/** How far below the shoulder line the sleeve (and the scanned arm) starts, per metre of stature scale. */
+export const SLEEVE_DROP = 0.06;
+export const SLEEVE_TILT = (36 * Math.PI) / 180;
+const SLEEVE_RADIAL = 32;
 
 const buildSleeve = (
   panel: Classified,
@@ -294,7 +357,7 @@ const buildSleeve = (
 ): { positions: number[]; indices: number[]; border: number[] } => {
   const landmarks = bodyLandmarks(body);
   const shoulderRing = ringAt(rings, landmarks.shoulderY);
-  const start = { x: side * (shoulderRing.a + 0.012), y: landmarks.shoulderY - 0.01, z: 0 };
+  const start = { x: side * (shoulderRing.a + 0.012), y: landmarks.shoulderY - SLEEVE_DROP * bodyScale(body), z: 0 };
   const dir = { x: side * Math.sin(SLEEVE_TILT), y: -Math.cos(SLEEVE_TILT), z: 0 };
   // Basis of the plane perpendicular to the arm axis.
   const u1 = { x: 0, y: 0, z: 1 };
@@ -360,7 +423,7 @@ export const buildGarmentModel = (
   pieces: PatternPieceDto[],
   garmentType: string,
   measurements: Record<string, number> | null | undefined,
-  templateId?: BodyTemplateId | string | null,
+  templateId?: string | null,
 ): GarmentModelResult => {
   const body = readBodyMeasurements(measurements, templateId);
   const landmarks = bodyLandmarks(body);
@@ -437,7 +500,7 @@ export const buildGarmentModel = (
   for (const group of zones) {
     if (group.zone === 'legs') {
       for (const side of [1, -1] as const) {
-        const mesh = buildLeg(group, side, body);
+        const mesh = buildLeg(group, side, body, rings);
         const ref = (group.front ?? group.back)!;
         panels.push({
           id: `legs-${side}`,
@@ -526,5 +589,5 @@ export const buildGarmentModel = (
     });
   }
 
-  return { ok: true, model: { body, torsoRings: rings, panels, fit, ignored, generic } };
+  return { ok: true, model: { body, torsoRings: rings, panels, fit, ignored, generic, templateId: getBodyTemplate(templateId).id } };
 };
