@@ -100,7 +100,9 @@ describe('guard-rails: every garment × cut × ease yields sound pieces', () => 
       for (const cutType of CUTS) {
         for (const ease of EASES) {
           const result = gen({ garmentType, cutType, ease, fullness: { skirt: 3, sleeve: 2 }, lengths: { skirtPct: 60, bodicePct: 90 } });
-          expect(result.warnings, `${garmentType}/${cutType}/${ease}`).toEqual([]);
+          // AUTRE always carries its intentional "generic base block" caveat; nothing else may appear.
+          const unexpected = result.warnings.filter((w) => !w.includes('générique'));
+          expect(unexpected, `${garmentType}/${cutType}/${ease}`).toEqual([]);
           expect(result.pieces.length).toBeGreaterThan(0);
         }
       }
@@ -178,5 +180,167 @@ describe('bodice, sleeves and body measurements', () => {
       piece(gen({ garmentType: 'PANTALON' }, { ...M, ...m }).pieces, 'Devant').outlineMm[7]!.y;
     expect(crotchY({ HAUTEUR_FOURCHE: 29 })).toBe(290);
     expect(crotchY({})).not.toBe(290);
+  });
+});
+
+const FULL_BODY: MeasurementSet = {
+  ...M,
+  TOUR_SOUS_POITRINE: 76,
+  HAUTEUR_POITRINE: 26,
+  ECARTEMENT_POINTS_POITRINE: 19,
+  CARRURE_DEVANT: 34,
+  CARRURE_DOS: 36,
+  LARGEUR_EPAULE: 12,
+  PROFONDEUR_EMMANCHURE: 21,
+  TOUR_EMMANCHURE: 42,
+  TOUR_BRAS: 29,
+  TOUR_POIGNET: 16,
+  TOUR_COU: 36,
+  LONGUEUR_BRAS: 60,
+  TOUR_CUISSE: 58,
+  TOUR_GENOU: 38,
+  TOUR_CHEVILLE: 23,
+  HAUTEUR_FOURCHE: 27,
+  HAUTEUR_ENTREJAMBE: 78,
+  HAUTEUR_BASSIN: 20,
+};
+
+describe('torso measurements: shoulders, armhole and bust dart', () => {
+  const front = (garmentType: GarmentType, m: MeasurementSet, name: string) =>
+    piece(gen({ garmentType, details: { manches: 'LONGUES' } }, { ...M, ...m }).pieces, name);
+
+  it.each([
+    ['VESTE', 'Devant Veste'],
+    ['CHEMISE', 'Devant Chemise'],
+    ['COSTUME', 'Devant Veste'],
+    ['ROBE', 'Corsage Devant'],
+  ] as Array<[GarmentType, string]>)('%s: a narrower carrure pulls the shoulder tip in', (garment, name) => {
+    const base = front(garment, {}, name).outlineMm[2]!.x;
+    const narrow = front(garment, { CARRURE_DEVANT: 28 }, name).outlineMm[2]!.x;
+    expect(narrow).toBeLessThan(base);
+    expect(front(garment, { CARRURE_DEVANT: 28 }, name).outlineMm[2]!.x).toBe(Math.max(140, narrow));
+  });
+
+  it('LARGEUR_EPAULE is used when no carrure is given, and never closer than 4 cm to the neck', () => {
+    const tip = (m: MeasurementSet) => front('VESTE', m, 'Devant Veste').outlineMm[2]!.x;
+    expect(tip({ LARGEUR_EPAULE: 12 })).toBeLessThan(tip({}));
+    const neck = front('VESTE', {}, 'Devant Veste').outlineMm[1]!.x;
+    expect(tip({ LARGEUR_EPAULE: 0.1 })).toBeGreaterThanOrEqual(neck + 40);
+  });
+
+  it('PROFONDEUR_EMMANCHURE moves the underarm point', () => {
+    const y = (m: MeasurementSet) => front('VESTE', m, 'Devant Veste').outlineMm[3]!.y;
+    expect(y({})).toBe(240);
+    expect(y({ PROFONDEUR_EMMANCHURE: 19 })).toBe(210);
+    expect(y({ PROFONDEUR_EMMANCHURE: 1 })).toBeGreaterThanOrEqual(135); // clamped, never degenerate
+  });
+
+  it('adds a bust dart only when the cup difference is real, at the measured height', () => {
+    const count = (m: MeasurementSet) => front('VESTE', m, 'Devant Veste').outlineMm.length;
+    const base = count({});
+    expect(count({ TOUR_SOUS_POITRINE: 82 })).toBe(base); // 10 cm difference: no dart
+    expect(count({ TOUR_SOUS_POITRINE: 76 })).toBe(base + 3);
+    const outline = front('VESTE', { TOUR_SOUS_POITRINE: 76, HAUTEUR_POITRINE: 30, ECARTEMENT_POINTS_POITRINE: 20 }, 'Devant Veste').outlineMm;
+    const apex = outline.find((p) => p.x === 100)!;
+    expect(apex).toBeDefined();
+    expect(apex.y).toBeGreaterThanOrEqual(240);
+  });
+
+  it('a larger cup difference makes a deeper dart', () => {
+    const depth = (sous: number) => {
+      const o = front('CHEMISE', { TOUR_SOUS_POITRINE: sous }, 'Devant Chemise').outlineMm;
+      const i = o.findIndex((p, k) => k > 3 && o[k - 1]!.x > p.x && o[k + 1]!.x > p.x);
+      return o[i - 1]!.x - o[i]!.x;
+    };
+    expect(depth(70)).toBeGreaterThan(depth(78));
+  });
+
+  it('the wedding bustier gets the same dart; the dress back never does', () => {
+    const base = piece(gen({ garmentType: 'ROBE_MARIEE' }).pieces, 'Bustier Devant').outlineMm.length;
+    const withDart = piece(gen({ garmentType: 'ROBE_MARIEE' }, { ...M, TOUR_SOUS_POITRINE: 74 }).pieces, 'Bustier Devant').outlineMm.length;
+    expect(withDart).toBe(base + 3);
+    const back = (m: MeasurementSet) => piece(gen({ garmentType: 'ROBE' }, { ...M, ...m }).pieces, 'Corsage Dos').outlineMm.length;
+    expect(back({ TOUR_SOUS_POITRINE: 70 })).toBe(back({}));
+  });
+});
+
+describe('arm and neck measurements', () => {
+  const sleeveW = (garmentType: GarmentType, m: MeasurementSet, name: string) =>
+    width([piece(gen({ garmentType, details: { manches: 'LONGUES' } }, { ...M, LONGUEUR_BRAS: 60, ...m }).pieces, name)]);
+
+  it.each([
+    ['VESTE', 'Manche Veste'],
+    ['CHEMISE', 'Manche Chemise'],
+    ['COSTUME', 'Manche Veste'],
+    ['ROBE', 'Manche'],
+  ] as Array<[GarmentType, string]>)('%s: the sleeve is never narrower than the arm', (garment, name) => {
+    const tiny = sleeveW(garment, { TOUR_BRAS: 20 }, name);
+    const big = sleeveW(garment, { TOUR_BRAS: 40 }, name);
+    expect(big).toBeGreaterThanOrEqual(400 + 60);
+    expect(big).toBeGreaterThan(tiny);
+  });
+
+  it('TOUR_POIGNET keeps the cuff above the wrist; TOUR_EMMANCHURE raises the cap', () => {
+    const p = (m: MeasurementSet) => piece(gen({ garmentType: 'VESTE', details: { manches: 'LONGUES' } }, { ...M, LONGUEUR_BRAS: 60, ...m }).pieces, 'Manche Veste').outlineMm;
+    const cuff = (m: MeasurementSet) => p(m)[3]!.x - p(m)[4]!.x;
+    expect(cuff({ TOUR_POIGNET: 20 })).toBeGreaterThanOrEqual(230);
+    expect(p({ TOUR_EMMANCHURE: 54 })[0]!.y).toBeGreaterThan(p({ TOUR_EMMANCHURE: 36 })[0]!.y);
+  });
+
+  it('TOUR_COU sets the collar length', () => {
+    const len = (garmentType: GarmentType, name: string, cou: number) =>
+      Math.max(...piece(gen({ garmentType }, { ...M, TOUR_COU: cou }).pieces, name).outlineMm.map((p) => p.x));
+    expect(len('CHEMISE', 'Col', 38)).toBe(400);
+    expect(len('VESTE', 'Col Tailleur', 40)).toBe(420);
+    expect(len('COSTUME', 'Col Tailleur', 36)).toBe(380);
+  });
+});
+
+describe('leg measurements', () => {
+  const leg = (m: MeasurementSet, garmentType: GarmentType = 'PANTALON') =>
+    piece(gen({ garmentType }, { ...M, LONGUEUR_JAMBE: 100, ...m }).pieces, garmentType === 'PANTALON' ? 'Devant Pantalon' : 'Devant Pantalon');
+
+  it.each(['PANTALON', 'COSTUME'] as GarmentType[])('%s: ankle and knee girths set the minimum widths', (garment) => {
+    const hem = (m: MeasurementSet) => {
+      const o = leg(m, garment).outlineMm;
+      return Math.abs(o[4]!.x - o[5]!.x);
+    };
+    expect(hem({})).toBeLessThan(hem({ TOUR_CHEVILLE: 40 }));
+    const knee = (m: MeasurementSet) => {
+      const o = leg(m, garment).outlineMm;
+      return Math.abs(o[3]!.x - o[6]!.x);
+    };
+    expect(knee({})).toBeLessThan(knee({ TOUR_GENOU: 60 }));
+  });
+
+  it('TOUR_CUISSE widens the hip line only when the thigh would be too tight', () => {
+    const hip = (m: MeasurementSet) => leg(m).outlineMm[2]!.x;
+    expect(hip({ TOUR_CUISSE: 40 })).toBe(hip({}));
+    expect(hip({ TOUR_CUISSE: 75 })).toBeGreaterThan(hip({}));
+  });
+
+  it('HAUTEUR_ENTREJAMBE gives the length when no outer leg length is measured', () => {
+    const length = (m: MeasurementSet, garment: GarmentType) => {
+      const { LONGUEUR_JAMBE: _omit, ...rest } = { ...M, ...m } as MeasurementSet;
+      void _omit;
+      const o = piece(gen({ garmentType: garment }, rest).pieces, 'Devant Pantalon').outlineMm;
+      return Math.max(...o.map((p) => p.y));
+    };
+    for (const garment of ['PANTALON', 'COSTUME'] as GarmentType[]) {
+      expect(length({ HAUTEUR_FOURCHE: 27, HAUTEUR_ENTREJAMBE: 78 }, garment)).toBe(270 + 780);
+      expect(length({}, garment)).toBe(1000);
+    }
+  });
+});
+
+describe('a fully measured body', () => {
+  it.each(GARMENTS)('%s: every measurement together gives sound pieces for every cut and ease', (garmentType) => {
+    for (const cutType of CUTS) {
+      for (const ease of EASES) {
+        const result = gen({ garmentType, cutType, ease, details: { manches: 'LONGUES' } }, FULL_BODY);
+        expect(result.warnings.filter((w) => !w.includes('générique')), `${garmentType}/${cutType}/${ease}`).toEqual([]);
+        for (const p of result.pieces) expect(p.outlineMm.every((pt) => Number.isFinite(pt.x) && Number.isFinite(pt.y))).toBe(true);
+      }
+    }
   });
 });

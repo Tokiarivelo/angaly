@@ -75,7 +75,7 @@ S1 → S3 forment le **chemin critique** pour lever L2. S4 → S5 lèvent L1. S6
 
 > **Livré** : types/bornes/validation (`packages/types/src/pattern-fit.ts`), colonne
 > `parametersExtJson` + PATCH validé + régénération revalidée, types moteur optionnels (géométrie
-> inchangée, test `ease-contract.test.ts`). **En plus du plan** : catalogue de 31 mesures
+> inchangée, test `ease-contract.test.ts`). **En plus du plan** : catalogue de mesures
 > (indispensables / recommandées par vêtement, bornes de plausibilité, cohérence), validation 400
 > des profils et des mesures de génération, étape Mesures du wizard adaptée au vêtement, curseurs
 > aisance/ampleur/longueurs. Reste pour S2 : faire consommer ces mesures et paramètres par les
@@ -123,8 +123,8 @@ un projet sans paramètres étendus se génère identique à avant.
 > `LONGUEUR_JUPE`, `HAUTEUR_TAILLE_SOL`, `LONGUEUR_DEVANT`, `HAUTEUR_BASSIN`, `HAUTEUR_FOURCHE`
 > consommées ; `warnings[]` géométriques (`geometry-checks.ts`) ; 36 tests (131 au total dans le
 > moteur). Écarts avec le plan : fichiers `ease-profile.ts`/`proportions.ts` fusionnés en `fit.ts` ;
-> l'avertissement « AUTRE » reste côté API ; les autres mesures du catalogue restent à brancher
-> (voir `docs/features/pattern-engine.md`).
+> l'avertissement « AUTRE » est émis par la règle (`IPatternRule.warnings?`) ; toutes les mesures
+> du catalogue sont consommées (tableau dans `docs/features/pattern-engine.md`, test anti-mesure inutile).
 
 **But** : que `ease`, `fullness`, `lengths` modifient réellement les contours.
 

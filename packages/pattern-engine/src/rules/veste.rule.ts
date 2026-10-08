@@ -6,6 +6,15 @@ import type {
 } from '../types';
 import { resolveTopAdjustments } from '../shared/cut-profile';
 import { sleeveOutline } from '../shared/shapes';
+import { collarLengthMm, fitSleeveDims, fitTorsoOutline } from '../shared/fit';
+
+const sleeveFromDims = (
+  sleeve: { topRatio: number; cuffRatio: number; lengthMm: number },
+  measurements: Record<string, number>,
+) => {
+  const d = fitSleeveDims({ topMm: 320 * sleeve.topRatio, cuffMm: 320 * sleeve.cuffRatio, capMm: 150 }, measurements);
+  return sleeveOutline(d.topMm, d.cuffMm, d.capMm, sleeve.lengthMm);
+};
 
 const REQUIRED_MEASUREMENTS = ['TOUR_POITRINE', 'TOUR_TAILLE', 'LONGUEUR_DOS'];
 
@@ -103,7 +112,7 @@ export const VesteRule: IPatternRule = {
         { positionAlongEdge: 0.5, edgeIndex: 0 }, // Cran tête de manche
       ],
       outlineMm: adj.sleeve
-        ? sleeveOutline(320 * adj.sleeve.topRatio, 320 * adj.sleeve.cuffRatio, 150, adj.sleeve.lengthMm)
+        ? sleeveFromDims(adj.sleeve, measurements)
         : [
             { x: 0, y: 150 }, // Saussée emmanchure
             { x: 160, y: 0 }, // Tête de manche
@@ -127,12 +136,21 @@ export const VesteRule: IPatternRule = {
       notches: [],
       outlineMm: [
         { x: 0, y: 0 },
-        { x: 400, y: 0 },
-        { x: 390, y: 90 },
+        { x: collarLengthMm(400, measurements), y: 0 },
+        { x: collarLengthMm(400, measurements) - 10, y: 90 },
         { x: 10, y: 90 },
         { x: 0, y: 0 },
       ],
     };
+
+    pieceDevant.outlineMm = fitTorsoOutline(pieceDevant.outlineMm, measurements, {
+      side: 'front',
+      neckWidthMm: neckFront.widthMm,
+    });
+    pieceDos.outlineMm = fitTorsoOutline(pieceDos.outlineMm, measurements, {
+      side: 'back',
+      neckWidthMm: neckBackWidth,
+    });
 
     const pieces = [pieceDevant, pieceDos];
     if (!adj.sleeveless) pieces.push(pieceManche);

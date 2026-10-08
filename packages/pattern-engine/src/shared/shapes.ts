@@ -1,5 +1,6 @@
 import type { PatternPieceGeometry } from '../types';
 import type { SleeveSpec } from './cut-profile';
+import { fitSleeveDims } from './fit';
 
 type Outline = PatternPieceGeometry['outlineMm'];
 
@@ -48,10 +49,19 @@ export function sleevePiece(
   sleeve: SleeveSpec,
   fabricRecommendation: string | null = null,
   seamAllowanceMm = 10,
+  measurements: Record<string, number> = {},
 ): PatternPieceGeometry {
-  const capHeight = 150;
-  const top = (tourPoitrineMm / 3.2) * sleeve.topRatio;
-  const cuff = (tourPoitrineMm / 3.2) * sleeve.cuffRatio;
+  const dims = fitSleeveDims(
+    {
+      topMm: (tourPoitrineMm / 3.2) * sleeve.topRatio,
+      cuffMm: (tourPoitrineMm / 3.2) * sleeve.cuffRatio,
+      capMm: 150,
+    },
+    measurements,
+  );
+  const capHeight = dims.capMm;
+  const top = dims.topMm;
+  const cuff = dims.cuffMm;
   return {
     name,
     fabricRecommendation,

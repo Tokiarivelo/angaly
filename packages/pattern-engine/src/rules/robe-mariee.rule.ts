@@ -14,6 +14,7 @@ import { sleevePiece } from '../shared/shapes';
 import {
   bodiceLengthFactor,
   fitSleeve,
+  fitTorsoOutline,
   resolveLengthMm,
   skirtFullnessExtraMm,
   withEase,
@@ -266,9 +267,21 @@ export const RobeMarieeRule: IPatternRule = {
       ],
     };
 
+    // Pince de poitrine sur la couture côté du bustier (seulement dépend des mesures de poitrine).
+    const bustMeasures = Object.fromEntries(
+      ['TOUR_POITRINE', 'TOUR_SOUS_POITRINE', 'HAUTEUR_POITRINE', 'ECARTEMENT_POINTS_POITRINE']
+        .filter((k) => measurements[k] !== undefined)
+        .map((k) => [k, measurements[k] as number]),
+    );
+    bustierDevant.outlineMm = fitTorsoOutline(bustierDevant.outlineMm, bustMeasures, {
+      side: 'front',
+      neckWidthMm: neck?.widthMm ?? 80,
+      dartSegmentIdx: 2,
+    });
+
     const pieces = [bustierDevant, bustierCote, bustierDos, jupeDevant, jupeCote, jupeDosTraine, jupon];
     if (sleeve) {
-      pieces.push(sleevePiece('Manche', tp, sleeve, 'Dentelle, Organza ou Mikado'));
+      pieces.push(sleevePiece('Manche', tp, sleeve, 'Dentelle, Organza ou Mikado', 10, measurements));
     }
     return pieces;
   },

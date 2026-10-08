@@ -189,23 +189,32 @@ Appliquée à robe, jupe, pantalon, veste, chemise, costume (veste + pantalon), 
 - `lengths.sleevePct` (0 = pas de manche, ni poignet) et `fullness.sleeve` (× largeur de tête de manche).
 - `lengths.bodicePct` : hauteur du corsage / longueur de veste, chemise, costume.
 
-**Mesures consommées** (si présentes ; sinon comportement historique) :
+**Mesures consommées** (si présentes ; sinon comportement historique — `shared/fit.ts`) :
 
-| Mesure | Effet |
-|--------|-------|
-| `LONGUEUR_JUPE` | longueur de jupe (prioritaire sur le détail `longueur`) — jupe, robe, mariée |
-| `HAUTEUR_TAILLE_SOL` | longueur de jupe de la robe de mariée (si pas de `LONGUEUR_JUPE`) |
-| `LONGUEUR_DEVANT` | hauteur du corsage devant de la robe |
-| `HAUTEUR_BASSIN` | ligne de bassin de la jupe |
-| `HAUTEUR_FOURCHE` | hauteur de fourche du pantalon et du costume |
-| `LONGUEUR_BRAS` | inchangé (déjà utilisé) |
+| Mesure(s) | Effet | Vêtements |
+|-----------|-------|-----------|
+| `LONGUEUR_JUPE` | longueur de jupe (prioritaire sur le détail `longueur`) | jupe, robe, mariée |
+| `HAUTEUR_TAILLE_SOL` | longueur de jupe de la robe de mariée (sans `LONGUEUR_JUPE`) | mariée |
+| `HAUTEUR_BASSIN` | ligne de bassin de la jupe | jupe |
+| `LONGUEUR_DEVANT` | hauteur du corsage devant | robe |
+| `CARRURE_DEVANT` / `CARRURE_DOS` (sinon `LARGEUR_EPAULE`) | pointe d'épaule : ½ carrure (ou col + épaule), bornée à [col + 40 mm ; défaut + 30 mm] | robe, veste, chemise, costume |
+| `PROFONDEUR_EMMANCHURE` | hauteur du dessous de bras (+ 20 mm), bornée | veste, chemise, costume |
+| `TOUR_SOUS_POITRINE` + `TOUR_POITRINE`, `HAUTEUR_POITRINE`, `ECARTEMENT_POINTS_POITRINE` | **pince de poitrine** sur la couture côté du devant : prise = 5 mm par cm d'écart au-delà de 12 cm (max 60 mm), à la hauteur de poitrine, pointant à ½ écart du milieu devant ; aucune pince si l'écart est trop faible | robe, veste, chemise, costume, mariée (bustier) |
+| `TOUR_BRAS`, `TOUR_POIGNET` | manche jamais plus étroite que le bras (+ 6 cm) ni que le poignet (+ 3 cm) | toutes les manches |
+| `TOUR_EMMANCHURE` | hauteur de tête de manche = emmanchure / 3 (100–220 mm) | toutes les manches |
+| `TOUR_COU` | longueur du col = tour de cou + 2 cm | chemise, veste, costume |
+| `TOUR_CUISSE` | élargit la ligne de bassin (devant + dos) si la cuisse estimée serait trop serrée (+ 6 cm d'aisance) | pantalon, costume |
+| `TOUR_GENOU`, `TOUR_CHEVILLE` | largeurs minimales de genou / bas de jambe (+ 4 cm d'aisance) | pantalon, costume |
+| `HAUTEUR_FOURCHE` | hauteur de fourche | pantalon, costume |
+| `HAUTEUR_TAILLE_GENOU` | hauteur du genou (bornée entre fourche et ourlet) | pantalon, costume |
+| `HAUTEUR_ENTREJAMBE` | longueur totale = fourche + entrejambe, si ni `LONGUEUR_JAMBE` ni `LONGUEUR_PANTALON` | pantalon, costume |
+| `LONGUEUR_JAMBE`, `LONGUEUR_BRAS`, `LONGUEUR_TRAINE` | déjà utilisées | pantalon/costume, manches, mariée |
 
-**Pas encore consommées** (catalogue seulement) : tour sous-poitrine, hauteur de poitrine, carrures,
-largeur d'épaule, écart des pointes, tour de cuisse/genou/cheville, entrejambe, tour de bras/poignet,
-profondeur et tour d'emmanchure, tour de cou. À brancher quand un bloc de construction les exige
-(pinces de poitrine, emmanchure ajustée, jambe ajustée).
+Limites assumées : les blocs restent des constructions simplifiées (pas d'emmanchure courbe sculptée) ;
+la pince de poitrine est un coin sur la couture côté, pas un dessin de pince pivotée. Un test garantit que
+**chaque mesure du catalogue est lue par une règle** (`apps/api/.../pattern-fit.spec.ts`).
 
 **Garde-fous** — `PatternEngine.generate()` renvoie maintenant `warnings[]` : contour non fermé,
 coordonnées non finies, surface < 25 cm², contour auto-sécant. Un test balaie vêtement × coupe × aisance
-(avec ampleur et longueurs extrêmes) et exige zéro avertissement. L'avertissement « AUTRE » reste
-ajouté côté API (`generate-pattern-version.use-case.ts`) — à migrer dans la règle.
+(avec ampleur et longueurs extrêmes) et exige zéro avertissement. Les règles peuvent aussi émettre leurs propres
+avertissements (`IPatternRule.warnings?`) : `AutreRule` signale le bloc de base générique (l'API ne l'ajoute plus).

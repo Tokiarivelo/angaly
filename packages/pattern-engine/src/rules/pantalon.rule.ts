@@ -6,6 +6,8 @@ import type {
 } from '../types';
 import { resolveLegProfile, resolveTrouserLengthFactor } from '../shared/cut-profile';
 
+import { trouserGirths } from '../shared/fit';
+
 const REQUIRED_MEASUREMENTS = ['TOUR_TAILLE', 'TOUR_BASSIN'];
 
 export const PantalonRule: IPatternRule = {
@@ -20,12 +22,11 @@ export const PantalonRule: IPatternRule = {
   ): PatternPieceGeometry[] {
     const tourTaille = measurements['TOUR_TAILLE'] ?? 70;
     const tourBassin = measurements['TOUR_BASSIN'] ?? 95;
-    const longueurJambe = measurements['LONGUEUR_JAMBE'] ?? measurements['LONGUEUR_PANTALON'] ?? 100;
+    const longueurJambeMesuree = measurements['LONGUEUR_JAMBE'] ?? measurements['LONGUEUR_PANTALON'];
 
     // Dimensions en millimètres
     const tt = tourTaille * 10;
     const tb = tourBassin * 10;
-    const lg = Math.round(longueurJambe * 10 * resolveTrouserLengthFactor(parameters.details['longueur']));
 
     // Ligne d'enfourchure (hauteur montant) et genou
     // HAUTEUR_FOURCHE (taille → assise) si mesurée, sinon proportion du bassin (~260mm).
@@ -33,15 +34,29 @@ export const PantalonRule: IPatternRule = {
       measurements['HAUTEUR_FOURCHE'] !== undefined
         ? Math.round(measurements['HAUTEUR_FOURCHE'] * 10)
         : Math.round(tb / 4 + 20);
-    const hauteurGenou = Math.round(hauteurMontant + (lg - hauteurMontant) * 0.5); // ~630mm
+
+    // Longueur totale : LONGUEUR_JAMBE (extérieure) sinon fourche + HAUTEUR_ENTREJAMBE (intérieure), sinon 100 cm.
+    const longueurMm =
+      longueurJambeMesuree !== undefined
+        ? longueurJambeMesuree * 10
+        : measurements['HAUTEUR_ENTREJAMBE'] !== undefined
+          ? hauteurMontant + measurements['HAUTEUR_ENTREJAMBE'] * 10
+          : 1000;
+    const lg = Math.round(longueurMm * resolveTrouserLengthFactor(parameters.details['longueur']));
+    // HAUTEUR_TAILLE_GENOU mesurée (bornée entre fourche et ourlet), sinon mi-chemin fourche/ourlet.
+    const hauteurGenou =
+      measurements['HAUTEUR_TAILLE_GENOU'] !== undefined
+        ? Math.round(Math.min(lg - 100, Math.max(hauteurMontant + 100, measurements['HAUTEUR_TAILLE_GENOU'] * 10)))
+        : Math.round(hauteurMontant + (lg - hauteurMontant) * 0.5); // ~630mm
 
     // Forme de jambe selon la coupe choisie (voir shared/cut-profile.ts)
     const leg = resolveLegProfile(parameters.cutType, parameters.ease);
-    const demiLargeurBasDevant = leg.halfHemMm; // Standard 200mm bas
-    const kneeFront = Math.round(demiLargeurBasDevant * leg.kneeRatio);
+    const girths = trouserGirths(tb, leg.hipDeltaMm, measurements);
+    const demiLargeurBasDevant = Math.max(leg.halfHemMm, girths.minHalfHemMm); // Standard 200mm bas
+    const kneeFront = Math.max(Math.round(demiLargeurBasDevant * leg.kneeRatio), girths.minKneeMm);
 
     // Devant
-    const largeurBassinDevant = Math.round(tb / 4 - 10 + leg.hipDeltaMm);
+    const largeurBassinDevant = Math.round(tb / 4 - 10 + leg.hipDeltaMm + girths.thighExtraMm);
     const avanceeFourcheDevant = Math.round((tb / 4) * 0.18);
     const largeurTailleDevant = Math.round(tt / 4 + 20 + leg.waistDeltaMm);
     const lignePliDevant = Math.round((largeurBassinDevant + avanceeFourcheDevant) / 2);
@@ -75,11 +90,11 @@ export const PantalonRule: IPatternRule = {
     };
 
     // Dos
-    const largeurBassinDos = Math.round(tb / 4 + 10 + leg.hipDeltaMm);
+    const largeurBassinDos = Math.round(tb / 4 + 10 + leg.hipDeltaMm + girths.thighExtraMm);
     const avanceeFourcheDos = Math.round((tb / 4) * 0.38);
     const largeurTailleDos = Math.round(tt / 4 + 30 + leg.waistDeltaMm);
     const demiLargeurBasDos = demiLargeurBasDevant + 15;
-    const kneeDos = Math.round(demiLargeurBasDos * leg.kneeRatio);
+    const kneeDos = Math.max(Math.round(demiLargeurBasDos * leg.kneeRatio), girths.minKneeMm);
     const lignePliDos = Math.round((largeurBassinDos + avanceeFourcheDos) / 2);
     const rehausseDos = 35;
 

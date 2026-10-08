@@ -419,6 +419,9 @@ importers:
       '@angaly/vitest-config':
         specifier: workspace:*
         version: link:../config/vitest
+      '@vitest/coverage-v8':
+        specifier: 2.1.9
+        version: 2.1.9(vitest@2.1.9)
       typescript:
         specifier: ^5.6.3
         version: 5.9.3

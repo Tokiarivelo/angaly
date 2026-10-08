@@ -60,7 +60,6 @@ export interface MeasurementDefinition {
 }
 
 const TOPS: readonly FitGarmentType[] = ['ROBE', 'VESTE', 'COSTUME', 'CHEMISE', 'ROBE_MARIEE', 'AUTRE'];
-const BOTTOMS: readonly FitGarmentType[] = ['JUPE', 'PANTALON', 'COSTUME'];
 const SLEEVED: readonly FitGarmentType[] = ['ROBE', 'VESTE', 'COSTUME', 'CHEMISE', 'ROBE_MARIEE'];
 const DRESSES: readonly FitGarmentType[] = ['ROBE', 'ROBE_MARIEE'];
 const NONE: readonly FitGarmentType[] = [];
@@ -96,16 +95,6 @@ export const MEASUREMENT_CATALOG: readonly MeasurementDefinition[] = [
     maxCm: 160,
     requiredFor: ['ROBE', 'JUPE', 'PANTALON', 'VESTE', 'COSTUME', 'CHEMISE', 'ROBE_MARIEE', 'AUTRE'],
     recommendedFor: NONE,
-  },
-  {
-    key: 'TOUR_HAUT_BASSIN',
-    label: 'Tour de hanches (haut)',
-    help: 'Horizontalement à environ 10 cm sous la taille, sur le haut des hanches.',
-    group: 'CIRCONFERENCES',
-    minCm: 55,
-    maxCm: 170,
-    requiredFor: NONE,
-    recommendedFor: ['JUPE', 'PANTALON', 'COSTUME', 'ROBE_MARIEE'],
   },
   {
     key: 'TOUR_BASSIN',
@@ -290,16 +279,6 @@ export const MEASUREMENT_CATALOG: readonly MeasurementDefinition[] = [
     requiredFor: NONE,
     recommendedFor: SLEEVED,
   },
-  {
-    key: 'HAUTEUR_COUDE',
-    label: 'Longueur épaule–coude',
-    help: 'De la pointe de l’épaule au coude, bras plié.',
-    group: 'BRAS',
-    minCm: 20,
-    maxCm: 45,
-    requiredFor: NONE,
-    recommendedFor: ['VESTE', 'COSTUME'],
-  },
   // --- Bas du corps ---
   {
     key: 'LONGUEUR_JUPE',
@@ -370,16 +349,6 @@ export const MEASUREMENT_CATALOG: readonly MeasurementDefinition[] = [
     maxCm: 400,
     requiredFor: NONE,
     recommendedFor: ['ROBE_MARIEE'],
-  },
-  {
-    key: 'HAUTEUR_TOTALE',
-    label: 'Taille (hauteur totale)',
-    help: 'Debout, sans chaussures, dos au mur.',
-    group: 'BAS_DU_CORPS',
-    minCm: 130,
-    maxCm: 220,
-    requiredFor: NONE,
-    recommendedFor: [...BOTTOMS, ...DRESSES],
   },
 ];
 
@@ -486,7 +455,6 @@ export function checkMeasurementCoherence(values: Record<string, number>): strin
   const poitrine = v['TOUR_POITRINE'];
   const sousPoitrine = v['TOUR_SOUS_POITRINE'];
   const taille = v['TOUR_TAILLE'];
-  const haut = v['TOUR_HAUT_BASSIN'];
   const bassin = v['TOUR_BASSIN'];
   const cuisse = v['TOUR_CUISSE'];
   const genou = v['TOUR_GENOU'];
@@ -507,9 +475,6 @@ export function checkMeasurementCoherence(values: Record<string, number>): strin
   }
   if (taille !== undefined && bassin !== undefined && bassin < taille * 0.9) {
     warnings.push('Le tour de bassin est inférieur au tour de taille : vérifiez la saisie.');
-  }
-  if (haut !== undefined && bassin !== undefined && haut > bassin) {
-    warnings.push('Le tour de hanches (haut) dépasse le tour de bassin : vérifiez la saisie.');
   }
   if (cuisse !== undefined && genou !== undefined && genou > cuisse) {
     warnings.push('Le tour de genou dépasse le tour de cuisse : vérifiez la saisie.');

@@ -75,6 +75,15 @@ describe('measurement catalogue', () => {
     for (const key of used) expect(known.has(key) || legacyAliases.has(key)).toBe(true);
   });
 
+  it('every catalogue measurement is read by at least one engine rule (nothing asked for nothing)', () => {
+    const dirs = ['rules', 'shared'].map((d) => join(__dirname, '../../../../../../packages/pattern-engine/src', d));
+    const source = dirs
+      .flatMap((dir) => readdirSync(dir).map((f) => readFileSync(join(dir, f), 'utf8')))
+      .join('\n');
+    const unused = MEASUREMENT_CATALOG.map((m) => m.key).filter((key) => !source.includes(`'${key}'`));
+    expect(unused).toEqual([]);
+  });
+
   it('lists required then recommended fields for a garment, without duplicates', () => {
     const fields = measurementFieldsFor('PANTALON');
     const keys = fields.map((f) => f.key);

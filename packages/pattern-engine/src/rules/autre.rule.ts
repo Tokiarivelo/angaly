@@ -48,6 +48,13 @@ export const AutreRule: IPatternRule = {
   appliesTo(parameters: PatternParameters): boolean {
     return parameters.garmentType === 'AUTRE';
   },
+  warnings(): string[] {
+    return [
+      'Patron de base générique : ce type de vêtement ("Autre") ne dispose pas de ' +
+        'construction dédiée. Les pièces générées sont un bloc de base rectangulaire ' +
+        'neutre — une adaptation par une couturière est requise avant confection.',
+    ];
+  },
   computePieces(
     parameters: PatternParameters,
     measurements: MeasurementSet,

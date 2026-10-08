@@ -6,6 +6,7 @@ import type {
 } from '../types';
 import { resolveTopAdjustments } from '../shared/cut-profile';
 import { sleeveOutline } from '../shared/shapes';
+import { collarLengthMm, fitSleeveDims, fitTorsoOutline } from '../shared/fit';
 
 const REQUIRED_MEASUREMENTS = ['TOUR_POITRINE', 'TOUR_TAILLE', 'LONGUEUR_DOS'];
 
@@ -102,7 +103,13 @@ export const ChemiseRule: IPatternRule = {
       },
       notches: [{ positionAlongEdge: 0.5, edgeIndex: 0 }],
       outlineMm: adj.sleeve
-        ? sleeveOutline(300 * adj.sleeve.topRatio, 300 * adj.sleeve.cuffRatio, 120, adj.sleeve.lengthMm)
+        ? (() => {
+            const d = fitSleeveDims(
+              { topMm: 300 * adj.sleeve.topRatio, cuffMm: 300 * adj.sleeve.cuffRatio, capMm: 120 },
+              measurements,
+            );
+            return sleeveOutline(d.topMm, d.cuffMm, d.capMm, adj.sleeve.lengthMm);
+          })()
         : [
             { x: 0, y: 120 },
             { x: 150, y: 0 },
@@ -126,8 +133,8 @@ export const ChemiseRule: IPatternRule = {
       notches: [],
       outlineMm: [
         { x: 0, y: 0 },
-        { x: 380, y: 0 },
-        { x: 370, y: 70 },
+        { x: collarLengthMm(380, measurements), y: 0 },
+        { x: collarLengthMm(380, measurements) - 10, y: 70 },
         { x: 10, y: 70 },
         { x: 0, y: 0 },
       ],
@@ -152,6 +159,15 @@ export const ChemiseRule: IPatternRule = {
         { x: 0, y: 0 },
       ],
     };
+
+    pieceDevant.outlineMm = fitTorsoOutline(pieceDevant.outlineMm, measurements, {
+      side: 'front',
+      neckWidthMm: neckFront.widthMm,
+    });
+    pieceDos.outlineMm = fitTorsoOutline(pieceDos.outlineMm, measurements, {
+      side: 'back',
+      neckWidthMm: neckBackWidth,
+    });
 
     const pieces = [pieceDevant, pieceDos];
     if (!adj.sleeveless) pieces.push(pieceManche);

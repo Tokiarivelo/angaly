@@ -322,33 +322,19 @@ describe('GeneratePatternVersionUseCase', () => {
     expect(mockGeneratePiecesUseCase.execute).toHaveBeenCalledTimes(1);
   });
 
-  it('adds a generic-base warning to parametersJson.warnings for AUTRE garment type', async () => {
-    const autreProject = PatternProjectEntity.create({
-      id: 'proj-autre',
-      projectRef: 'ANG-PAT-2026-00005',
-      customerId: 'cust-1',
-      measurementProfileId: null,
-      garmentType: 'AUTRE',
-      occasion: 'Autre',
-      style: null,
-      cutType: 'DROITE',
-      detailsJson: null,
-      inspirationMediaId: null,
-      status: 'DRAFT',
-      createdAt: new Date(),
-      updatedAt: new Date(),
-    });
-    mockProjectRepo.findById.mockResolvedValueOnce(autreProject);
-    mockProjectRepo.update.mockResolvedValueOnce(autreProject);
+  it('forwards the engine warnings (e.g. the generic AUTRE base block) to parametersJson.warnings', async () => {
+    mockGeneratePiecesUseCase.execute.mockResolvedValueOnce({
+      pieces: [],
+      warnings: ['Patron de base générique : adaptation requise.'],
+      metadata: { engineVersion: '0.2.0-fit' },
+    } as any);
 
-    const version = await useCase.execute('proj-autre', 'cust-1');
+    const version = await useCase.execute('proj-1', 'cust-1');
 
-    const warnings = version.parametersJson.warnings as string[];
-    expect(warnings.length).toBe(1);
-    expect(warnings[0]).toContain('générique');
+    expect(version.parametersJson.warnings).toEqual(['Patron de base générique : adaptation requise.']);
   });
 
-  it('does not add a generic-base warning for other garment types', async () => {
+  it('adds no warning of its own when the engine reports none', async () => {
     const version = await useCase.execute('proj-1', 'cust-1');
 
     const warnings = version.parametersJson.warnings as string[];

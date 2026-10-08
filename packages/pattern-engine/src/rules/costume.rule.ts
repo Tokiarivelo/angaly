@@ -6,6 +6,7 @@ import type {
 } from '../types';
 import { resolveLegProfile, resolveTopAdjustments, resolveTrouserLengthFactor } from '../shared/cut-profile';
 import { sleeveOutline } from '../shared/shapes';
+import { collarLengthMm, fitSleeveDims, fitTorsoOutline, trouserGirths } from '../shared/fit';
 
 /**
  * COSTUME = "ensemble tailleur veste et pantalon/jupe" (voir
@@ -111,7 +112,13 @@ export const CostumeRule: IPatternRule = {
       grainline: { angleDegrees: 90, originX: 160, originY: lgBras / 2 },
       notches: [{ positionAlongEdge: 0.5, edgeIndex: 0 }], // Cran tête de manche
       outlineMm: adj.sleeve
-        ? sleeveOutline(320 * adj.sleeve.topRatio, 320 * adj.sleeve.cuffRatio, 150, adj.sleeve.lengthMm)
+        ? (() => {
+            const d = fitSleeveDims(
+              { topMm: 320 * adj.sleeve.topRatio, cuffMm: 320 * adj.sleeve.cuffRatio, capMm: 150 },
+              measurements,
+            );
+            return sleeveOutline(d.topMm, d.cuffMm, d.capMm, adj.sleeve.lengthMm);
+          })()
         : [
             { x: 0, y: 150 }, // Saussée emmanchure
             { x: 160, y: 0 }, // Tête de manche
@@ -131,8 +138,8 @@ export const CostumeRule: IPatternRule = {
       notches: [],
       outlineMm: [
         { x: 0, y: 0 },
-        { x: 400, y: 0 },
-        { x: 390, y: 90 },
+        { x: collarLengthMm(400, measurements), y: 0 },
+        { x: collarLengthMm(400, measurements) - 10, y: 90 },
         { x: 10, y: 90 },
         { x: 0, y: 0 },
       ],
@@ -140,23 +147,35 @@ export const CostumeRule: IPatternRule = {
 
     // --- Pantalon (adapté de pantalon.rule.ts) ---
     const tourBassin = measurements['TOUR_BASSIN'] ?? 95;
-    const longueurJambe =
-      measurements['LONGUEUR_JAMBE'] ?? measurements['LONGUEUR_PANTALON'] ?? 100;
+    const longueurJambeMesuree = measurements['LONGUEUR_JAMBE'] ?? measurements['LONGUEUR_PANTALON'];
 
     const tb = tourBassin * 10;
-    const lg = Math.round(longueurJambe * 10 * resolveTrouserLengthFactor(parameters.details['longueur']));
 
     const hauteurMontant =
       measurements['HAUTEUR_FOURCHE'] !== undefined
         ? Math.round(measurements['HAUTEUR_FOURCHE'] * 10)
         : Math.round(tb / 4 + 20); // ~260mm
-    const hauteurGenou = Math.round(hauteurMontant + (lg - hauteurMontant) * 0.5);
+
+    // Longueur totale : LONGUEUR_JAMBE (extérieure) sinon fourche + HAUTEUR_ENTREJAMBE (intérieure), sinon 100 cm.
+    const longueurMm =
+      longueurJambeMesuree !== undefined
+        ? longueurJambeMesuree * 10
+        : measurements['HAUTEUR_ENTREJAMBE'] !== undefined
+          ? hauteurMontant + measurements['HAUTEUR_ENTREJAMBE'] * 10
+          : 1000;
+    const lg = Math.round(longueurMm * resolveTrouserLengthFactor(parameters.details['longueur']));
+    // HAUTEUR_TAILLE_GENOU mesurée (bornée entre fourche et ourlet), sinon mi-chemin fourche/ourlet.
+    const hauteurGenou =
+      measurements['HAUTEUR_TAILLE_GENOU'] !== undefined
+        ? Math.round(Math.min(lg - 100, Math.max(hauteurMontant + 100, measurements['HAUTEUR_TAILLE_GENOU'] * 10)))
+        : Math.round(hauteurMontant + (lg - hauteurMontant) * 0.5);
 
     const leg = resolveLegProfile(parameters.cutType, parameters.ease);
-    const demiLargeurBasDevant = leg.halfHemMm; // Coupe droite tailleur par défaut
-    const kneeFront = Math.round(demiLargeurBasDevant * leg.kneeRatio);
+    const girths = trouserGirths(tb, leg.hipDeltaMm, measurements);
+    const demiLargeurBasDevant = Math.max(leg.halfHemMm, girths.minHalfHemMm); // Coupe droite tailleur par défaut
+    const kneeFront = Math.max(Math.round(demiLargeurBasDevant * leg.kneeRatio), girths.minKneeMm);
 
-    const largeurBassinDevant = Math.round(tb / 4 - 10 + leg.hipDeltaMm);
+    const largeurBassinDevant = Math.round(tb / 4 - 10 + leg.hipDeltaMm + girths.thighExtraMm);
     const avanceeFourcheDevant = Math.round((tb / 4) * 0.18);
     const largeurTailleDevantPantalon = Math.round(tt / 4 + 20 + leg.waistDeltaMm);
     const lignePliDevant = Math.round((largeurBassinDevant + avanceeFourcheDevant) / 2);
@@ -185,11 +204,11 @@ export const CostumeRule: IPatternRule = {
       ],
     };
 
-    const largeurBassinDos = Math.round(tb / 4 + 10 + leg.hipDeltaMm);
+    const largeurBassinDos = Math.round(tb / 4 + 10 + leg.hipDeltaMm + girths.thighExtraMm);
     const avanceeFourcheDos = Math.round((tb / 4) * 0.38);
     const largeurTailleDosPantalon = Math.round(tt / 4 + 30 + leg.waistDeltaMm);
     const demiLargeurBasDos = demiLargeurBasDevant + 15;
-    const kneeDos = Math.round(demiLargeurBasDos * leg.kneeRatio);
+    const kneeDos = Math.max(Math.round(demiLargeurBasDos * leg.kneeRatio), girths.minKneeMm);
     const lignePliDos = Math.round((largeurBassinDos + avanceeFourcheDos) / 2);
     const rehausseDos = 35;
 
@@ -242,6 +261,15 @@ export const CostumeRule: IPatternRule = {
         { x: 0, y: 0 },
       ],
     };
+
+    pieceDevantVeste.outlineMm = fitTorsoOutline(pieceDevantVeste.outlineMm, measurements, {
+      side: 'front',
+      neckWidthMm: neckFront.widthMm,
+    });
+    pieceDosVeste.outlineMm = fitTorsoOutline(pieceDosVeste.outlineMm, measurements, {
+      side: 'back',
+      neckWidthMm: neckBackWidth,
+    });
 
     const jacket = [pieceDevantVeste, pieceDosVeste];
     if (!adj.sleeveless) jacket.push(pieceMancheVeste);

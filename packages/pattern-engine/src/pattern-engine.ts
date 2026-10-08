@@ -54,7 +54,7 @@ export class PatternEngine implements IPatternEngine {
 
     return {
       pieces,
-      warnings: checkPieceGeometry(pieces),
+      warnings: [...(rule.warnings?.(parameters, measurements) ?? []), ...checkPieceGeometry(pieces)],
       metadata: {
         engineVersion: ENGINE_VERSION,
         generatedAt: new Date().toISOString(),

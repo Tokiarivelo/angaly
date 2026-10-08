@@ -26,6 +26,13 @@ API 1239, web verts, typecheck 10/10. Détail : `docs/features/pattern-engine.md
 ⚠️ Après `git pull` : appliquer la migration `20261008130000` (`pnpm --filter @angaly/database db:migrate`),
 sinon toute lecture de projet échoue (colonne `parametersExtJson`).
 
+**S2b (même session)** : les mesures restantes du catalogue sont désormais lues par le moteur — épaules/carrures,
+profondeur d'emmanchure, **pince de poitrine**, manches (bras/poignet/emmanchure), col (tour de cou), jambes
+(cuisse/genou/cheville/entrejambe/hauteur genou). Le catalogue passe à 28 mesures (`TOUR_HAUT_BASSIN`,
+`HAUTEUR_TOTALE`, `HAUTEUR_COUDE` retirées : aucune règle ne les lit) et un test échoue si une mesure du
+catalogue n'est lue par aucune règle. L'avertissement « Autre » vient du moteur (`IPatternRule.warnings?`).
+`@vitest/coverage-v8` installé dans pattern-engine : couverture 89,6 % (moteur : 159 tests).
+
 **Prochaine action : S3** — l'analyse photo remplit `ease/fullness/lengths` (prompt + `normalize_profile`
 bornage + fusion API client > photo > IA) et écran « Ajustements déduits de la photo » (consulter Stitch via
 `agy` avant JSX). Dette : brancher les mesures restantes du catalogue (sous-poitrine, hauteur de poitrine,

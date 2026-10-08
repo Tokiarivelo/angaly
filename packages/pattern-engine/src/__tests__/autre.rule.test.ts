@@ -52,3 +52,17 @@ describe('AutreRule', () => {
     }
   });
 });
+
+describe('AutreRule warnings', () => {
+  it('flags the generic base block through the engine warnings', async () => {
+    const { PatternEngine } = await import('../pattern-engine');
+    const engine = new PatternEngine();
+    engine.registerRule(AutreRule);
+    const result = engine.generate(
+      { garmentType: 'AUTRE', cutType: 'DROITE', style: null, details: {} },
+      { TOUR_POITRINE: 90, TOUR_TAILLE: 70, LONGUEUR_DOS: 40 },
+    );
+    expect(result.warnings).toHaveLength(1);
+    expect(result.warnings[0]).toContain('générique');
+  });
+});

@@ -14,6 +14,7 @@ import { skirtOutline, sleevePiece } from '../shared/shapes';
 import {
   bodiceLengthFactor,
   fitSleeve,
+  fitTorsoOutline,
   resolveLengthMm,
   skirtFullnessExtraMm,
   withEase,
@@ -127,6 +128,17 @@ export const RobeRule: IPatternRule = {
       outlineMm: skirtOutline(largeurTailleDos, largeurJupeDos, hemDos, longueurJupe, profile.fishtail),
     };
 
+    // Épaules, emmanchure et pince de poitrine d'après les mesures du corps (no-op sans elles).
+    corsageDevant.outlineMm = fitTorsoOutline(corsageDevant.outlineMm, measurements, {
+      side: 'front',
+      neckWidthMm: neckline.widthMm,
+    });
+    corsageDos.outlineMm = fitTorsoOutline(corsageDos.outlineMm, measurements, {
+      side: 'back',
+      neckWidthMm: 75,
+      dartSegmentIdx: null,
+    });
+
     const pieces = [corsageDevant, corsageDos, jupeDevant, jupeDos];
 
     const sleeve = fitSleeve(
@@ -137,7 +149,7 @@ export const RobeRule: IPatternRule = {
       parameters,
     );
     if (sleeve) {
-      pieces.push(sleevePiece('Manche', tp, sleeve));
+      pieces.push(sleevePiece('Manche', tp, sleeve, null, 10, measurements));
     }
     return pieces;
   },

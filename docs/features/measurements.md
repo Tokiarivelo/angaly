@@ -121,35 +121,30 @@ taille pré-remplit les champs de mesure côté client (`onApplyMeasurements`), 
 - [x] `docs/checklist-implementation.md` : `measurements` passé à ✅
 
 
-## Catalogue de mesures pour un ajustement parfait (Phase 5b S1)
+## Catalogue de mesures pour un ajustement parfait (Phase 5b S1/S2)
 
-Source unique : `packages/types/src/pattern-fit.ts` (`MEASUREMENT_CATALOG`). Consommée par la
+Source unique : `packages/types/src/pattern-fit.ts` (`MEASUREMENT_CATALOG`, 28 mesures). Consommée par la
 validation API, le formulaire « Mes mesures », l'étape Mesures du wizard et vérifiée contre les
-règles du pattern-engine (`apps/api/src/measurements/__tests__/unit/pattern-fit.spec.ts` :
-les clés **requises** par garment = `requiredMeasurementKeys` des règles, aucune clé lue par une
-règle hors catalogue ; `LONGUEUR_PANTALON` reste un alias historique de `LONGUEUR_JAMBE`).
+règles du pattern-engine (`apps/api/src/measurements/__tests__/unit/pattern-fit.spec.ts`) :
+- les clés **requises** par vêtement = `requiredMeasurementKeys` des règles ;
+- toute clé lue par une règle est dans le catalogue (`LONGUEUR_PANTALON` reste un alias historique) ;
+- **toute mesure du catalogue est lue par au moins une règle** (on ne demande rien d'inutile).
 
 - **Indispensable** (`requiredFor`) : le moteur refuse de générer sans (sinon estimation IA explicite).
 - **Recommandé** (`recommendedFor`) : demandé dans le wizard pour améliorer l'ajustement, jamais bloquant.
-- Toutes les valeurs sont en **cm** côté wizard/API-pattern ; un profil en pouces est converti
-  (×2,54) pour le seul contrôle de plausibilité.
-- **Validation (400 « Mesures invalides »)** à la création/modification d'un profil et à la
-  génération (`measurements` manuelles) : nombre fini, > 0 (0 toléré pour `LONGUEUR_TRAINE`),
-  dans la plage plausible ci-dessous. Clés inconnues (anciens profils) : positives, ≤ 400 cm.
-- `checkMeasurementCoherence()` renvoie des **avertissements non bloquants** (sous-poitrine >
-  poitrine, genou > cuisse, bassin < taille…), affichés dans le wizard.
-- Les 6 clés historiques (poitrine, taille, bassin, longueur dos, carrure dos, cou) restent celles
-  des tables de tailles standard / de l'imputation IA ; les nouvelles clés sont saisies à la main
-  (l'estimation IA ne les produit pas encore).
-- Les règles du moteur **ne consomment pas encore** les nouvelles mesures : c'est l'objet de S2
-  (aucun changement de géométrie en S1, test de non-régression `ease-contract.test.ts`).
+- Valeurs en **cm** ; un profil en pouces est converti (×2,54) pour le seul contrôle de plausibilité.
+- **Validation (400 « Mesures invalides »)** à la création/modification d'un profil et à la génération
+  (`measurements` manuelles) : nombre fini, > 0 (0 toléré pour `LONGUEUR_TRAINE`), dans la plage ci-dessous.
+  Clés inconnues (anciens profils) : positives, ≤ 400 cm.
+- `checkMeasurementCoherence()` : avertissements **non bloquants** (sous-poitrine > poitrine, genou > cuisse…).
+- Les 6 clés historiques restent celles des tables de tailles / de l'imputation IA ; les autres se saisissent
+  à la main. Usage de chaque mesure dans la géométrie : `docs/features/pattern-engine.md`.
 
 | Clé | Libellé | Groupe | Plage cm | Indispensable pour | Recommandé pour |
 |-----|---------|--------|----------|--------------------|-----------------|
 | `TOUR_POITRINE` | Tour de poitrine | CIRCONFERENCES | 60–170 | ROBE, VESTE, COSTUME, CHEMISE, ROBE_MARIEE, AUTRE | — |
 | `TOUR_SOUS_POITRINE` | Tour sous la poitrine | CIRCONFERENCES | 55–150 | — | ROBE_MARIEE |
 | `TOUR_TAILLE` | Tour de taille | CIRCONFERENCES | 45–160 | ROBE, JUPE, PANTALON, VESTE, COSTUME, CHEMISE, ROBE_MARIEE, AUTRE | — |
-| `TOUR_HAUT_BASSIN` | Tour de hanches (haut) | CIRCONFERENCES | 55–170 | — | JUPE, PANTALON, COSTUME, ROBE_MARIEE |
 | `TOUR_BASSIN` | Tour de bassin | CIRCONFERENCES | 65–180 | ROBE, JUPE, PANTALON, COSTUME, ROBE_MARIEE | VESTE |
 | `TOUR_COU` | Tour de cou | CIRCONFERENCES | 25–55 | — | VESTE, COSTUME, CHEMISE |
 | `TOUR_EMMANCHURE` | Tour d’emmanchure | CIRCONFERENCES | 30–70 | — | VESTE, COSTUME, CHEMISE |
@@ -168,7 +163,6 @@ règle hors catalogue ; `LONGUEUR_PANTALON` reste un alias historique de `LONGUE
 | `HAUTEUR_BASSIN` | Hauteur de bassin | LONGUEURS_TORSE | 14–28 | — | ROBE, JUPE, PANTALON, COSTUME, ROBE_MARIEE |
 | `PROFONDEUR_EMMANCHURE` | Profondeur d’emmanchure | LONGUEURS_TORSE | 15–30 | — | VESTE, COSTUME, CHEMISE |
 | `LONGUEUR_BRAS` | Longueur de bras | BRAS | 40–85 | — | manches |
-| `HAUTEUR_COUDE` | Longueur épaule–coude | BRAS | 20–45 | — | VESTE, COSTUME |
 | `LONGUEUR_JUPE` | Longueur de jupe souhaitée | BAS_DU_CORPS | 25–140 | — | JUPE, ROBE, ROBE_MARIEE |
 | `HAUTEUR_TAILLE_GENOU` | Hauteur taille–genou | BAS_DU_CORPS | 40–75 | — | JUPE, PANTALON, COSTUME |
 | `HAUTEUR_FOURCHE` | Hauteur de fourche | BAS_DU_CORPS | 18–40 | — | PANTALON, COSTUME |
@@ -176,4 +170,3 @@ règle hors catalogue ; `LONGUEUR_PANTALON` reste un alias historique de `LONGUE
 | `LONGUEUR_JAMBE` | Longueur de jambe (extérieure) | BAS_DU_CORPS | 70–130 | — | PANTALON, COSTUME |
 | `HAUTEUR_TAILLE_SOL` | Hauteur taille–sol | BAS_DU_CORPS | 80–140 | — | robes |
 | `LONGUEUR_TRAINE` | Longueur de traîne | BAS_DU_CORPS | 0–400 | — | ROBE_MARIEE |
-| `HAUTEUR_TOTALE` | Taille (hauteur totale) | BAS_DU_CORPS | 130–220 | — | ...BOTTOMS, ...DRESSES |

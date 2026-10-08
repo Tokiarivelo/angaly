@@ -93,6 +93,8 @@ export interface IPatternRule {
     parameters: PatternParameters,
     measurements: MeasurementSet,
   ): PatternPieceGeometry[];
+  /** Rule-specific, customer-facing caveats (e.g. "generic base block"). Optional. */
+  warnings?(parameters: PatternParameters, measurements: MeasurementSet): string[];
 }
 
 export interface IPatternEngine {
