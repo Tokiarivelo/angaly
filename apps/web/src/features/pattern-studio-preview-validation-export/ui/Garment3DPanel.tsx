@@ -7,6 +7,7 @@ import type { ViewName, ViewRequest } from './Garment3DViewer';
 import { WebGlBoundary } from './WebGlBoundary';
 import type { PatternPieceDto } from '@angaly/types';
 import { buildGarmentModel, type FitStatus } from '../utils/garment3d/garment-model';
+import { BODY_TEMPLATES, suggestTemplate, type BodyTemplateId } from '../utils/garment3d/body-templates';
 
 // three.js is only downloaded when the 3D tab is opened.
 const Garment3DViewer = dynamic(() => import('./Garment3DViewer').then((m) => m.Garment3DViewer), {
@@ -51,10 +52,12 @@ export const Garment3DPanel: React.FC<Garment3DPanelProps> = ({
   const [viewerKey, setViewerKey] = useState(0);
   const [contextLost, setContextLost] = useState(false);
   const frame = useRef<number | null>(null);
+  // Starts on the silhouette closest to the customer's measurements; the user can pick another one.
+  const [templateId, setTemplateId] = useState<BodyTemplateId>(() => suggestTemplate(measurements));
 
   const result = useMemo(
-    () => buildGarmentModel(pieces, garmentType, measurements),
-    [pieces, garmentType, measurements],
+    () => buildGarmentModel(pieces, garmentType, measurements, templateId),
+    [pieces, garmentType, measurements, templateId],
   );
 
   // Assembly animation: 0 → 1 over ~2.4 s, one state update per animation frame.
@@ -205,6 +208,21 @@ export const Garment3DPanel: React.FC<Garment3DPanelProps> = ({
         </label>
 
         <label className="flex items-center gap-2">
+          <span className="whitespace-nowrap">Morphologie</span>
+          <select
+            aria-label="Morphologie du mannequin"
+            value={templateId}
+            onChange={(e) => setTemplateId(e.target.value as BodyTemplateId)}
+            className="bg-[#0C2650] border border-[#C5B190]/30 text-[#D8D3C8] text-xs rounded-lg px-2 py-1.5 focus:outline-none focus:border-[#C5B190]"
+          >
+            {BODY_TEMPLATES.map((t) => (
+              <option key={t.id} value={t.id}>
+                {t.label}
+              </option>
+            ))}
+          </select>
+        </label>
+        <label className="flex items-center gap-2">
           <input type="checkbox" checked={showMannequin} onChange={(e) => setShowMannequin(e.target.checked)} />
           Mannequin
         </label>
@@ -245,8 +263,10 @@ export const Garment3DPanel: React.FC<Garment3DPanelProps> = ({
       )}
 
       <p className="text-[11px] text-[#D8D3C8]/70 leading-relaxed">
-        Les panneaux suivent les largeurs réelles des pièces du patron sur un mannequin à vos mesures ; la chute du
+        Les panneaux suivent les largeurs réelles des pièces du patron sur un mannequin ajusté à vos mesures (les mesures manquantes viennent de la morphologie choisie) ; la chute du
         tissu n’est pas simulée.
+        {model.generic &&
+          ' Aucune pièce devant/dos : la plus grande pièce est enroulée autour du corps (représentation indicative).'}
         {model.ignored.length > 0 && ` Non placé(es) sur le mannequin : ${model.ignored.join(', ')}.`}
       </p>
     </div>

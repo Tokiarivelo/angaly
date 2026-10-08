@@ -8,6 +8,8 @@ import {
   readBodyMeasurements,
   ringAt,
 } from '../utils/garment3d/body-model';
+import { BODY_TEMPLATES, getBodyTemplate, suggestTemplate } from '../utils/garment3d/body-templates';
+import { bodyLandmarks } from '../utils/garment3d/body-model';
 import { buildGarmentModel, classifyPiece, fitStatus, rowExtent } from '../utils/garment3d/garment-model';
 
 const piece = (
@@ -80,7 +82,7 @@ describe('garment-model', () => {
     expect(classifyPiece('Devant', 'JUPE')).toEqual({ role: 'front', zone: 'skirt' });
     expect(classifyPiece('Manche', 'ROBE')).toEqual({ role: 'sleeve', zone: 'sleeve' });
     expect(classifyPiece('Ceinture', 'ROBE')).toBeNull();
-    expect(classifyPiece('Devant', 'PANTALON')).toBeNull();
+    expect(classifyPiece('Devant', 'PANTALON')).toEqual({ role: 'front', zone: 'legs' });
   });
 
   it('finds the extent of a polygon on a horizontal line', () => {
@@ -94,9 +96,43 @@ describe('garment-model', () => {
     expect(rowExtent(square, 500)).toBeNull();
   });
 
-  it('refuses garments without recognisable front/back pieces', () => {
-    const result = buildGarmentModel([piece('x', 'Ceinture', closed([[0, 0], [10, 0], [10, 10]]))], 'ROBE', measurements);
-    expect(result.ok).toBe(false);
+  it('refuses only when no piece has a usable outline', () => {
+    const empty = piece('x', 'Ceinture', []);
+    expect(buildGarmentModel([empty], 'ROBE', measurements).ok).toBe(false);
+    expect(buildGarmentModel([], 'AUTRE', measurements).ok).toBe(false);
+  });
+
+  it('wraps the largest piece around the body when there are no front/back pieces (any garment can be worn)', () => {
+    const lamba = piece('l', 'Lamba', closed([[0, 0], [1800, 0], [1800, 1100], [0, 1100]]));
+    const result = buildGarmentModel([lamba], 'AUTRE', measurements);
+    if (!result.ok) throw new Error('expected a model');
+    expect(result.model.generic).toBe(true);
+    expect(result.model.panels.map((p) => p.role).sort()).toEqual(['back', 'front']);
+    // The wrap uses the piece width as circumference: 180 cm around a 94 cm hip is "loose".
+    expect(result.model.fit.some((f) => f.status === 'loose')).toBe(true);
+  });
+
+  it('places a trousers pattern on two legs and reports waist/hip ease', () => {
+    const leg = (name: string, w: number) =>
+      piece(name, name, closed([[0, 0], [w, 0], [w - 20, 450], [w - 60, 1000], [w - 90, 1000], [0, 1000]]), 2);
+    const result = buildGarmentModel([leg('Devant Pantalon', 260), leg('Dos Pantalon', 290)], 'PANTALON', {
+      ...measurements,
+      TOUR_TAILLE: 74,
+    });
+    if (!result.ok) throw new Error('expected a model');
+    expect(result.model.generic).toBe(false);
+    const legs = result.model.panels.filter((p) => p.zone === 'legs');
+    expect(legs).toHaveLength(2);
+    const xs = legs.map((p) => p.positions[0]!);
+    expect(Math.sign(xs[0]!)).toBe(-Math.sign(xs[1]!));
+    expect(result.model.fit.map((f) => f.label)).toContain('Bassin');
+    for (const panel of legs) expect(Math.max(...panel.indices)).toBeLessThan(panel.positions.length / 3);
+  });
+
+  it('classifies trousers and "other" garments', () => {
+    expect(classifyPiece('Devant Pantalon', 'PANTALON')).toEqual({ role: 'front', zone: 'legs' });
+    expect(classifyPiece('Dos Pantalon', 'PANTALON')).toEqual({ role: 'back', zone: 'legs' });
+    expect(classifyPiece('Devant', 'AUTRE')).toEqual({ role: 'front', zone: 'torso' });
   });
 
   it('builds front/back panels per zone plus two sleeves, with valid indexed geometry', () => {
@@ -170,5 +206,46 @@ describe('garment-model', () => {
     );
     if (!result.ok) throw new Error('expected a model');
     expect(result.model.ignored).toEqual(['Ceinture']);
+  });
+});
+
+describe('body templates', () => {
+  it('offers several distinct morphologies with unique ids and plausible numbers', () => {
+    expect(BODY_TEMPLATES.length).toBeGreaterThanOrEqual(8);
+    expect(new Set(BODY_TEMPLATES.map((t) => t.id)).size).toBe(BODY_TEMPLATES.length);
+    for (const t of BODY_TEMPLATES) {
+      expect(t.waist).toBeLessThan(t.hip + 0.2);
+      expect(t.height).toBeGreaterThan(1.2);
+      expect(t.thigh).toBeGreaterThan(t.knee);
+      expect(t.knee).toBeGreaterThan(t.ankle);
+    }
+    expect(getBodyTemplate('inconnu').id).toBe('FEMME_STANDARD');
+  });
+
+  it('fills missing measurements from the template and lets given ones win', () => {
+    const athletic = readBodyMeasurements(undefined, 'HOMME_ATHLETIQUE');
+    expect(athletic.shoulderWidth).toBeCloseTo(0.5);
+    expect(athletic.bust).toBeCloseTo(1.08);
+
+    const measured = readBodyMeasurements({ TOUR_POITRINE: 100, LARGEUR_EPAULE: 41 }, 'HOMME_ATHLETIQUE');
+    expect(measured.bust).toBeCloseTo(1.0);
+    expect(measured.shoulderWidth).toBeCloseTo(0.41);
+    expect(measured.waist).toBeCloseTo(0.82); // not measured → template
+  });
+
+  it('scales every landmark with stature, deduced from the waist height when given', () => {
+    const standard = readBodyMeasurements(undefined);
+    const tall = readBodyMeasurements({ HAUTEUR_TAILLE_SOL: 114 });
+    expect(tall.height).toBeCloseTo(1.9);
+    expect(bodyLandmarks(tall).napeY).toBeGreaterThan(bodyLandmarks(standard).napeY);
+    expect(bodyLandmarks(standard).napeY).toBeCloseTo(1.42);
+    expect(readBodyMeasurements({ HAUTEUR_TAILLE_SOL: 9000 }).height).toBe(2.1);
+  });
+
+  it('suggests the closest female silhouette from bust/waist/hip, defaulting when unmeasured', () => {
+    expect(suggestTemplate(undefined)).toBe('FEMME_STANDARD');
+    expect(suggestTemplate({ TOUR_POITRINE: 97, TOUR_TAILLE: 69, TOUR_BASSIN: 99 })).toBe('FEMME_SABLIER');
+    expect(suggestTemplate({ TOUR_POITRINE: 86, TOUR_TAILLE: 73, TOUR_BASSIN: 104 })).toBe('FEMME_POIRE');
+    expect(suggestTemplate({ TOUR_POITRINE: 108, TOUR_TAILLE: 92, TOUR_BASSIN: 114 })).toBe('FEMME_RONDE');
   });
 });

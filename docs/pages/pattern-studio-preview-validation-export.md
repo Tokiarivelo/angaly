@@ -147,3 +147,17 @@ indisponible. Vêtements pris en charge : robe, jupe, chemise, veste, costume (p
   d'où un faux « WebGL indisponible »). Le démarrage réel est protégé par `WebGlBoundary` : en cas d'échec, message
   actionnable (accélération matérielle, extensions anti-canvas), erreur technique et bouton « Réessayer » ; perte de
   contexte GPU gérée de même. Résolution adaptative pendant les interactions (`AdaptiveDpr`).
+
+## Aperçu 3D — tout vêtement + mannequin ajustable (2026-10-08)
+- **Tout vêtement est portable** : robes, jupes, hauts, vestes, costumes et « autre » (devant/dos) ; **pantalons** (deux jambes
+  à partir des pièces devant + dos) ; sans pièce devant/dos (sari, cape, drapé libre…), la plus grande pièce est
+  **enroulée autour du corps** (sa largeur = la circonférence, note « représentation indicative »). Refus seulement si aucune
+  pièce n'a de contour exploitable.
+- **Mannequin à la mesure de la personne** (`utils/garment3d/body-templates.ts`, `body-model.ts`) : 10 morphologies
+  procédurales (femme standard / sablier / poire / rectangle / forte / petite / grande, homme standard / athlétique,
+  enfant 10 ans) ; chaque mesure fournie (poitrine, taille, bassin, cou, épaule, bras, poignet, cuisse, genou, cheville,
+  longueur dos/bras, hauteur taille-sol → stature) **remplace** la valeur du gabarit, le reste vient de la morphologie. Tous les
+  repères se mettent à l'échelle de la stature. La morphologie la plus proche est présélectionnée ; sélecteur « Morphologie ».
+- Mannequin amélioré : cou, tête, bras (coude), mains, cuisses/genoux/chevilles, pieds, teinte de peau par gabarit.
+- Limites : pas de modèle humain téléchargé (le procédural garde chaque dimension pilotée par les mesures) ; la chute du
+  tissu n'est pas simulée ; la maquette Stitch n'a pas été consultée pour le sélecteur.

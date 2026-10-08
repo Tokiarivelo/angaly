@@ -6,7 +6,7 @@ import { AdaptiveDpr, GizmoHelper, GizmoViewport, OrbitControls } from '@react-t
 import * as THREE from 'three';
 import { SLEEVE_TILT, type GarmentModel, type PanelMeshData } from '../utils/garment3d/garment-model';
 import { loftRings } from '../utils/garment3d/body-model';
-import { bodyLandmarks } from '../utils/garment3d/body-model';
+import { bodyLandmarks, bodyScale } from '../utils/garment3d/body-model';
 
 interface Garment3DViewerProps {
   model: GarmentModel;
@@ -42,6 +42,7 @@ const ZONE_COLORS: Record<PanelMeshData['zone'], string> = {
   bodice: '#C5B190',
   torso: '#C5B190',
   skirt: '#7F95B8',
+  legs: '#7F95B8',
   sleeve: '#B08A5B',
 };
 
@@ -83,6 +84,7 @@ const CameraRig: React.FC<{ request: ViewRequest | null }> = ({ request }) => {
 };
 
 const Torso: React.FC<{ model: GarmentModel }> = ({ model }) => {
+  const skin = model.body.skin;
   const geometry = useGeometry(() => {
     const mesh = loftRings(model.torsoRings, 40);
     const g = new THREE.BufferGeometry();
@@ -94,7 +96,7 @@ const Torso: React.FC<{ model: GarmentModel }> = ({ model }) => {
 
   return (
     <mesh geometry={geometry}>
-      <meshStandardMaterial color="#E4DED2" roughness={0.9} metalness={0} />
+      <meshStandardMaterial color={skin} roughness={0.9} metalness={0} />
     </mesh>
   );
 };
@@ -105,7 +107,8 @@ const Limb: React.FC<{
   to: [number, number, number];
   radiusTop: number;
   radiusBottom: number;
-}> = ({ from, to, radiusTop, radiusBottom }) => {
+  color: string;
+}> = ({ from, to, radiusTop, radiusBottom, color }) => {
   const { position, quaternion, length } = useMemo(() => {
     const a = new THREE.Vector3(...from);
     const b = new THREE.Vector3(...to);
@@ -119,41 +122,89 @@ const Limb: React.FC<{
 
   return (
     <mesh position={position} quaternion={quaternion}>
-      <cylinderGeometry args={[radiusTop, radiusBottom, length, 14]} />
-      <meshStandardMaterial color="#E4DED2" roughness={0.9} />
+      <cylinderGeometry args={[radiusTop, radiusBottom, length, 18]} />
+      <meshStandardMaterial color={color} roughness={0.9} />
     </mesh>
   );
 };
 
+const radiusOf = (circumference: number): number => circumference / (2 * Math.PI);
+
+/** Mannequin whose limbs, neck, head and stature come from the measurements / chosen morphology. */
 const Mannequin: React.FC<{ model: GarmentModel }> = ({ model }) => {
-  const landmarks = bodyLandmarks(model.body);
+  const { body } = model;
+  const landmarks = bodyLandmarks(body);
+  const s = bodyScale(body);
   const shoulder = model.torsoRings[1]!;
-  const armEndY = landmarks.shoulderY - Math.cos(SLEEVE_TILT) * model.body.armLength;
-  const armEndX = Math.sin(SLEEVE_TILT) * model.body.armLength;
+  const armEndY = landmarks.shoulderY - Math.cos(SLEEVE_TILT) * body.armLength;
+  const armEndX = Math.sin(SLEEVE_TILT) * body.armLength;
+  const elbow = 0.55; // fraction of the arm where the forearm starts
+  const legX = Math.max(0.085 * s, radiusOf(body.thigh) * 0.95);
+  const kneeY = (landmarks.crotchY + landmarks.ankleY) / 2;
+  const skin = body.skin;
+  const neckR = radiusOf(body.neck);
+  const headY = landmarks.napeY + 0.02 + body.headRadius * 1.15;
 
   return (
     <group>
       <Torso model={model} />
-      <mesh position={[0, landmarks.napeY + 0.115, 0.01]}>
-        <sphereGeometry args={[0.095, 20, 16]} />
-        <meshStandardMaterial color="#E4DED2" roughness={0.9} />
+      <Limb
+        from={[0, landmarks.napeY - 0.01, 0.005]}
+        to={[0, landmarks.napeY + 0.07 * s, 0.015]}
+        radiusTop={neckR * 0.92}
+        radiusBottom={neckR}
+        color={skin}
+      />
+      <mesh position={[0, headY, 0.012]} scale={[0.88, 1.15, 1]}>
+        <sphereGeometry args={[body.headRadius, 24, 18]} />
+        <meshStandardMaterial color={skin} roughness={0.9} />
       </mesh>
-      {[1, -1].map((side) => (
-        <React.Fragment key={side}>
-          <Limb
-            from={[side * (shoulder.a + 0.012), landmarks.shoulderY - 0.01, 0]}
-            to={[side * (shoulder.a + 0.012 + armEndX), armEndY, 0]}
-            radiusTop={0.036}
-            radiusBottom={0.026}
-          />
-          <Limb
-            from={[side * 0.09, landmarks.crotchY, 0]}
-            to={[side * 0.085, landmarks.ankleY, 0]}
-            radiusTop={0.082}
-            radiusBottom={0.036}
-          />
-        </React.Fragment>
-      ))}
+      {[1, -1].map((side) => {
+        const sx = side * (shoulder.a + 0.012);
+        const ex = sx + side * armEndX * elbow;
+        const ey = landmarks.shoulderY - 0.01 - Math.cos(SLEEVE_TILT) * body.armLength * elbow;
+        const wx = side * (shoulder.a + 0.012 + armEndX);
+        return (
+          <React.Fragment key={side}>
+            <Limb
+              from={[sx, landmarks.shoulderY - 0.01, 0]}
+              to={[ex, ey, 0]}
+              radiusTop={radiusOf(body.upperArm)}
+              radiusBottom={radiusOf(body.upperArm) * 0.8}
+              color={skin}
+            />
+            <Limb
+              from={[ex, ey, 0]}
+              to={[wx, armEndY, 0]}
+              radiusTop={radiusOf(body.upperArm) * 0.78}
+              radiusBottom={radiusOf(body.wrist)}
+              color={skin}
+            />
+            <mesh position={[wx, armEndY - 0.035 * s, 0]} scale={[0.8, 1.4, 0.55]}>
+              <sphereGeometry args={[0.04 * s, 14, 10]} />
+              <meshStandardMaterial color={skin} roughness={0.9} />
+            </mesh>
+            <Limb
+              from={[side * legX, landmarks.crotchY, 0]}
+              to={[side * legX * 0.95, kneeY, 0]}
+              radiusTop={radiusOf(body.thigh)}
+              radiusBottom={radiusOf(body.knee)}
+              color={skin}
+            />
+            <Limb
+              from={[side * legX * 0.95, kneeY, 0]}
+              to={[side * legX * 0.9, landmarks.ankleY, 0]}
+              radiusTop={radiusOf(body.knee) * 0.96}
+              radiusBottom={radiusOf(body.ankle)}
+              color={skin}
+            />
+            <mesh position={[side * legX * 0.9, landmarks.ankleY * 0.45, 0.05 * s]} scale={[0.9, 0.5, 2.2]}>
+              <sphereGeometry args={[0.04 * s, 14, 10]} />
+              <meshStandardMaterial color={skin} roughness={0.9} />
+            </mesh>
+          </React.Fragment>
+        );
+      })}
     </group>
   );
 };

@@ -1,3 +1,4 @@
+import userEvent from '@testing-library/user-event';
 import { fireEvent, render, screen } from '@testing-library/react';
 import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest';
 import type { PatternPieceDto } from '@angaly/types';
@@ -93,16 +94,47 @@ describe('Garment3DPanel', () => {
     expect(probe.getAttribute('data-transparent')).toBe('true');
   });
 
-  it('explains when the garment cannot be shown on the mannequin', () => {
+  it('explains when no piece can be placed on the mannequin (no outline at all)', () => {
     render(
       <Garment3DPanel
-        pieces={[piece('x', 'Ceinture', [[0, 0], [700, 0], [700, 70], [0, 70]], 1)]}
+        pieces={[piece('x', 'Ceinture', [[0, 0], [0, 0]], 1)]}
         garmentType="ROBE"
         measurements={measurements}
         selectedPieceId={null}
       />,
     );
     expect(screen.getByTestId('garment-3d-unsupported')).toBeInTheDocument();
+  });
+
+  it('shows any garment: pieces without front/back are wrapped around the body, with a note', () => {
+    render(
+      <Garment3DPanel
+        pieces={[piece('l', 'Lamba', [[0, 0], [1800, 0], [1800, 1100], [0, 1100]], 1)]}
+        garmentType="AUTRE"
+        measurements={measurements}
+        selectedPieceId={null}
+      />,
+    );
+    expect(screen.queryByTestId('garment-3d-unsupported')).not.toBeInTheDocument();
+    expect(screen.getByText(/enroulée autour du corps/)).toBeInTheDocument();
+  });
+
+  it('offers several morphologies, starting from the one closest to the measurements', async () => {
+    const user = userEvent.setup();
+    render(
+      <Garment3DPanel
+        pieces={pieces}
+        garmentType="JUPE"
+        measurements={{ TOUR_POITRINE: 97, TOUR_TAILLE: 69, TOUR_BASSIN: 99 }}
+        selectedPieceId={null}
+      />,
+    );
+    const select = screen.getByLabelText('Morphologie du mannequin') as HTMLSelectElement;
+    expect(select.value).toBe('FEMME_SABLIER');
+    expect(select.options.length).toBeGreaterThanOrEqual(8);
+
+    await user.selectOptions(select, 'HOMME_ATHLETIQUE');
+    expect(select.value).toBe('HOMME_ATHLETIQUE');
   });
 
   it('does not probe WebGL with a throw-away canvas context (probes leak contexts)', async () => {

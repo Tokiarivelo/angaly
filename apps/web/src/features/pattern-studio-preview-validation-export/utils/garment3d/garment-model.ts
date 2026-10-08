@@ -2,6 +2,7 @@ import type { PatternPieceDto } from '@angaly/types';
 import { getBounds, openPolygon, polygonAreaCm2, type Point } from '../pattern-geometry';
 import {
   bodyLandmarks,
+  bodyScale,
   buildTorsoRings,
   ellipseCircumference,
   ellipseSemiAxes,
@@ -10,9 +11,10 @@ import {
   type BodyMeasurements,
   type BodyRing,
 } from './body-model';
+import type { BodyTemplateId } from './body-templates';
 
 export type PanelRole = 'front' | 'back' | 'sleeve';
-export type GarmentZone = 'bodice' | 'skirt' | 'torso';
+export type GarmentZone = 'bodice' | 'skirt' | 'torso' | 'legs';
 
 export interface PanelMeshData {
   id: string;
@@ -46,6 +48,8 @@ export interface GarmentModel {
   fit: FitLine[];
   /** Pieces that were not placed on the mannequin (collars, belts, trains…). */
   ignored: string[];
+  /** True when no front/back pieces exist and the largest piece is wrapped around the body instead. */
+  generic: boolean;
 }
 
 export type GarmentModelResult =
@@ -59,12 +63,14 @@ interface Classified {
   zone: GarmentZone | 'sleeve';
   minY: number;
   maxY: number;
+  /** Overrides the fold factor (generic wraps: the piece is the whole width). */
+  fold?: number;
 }
 
 const normalize = (name: string): string =>
   name.normalize('NFD').replace(/[̀-ͯ]/g, '').toLowerCase();
 
-const TORSO_GARMENTS = new Set(['CHEMISE', 'VESTE', 'COSTUME']);
+const TORSO_GARMENTS = new Set(['CHEMISE', 'VESTE', 'COSTUME', 'AUTRE']);
 
 export const classifyPiece = (
   name: string,
@@ -79,6 +85,7 @@ export const classifyPiece = (
   if (n.includes('corsage') || n.includes('buste') || n.includes('haut')) return { role, zone: 'bodice' };
   if (n.includes('jupe')) return { role, zone: 'skirt' };
   if (garmentType === 'JUPE') return { role, zone: 'skirt' };
+  if (garmentType === 'PANTALON') return { role, zone: 'legs' };
   if (TORSO_GARMENTS.has(garmentType)) return { role, zone: 'torso' };
   return null;
 };
@@ -118,12 +125,26 @@ interface ZoneGroup {
   back?: Classified | undefined;
 }
 
-const foldFactor = (c: Classified): number => (c.piece.quantity === 1 ? 2 : c.piece.quantity);
+const foldFactor = (c: Classified): number => c.fold ?? (c.piece.quantity === 1 ? 2 : c.piece.quantity);
 
 const halfWidthAt = (c: Classified, flatY: number): number => {
   const y = Math.min(c.maxY - FLAT_EPSILON, Math.max(c.minY + FLAT_EPSILON, flatY));
   const extent = rowExtent(c.polygon, y);
   return extent ? extent[1] : 0;
+};
+
+/** Full width (mm) of a piece on a flat row — a trouser leg panel is one whole leg side, not a half. */
+const fullWidthAt = (c: Classified, flatY: number): number => {
+  const y = Math.min(c.maxY - FLAT_EPSILON, Math.max(c.minY + FLAT_EPSILON, flatY));
+  const extent = rowExtent(c.polygon, y);
+  return extent ? extent[1] - extent[0] : 0;
+};
+
+/** One trouser leg circumference (m) at a flat row: front width + back width. */
+const legCircumference = (group: ZoneGroup, flatY: number): number => {
+  const f = group.front ? fullWidthAt(group.front, flatY) / 1000 : 0;
+  const b = group.back ? fullWidthAt(group.back, flatY) / 1000 : 0;
+  return (f || b) + (b || f);
 };
 
 /** Total garment circumference (m) at a flat-y position of a zone, summing front and back panels. */
@@ -199,6 +220,65 @@ const buildHalfStrips = (
     }
   }
 
+  return { positions, indices, border };
+};
+
+const LEG_RADIAL = 20;
+
+/** Radius (m) of the mannequin's leg at height y — thigh at the crotch, knee, then ankle. */
+const bodyLegRadius = (body: BodyMeasurements, y: number): number => {
+  const l = bodyLandmarks(body);
+  const kneeY = (l.crotchY + l.ankleY) / 2;
+  const t = (value: number) => value / (2 * Math.PI);
+  if (y >= l.crotchY) return t(body.thigh);
+  if (y >= kneeY) return t(body.thigh) + ((t(body.knee) - t(body.thigh)) * (l.crotchY - y)) / (l.crotchY - kneeY);
+  return t(body.knee) + ((t(body.ankle) - t(body.knee)) * (kneeY - Math.max(y, l.ankleY))) / (kneeY - l.ankleY);
+};
+
+const buildLeg = (
+  group: ZoneGroup,
+  side: 1 | -1,
+  body: BodyMeasurements,
+): { positions: number[]; indices: number[]; border: number[] } => {
+  const panel = (group.front ?? group.back)!;
+  const s = bodyScale(body);
+  const positions: number[] = [];
+  const indices: number[] = [];
+  const ringStarts: number[] = [];
+  for (let i = 0; i <= ROWS; i += 1) {
+    const flatY = panel.minY + FLAT_EPSILON + ((panel.maxY - panel.minY - 2 * FLAT_EPSILON) * i) / ROWS;
+    const y = group.topY - flatY / 1000;
+    // Visual guard only, as for the torso: never narrower than the leg inside.
+    const radius = Math.max(legCircumference(group, flatY) / (2 * Math.PI), bodyLegRadius(body, y) * 1.03);
+    const cx = side * Math.max(0.09 * s, radius * 0.95);
+    ringStarts.push(positions.length / 3);
+    for (let j = 0; j < LEG_RADIAL; j += 1) {
+      const t = (j / LEG_RADIAL) * Math.PI * 2;
+      positions.push(cx + radius * Math.sin(t), y, radius * Math.cos(t) * 0.92);
+    }
+  }
+  for (let i = 0; i < ROWS; i += 1) {
+    for (let j = 0; j < LEG_RADIAL; j += 1) {
+      const next = (j + 1) % LEG_RADIAL;
+      const a = ringStarts[i]! + j;
+      const b = ringStarts[i]! + next;
+      const c = ringStarts[i + 1]! + j;
+      const d = ringStarts[i + 1]! + next;
+      indices.push(a, c, b, b, c, d);
+    }
+  }
+  const border: number[] = [];
+  const hem = ringStarts[ROWS]!;
+  for (let j = 0; j < LEG_RADIAL; j += 1) {
+    const from = (hem + j) * 3;
+    const to = (hem + ((j + 1) % LEG_RADIAL)) * 3;
+    border.push(positions[from]!, positions[from + 1]!, positions[from + 2]!, positions[to]!, positions[to + 1]!, positions[to + 2]!);
+  }
+  for (let i = 0; i < ROWS; i += 1) {
+    const from = ringStarts[i]! * 3;
+    const to = ringStarts[i + 1]! * 3;
+    border.push(positions[from]!, positions[from + 1]!, positions[from + 2]!, positions[to]!, positions[to + 1]!, positions[to + 2]!);
+  }
   return { positions, indices, border };
 };
 
@@ -280,17 +360,20 @@ export const buildGarmentModel = (
   pieces: PatternPieceDto[],
   garmentType: string,
   measurements: Record<string, number> | null | undefined,
+  templateId?: BodyTemplateId | string | null,
 ): GarmentModelResult => {
-  const body = readBodyMeasurements(measurements);
+  const body = readBodyMeasurements(measurements, templateId);
   const landmarks = bodyLandmarks(body);
   const rings = buildTorsoRings(body);
 
   const classified: Classified[] = [];
+  /** Pieces with a usable outline that no front/back rule recognised (candidates for the generic wrap). */
+  const unrecognised: Classified[] = [];
   const ignored: string[] = [];
   for (const piece of pieces) {
     const outline = (piece.dimensionsJson as { outlineMm?: Point[] } | null)?.outlineMm;
     const role = classifyPiece(piece.name, garmentType);
-    if (!role || !outline || outline.length < 3) {
+    if (!outline || outline.length < 3) {
       ignored.push(piece.name);
       continue;
     }
@@ -300,30 +383,76 @@ export const buildGarmentModel = (
       ignored.push(piece.name);
       continue;
     }
+    if (!role) {
+      unrecognised.push({
+        piece,
+        polygon: polygon.map((pt) => ({ x: pt.x - bounds.minX, y: pt.y })),
+        role: 'front',
+        zone: 'torso',
+        minY: bounds.minY,
+        maxY: bounds.maxY,
+        fold: 0.5,
+      });
+      continue;
+    }
     classified.push({ piece, polygon, role: role.role, zone: role.zone, minY: bounds.minY, maxY: bounds.maxY });
   }
 
-  const bodyPanels = classified.filter((c) => c.role !== 'sleeve');
-  if (bodyPanels.length === 0) {
-    return {
-      ok: false,
-      reason:
-        'La prévisualisation 3D est disponible pour les robes, jupes, chemises, vestes et costumes. ' +
-        'Ce vêtement n’a pas de pièces devant/dos reconnaissables.',
-    };
+  let generic = false;
+  let genericTopY: number | null = null;
+  if (classified.filter((c) => c.role !== 'sleeve').length === 0) {
+    // Any garment can be worn: with no front/back pieces (saris, capes, free drapes, "other"), the
+    // largest piece is wrapped around the body, its width being the circumference.
+    const wrap = pickLargest(unrecognised);
+    if (!wrap) {
+      return {
+        ok: false,
+        reason: 'Aucune pièce du patron ne peut être posée sur le mannequin (contours manquants ou vides).',
+      };
+    }
+    generic = true;
+    const heightM = (wrap.maxY - wrap.minY) / 1000;
+    genericTopY = Math.min(landmarks.napeY, heightM + 0.05);
+    classified.push({ ...wrap, role: 'front', zone: 'torso' }, { ...wrap, role: 'back', zone: 'torso' });
+    unrecognised.splice(unrecognised.indexOf(wrap), 1);
   }
+  for (const rest of unrecognised) ignored.push(rest.piece.name);
 
   const zones: ZoneGroup[] = [];
-  for (const zone of ['bodice', 'torso', 'skirt'] as const) {
+  for (const zone of ['bodice', 'torso', 'legs', 'skirt'] as const) {
     const inZone = classified.filter((c) => c.zone === zone);
     const front = pickLargest(inZone.filter((c) => c.role === 'front'));
     const back = pickLargest(inZone.filter((c) => c.role === 'back'));
     if (!front && !back) continue;
-    zones.push({ zone, topY: zone === 'skirt' ? landmarks.waistY : landmarks.napeY, front, back });
+    const topY =
+      zone === 'skirt' || zone === 'legs'
+        ? landmarks.waistY
+        : generic && genericTopY !== null
+          ? genericTopY
+          : landmarks.napeY;
+    zones.push({ zone, topY, front, back });
   }
 
   const panels: PanelMeshData[] = [];
   for (const group of zones) {
+    if (group.zone === 'legs') {
+      for (const side of [1, -1] as const) {
+        const mesh = buildLeg(group, side, body);
+        const ref = (group.front ?? group.back)!;
+        panels.push({
+          id: `legs-${side}`,
+          label: side === 1 ? 'Jambe gauche' : 'Jambe droite',
+          role: 'front',
+          zone: 'legs',
+          pieceIds: classified.filter((c) => c.zone === 'legs').map((c) => c.piece.id),
+          positions: Float32Array.from(mesh.positions),
+          indices: Uint32Array.from(mesh.indices),
+          border: Float32Array.from(mesh.border),
+          explode: { x: side, y: 0, z: ref.role === 'front' ? 0.3 : -0.3 },
+        });
+      }
+      continue;
+    }
     for (const panel of [group.front, group.back]) {
       if (!panel) continue;
       const mesh = buildHalfStrips(group, panel, rings);
@@ -365,6 +494,8 @@ export const buildGarmentModel = (
       if (!ref) continue;
       const flatY = (group.topY - worldY) * 1000;
       if (flatY < ref.minY || flatY > ref.maxY) continue;
+      // Both legs together make the trouser circumference.
+      if (group.zone === 'legs') return legCircumference(group, flatY) * 2 * 100;
       return zoneCircumference(group, flatY).total * 100;
     }
     return null;
@@ -378,8 +509,8 @@ export const buildGarmentModel = (
   const fit: FitLine[] = [];
   const candidates: Array<[FitLine['label'], number, GarmentZone[]]> = [
     ['Poitrine', landmarks.bustY, ['bodice', 'torso']],
-    ['Taille', landmarks.waistY - 0.005, ['bodice', 'torso', 'skirt']],
-    ['Bassin', landmarks.hipY, ['skirt', 'torso']],
+    ['Taille', landmarks.waistY - 0.005, ['bodice', 'torso', 'skirt', 'legs']],
+    ['Bassin', landmarks.hipY, ['skirt', 'torso', 'legs']],
   ];
   for (const [label, y, zoneNames] of candidates) {
     const garmentCm = circumferenceCmAt(y, zoneNames);
@@ -395,5 +526,5 @@ export const buildGarmentModel = (
     });
   }
 
-  return { ok: true, model: { body, torsoRings: rings, panels, fit, ignored } };
+  return { ok: true, model: { body, torsoRings: rings, panels, fit, ignored, generic } };
 };

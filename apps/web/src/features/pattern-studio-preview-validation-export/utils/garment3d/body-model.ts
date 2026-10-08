@@ -1,3 +1,5 @@
+import { DEFAULT_TEMPLATE_ID, getBodyTemplate, type BodyTemplateId } from './body-templates';
+
 /**
  * Parametric mannequin built from the customer's measurements (metres, y up, +z = front).
  * Pure functions, no three.js: the viewer only turns these numbers into meshes.
@@ -11,27 +13,61 @@ export interface BodyMeasurements {
   /** Nape-to-waist length. */
   backLength: number;
   armLength: number;
+  /** Stature (m); every landmark scales with it (1.70 m = the historical mannequin). */
+  height: number;
+  shoulderWidth: number;
+  thigh: number;
+  knee: number;
+  ankle: number;
+  upperArm: number;
+  wrist: number;
+  /** Torso cross-section depth / width at bust, waist, hip. */
+  depth: { bust: number; waist: number; hip: number };
+  headRadius: number;
+  skin: string;
 }
 
-const DEFAULTS = { bust: 0.88, waist: 0.68, hip: 0.94, neck: 0.36, backLength: 0.4, armLength: 0.58 };
+/** Stature the fixed landmark offsets below were drawn for. */
+const REFERENCE_HEIGHT = 1.7;
+/** Waist height ÷ stature, to deduce stature from HAUTEUR_TAILLE_SOL when it is given. */
+const WAIST_HEIGHT_RATIO = 0.6;
+
+const scaleOf = (body: Pick<BodyMeasurements, 'height'>): number => body.height / REFERENCE_HEIGHT;
 
 const cm = (value: number | undefined, fallback: number): number =>
   typeof value === 'number' && Number.isFinite(value) && value > 0 ? value / 100 : fallback;
 
 const clamp = (value: number, min: number, max: number): number => Math.min(max, Math.max(min, value));
 
-/** Reads the version's `measurements` (cm, engine keys) and keeps every value in a plausible range. */
+/**
+ * Reads the version's `measurements` (cm, engine keys), keeps every value in a plausible range, and
+ * fills whatever is missing from the chosen morphology template (never from a fixed average).
+ */
 export const readBodyMeasurements = (
   measurements: Record<string, number> | null | undefined,
+  templateId: BodyTemplateId | string | null | undefined = DEFAULT_TEMPLATE_ID,
 ): BodyMeasurements => {
   const m = measurements ?? {};
+  const t = getBodyTemplate(templateId);
+  const waistFloor = cm(m['HAUTEUR_TAILLE_SOL'], 0);
+  const height = waistFloor > 0 ? clamp(waistFloor / WAIST_HEIGHT_RATIO, 1.2, 2.1) : t.height;
   return {
-    bust: clamp(cm(m['TOUR_POITRINE'], DEFAULTS.bust), 0.6, 1.5),
-    waist: clamp(cm(m['TOUR_TAILLE'], DEFAULTS.waist), 0.5, 1.4),
-    hip: clamp(cm(m['TOUR_BASSIN'], DEFAULTS.hip), 0.6, 1.6),
-    neck: clamp(cm(m['TOUR_COU'], DEFAULTS.neck), 0.28, 0.5),
-    backLength: clamp(cm(m['LONGUEUR_DOS'], DEFAULTS.backLength), 0.32, 0.5),
-    armLength: clamp(cm(m['LONGUEUR_BRAS'], DEFAULTS.armLength), 0.45, 0.72),
+    bust: clamp(cm(m['TOUR_POITRINE'], t.bust), 0.5, 1.5),
+    waist: clamp(cm(m['TOUR_TAILLE'], t.waist), 0.5, 1.4),
+    hip: clamp(cm(m['TOUR_BASSIN'], t.hip), 0.6, 1.6),
+    neck: clamp(cm(m['TOUR_COU'], t.neck), 0.26, 0.5),
+    backLength: clamp(cm(m['LONGUEUR_DOS'], t.backLength), 0.3, 0.5),
+    armLength: clamp(cm(m['LONGUEUR_BRAS'], t.armLength), 0.42, 0.72),
+    height,
+    shoulderWidth: clamp(cm(m['LARGEUR_EPAULE'], t.shoulderWidth), 0.26, 0.56),
+    thigh: clamp(cm(m['TOUR_CUISSE'], t.thigh), 0.36, 0.85),
+    knee: clamp(cm(m['TOUR_GENOU'], t.knee), 0.26, 0.55),
+    ankle: clamp(cm(m['TOUR_CHEVILLE'], t.ankle), 0.15, 0.32),
+    upperArm: clamp(cm(m['TOUR_BRAS'], t.upperArm), 0.17, 0.45),
+    wrist: clamp(cm(m['TOUR_POIGNET'], t.wrist), 0.11, 0.24),
+    depth: t.depth,
+    headRadius: t.headRadius,
+    skin: t.skin,
   };
 };
 
@@ -64,32 +100,40 @@ export interface BodyLandmarks {
 
 export const NAPE_Y = 1.42;
 
+/** Scale of the fixed landmark offsets for a given stature. */
+export const bodyScale = scaleOf;
+
 export const bodyLandmarks = (body: BodyMeasurements): BodyLandmarks => {
-  const waistY = NAPE_Y - body.backLength;
+  const s = scaleOf(body);
+  const napeY = NAPE_Y * s;
+  const waistY = napeY - body.backLength;
   return {
-    napeY: NAPE_Y,
-    shoulderY: NAPE_Y - 0.05,
-    bustY: NAPE_Y - 0.2,
+    napeY,
+    shoulderY: napeY - 0.05 * s,
+    bustY: napeY - 0.2 * s,
     waistY,
-    hipY: waistY - 0.2,
-    crotchY: waistY - 0.3,
-    ankleY: 0.08,
+    hipY: waistY - 0.2 * s,
+    crotchY: waistY - 0.3 * s,
+    ankleY: 0.08 * s,
   };
 };
 
 /** Torso cross-sections from the nape down to the crotch, strictly decreasing in y. */
 export const buildTorsoRings = (body: BodyMeasurements): BodyRing[] => {
   const l = bodyLandmarks(body);
+  const s = scaleOf(body);
+  const d = body.depth;
+  const shoulderCircumference = body.bust * 0.88 * clamp(body.shoulderWidth / 0.35, 0.8, 1.4);
   const keys: Array<[number, number, number]> = [
     [l.napeY, body.neck, 1],
-    [l.shoulderY, body.bust * 0.88, 0.55],
-    [l.napeY - 0.14, body.bust * 0.97, 0.66],
-    [l.bustY, body.bust, 0.78],
-    [l.bustY - 0.07, body.bust * 0.9, 0.78],
-    [l.waistY, body.waist, 0.74],
-    [l.waistY - 0.1, (body.waist + body.hip) / 2, 0.76],
-    [l.hipY, body.hip, 0.78],
-    [l.crotchY, body.hip * 0.95, 0.8],
+    [l.shoulderY, shoulderCircumference, 0.55],
+    [l.napeY - 0.14 * s, body.bust * 0.97, d.bust - 0.12],
+    [l.bustY, body.bust, d.bust],
+    [l.bustY - 0.07 * s, body.bust * 0.9, d.bust],
+    [l.waistY, body.waist, d.waist],
+    [l.waistY - 0.1 * s, (body.waist + body.hip) / 2, (d.waist + d.hip) / 2],
+    [l.hipY, body.hip, d.hip],
+    [l.crotchY, body.hip * 0.95, d.hip + 0.02],
   ];
   return keys.map(([y, circumference, ratio]) => {
     const { a, b } = ellipseSemiAxes(circumference, ratio);
