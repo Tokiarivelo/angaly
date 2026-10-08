@@ -218,3 +218,37 @@ la pince de poitrine est un coin sur la couture côté, pas un dessin de pince p
 coordonnées non finies, surface < 25 cm², contour auto-sécant. Un test balaie vêtement × coupe × aisance
 (avec ampleur et longueurs extrêmes) et exige zéro avertissement. Les règles peuvent aussi émettre leurs propres
 avertissements (`IPatternRule.warnings?`) : `AutreRule` signale le bloc de base générique (l'API ne l'ajoute plus).
+
+## Blocs de drapé déterministes (Phase 5b S4, engine `0.3.0-drape`)
+
+Code : `packages/pattern-engine/src/blocks/` (fonctions pures : tour de taille / longueur / paramètres →
+pièces fermées en mm). Entrée : `parameters.drape = { blocks: [...] }` (stocké dans
+`pattern_projects.parametersExtJson.drape`, validé par `validatePatternExtParameters`). **Absent = géométrie
+historique à l'identique** (test bit à bit).
+
+| Bloc | Paramètres (bornes) | Formule | Pièces |
+|------|---------------------|---------|--------|
+| `GATHERED_SKIRT` | `fullness` 1,25–4 (pas 0,25) | largeur de coupe totale = taille × ampleur, 2 panneaux ; repères de fronces aux ¼, ½, ¾ | « Jupe froncée (panneau) » ×2 |
+| `PLEATED_SKIRT` | `pleats` 4–60, `depthMm` 10–80, `type` KNIFE\|BOX | largeur = taille + plis × extra ; extra = `depthMm` (plat) ou 2 × `depthMm` (creux) ; 1 repère par pli et par panneau | « Jupe plissée … (panneau) » ×2 |
+| `CIRCLE_SKIRT` | `fraction` 0,25 \| 0,5 \| 1 | secteur annulaire, rayon intérieur `r = taille / (2π × fraction)`, rayon extérieur `r + longueur` ; arcs échantillonnés à 65 points ; le cercle complet est livré en 2 demi-pièces | quart / demi / « cercle (demi-pièce) » ×2 |
+| `WRAP_FRONT` | `overlapMm` 40–250, `side` LEFT\|RIGHT | le devant (coupé au pli) devient « dessus croisé » (milieu devant décalé de `overlapMm`, repères de fermeture à 20 % / 80 %) + « dessous croisé » (35 % du croisement) | remplace Corsage Devant / Bustier Devant / Devant (jupe) |
+| `COWL_NECK` | `depthMm` 60–300 | trapèze taillé **dans le biais** (fil à 45°) : haut = ouverture d'encolure, bas = haut + 1,2 × profondeur, hauteur = profondeur + 12 cm | « Col bénitier (taillé dans le biais) » |
+
+Règles d'intégration (`jupe`, `robe`, `robe-mariee`) :
+- un **bloc de jupe** remplace les panneaux de jupe ; le tour de taille utilisé = tour de taille + 4 cm +
+  4 × delta de taille (donc il suit la coupe et l'aisance), la longueur = longueur de jupe résolue
+  (`LONGUEUR_JUPE`, détail `longueur`, `lengths.skirtPct`) ;
+- **mariée** : un bloc de jupe remplace jupe devant/côté/dos **et jupon** ; la traîne n'est pas incluse
+  (avertissement, bloc dédié prévu en S5) ;
+- **jupe** : `WRAP_FRONT` + bloc de jupe → le portefeuille est ignoré (avertissement) ;
+- au plus un bloc par type et un seul bloc de jupe (sinon rejet 400 au PATCH) ; 3 blocs maximum.
+
+**Métrage indicatif** — `metadata.yardage = { fabricWidthMm: 1400, lengthMm, method }` pour **toute**
+génération : somme des encombrements (marges de couture incluses) × quantité ÷ laize 140 cm, +12 % de chutes,
+arrondi à 5 cm. Une pièce qu'aucune orientation ne permet de placer dans la laize déclenche
+« tissu d'au moins N cm de large requis ». Indicatif seulement : la couturière confirme.
+
+Limites : pas encore de sélection de bloc par l'IA ni d'écran de choix (S5) ; l'export PDF/SVG de l'API est
+encore un gabarit (`export-pattern-version.use-case.ts`), donc l'export des pièces de blocs n'est pas testé de
+bout en bout — l'aperçu web et les tests moteur valident la fermeture, l'absence d'auto-intersection et la
+symétrie des contours.

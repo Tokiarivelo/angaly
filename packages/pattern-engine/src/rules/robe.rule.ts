@@ -11,6 +11,7 @@ import {
   resolveSleeve,
 } from '../shared/cut-profile';
 import { skirtOutline, sleevePiece } from '../shared/shapes';
+import { buildSkirtBlock, computeCowlNeck, resolveDrape, wrapFrontPiece } from '../blocks';
 import {
   bodiceLengthFactor,
   fitSleeve,
@@ -139,7 +140,19 @@ export const RobeRule: IPatternRule = {
       dartSegmentIdx: null,
     });
 
-    const pieces = [corsageDevant, corsageDos, jupeDevant, jupeDos];
+    // Blocs de drapé (S4) : un bloc de jupe remplace les panneaux de jupe de la règle ; le portefeuille
+    // croise le devant du corsage ; le col bénitier ajoute une pièce taillée dans le biais.
+    const drape = resolveDrape(parameters);
+    const waistCircumference = tt + 40 + 4 * profile.waistDeltaMm;
+    let pieces: PatternPieceGeometry[] = [
+      corsageDevant,
+      corsageDos,
+      ...(drape.skirt
+        ? buildSkirtBlock(drape.skirt, waistCircumference, longueurJupe)
+        : [jupeDevant, jupeDos]),
+    ];
+    if (drape.wrap) pieces = wrapFrontPiece(pieces, 'Corsage Devant', drape.wrap);
+    if (drape.cowl) pieces.push(computeCowlNeck(neckline.widthMm, drape.cowl.depthMm));
 
     const sleeve = fitSleeve(
       resolveSleeve(

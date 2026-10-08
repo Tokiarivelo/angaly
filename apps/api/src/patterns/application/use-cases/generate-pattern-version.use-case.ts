@@ -112,6 +112,7 @@ export class GeneratePatternVersionUseCase {
       ...(ext.ease ? { ease: ext.ease } : {}),
       ...(ext.fullness ? { fullness: ext.fullness } : {}),
       ...(ext.lengths ? { lengths: ext.lengths } : {}),
+      ...(ext.drape ? { drape: ext.drape } : {}),
     };
 
     // Calcul géométrique déterministe via le pattern-engine — aucune valeur

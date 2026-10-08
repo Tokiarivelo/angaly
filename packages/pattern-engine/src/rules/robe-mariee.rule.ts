@@ -19,6 +19,7 @@ import {
   skirtFullnessExtraMm,
   withEase,
 } from '../shared/fit';
+import { buildSkirtBlock, computeCowlNeck, resolveDrape, wrapFrontPiece } from '../blocks';
 
 /**
  * ROBE_MARIEE — construction dédiée, distincte de `robe.rule.ts`.
@@ -54,6 +55,15 @@ export const RobeMarieeRule: IPatternRule = {
   requiredMeasurementKeys: REQUIRED_MEASUREMENTS,
   appliesTo(parameters: PatternParameters): boolean {
     return parameters.garmentType === 'ROBE_MARIEE';
+  },
+  warnings(parameters: PatternParameters): string[] {
+    const drape = resolveDrape(parameters);
+    return drape.skirt
+      ? [
+          'Bloc de jupe sur robe de mariée : la traîne et le jupon ne sont pas inclus dans ce bloc ' +
+            '(à ajouter séparément).',
+        ]
+      : [];
   },
   computePieces(
     parameters: PatternParameters,
@@ -279,7 +289,20 @@ export const RobeMarieeRule: IPatternRule = {
       dartSegmentIdx: 2,
     });
 
-    const pieces = [bustierDevant, bustierCote, bustierDos, jupeDevant, jupeCote, jupeDosTraine, jupon];
+    // Blocs de drapé (S4). Un bloc de jupe remplace tous les panneaux de jupe (la traîne n'y est pas
+    // incluse — elle viendra d'un bloc dédié, voir warnings) ; le portefeuille croise le bustier ;
+    // le col bénitier ajoute une pièce taillée dans le biais.
+    const drape = resolveDrape(parameters);
+    let pieces: PatternPieceGeometry[] = [
+      bustierDevant,
+      bustierCote,
+      bustierDos,
+      ...(drape.skirt
+        ? buildSkirtBlock(drape.skirt, tt + 40 + 4 * profile.waistDeltaMm, longueurJupeDevant, 'Duchesse, Mikado ou Organza')
+        : [jupeDevant, jupeCote, jupeDosTraine, jupon]),
+    ];
+    if (drape.wrap) pieces = wrapFrontPiece(pieces, 'Bustier Devant (Princesse)', drape.wrap);
+    if (drape.cowl) pieces.push(computeCowlNeck(neck?.widthMm ?? 80, drape.cowl.depthMm));
     if (sleeve) {
       pieces.push(sleevePiece('Manche', tp, sleeve, 'Dentelle, Organza ou Mikado', 10, measurements));
     }

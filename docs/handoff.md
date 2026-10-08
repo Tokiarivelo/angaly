@@ -44,7 +44,14 @@ l'aperçu), étapes animées + compteur + message « toujours en cours », bouto
 `loading.tsx` sur `/pattern-studio/projects/[projectId]`, et bannière d'erreur si la génération échoue.
 Tests : `GenerationLoading.test.tsx`, `PatternStudioWizard.generate.test.tsx`.
 
-**Prochaine action : S4** — blocs de drapé déterministes (jupe froncée/plissée/cercle, portefeuille, col bénitier :
+**S4 livrée** — blocs de drapé (froncée, plissée, cercle, portefeuille, col bénitier), `parameters.drape`,
+métrage indicatif, avertissements de laize ; moteur `0.3.0-drape`, 184 tests (90,6 % de couverture). Aucune UI
+pour choisir un bloc pour l'instant (PATCH `parametersExtJson.drape` seulement) → S5.
+
+**Prochaine action : S5** — drapé avancé (traîne, surjupe, manches ballon/papillon via `fullness.sleeve`,
+bustier drapé, ourlet asymétrique), sélection de bloc par l'IA validée (`drapeBlocks` dans le profil),
+arbre de décision « meilleure approche », fiche de moulage mannequin ; UI de choix (consulter Stitch avant JSX).
+(Ancien texte S4 :) — blocs de drapé déterministes (jupe froncée/plissée/cercle, portefeuille, col bénitier :
 `packages/pattern-engine/src/blocks/*.ts`, `DrapeSpec`, métrage indicatif, `warnings[]`) — voir la phase 5b §S4.
 (Ancien texte S3 :) l'analyse photo remplit `ease/fullness/lengths` (prompt + `normalize_profile`
 bornage + fusion API client > photo > IA) et écran « Ajustements déduits de la photo » (consulter Stitch via

@@ -7,6 +7,8 @@ import {
   MEASUREMENT_CATALOG,
   MeasurementUnit,
   checkMeasurementCoherence,
+  listPatternExtKeys,
+  mergePatternExtParameters,
   measurementFieldsFor,
   recommendedMeasurementKeysFor,
   requiredMeasurementKeysFor,
@@ -209,5 +211,75 @@ describe('assertValidMeasurements', () => {
     // 28 in = 71 cm: plausible waist; 28 cm would not be.
     expect(() => assertValidMeasurements({ TOUR_TAILLE: 28 }, MeasurementUnit.INCH)).not.toThrow();
     expect(() => assertValidMeasurements({ TOUR_TAILLE: 28 }, MeasurementUnit.CM)).toThrow(BadRequestException);
+  });
+});
+
+describe('validatePatternExtParameters — drape blocks (S4)', () => {
+  const drape = (...blocks: unknown[]) => validatePatternExtParameters({ drape: { blocks } });
+
+  it('accepts every block kind and snaps numbers to their step', () => {
+    const { value, issues } = drape(
+      { kind: 'PLEATED_SKIRT', pleats: 24.4, depthMm: 25, type: 'BOX' },
+      { kind: 'WRAP_FRONT', overlapMm: 100, side: 'LEFT' },
+      { kind: 'COWL_NECK', depthMm: 150 },
+    );
+    expect(issues).toEqual([]);
+    expect(value.drape?.blocks).toEqual([
+      { kind: 'PLEATED_SKIRT', pleats: 24, depthMm: 25, type: 'BOX' },
+      { kind: 'WRAP_FRONT', overlapMm: 100, side: 'LEFT' },
+      { kind: 'COWL_NECK', depthMm: 150 },
+    ]);
+    expect(drape({ kind: 'GATHERED_SKIRT', fullness: 2.1 }).value.drape?.blocks).toEqual([
+      { kind: 'GATHERED_SKIRT', fullness: 2 },
+    ]);
+    for (const fraction of [0.25, 0.5, 1]) {
+      expect(drape({ kind: 'CIRCLE_SKIRT', fraction }).value.drape?.blocks[0]).toEqual({ kind: 'CIRCLE_SKIRT', fraction });
+    }
+  });
+
+  it('rejects out-of-range numbers, unknown kinds and bad enums — dropping only the bad block', () => {
+    const { value, issues } = drape(
+      { kind: 'GATHERED_SKIRT', fullness: 9 },
+      { kind: 'COWL_NECK', depthMm: 150 },
+      { kind: 'CIRCLE_SKIRT', fraction: 0.3 },
+    );
+    expect(value.drape?.blocks).toEqual([{ kind: 'COWL_NECK', depthMm: 150 }]);
+    expect(issues.map((i) => i.path)).toEqual(['drape.blocks[0].fullness', 'drape.blocks[2].fraction']);
+    expect(drape({ kind: 'HOVERCRAFT' }).issues[0]?.path).toBe('drape.blocks[0].kind');
+  });
+
+  it('requires the mandatory fields of each block', () => {
+    expect(drape({ kind: 'GATHERED_SKIRT' }).issues).toHaveLength(1);
+    expect(drape({ kind: 'PLEATED_SKIRT', pleats: 10, type: 'KNIFE' }).issues.length).toBeGreaterThan(0);
+    expect(drape({ kind: 'WRAP_FRONT', overlapMm: 100 }).issues).toHaveLength(1);
+    expect(drape({ kind: 'COWL_NECK' }).value.drape).toBeUndefined();
+  });
+
+  it('allows one block per kind and a single skirt block', () => {
+    const twoSkirts = drape({ kind: 'GATHERED_SKIRT', fullness: 2 }, { kind: 'CIRCLE_SKIRT', fraction: 1 });
+    expect(twoSkirts.value.drape?.blocks).toEqual([{ kind: 'GATHERED_SKIRT', fullness: 2 }]);
+    expect(twoSkirts.issues[0]?.message).toMatch(/Un seul bloc de jupe/);
+    const twice = drape({ kind: 'COWL_NECK', depthMm: 100 }, { kind: 'COWL_NECK', depthMm: 200 });
+    expect(twice.value.drape?.blocks).toHaveLength(1);
+    expect(twice.issues).toHaveLength(1);
+  });
+
+  it('caps the number of blocks and rejects malformed specs', () => {
+    expect(drape(...Array.from({ length: 4 }, () => ({ kind: 'COWL_NECK', depthMm: 100 }))).issues.length).toBeGreaterThan(0);
+    expect(validatePatternExtParameters({ drape: 'x' }).issues).toHaveLength(1);
+    expect(validatePatternExtParameters({ drape: { blocks: 'x' } }).issues).toHaveLength(1);
+    expect(validatePatternExtParameters({ drape: { blocks: [] } })).toEqual({ value: {}, issues: [] });
+    expect(validatePatternExtParameters({ drape: { blocks: [42] } }).issues).toHaveLength(1);
+  });
+
+  it('merges drape as one indivisible choice: the first source with a valid one wins', () => {
+    const { value, origin } = mergePatternExtParameters(
+      { ease: 'AMPLE' },
+      { drape: { blocks: [{ kind: 'COWL_NECK', depthMm: 100 }] } },
+      { drape: { blocks: [{ kind: 'GATHERED_SKIRT', fullness: 2 }] } },
+    );
+    expect(value.drape?.blocks).toEqual([{ kind: 'COWL_NECK', depthMm: 100 }]);
+    expect(origin['drape']).toBe(1);
+    expect(listPatternExtKeys(value)).toEqual(['ease', 'drape']);
   });
 });

@@ -101,7 +101,8 @@ describe('guard-rails: every garment × cut × ease yields sound pieces', () => 
         for (const ease of EASES) {
           const result = gen({ garmentType, cutType, ease, fullness: { skirt: 3, sleeve: 2 }, lengths: { skirtPct: 60, bodicePct: 90 } });
           // AUTRE always carries its intentional "generic base block" caveat; nothing else may appear.
-          const unexpected = result.warnings.filter((w) => !w.includes('générique'));
+          // Extreme fullness can legitimately need a wider fabric: that warning is expected, any other is not.
+          const unexpected = result.warnings.filter((w) => !w.includes('générique') && !w.includes('laize'));
           expect(unexpected, `${garmentType}/${cutType}/${ease}`).toEqual([]);
           expect(result.pieces.length).toBeGreaterThan(0);
         }
@@ -338,7 +339,7 @@ describe('a fully measured body', () => {
     for (const cutType of CUTS) {
       for (const ease of EASES) {
         const result = gen({ garmentType, cutType, ease, details: { manches: 'LONGUES' } }, FULL_BODY);
-        expect(result.warnings.filter((w) => !w.includes('générique')), `${garmentType}/${cutType}/${ease}`).toEqual([]);
+        expect(result.warnings.filter((w) => !w.includes('générique') && !w.includes('laize')), `${garmentType}/${cutType}/${ease}`).toEqual([]);
         for (const p of result.pieces) expect(p.outlineMm.every((pt) => Number.isFinite(pt.x) && Number.isFinite(pt.y))).toBe(true);
       }
     }

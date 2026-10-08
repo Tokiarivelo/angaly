@@ -523,6 +523,28 @@ describe('GeneratePatternVersionUseCase', () => {
       expect(params['lengths']).toEqual({ skirtPct: 90 });
     });
 
+    it('passes validated drape blocks to the engine and drops invalid ones', async () => {
+      mockProjectRepo.findById.mockResolvedValueOnce(
+        projectWith({
+          drape: {
+            blocks: [
+              { kind: 'GATHERED_SKIRT', fullness: 2 },
+              { kind: 'CIRCLE_SKIRT', fraction: 1 }, // second skirt block: dropped
+              { kind: 'COWL_NECK', depthMm: 9999 }, // out of range: dropped
+            ],
+          },
+        }),
+      );
+
+      const version = await useCase.execute('proj-ext', 'cust-1');
+
+      expect(mockGeneratePiecesUseCase.execute).toHaveBeenCalledWith(
+        expect.objectContaining({ drape: { blocks: [{ kind: 'GATHERED_SKIRT', fullness: 2 }] } }),
+        expect.any(Object),
+      );
+      expect((version.parametersJson as any).parameters.drape.blocks).toHaveLength(1);
+    });
+
     it('rejects implausible manual measurements with a 400', async () => {
       await expect(
         useCase.execute('proj-1', 'cust-1', { measurements: { TOUR_TAILLE: 900 } }),

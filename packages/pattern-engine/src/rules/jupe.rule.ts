@@ -6,6 +6,7 @@ import type {
 } from '../types';
 import { resolveCutProfile, resolveSkirtLengthMm } from '../shared/cut-profile';
 import { resolveLengthMm, skirtFullnessExtraMm, withEase } from '../shared/fit';
+import { buildSkirtBlock, resolveDrape, wrapFrontPiece } from '../blocks';
 
 // Pour une jupe de base, il nous faut au minimum :
 const REQUIRED_MEASUREMENTS = ['TOUR_TAILLE', 'TOUR_BASSIN', 'LONGUEUR_DOS'];
@@ -15,6 +16,12 @@ export const JupeRule: IPatternRule = {
   requiredMeasurementKeys: REQUIRED_MEASUREMENTS,
   appliesTo(parameters: PatternParameters): boolean {
     return parameters.garmentType === 'JUPE';
+  },
+  warnings(parameters: PatternParameters): string[] {
+    const drape = resolveDrape(parameters);
+    return drape.skirt && drape.wrap
+      ? ['Jupe portefeuille ignorée : un bloc de jupe (froncée, plissée ou cercle) a déjà remplacé le devant.']
+      : [];
   },
   computePieces(
     parameters: PatternParameters,
@@ -87,6 +94,11 @@ export const JupeRule: IPatternRule = {
       ],
     };
 
-    return [devant, dos];
+    // Blocs de drapé (S4) : un bloc de jupe remplace Devant/Dos ; le portefeuille croise le devant.
+    const drape = resolveDrape(parameters);
+    if (drape.skirt) {
+      return buildSkirtBlock(drape.skirt, tt + 40 + 4 * profile.waistDeltaMm, lg);
+    }
+    return drape.wrap ? wrapFrontPiece([devant, dos], 'Devant', drape.wrap) : [devant, dos];
   },
 };

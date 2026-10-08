@@ -542,11 +542,56 @@ export interface PatternLengths {
   bodicePct?: number;
 }
 
+// ---- Drape blocks (Phase 5b S4) ----
+
+export const DRAPE_BLOCK_KINDS = [
+  'GATHERED_SKIRT',
+  'PLEATED_SKIRT',
+  'CIRCLE_SKIRT',
+  'WRAP_FRONT',
+  'COWL_NECK',
+] as const;
+export type DrapeBlockKind = (typeof DRAPE_BLOCK_KINDS)[number];
+
+export const DRAPE_BLOCK_LABELS: Record<DrapeBlockKind, string> = {
+  GATHERED_SKIRT: 'Jupe froncée',
+  PLEATED_SKIRT: 'Jupe plissée',
+  CIRCLE_SKIRT: 'Jupe cercle',
+  WRAP_FRONT: 'Devant portefeuille',
+  COWL_NECK: 'Col bénitier',
+};
+
+/** Skirt blocks replace the skirt panels, so at most one of them per garment. */
+export const SKIRT_DRAPE_KINDS: readonly DrapeBlockKind[] = ['GATHERED_SKIRT', 'PLEATED_SKIRT', 'CIRCLE_SKIRT'];
+
+export const DRAPE_BOUNDS = {
+  gatheredFullness: { min: 1.25, max: 4, step: 0.25 },
+  pleats: { min: 4, max: 60, step: 1 },
+  pleatDepthMm: { min: 10, max: 80, step: 1 },
+  wrapOverlapMm: { min: 40, max: 250, step: 1 },
+  cowlDepthMm: { min: 60, max: 300, step: 1 },
+} as const satisfies Record<string, NumericBounds>;
+
+export const CIRCLE_FRACTIONS = [0.25, 0.5, 1] as const;
+export const MAX_DRAPE_BLOCKS = 3;
+
+export type DrapeBlock =
+  | { kind: 'GATHERED_SKIRT'; fullness: number }
+  | { kind: 'PLEATED_SKIRT'; pleats: number; depthMm: number; type: 'KNIFE' | 'BOX' }
+  | { kind: 'CIRCLE_SKIRT'; fraction: 0.25 | 0.5 | 1 }
+  | { kind: 'WRAP_FRONT'; overlapMm: number; side: 'LEFT' | 'RIGHT' }
+  | { kind: 'COWL_NECK'; depthMm: number };
+
+export interface DrapeSpec {
+  blocks: DrapeBlock[];
+}
+
 /** Optional engine inputs stored in `pattern_projects.parametersExtJson`. Absent = historical geometry. */
 export interface PatternExtParameters {
   ease?: EaseLevel;
   fullness?: PatternFullness;
   lengths?: PatternLengths;
+  drape?: DrapeSpec;
 }
 
 export interface PatternExtIssue {
@@ -628,7 +673,106 @@ export function validatePatternExtParameters(input: unknown): {
     }
   }
 
+  if (raw['drape'] !== undefined && raw['drape'] !== null) {
+    const drape = validateDrapeSpec(raw['drape'], issues);
+    if (drape) value.drape = drape;
+  }
+
   return { value, issues };
+}
+
+/** Each block is validated on its own: an invalid block is reported and dropped, the others stay. */
+function validateDrapeSpec(input: unknown, issues: PatternExtIssue[]): DrapeSpec | undefined {
+  const rawBlocks = (input as { blocks?: unknown })?.blocks;
+  if (typeof input !== 'object' || Array.isArray(input) || !Array.isArray(rawBlocks)) {
+    issues.push({ path: 'drape', message: 'drape doit être { blocks: [...] }.' });
+    return undefined;
+  }
+  if (rawBlocks.length > MAX_DRAPE_BLOCKS) {
+    issues.push({ path: 'drape.blocks', message: `Au plus ${MAX_DRAPE_BLOCKS} blocs de drapé.` });
+  }
+  const blocks: DrapeBlock[] = [];
+  const seenKinds = new Set<string>();
+  let hasSkirt = false;
+  rawBlocks.slice(0, MAX_DRAPE_BLOCKS).forEach((rawBlock, index) => {
+    const path = `drape.blocks[${index}]`;
+    if (typeof rawBlock !== 'object' || rawBlock === null || Array.isArray(rawBlock)) {
+      issues.push({ path, message: `${path} doit être un objet.` });
+      return;
+    }
+    const b = rawBlock as Record<string, unknown>;
+    const kind = b['kind'];
+    if (typeof kind !== 'string' || !(DRAPE_BLOCK_KINDS as readonly string[]).includes(kind)) {
+      issues.push({ path: `${path}.kind`, message: `kind doit valoir ${DRAPE_BLOCK_KINDS.join(', ')}.` });
+      return;
+    }
+    if (seenKinds.has(kind)) {
+      issues.push({ path, message: `Le bloc ${kind} ne peut apparaître qu'une fois.` });
+      return;
+    }
+    if (SKIRT_DRAPE_KINDS.includes(kind as DrapeBlockKind) && hasSkirt) {
+      issues.push({ path, message: 'Un seul bloc de jupe (froncée, plissée ou cercle) par vêtement.' });
+      return;
+    }
+    const num = (name: string, bounds: NumericBounds): number | undefined =>
+      checkBounded(b[name], bounds, `${path}.${name}`, issues);
+
+    let block: DrapeBlock | undefined;
+    switch (kind) {
+      case 'GATHERED_SKIRT': {
+        const fullness = num('fullness', DRAPE_BOUNDS.gatheredFullness);
+        if (fullness !== undefined) block = { kind, fullness };
+        else if (b['fullness'] === undefined) issues.push({ path: `${path}.fullness`, message: 'fullness est requis.' });
+        break;
+      }
+      case 'PLEATED_SKIRT': {
+        const pleats = num('pleats', DRAPE_BOUNDS.pleats);
+        const depthMm = num('depthMm', DRAPE_BOUNDS.pleatDepthMm);
+        const type = b['type'];
+        if (type !== 'KNIFE' && type !== 'BOX') {
+          issues.push({ path: `${path}.type`, message: 'type doit valoir KNIFE ou BOX.' });
+        } else if (pleats !== undefined && depthMm !== undefined) {
+          block = { kind, pleats, depthMm, type };
+        } else if (b['pleats'] === undefined || b['depthMm'] === undefined) {
+          issues.push({ path, message: 'pleats et depthMm sont requis.' });
+        }
+        break;
+      }
+      case 'CIRCLE_SKIRT': {
+        const fraction = b['fraction'];
+        if ((CIRCLE_FRACTIONS as readonly unknown[]).includes(fraction)) {
+          block = { kind, fraction: fraction as 0.25 | 0.5 | 1 };
+        } else {
+          issues.push({ path: `${path}.fraction`, message: 'fraction doit valoir 0.25, 0.5 ou 1.' });
+        }
+        break;
+      }
+      case 'WRAP_FRONT': {
+        const overlapMm = num('overlapMm', DRAPE_BOUNDS.wrapOverlapMm);
+        const side = b['side'];
+        if (side !== 'LEFT' && side !== 'RIGHT') {
+          issues.push({ path: `${path}.side`, message: 'side doit valoir LEFT ou RIGHT.' });
+        } else if (overlapMm !== undefined) {
+          block = { kind, overlapMm, side };
+        } else if (b['overlapMm'] === undefined) {
+          issues.push({ path: `${path}.overlapMm`, message: 'overlapMm est requis.' });
+        }
+        break;
+      }
+      case 'COWL_NECK': {
+        const depthMm = num('depthMm', DRAPE_BOUNDS.cowlDepthMm);
+        if (depthMm !== undefined) block = { kind, depthMm };
+        else if (b['depthMm'] === undefined) issues.push({ path: `${path}.depthMm`, message: 'depthMm est requis.' });
+        break;
+      }
+    }
+    if (block) {
+      blocks.push(block);
+      seenKinds.add(kind);
+      if (SKIRT_DRAPE_KINDS.includes(kind as DrapeBlockKind)) hasSkirt = true;
+    }
+  });
+  return blocks.length > 0 ? { blocks } : undefined;
 }
 
 // ============================================================
@@ -665,7 +809,8 @@ export type PatternExtKey =
   | 'fullness.sleeve'
   | 'lengths.skirtPct'
   | 'lengths.sleevePct'
-  | 'lengths.bodicePct';
+  | 'lengths.bodicePct'
+  | 'drape';
 
 export function listPatternExtKeys(ext: PatternExtParameters | null | undefined): PatternExtKey[] {
   if (!ext) return [];
@@ -676,6 +821,7 @@ export function listPatternExtKeys(ext: PatternExtParameters | null | undefined)
   if (ext.lengths?.skirtPct !== undefined) keys.push('lengths.skirtPct');
   if (ext.lengths?.sleevePct !== undefined) keys.push('lengths.sleevePct');
   if (ext.lengths?.bodicePct !== undefined) keys.push('lengths.bodicePct');
+  if (ext.drape) keys.push('drape');
   return keys;
 }
 
@@ -694,6 +840,11 @@ export function mergePatternExtParameters(
     if (valid.ease && value.ease === undefined) {
       value.ease = valid.ease;
       origin['ease'] = index;
+    }
+    // Drape is one indivisible choice: the first source that has any valid block wins as a whole.
+    if (valid.drape && value.drape === undefined) {
+      value.drape = valid.drape;
+      origin['drape'] = index;
     }
     for (const group of ['fullness', 'lengths'] as const) {
       const from = valid[group] as Record<string, number> | undefined;

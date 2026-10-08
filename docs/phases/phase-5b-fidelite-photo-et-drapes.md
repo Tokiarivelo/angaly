@@ -1,6 +1,6 @@
 # Phase 5b — Fidélité photo, aisance paramétrique, blocs de drapé & modèle local
 
-**Statut : 🚧 S1, S2 et S3 livrées (2026-10-08) ; S4 → S8 à faire.** Dépend de : Phase 4 (pattern-engine, wizard) et
+**Statut : 🚧 S1 à S4 livrées (2026-10-08) ; S5 → S8 à faire.** Dépend de : Phase 4 (pattern-engine, wizard) et
 Phase 5 (ai-inference, analyse de photo). Prolonge `docs/features/ai-inference.md`,
 `docs/features/pattern-engine.md`, `docs/features/patterns.md` et
 `docs/features/ai-training-data.md`.
@@ -181,7 +181,14 @@ Vitest (composant, autosave), e2e Playwright : photo → fiche → ajustement �
 **Acceptation** : une photo de robe ample produit un `ease = AMPLE` validé et un patron plus large qu'une photo de robe ajustée
 (test de comportement avec modèle mocké).
 
-### S4 — Blocs de drapé déterministes (lot 1)
+### S4 — Blocs de drapé déterministes (lot 1)  ✅ livrée 2026-10-08
+
+> **Livré** : 5 blocs (`blocks/*.ts`), intégrés à jupe / robe / mariée, `DrapeSpec` validé (types partagés,
+> PATCH 400, revalidation à la génération), métrage indicatif `metadata.yardage`, avertissements de laize,
+> 25 tests de blocs + 6 de validation (catalogue et formules : `docs/features/pattern-engine.md`).
+> **Écarts** : pas d'UI de choix ni de sélection IA (S5) ; l'export PDF/SVG de l'API est encore un gabarit,
+> donc « les pièces s'exportent sans erreur » n'est vérifié qu'au niveau géométrie ; pas de snapshots SVG
+> « golden » (les invariants numériques — aire, fermeture, symétrie, points — les remplacent).
 
 **But** : lever L1 pour les drapés **constructibles à plat**.
 

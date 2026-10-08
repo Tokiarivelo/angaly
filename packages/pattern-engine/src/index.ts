@@ -1,5 +1,7 @@
 export { PatternEngine } from './pattern-engine';
 export type {
+  DrapeBlock,
+  DrapeSpec,
   EaseLevel,
   GarmentType,
   GrainlineSpec,

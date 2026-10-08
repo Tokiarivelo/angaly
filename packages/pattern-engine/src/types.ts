@@ -38,6 +38,20 @@ export interface PatternParameters {
   ease?: EaseLevel;
   fullness?: { skirt?: number; sleeve?: number };
   lengths?: { skirtPct?: number; sleevePct?: number; bodicePct?: number };
+  /** Phase 5b S4 — deterministic drape blocks (gathered / pleated / circle skirt, wrap front, cowl neck). */
+  drape?: DrapeSpec;
+}
+
+/** Skirt blocks replace the rule's own skirt panels; at most one per garment. */
+export type DrapeBlock =
+  | { kind: 'GATHERED_SKIRT'; fullness: number }
+  | { kind: 'PLEATED_SKIRT'; pleats: number; depthMm: number; type: 'KNIFE' | 'BOX' }
+  | { kind: 'CIRCLE_SKIRT'; fraction: 0.25 | 0.5 | 1 }
+  | { kind: 'WRAP_FRONT'; overlapMm: number; side: 'LEFT' | 'RIGHT' }
+  | { kind: 'COWL_NECK'; depthMm: number };
+
+export interface DrapeSpec {
+  blocks: DrapeBlock[];
 }
 
 /** Global ease: AJUSTE (close-fitting) < CONFORT (historical default) < AMPLE (roomy). */
@@ -71,6 +85,8 @@ export interface PatternGenerationResult {
   metadata: {
     engineVersion: string;
     generatedAt: string; // ISO 8601
+    /** Indicative fabric need (never a purchase quantity — the couturière confirms). */
+    yardage?: { fabricWidthMm: number; lengthMm: number; method: string };
   };
 }
 

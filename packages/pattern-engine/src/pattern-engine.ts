@@ -9,8 +9,9 @@ import {
 } from './types';
 
 import { checkPieceGeometry } from './shared/geometry-checks';
+import { estimateYardage } from './shared/yardage';
 
-const ENGINE_VERSION = '0.2.0-fit';
+const ENGINE_VERSION = '0.3.0-drape';
 
 /**
  * Deterministic orchestrator: picks the registered rule matching the requested
@@ -52,12 +53,23 @@ export class PatternEngine implements IPatternEngine {
 
     const pieces = rule.computePieces(parameters, measurements);
 
+    const yardage = estimateYardage(pieces);
+    const widthWarnings = yardage.oversize.map(
+      (o) =>
+        `Pièce « ${o.name} » : tissu d'au moins ${Math.ceil(o.neededWidthMm / 10)} cm de large requis (laize standard ${yardage.fabricWidthMm / 10} cm).`,
+    );
+
     return {
       pieces,
-      warnings: [...(rule.warnings?.(parameters, measurements) ?? []), ...checkPieceGeometry(pieces)],
+      warnings: [
+        ...(rule.warnings?.(parameters, measurements) ?? []),
+        ...checkPieceGeometry(pieces),
+        ...widthWarnings,
+      ],
       metadata: {
         engineVersion: ENGINE_VERSION,
         generatedAt: new Date().toISOString(),
+        yardage: { fabricWidthMm: yardage.fabricWidthMm, lengthMm: yardage.lengthMm, method: yardage.method },
       },
     };
   }
