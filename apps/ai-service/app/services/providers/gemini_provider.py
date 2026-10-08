@@ -49,7 +49,7 @@ class GeminiProvider(LlmProvider):
             config=types.GenerateContentConfig(
                 response_mime_type="application/json",
                 response_schema=schema,
-                max_output_tokens=512,
+                max_output_tokens=1024,
             ),
         )
         return schema.model_validate_json(response.text)

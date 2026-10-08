@@ -7,19 +7,22 @@ import request from 'supertest';
 
 import { ACCESS_TOKEN_SERVICE } from '../../../auth/domain/services/access-token.service';
 import { JwtAuthGuard } from '../../../auth/presentation/guards/jwt-auth.guard';
-import { SuggestPatternParametersUseCase } from '../../application/use-cases/suggest-pattern-parameters.use-case';
+import { AnalyzeInspirationImageUseCase } from '../../application/use-cases/analyze-inspiration-image.use-case';
+import { AiProviderResolverService } from '../../application/services/ai-provider-resolver.service';
 import { AiInspirationController } from '../../presentation/controllers/ai-inspiration.controller';
 
 describe('AiInspirationController (integration)', () => {
   let app: INestApplication;
-  const suggestPatternParametersUseCase = { execute: jest.fn() };
+  const analyzeInspirationImage = { execute: jest.fn() };
+  const providerResolver = { resolveSelected: jest.fn() };
   const accessTokenService = { sign: jest.fn(), verify: jest.fn() };
 
   beforeAll(async () => {
     const moduleRef = await Test.createTestingModule({
       controllers: [AiInspirationController],
       providers: [
-        { provide: SuggestPatternParametersUseCase, useValue: suggestPatternParametersUseCase },
+        { provide: AnalyzeInspirationImageUseCase, useValue: analyzeInspirationImage },
+        { provide: AiProviderResolverService, useValue: providerResolver },
         JwtAuthGuard,
         { provide: ACCESS_TOKEN_SERVICE, useValue: accessTokenService },
       ],
@@ -44,16 +47,22 @@ describe('AiInspirationController (integration)', () => {
     return app.getHttpServer() as Server;
   }
 
-  it('POST /ai-inference/inspiration-analysis calls the real AI suggestion pipeline, not a stub', async () => {
-    suggestPatternParametersUseCase.execute.mockResolvedValue({
-      suggestion: {
-        suggestedCutType: 'SIRENE',
-        suggestedDetails: { encolure: 'Décolleté en V' },
-        detectedInspirationFeatures: { silhouette: 'Ajustée' },
-        confidence: 0.7,
-        modelVersion: 'gemini-2.5-flash',
-      },
-      isIndicativeOnly: false,
+  const profile = {
+    isGarment: true,
+    garmentType: 'ROBE',
+    occasion: 'SOIREE',
+    style: 'ELEGANT',
+    cutType: 'SIRENE',
+    details: { longueur: 'SOL' },
+  };
+
+  it('POST /ai-inference/inspiration-analysis returns the wizard-ready garment profile', async () => {
+    analyzeInspirationImage.execute.mockResolvedValue({
+      features: { silhouette: 'Ajustée' },
+      profile,
+      suggestedCutType: 'SIRENE',
+      confidence: 0.8,
+      modelVersion: 'gemini-2.5-flash',
     });
 
     const response = await request(server())
@@ -62,14 +71,68 @@ describe('AiInspirationController (integration)', () => {
       .send({ inspirationImageUrl: 'https://cdn.angaly.test/inspiration.jpg' })
       .expect(201);
 
-    expect(suggestPatternParametersUseCase.execute).toHaveBeenCalledWith(
-      expect.objectContaining({ inspirationImageUrl: 'https://cdn.angaly.test/inspiration.jpg' }),
+    expect(analyzeInspirationImage.execute).toHaveBeenCalledWith(
+      'https://cdn.angaly.test/inspiration.jpg',
+      undefined,
     );
     expect(response.body).toMatchObject({
       suggestedCutType: 'SIRENE',
       detectedInspirationFeatures: { silhouette: 'Ajustée' },
+      profile,
       isIndicativeOnly: false,
     });
+  });
+
+  it('analyses the photo with the model chosen in the wizard', async () => {
+    const credentials = { provider: 'ANTHROPIC', model: 'claude-haiku-4-5-20251001', apiKey: 'k' };
+    providerResolver.resolveSelected.mockResolvedValue(credentials);
+    analyzeInspirationImage.execute.mockResolvedValue({
+      features: {},
+      profile,
+      suggestedCutType: null,
+      confidence: 0.8,
+      modelVersion: 'claude-haiku-4-5-20251001',
+    });
+
+    await request(server())
+      .post('/ai-inference/inspiration-analysis')
+      .set('Authorization', 'Bearer valid-token')
+      .send({ inspirationImageUrl: 'https://cdn.angaly.test/inspiration.jpg', aiProvider: 'ANTHROPIC' })
+      .expect(201);
+
+    expect(providerResolver.resolveSelected).toHaveBeenCalledWith('ANTHROPIC', 'PATTERN_SUGGESTION');
+    expect(analyzeInspirationImage.execute).toHaveBeenCalledWith(
+      'https://cdn.angaly.test/inspiration.jpg',
+      credentials,
+    );
+  });
+
+  it('degrades to an empty indicative answer when the photo cannot be analysed', async () => {
+    analyzeInspirationImage.execute.mockRejectedValue(new Error('image unreachable'));
+
+    const response = await request(server())
+      .post('/ai-inference/inspiration-analysis')
+      .set('Authorization', 'Bearer valid-token')
+      .send({ inspirationImageUrl: 'https://cdn.angaly.test/inspiration.jpg' })
+      .expect(201);
+
+    expect(response.body).toMatchObject({ profile: null, confidence: 0, isIndicativeOnly: true });
+  });
+
+  it('accepts a local MinIO URL without a TLD (http://localhost:9000/…) in development', async () => {
+    analyzeInspirationImage.execute.mockResolvedValue({
+      features: {},
+      profile,
+      suggestedCutType: null,
+      confidence: 0.8,
+      modelVersion: 'm',
+    });
+
+    await request(server())
+      .post('/ai-inference/inspiration-analysis')
+      .set('Authorization', 'Bearer valid-token')
+      .send({ inspirationImageUrl: 'http://localhost:9000/angaly-media/patterns/a.jpg' })
+      .expect(201);
   });
 
   it('rejects an invalid inspiration URL with 400', async () => {
@@ -79,6 +142,6 @@ describe('AiInspirationController (integration)', () => {
       .send({ inspirationImageUrl: 'not-a-url' })
       .expect(400);
 
-    expect(suggestPatternParametersUseCase.execute).not.toHaveBeenCalled();
+    expect(analyzeInspirationImage.execute).not.toHaveBeenCalled();
   });
 });

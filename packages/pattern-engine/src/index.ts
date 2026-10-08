@@ -1,5 +1,6 @@
 export { PatternEngine } from './pattern-engine';
 export type {
+  EaseLevel,
   GarmentType,
   GrainlineSpec,
   IPatternEngine,

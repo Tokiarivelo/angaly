@@ -2,6 +2,7 @@ import { Inject, Injectable, NotFoundException, ForbiddenException } from '@nest
 import { IMeasurementProfileRepository } from '../../domain/repositories/measurement-profile.repository';
 import { UpdateMeasurementProfileDto } from '../dtos/update-measurement-profile.dto';
 import { MeasurementProfile } from '../../domain/entities/measurement-profile.entity';
+import { assertValidMeasurements } from '../services/assert-valid-measurements';
 
 @Injectable()
 export class UpdateMeasurementProfileUseCase {
@@ -21,6 +22,7 @@ export class UpdateMeasurementProfileUseCase {
 
     let valuesMap = profile.values;
     if (dto.values) {
+      assertValidMeasurements(dto.values, dto.unit || profile.unit);
       valuesMap = new Map<string, number>();
       for (const [key, val] of Object.entries(dto.values)) {
         if (val > 0) {

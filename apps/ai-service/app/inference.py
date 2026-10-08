@@ -7,9 +7,12 @@ from __future__ import annotations
 
 import base64
 import logging
+import time
 
+from .garment_knowledge import build_taxonomy_prompt, normalize_profile
 from .local_model import LOCAL_MODEL_VERSION, estimate_with_local_model, is_local_model_available
 from .schemas import (
+    GarmentProfile,
     InspirationAnalysisRequest,
     InspirationAnalysisResponse,
     PatternAiSuggestionRequest,
@@ -120,23 +123,27 @@ def suggest_pattern_parameters(
         )
 
 
-INSPIRATION_FEATURE_KEYS = (
-    "garmentType, neckline, sleeves, length, silhouette, waist, fabricLook, details"
-)
-
-
 def analyze_inspiration(request: InspirationAnalysisRequest) -> InspirationAnalysisResponse:
     """Reads garment attributes from ONE downscaled photo, once. The compact JSON is cached by the
-    caller (keyed on the image hash) so later calls never pay for image tokens again."""
-    prompt = (
-        "Observe ce vêtement et décris-le de façon concise pour un modéliste. "
-        f"Remplis features avec ces clés uniquement : {INSPIRATION_FEATURE_KEYS} "
-        "(valeurs courtes, 1 à 4 mots, en français, omets une clé si invisible). "
-        f"Choisis suggestedCutType strictement parmi : {', '.join(KNOWN_CUT_TYPES)}. "
-        "N'invente aucune mesure ni géométrie."
+    caller (keyed on the image hash) so later calls never pay for image tokens again.
+
+    The prompt carries the full garment taxonomy (see `garment_knowledge.py`); the model output is
+    then re-validated against it so the wizard can safely auto-fill from `profile`."""
+    prompt = build_taxonomy_prompt() + (
+        "\n\nRéponds avec : features, profile "
+        "(isGarment, garmentType, occasion, style, cutType, details, constructionMethod, presentation, "
+        "constructionNotes), confidence (0..1)."
     )
     try:
         image_bytes = base64.b64decode(request.image_base64, validate=True)
+        started = time.perf_counter()
+        logger.info(
+            "analyze_inspiration: %d KB, provider=%s model=%s key=%s",
+            len(image_bytes) // 1024,
+            request.provider.provider if request.provider else "default(gemini)",
+            request.provider.model if request.provider else GEMINI_MODEL_VERSION,
+            "set" if request.provider and request.provider.api_key else "missing",
+        )
         if request.provider:
             provider = get_llm_provider(request.provider)
             model_ver = request.provider.model
@@ -148,13 +155,27 @@ def analyze_inspiration(request: InspirationAnalysisRequest) -> InspirationAnaly
             prompt, InspirationAnalysisResponse, image_bytes, request.mime_type
         )
         result.model_version = model_ver
-        if result.suggested_cut_type not in KNOWN_CUT_TYPES:
-            result.suggested_cut_type = None
+        logger.info("analyze_inspiration: model answered in %.1fs", time.perf_counter() - started)
+
+        legacy_cut = result.suggested_cut_type if result.suggested_cut_type in KNOWN_CUT_TYPES else None
+        if result.profile is None:
+            # Model skipped the profile: keep the legacy descriptive answer, claim nothing more.
+            result.suggested_cut_type = legacy_cut
+        else:
+            profile = GarmentProfile.model_validate(
+                normalize_profile(result.profile.model_dump(by_alias=True))
+            )
+            result.profile = profile
+            if profile.is_garment:
+                result.suggested_cut_type = profile.cut_type or legacy_cut
+            else:
+                result.features = {}
+                result.suggested_cut_type = None
         return result
     except Exception as exc:
         logger.exception("analyze_inspiration failed: %s", exc)
         return InspirationAnalysisResponse(
-            features={}, suggestedCutType=None, confidence=0.0, modelVersion="fallback-0.0.0"
+            features={}, profile=None, suggestedCutType=None, confidence=0.0, modelVersion="fallback-0.0.0"
         )
 
 

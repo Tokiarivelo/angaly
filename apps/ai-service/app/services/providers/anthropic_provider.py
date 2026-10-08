@@ -55,7 +55,7 @@ class AnthropicProvider(LlmProvider):
         schema_json = json.dumps(schema.model_json_schema(), ensure_ascii=False)
         message = client.messages.create(
             model=self.model,
-            max_tokens=512,
+            max_tokens=1024,
             system="Tu es l'assistant de modélisme haute couture d'ANGALY. Tu réponds exclusivement en JSON valide.",
             messages=[
                 {

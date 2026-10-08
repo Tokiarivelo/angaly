@@ -3,6 +3,7 @@ import { IMeasurementProfileRepository } from '../../domain/repositories/measure
 import { CreateMeasurementProfileDto } from '../dtos/create-measurement-profile.dto';
 import { MeasurementProfile } from '../../domain/entities/measurement-profile.entity';
 import { MeasurementUnit } from '@angaly/types';
+import { assertValidMeasurements } from '../services/assert-valid-measurements';
 import { randomUUID } from 'crypto';
 
 @Injectable()
@@ -16,6 +17,8 @@ export class CreateMeasurementProfileUseCase {
     const id = randomUUID();
     const unit = dto.unit || MeasurementUnit.CM;
     
+    assertValidMeasurements(dto.values, unit);
+
     const valuesMap = new Map<string, number>();
     for (const [key, val] of Object.entries(dto.values)) {
       if (val > 0) {

@@ -25,6 +25,7 @@ from .schemas import (
 )
 from .services.providers import SsrfValidationError, get_llm_provider, validate_provider_base_url
 
+logging.basicConfig(level=logging.INFO, format="%(asctime)s %(levelname)s %(name)s: %(message)s")
 logger = logging.getLogger("angaly.ai_service")
 
 app = FastAPI(

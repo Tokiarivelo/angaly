@@ -11,7 +11,7 @@ export class PrismaPatternLearningRepository implements IPatternLearningReposito
   constructor(private readonly prisma: PrismaService) {}
 
   async upsertGenerated(data: PatternLearningRecordData): Promise<void> {
-    const { patternProjectId, ...snapshot } = data;
+    const { patternProjectId, inspirationMediaId: _unused, ...snapshot } = data;
     await this.prisma.patternLearningRecord.upsert({
       where: { patternProjectId },
       // `outcome` is intentionally absent from `update` so an EXPORTED row stays EXPORTED.

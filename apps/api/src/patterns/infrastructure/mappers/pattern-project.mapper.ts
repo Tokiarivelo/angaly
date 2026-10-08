@@ -1,3 +1,4 @@
+import type { InspirationAnalysisSnapshot, PatternExtParameters } from '@angaly/types';
 import { PatternProjectEntity } from '../../domain/entities/pattern-project.entity';
 import { PatternProjectResponseDto } from '../../application/dtos/pattern-project-response.dto';
 import { PatternVersionMapper } from './pattern-version.mapper';
@@ -17,6 +18,9 @@ export class PatternProjectMapper {
       detailsJson: (record.detailsJson as Record<string, unknown>) ?? null,
       inspirationMediaId: record.inspirationMediaId ?? null,
       inspirationMediaUrl: record.inspirationMedia?.url ?? null,
+      inspirationAnalysisJson:
+        (record.inspirationAnalysisJson as InspirationAnalysisSnapshot | null) ?? null,
+      parametersExtJson: (record.parametersExtJson as PatternExtParameters | null) ?? null,
       status: record.status as PatternStatus,
       createdAt: record.createdAt instanceof Date ? record.createdAt : new Date(record.createdAt),
       updatedAt: record.updatedAt instanceof Date ? record.updatedAt : new Date(record.updatedAt),
@@ -40,6 +44,8 @@ export class PatternProjectMapper {
       detailsJson: entity.detailsJson,
       inspirationMediaId: entity.inspirationMediaId,
       inspirationMediaUrl: entity.inspirationMediaUrl,
+      inspirationAnalysisJson: entity.inspirationAnalysisJson,
+      parametersExtJson: entity.parametersExtJson,
       status: entity.status,
       createdAt: entity.createdAt.toISOString(),
       updatedAt: entity.updatedAt.toISOString(),

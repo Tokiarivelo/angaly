@@ -3,6 +3,7 @@
 // Enums mirror packages/database/prisma/schema.prisma 1:1 — keep both in sync.
 
 import type { ProviderCredentials } from './ai-providers';
+import type { PatternExtParameters } from './pattern-fit';
 
 // ============================================================
 // Enums
@@ -801,9 +802,41 @@ export interface InspirationAnalysisRequest {
   provider?: ProviderCredentials;
 }
 
+/**
+ * Wizard-ready classification of an inspiration photo, restricted to the wizard's own ids
+ * (garment types, occasions, styles, cuts, detail groups). `isGarment: false` ⇒ pre-fill nothing.
+ */
+export interface GarmentProfile {
+  isGarment: boolean;
+  garmentType: string | null;
+  occasion: string | null;
+  style: string | null;
+  cutType: string | null;
+  details: Record<string, string>;
+  /**
+   * How the garment must be built: FLAT_PATTERN (traced flat), DRAPING (fabric pinned directly on a
+   * mannequin — the flat engine can only give a base block) or MIXED. Absent on older analyses.
+   */
+  constructionMethod?: 'FLAT_PATTERN' | 'DRAPING' | 'MIXED' | null;
+  /** How the photo shows the garment. */
+  presentation?: 'WORN' | 'MANNEQUIN' | 'FLAT' | 'SKETCH' | null;
+  /** Where the drape is and how to approach it (French), only for DRAPING/MIXED. */
+  constructionNotes?: string | null;
+}
+
+/** What the photo analysis found, stored on the pattern project so generation can use it. */
+export interface InspirationAnalysisSnapshot {
+  /** The "Observations": free descriptive attributes (silhouette, fabric look, waist…). */
+  features: Record<string, string>;
+  profile: GarmentProfile | null;
+  modelVersion?: string;
+}
+
 /** Garment attributes read from the photo — descriptive only, never geometry (ADR-005). */
 export interface InspirationAnalysisResponse {
   features: Record<string, string>;
+  /** Absent/null for rows cached before the profile existed or when the model skipped it. */
+  profile?: GarmentProfile | null;
   suggestedCutType: string | null;
   confidence: number;
   modelVersion: string;
@@ -876,6 +909,9 @@ export interface PatternProjectDto extends Timestamps {
   detailsJson: Record<string, string> | null;
   inspirationMediaId: string | null;
   inspirationMediaUrl?: string | null;
+  inspirationAnalysisJson?: InspirationAnalysisSnapshot | null;
+  /** Validated ease / fullness / lengths (Phase 5b S1); null = engine defaults. */
+  parametersExtJson?: PatternExtParameters | null;
   status: PatternStatus;
   versions?: PatternVersionDto[];
   currentVersion?: PatternVersionDto | null;
@@ -1046,3 +1082,5 @@ export * from './media';
 // ============================================================
 
 export * from './ai-providers';
+export * from './pattern-detail-options';
+export * from './pattern-fit';

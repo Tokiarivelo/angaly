@@ -1,3 +1,4 @@
+import type { InspirationAnalysisSnapshot, PatternExtParameters } from '@angaly/types';
 import type { PatternProjectEntity } from '../entities/pattern-project.entity';
 import type { PatternStatus } from '../value-objects/pattern-status.vo';
 
@@ -14,6 +15,8 @@ export interface CreatePatternProjectData {
   detailsJson?: Record<string, unknown> | null;
   measurementProfileId?: string | null;
   inspirationMediaId?: string | null;
+  inspirationAnalysisJson?: InspirationAnalysisSnapshot | null;
+  parametersExtJson?: PatternExtParameters | null;
   status?: PatternStatus;
 }
 

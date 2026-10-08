@@ -54,6 +54,9 @@ export class AiServiceHttpClient {
   }
 
   async analyzeInspiration(request: InspirationAnalysisRequest): Promise<InspirationAnalysisResponse> {
+    const startedAt = Date.now();
+    const model = request.provider ? `${request.provider.provider}/${request.provider.model}` : 'default';
+    this.logger.log(`ai-service analyze-inspiration → model=${model} imageKB=${Math.round(request.imageBase64.length * 0.75 / 1024)}`);
     try {
       const response = await fetch(`${this.baseUrl}/v1/pattern/analyze-inspiration`, {
         method: 'POST',
@@ -64,12 +67,26 @@ export class AiServiceHttpClient {
       });
 
       if (!response.ok) {
-        throw new Error(`AI service responded with status ${response.status}`);
+        const body = await response.text().catch(() => '');
+        throw new Error(`AI service responded with status ${response.status} ${body.slice(0, 300)}`);
       }
 
-      return (await response.json()) as InspirationAnalysisResponse;
+      const analysis = (await response.json()) as InspirationAnalysisResponse;
+      const elapsed = Date.now() - startedAt;
+      if (analysis.modelVersion.startsWith('fallback')) {
+        this.logger.warn(
+          `ai-service analyze-inspiration returned a FALLBACK after ${elapsed}ms (model=${model}) — see the ai-service log for the provider error`,
+        );
+      } else {
+        this.logger.log(
+          `ai-service analyze-inspiration ok in ${elapsed}ms model=${analysis.modelVersion} confidence=${analysis.confidence} garment=${analysis.profile?.isGarment ?? 'n/a'}`,
+        );
+      }
+      return analysis;
     } catch (error) {
-      this.logger.error(`Failed to analyze inspiration image: ${error instanceof Error ? error.message : String(error)}`);
+      this.logger.error(
+        `Failed to analyze inspiration image after ${Date.now() - startedAt}ms (url=${this.baseUrl}, model=${model}): ${error instanceof Error ? error.message : String(error)}`,
+      );
       return { features: {}, suggestedCutType: null, confidence: 0, modelVersion: 'fallback-0.0.0' };
     }
   }

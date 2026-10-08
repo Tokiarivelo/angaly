@@ -35,7 +35,7 @@ def test_analyze_inspiration_sends_one_image_block_and_returns_features(mock_ant
     assert body["modelVersion"] == "claude-haiku-4-5-20251001"
 
     kwargs = create.call_args.kwargs
-    assert kwargs["max_tokens"] == 512
+    assert kwargs["max_tokens"] == 1024
     blocks = kwargs["messages"][0]["content"]
     assert [b["type"] for b in blocks] == ["image", "text"]
     assert blocks[0]["source"]["media_type"] == "image/jpeg"

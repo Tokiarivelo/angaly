@@ -1,3 +1,4 @@
+import { Prisma } from '@angaly/database';
 import { Injectable } from '@nestjs/common';
 import { PrismaService } from '../../../prisma/prisma.service';
 import {
@@ -137,6 +138,12 @@ export class PrismaPatternProjectRepository implements IPatternProjectRepository
     if (data.detailsJson !== undefined) updateData.detailsJson = data.detailsJson;
     if (data.measurementProfileId !== undefined) updateData.measurementProfileId = data.measurementProfileId;
     if (data.inspirationMediaId !== undefined) updateData.inspirationMediaId = data.inspirationMediaId;
+    if (data.inspirationAnalysisJson !== undefined) {
+      updateData.inspirationAnalysisJson = data.inspirationAnalysisJson ?? Prisma.JsonNull;
+    }
+    if (data.parametersExtJson !== undefined) {
+      updateData.parametersExtJson = data.parametersExtJson ?? Prisma.JsonNull;
+    }
     if (data.status !== undefined) updateData.status = data.status;
 
     const record = await this.prisma.patternProject.update({

@@ -29,6 +29,9 @@ import { PatternLearningService } from './application/services/pattern-learning.
 import { RecordPatternLearningUseCase } from './application/use-cases/record-pattern-learning.use-case';
 import { ListSelectableAiProvidersUseCase } from './application/use-cases/list-selectable-ai-providers.use-case';
 import { AiSelectableProvidersController } from './presentation/controllers/ai-selectable-providers.controller';
+import { AI_TRAINING_SAMPLE_REPOSITORY } from './domain/repositories/ai-training-sample.repository';
+import { PrismaAiTrainingSampleRepository } from './infrastructure/repositories/prisma-ai-training-sample.repository';
+import { CollectAiTrainingSampleUseCase } from './application/use-cases/collect-ai-training-sample.use-case';
 import { AiProviderResolverService } from './application/services/ai-provider-resolver.service';
 
 @Module({
@@ -48,6 +51,8 @@ import { AiProviderResolverService } from './application/services/ai-provider-re
     { provide: INSPIRATION_ANALYSIS_REPOSITORY, useClass: PrismaInspirationAnalysisRepository },
     { provide: INSPIRATION_IMAGE_PREPROCESSOR, useClass: SharpInspirationImagePreprocessor },
     { provide: PATTERN_LEARNING_REPOSITORY, useClass: PrismaPatternLearningRepository },
+    { provide: AI_TRAINING_SAMPLE_REPOSITORY, useClass: PrismaAiTrainingSampleRepository },
+    CollectAiTrainingSampleUseCase,
     PatternLearningService,
     RecordPatternLearningUseCase,
     ListSelectableAiProvidersUseCase,

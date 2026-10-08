@@ -1,4 +1,5 @@
 import {
+  BadRequestException,
   ForbiddenException,
   Inject,
   Injectable,
@@ -17,12 +18,20 @@ import {
 import { PatternVersionEntity } from '../../domain/entities/pattern-version.entity';
 import { GeneratePatternPiecesUseCase } from '../../../pattern-engine/application/use-cases/generate-pattern-pieces.use-case';
 import { GetMeasurementProfileUseCase } from '../../../measurements/application/use-cases/get-measurement-profile.use-case';
-import { AiUsage } from '@angaly/types';
+import {
+  AiUsage,
+  validateMeasurementValues,
+  validatePatternExtParameters,
+  type AiProviderId,
+  type InspirationAnalysisSnapshot,
+} from '@angaly/types';
 import { AiProviderResolverService } from '../../../ai-inference/application/services/ai-provider-resolver.service';
+import { InspirationParametersService } from '../services/inspiration-parameters.service';
+import { SuggestPatternParametersUseCase } from '../../../ai-inference/application/use-cases/suggest-pattern-parameters.use-case';
 import { RecordPatternLearningUseCase } from '../../../ai-inference/application/use-cases/record-pattern-learning.use-case';
 import { EstimateMissingMeasurementsUseCase } from '../../../ai-inference/application/use-cases/estimate-missing-measurements.use-case';
 import { GeneratePatternVersionDto } from '../dtos/generate-pattern-version.dto';
-import { type GarmentType, PatternEngineValidationError } from '@angaly/pattern-engine';
+import { type GarmentType, type PatternParameters, PatternEngineValidationError } from '@angaly/pattern-engine';
 
 const KNOWN_GARMENT_TYPES: readonly GarmentType[] = [
   'ROBE',
@@ -47,6 +56,8 @@ export class GeneratePatternVersionUseCase {
     private readonly estimateMissingMeasurementsUseCase: EstimateMissingMeasurementsUseCase,
     private readonly providerResolver: AiProviderResolverService,
     private readonly recordPatternLearning: RecordPatternLearningUseCase,
+    private readonly inspirationParameters: InspirationParametersService,
+    private readonly suggestPatternParameters: SuggestPatternParametersUseCase,
   ) {}
 
   async execute(
@@ -71,11 +82,32 @@ export class GeneratePatternVersionUseCase {
       dto,
     );
 
-    const parameters = {
+    // The customer's confirmed choices win; the stored photo analysis fills the gaps with the most
+    // fitting engine values (then, best-effort, the AI fills what is still empty).
+    const analysis = project.inspirationAnalysisJson;
+    const merged = this.inspirationParameters.merge(
+      { cutType: project.cutType, details: (project.detailsJson as Record<string, string>) ?? {} },
+      analysis,
+    );
+    const aiFilledKeys = await this.fillMissingDetailsWithAi(
+      merged,
+      { garmentType, occasion: project.occasion, style: project.style },
+      analysis,
+      dto?.aiProvider,
+    );
+
+    // Extended inputs (ease, fullness, lengths): re-validated here too, so a row written by an older
+    // client or by hand can never push an out-of-range value into the engine. Absent = defaults.
+    const ext = validatePatternExtParameters(project.parametersExtJson).value;
+
+    const parameters: PatternParameters = {
       garmentType,
-      cutType: project.cutType ?? 'DROITE',
+      cutType: merged.cutType,
       style: project.style ?? null,
-      details: (project.detailsJson as Record<string, string>) ?? {},
+      details: merged.details,
+      ...(ext.ease ? { ease: ext.ease } : {}),
+      ...(ext.fullness ? { fullness: ext.fullness } : {}),
+      ...(ext.lengths ? { lengths: ext.lengths } : {}),
     };
 
     // Calcul géométrique déterministe via le pattern-engine — aucune valeur
@@ -138,6 +170,8 @@ export class GeneratePatternVersionUseCase {
     // donc l'avertissement est ajouté ici, où le GarmentType demandé est connu, plutôt que
     // de laisser l'UI présenter ce bloc de base comme un patron prêt à confectionner.
     const warnings = [...generationResult.warnings];
+    const draping = this.inspirationParameters.drapingAdvice(analysis?.profile);
+    if (draping) warnings.push(draping.warning);
     if (garmentType === 'AUTRE') {
       warnings.push(
         'Patron de base générique : ce type de vêtement ("Autre") ne dispose pas de ' +
@@ -167,6 +201,16 @@ export class GeneratePatternVersionUseCase {
         measurements,
         estimatedMeasurementKeys,
         warnings,
+        inspiration: analysis
+          ? {
+              observations: analysis.features,
+              presentation: analysis.profile?.presentation ?? null,
+              constructionMethod: analysis.profile?.constructionMethod ?? 'FLAT_PATTERN',
+              constructionNotes: analysis.profile?.constructionNotes ?? null,
+              detailKeysFromPhoto: merged.fromPhotoKeys,
+              detailKeysFromAi: aiFilledKeys,
+            }
+          : null,
         metadata: generationResult.metadata,
       },
       generatedByAI: estimatedMeasurementKeys.length > 0,
@@ -186,9 +230,45 @@ export class GeneratePatternVersionUseCase {
       style: project.style,
       cutType: parameters.cutType,
       details: parameters.details,
+      inspirationMediaId: project.inspirationMediaId,
     });
 
     return version;
+  }
+
+  /**
+   * Best-effort: asks the configured AI to propose the detail groups still empty, using the photo
+   * observations as text (no image tokens). Values are validated; the customer's choices never change.
+   */
+  private async fillMissingDetailsWithAi(
+    merged: { cutType: string; details: Record<string, string> },
+    base: { garmentType: string; occasion: string | null; style: string | null },
+    analysis: InspirationAnalysisSnapshot | null,
+    aiProvider: AiProviderId | undefined,
+  ): Promise<string[]> {
+    if (!analysis || Object.keys(analysis.features).length === 0) return [];
+    if (this.inspirationParameters.missingGroups(merged.details).length === 0) return [];
+    try {
+      const provider = await this.providerResolver.resolveSelected(aiProvider, AiUsage.PATTERN_SUGGESTION);
+      const { suggestion } = await this.suggestPatternParameters.execute({
+        garmentType: base.garmentType,
+        occasion: base.occasion,
+        style: base.style,
+        measurements: {},
+        inspirationImageUrl: null,
+        inspirationFeatures: analysis.features,
+        ...(provider ? { provider } : {}),
+      });
+      if (suggestion.modelVersion.startsWith('fallback')) return [];
+      const { details, acceptedKeys } = this.inspirationParameters.acceptSuggestedDetails(
+        merged.details,
+        suggestion.suggestedDetails,
+      );
+      Object.assign(merged.details, details);
+      return acceptedKeys;
+    } catch {
+      return [];
+    }
   }
 
   /**
@@ -216,7 +296,15 @@ export class GeneratePatternVersionUseCase {
       }
     }
 
-    return { ...profileMeasurements, ...(dto?.measurements ?? {}) };
+    const manual = dto?.measurements ?? {};
+    const { issues } = validateMeasurementValues(manual);
+    if (issues.length > 0) {
+      throw new BadRequestException({
+        message: 'Mesures invalides',
+        errors: issues.map((issue) => issue.message),
+      });
+    }
+    return { ...profileMeasurements, ...manual };
   }
 
   private resolveGarmentType(rawType: string): GarmentType {

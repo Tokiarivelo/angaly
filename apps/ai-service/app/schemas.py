@@ -137,9 +137,28 @@ class InspirationAnalysisRequest(BaseModel):
     model_config = {"populate_by_name": True}
 
 
+class GarmentProfile(BaseModel):
+    """Wizard-ready classification of the photo, restricted to the closed vocabulary of
+    `app/garment_knowledge.py`. `is_garment=False` means nothing may be pre-filled."""
+    is_garment: bool = Field(default=False, alias="isGarment")
+    garment_type: str | None = Field(default=None, alias="garmentType")
+    occasion: str | None = None
+    style: str | None = None
+    cut_type: str | None = Field(default=None, alias="cutType")
+    details: dict[str, str] = Field(default_factory=dict)
+    # FLAT_PATTERN | DRAPING | MIXED — how the garment should be built (drapes are made on a mannequin).
+    construction_method: str | None = Field(default=None, alias="constructionMethod")
+    # WORN | MANNEQUIN | FLAT | SKETCH — how the garment is shown in the photo.
+    presentation: str | None = None
+    construction_notes: str | None = Field(default=None, alias="constructionNotes")
+
+    model_config = {"populate_by_name": True}
+
+
 class InspirationAnalysisResponse(BaseModel):
     """Garment attributes read from the photo — descriptive only, never geometry."""
     features: dict[str, str] = Field(default_factory=dict)
+    profile: GarmentProfile | None = None
     suggested_cut_type: str | None = Field(default=None, alias="suggestedCutType")
     confidence: float
     model_version: str = Field(..., alias="modelVersion")

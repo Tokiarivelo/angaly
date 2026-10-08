@@ -30,7 +30,18 @@ export interface PatternParameters {
   cutType: string; // e.g. "SIRENE", "PRINCESSE"
   style: string | null;
   details: Record<string, string>; // manches, col, décolleté, longueur, etc.
+  /**
+   * Phase 5b S1 — extended, optional inputs. Absent (or `CONFORT`) = the historical geometry,
+   * unchanged. Bounds are enforced upstream by `validatePatternExtParameters` (@angaly/types);
+   * the engine never depends on that package, hence the structural copy below.
+   */
+  ease?: EaseLevel;
+  fullness?: { skirt?: number; sleeve?: number };
+  lengths?: { skirtPct?: number; sleevePct?: number; bodicePct?: number };
 }
+
+/** Global ease: AJUSTE (close-fitting) < CONFORT (historical default) < AMPLE (roomy). */
+export type EaseLevel = 'AJUSTE' | 'CONFORT' | 'AMPLE';
 
 export interface GrainlineSpec {
   angleDegrees: number;

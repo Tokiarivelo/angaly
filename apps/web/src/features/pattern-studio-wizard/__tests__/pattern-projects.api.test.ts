@@ -1,3 +1,4 @@
+import { AiProviderId } from '@angaly/types';
 import { describe, it, expect, vi, beforeEach, afterEach } from 'vitest';
 import { MediaEntityType } from '@angaly/types';
 import { apiClient } from '@/lib/api-client';
@@ -72,6 +73,15 @@ describe('uploadInspirationMedia', () => {
   });
 });
 
+const PROFILE = {
+  isGarment: true,
+  garmentType: 'ROBE',
+  occasion: 'SOIREE',
+  style: 'ELEGANT',
+  cutType: 'PRINCESSE',
+  details: { longueur: 'SOL' },
+};
+
 describe('analyzeInspirationPhoto', () => {
   beforeEach(() => {
     vi.clearAllMocks();
@@ -81,6 +91,7 @@ describe('analyzeInspirationPhoto', () => {
     vi.mocked(apiClient.post).mockResolvedValueOnce({
       suggestedCutType: 'PRINCESSE',
       detectedInspirationFeatures: { silhouette: 'Évasée' },
+      profile: PROFILE,
       confidence: 0.82,
       isIndicativeOnly: false,
     });
@@ -93,16 +104,42 @@ describe('analyzeInspirationPhoto', () => {
     expect(result).toEqual({
       suggestedCutType: 'PRINCESSE',
       detectedFeatures: { silhouette: 'Évasée' },
+      profile: PROFILE,
       confidence: 0.82,
     });
   });
 
-  it('falls back to placeholder analysis when the request fails', async () => {
+  it('sends the model chosen in the wizard, and nothing when the atelier setting applies', async () => {
+    vi.mocked(apiClient.post).mockResolvedValue({
+      suggestedCutType: null,
+      detectedInspirationFeatures: {},
+      profile: null,
+      confidence: 0,
+      isIndicativeOnly: true,
+    });
+
+    await analyzeInspirationPhoto('https://minio.local/p.jpg', AiProviderId.ANTHROPIC);
+    expect(apiClient.post).toHaveBeenLastCalledWith('/api/ai-inference/inspiration-analysis', {
+      inspirationImageUrl: 'https://minio.local/p.jpg',
+      aiProvider: 'ANTHROPIC',
+    });
+
+    await analyzeInspirationPhoto('https://minio.local/p.jpg');
+    expect(apiClient.post).toHaveBeenLastCalledWith('/api/ai-inference/inspiration-analysis', {
+      inspirationImageUrl: 'https://minio.local/p.jpg',
+    });
+  });
+
+  it('returns an empty analysis, never an invented one, when the request fails', async () => {
     vi.mocked(apiClient.post).mockRejectedValueOnce(new Error('network error'));
 
     const result = await analyzeInspirationPhoto('https://minio.local/patterns/inspiration-1.jpg');
 
-    expect(result.suggestedCutType).toBe('SIRENE');
-    expect(result.confidence).toBe(0);
+    expect(result).toEqual({
+      suggestedCutType: null,
+      detectedFeatures: {},
+      profile: null,
+      confidence: 0,
+    });
   });
 });

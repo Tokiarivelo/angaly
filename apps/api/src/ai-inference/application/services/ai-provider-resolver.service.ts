@@ -101,6 +101,7 @@ export class AiProviderResolverService {
       }
     }
 
+    this.logger.log(`Fournisseur résolu pour "${usage}" : ${providerId}/${config.model}`);
     return {
       provider: providerId,
       model: config.model,

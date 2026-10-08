@@ -16,6 +16,37 @@ Lis docs/handoff.md et poursuis le travail selon les priorités définies.
 
 ---
 
+## 0. Dernière session (2026-10-08) — Phase 5b S1 + catalogue de mesures
+
+**Livré (S1)** : contrat de paramètres étendus (`ease`, `fullness`, `lengths`) + **catalogue de 31
+mesures** pour l'ajustement (`packages/types/src/pattern-fit.ts`).
+- Types : bornes, `validatePatternExtParameters` (rejet, jamais de clamp), `validateMeasurementValues`,
+  `checkMeasurementCoherence`, `measurementFieldsFor(garment)`.
+- DB : `pattern_projects.parametersExtJson` (migration `20261008130000_…`, client Prisma régénéré).
+- API : PATCH projet valide/stocke les paramètres (400 hors bornes) ; génération les revalide et les
+  passe au moteur ; profils de mesures + mesures de génération validés (400 « Mesures invalides »).
+- Moteur : champs optionnels dans `PatternParameters` — **aucun contour modifié**
+  (`ease-contract.test.ts`).
+- Web : étape Mesures adaptée au vêtement (indispensables / recommandées / « plus de mesures »
+  groupées), erreurs de plausibilité et avertissements de cohérence, curseurs aisance/ampleur/
+  longueurs (`FitAdjustments`), formulaire « Mes mesures » groupé (schéma Zod tolère les champs vides).
+- Tests : API 1239, web 946, pattern-engine 95, pytest 59 — tous verts ; `pnpm typecheck` 10/10.
+
+**À savoir / dette**
+- ⚠️ **Maquette Stitch non consultée** pour les nouveaux blocs JSX (`FitAdjustments`,
+  `MeasurementFieldCard`, groupes du tiroir « Mes mesures ») : styles repris de l'existant. À
+  vérifier via `agy` puis ajouter la ligne dans `docs/mockup-reference.md`.
+- `pnpm lint` de `apps/api` était déjà rouge avant (≈250 erreurs hors périmètre).
+- L'IA d'estimation ne produit que les 6 clés historiques ; les 25 autres se saisissent à la main.
+- Le changement non commité des sessions précédentes (inspiration, ai-service…) est toujours dans l'arbre.
+
+**Prochaine action : S2** — `shared/ease-profile.ts` + `shared/proportions.ts`, brancher `ease`,
+`lengths`, `fullness` et les nouvelles mesures (tour sous-poitrine, hauteur de poitrine, carrures,
+hauteur de fourche, tour de cuisse…) dans les règles une par une (skill `pattern-engine-rule`),
+`warnings[]` dans le contrat moteur ; `CONFORT` doit rester identique aux snapshots.
+
+---
+
 ## 1. Résumé exécutif de la session
 
 ### Fournisseurs d'IA multiples (`docs/features/ai-providers.md`) — ✅ Livré de bout en bout (Phases 1 à 7)
@@ -143,3 +174,20 @@ Modifications locales vérifiées et prêtes :
 - Tests : api `jest src/ai-inference src/patterns` ✓, web `vitest src/features/pattern-studio-wizard` ✓, ai-service pytest 48 ✓.
 - À faire : vérifier visuellement le sélecteur sur la maquette Stitch (non consultée) ; apprendre des corrections de
   mesures ; `ai-assistant.controller` lit `req.user.id` alors que le payload JWT expose `sub` (bug probable existant).
+
+
+## Addendum 2026-10-08 — Pattern Studio : Inspiration en premier + pré-remplissage IA
+
+- Étapes : Inspiration → Vêtement → Occasion → Style → Coupe → Détails → Mesures ; `?step=<clé>` dans l'URL (reprise après refresh).
+- ai-service : `app/garment_knowledge.py` (taxonomie fermée, procédure, few-shot, `normalize_profile`) ; `analyze-inspiration` renvoie `profile` (`isGarment`, type, occasion, style, coupe, détails). Photo non-vêtement ⇒ rien de pré-rempli.
+- API : colonne `inspiration_analyses.profile` (migration `20261008100000…` **à appliquer** : `pnpm --filter @angaly/database prisma migrate deploy`) ; le contrôleur renvoie `profile`.
+- À faire : vérifier l'écran Stitch réel (ordre des étapes changé sur demande utilisateur), mettre à jour `docs/pages/` + `mockup-reference.md`, e2e Playwright, suite vitest complète (lancée en arrière-plan, non vérifiée).
+
+## Addendum 2026-10-08 (2) — Observations persistées, construction (drapé/mannequin), paramètres optimaux
+- `pattern_projects.inspirationAnalysisJson` (migration `20261008120000…`, **à appliquer**) : observations + profil du vêtement ; envoyé à chaque autosave, restauré au rechargement.
+- ai-service : le profil contient `constructionMethod` (FLAT_PATTERN | DRAPING | MIXED), `presentation` (WORN | MANNEQUIN | FLAT | SKETCH), `constructionNotes`.
+- Génération (`GeneratePatternVersionUseCase`) : choix du client prioritaires → trous comblés par la photo (`InspirationParametersService`, valeurs validées) → puis par l'IA (texte seul, best-effort). Avertissement si drapé/mixte (« à finaliser sur mannequin »). Tout est tracé dans `parametersJson.inspiration`.
+- Limite : le moteur reste plat et déterministe (ADR-005) ; les observations libres (tissu, silhouette) alimentent l'IA mais ne modifient pas encore directement la géométrie. `PATTERN_DETAIL_OPTIONS` (API) doit rester synchronisé avec `details.const.ts` (web) et `garment_knowledge.py`.
+
+## Addendum 2026-10-08 (3) — Plan Phase 5b
+Plan complet (S1→S8) : `docs/phases/phase-5b-fidelite-photo-et-drapes.md` — paramètres étendus (aisance/ampleur/longueurs), blocs de drapé déterministes, jeu de référence + métriques, modèle local entraîné sur `ai_training_samples`, RGPD. Prochaine action : session S1. Ajouter la ligne Phase 5b à `docs/checklist-implementation.md`.

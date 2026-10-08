@@ -26,6 +26,8 @@ import { RestorePatternVersionUseCase } from './application/use-cases/restore-pa
 import { PatternProjectsController } from './presentation/controllers/pattern-projects.controller';
 import { PatternVersionsController } from './presentation/controllers/pattern-versions.controller';
 
+import { InspirationParametersService } from './application/services/inspiration-parameters.service';
+
 @Module({
   imports: [
     PrismaModule,
@@ -50,6 +52,7 @@ import { PatternVersionsController } from './presentation/controllers/pattern-ve
     GetPatternProjectUseCase,
     ListPatternProjectsUseCase,
     UpdatePatternProjectStepUseCase,
+    InspirationParametersService,
     GeneratePatternVersionUseCase,
     RequestReviewUseCase,
     ExportPatternVersionUseCase,

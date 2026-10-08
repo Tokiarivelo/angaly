@@ -717,6 +717,10 @@ model PatternProject {
   cutType              String?
   detailsJson          Json?
   inspirationMediaId   String?
+  /// Photo analysis (observations + garment profile incl. construction method) used at generation.
+  inspirationAnalysisJson Json?
+  /// Phase 5b S1 — extended engine inputs (ease, fullness, lengths), validated; null = engine defaults.
+  parametersExtJson    Json?
   status               PatternStatus @default(DRAFT)
   createdAt            DateTime      @default(now())
   updatedAt            DateTime      @updatedAt
@@ -1072,6 +1076,7 @@ model InspirationAnalysis {
   id               String   @id @default(cuid())
   imageHash        String   @unique
   features         Json
+  profile          Json?
   suggestedCutType String?
   confidence       Float
   modelVersion     String
@@ -1102,4 +1107,33 @@ model PatternLearningRecord {
 
   @@index([garmentType])
   @@map("pattern_learning_records")
+}
+
+enum AiTrainingSampleStatus {
+  COLLECTED
+  HUMAN_CONFIRMED
+  EXCLUDED
+}
+
+/// Input/output pairs of EXTERNAL models (Claude, Gemini, OpenAI…) kept to train ANGALY's own local
+/// model. `output` is the external model's answer (a weak label); `humanLabel` is what the customer
+/// finally built from it (a validated label, set when the pattern is generated). The image is never
+/// copied: `imageUrl` points at our own MinIO. See docs/features/ai-training-data.md.
+model AiTrainingSample {
+  id           String                 @id @default(cuid())
+  task         String
+  inputHash    String
+  imageUrl     String?
+  output       Json
+  humanLabel   Json?
+  providerId   String?
+  modelVersion String
+  confidence   Float
+  status       AiTrainingSampleStatus @default(COLLECTED)
+  createdAt    DateTime               @default(now())
+  updatedAt    DateTime               @updatedAt
+
+  @@unique([task, inputHash])
+  @@index([task, status])
+  @@map("ai_training_samples")
 }

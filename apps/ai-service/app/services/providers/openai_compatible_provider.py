@@ -130,12 +130,12 @@ class OpenAICompatibleProvider(LlmProvider):
             completion = client.chat.completions.create(
                 model=self.model,
                 messages=messages,
-                max_tokens=512,
+                max_tokens=1024,
                 response_format={"type": "json_object"},
             )
         except Exception:
             completion = client.chat.completions.create(
-                model=self.model, messages=messages, max_tokens=512
+                model=self.model, messages=messages, max_tokens=1024
             )
         raw_text = completion.choices[0].message.content or "{}"
         return schema.model_validate_json(clean_json_text(raw_text))

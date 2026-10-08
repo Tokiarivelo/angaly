@@ -10,6 +10,14 @@ describe('AnalyzeInspirationImageUseCase', () => {
   const hash = createHash('sha256').update(original).digest('hex');
   const analysis: InspirationAnalysisResponse = {
     features: { neckline: 'col bateau' },
+    profile: {
+      isGarment: true,
+      garmentType: 'ROBE',
+      occasion: null,
+      style: null,
+      cutType: 'EVASEE',
+      details: {},
+    },
     suggestedCutType: 'EVASEE',
     confidence: 0.8,
     modelVersion: 'claude-haiku-4-5-20251001',
@@ -19,6 +27,7 @@ describe('AnalyzeInspirationImageUseCase', () => {
   let repository: jest.Mocked<IInspirationAnalysisRepository>;
   const aiClient = { analyzeInspiration: jest.fn() };
   const resolver = { resolveCredentials: jest.fn() };
+  const collector = { collectInspirationAnalysis: jest.fn().mockResolvedValue(undefined) };
   let useCase: AnalyzeInspirationImageUseCase;
 
   beforeEach(() => {
@@ -33,13 +42,15 @@ describe('AnalyzeInspirationImageUseCase', () => {
       }),
     };
     repository = { findByHash: jest.fn().mockResolvedValue(null), save: jest.fn() };
-    resolver.resolveCredentials.mockResolvedValue({ provider: 'ANTHROPIC', model: 'm' });
+    resolver.resolveCredentials.mockResolvedValue({ provider: 'ANTHROPIC', model: 'claude-haiku-4-5-20251001' });
     aiClient.analyzeInspiration.mockResolvedValue(analysis);
+    collector.collectInspirationAnalysis.mockClear();
     useCase = new AnalyzeInspirationImageUseCase(
       preprocessor,
       repository,
       aiClient as never,
       resolver as never,
+      collector as never,
     );
   });
 
@@ -52,6 +63,34 @@ describe('AnalyzeInspirationImageUseCase', () => {
     expect(result).toEqual(analysis);
     expect(preprocessor.downscale).not.toHaveBeenCalled();
     expect(aiClient.analyzeInspiration).not.toHaveBeenCalled();
+  });
+
+  it('keeps a fresh external answer as a training pair, but not a cache hit', async () => {
+    await useCase.execute('https://cdn.angaly.test/p.jpg');
+    expect(collector.collectInspirationAnalysis).toHaveBeenCalledWith(
+      expect.objectContaining({ imageHash: hash, providerId: 'ANTHROPIC', analysis }),
+    );
+
+    collector.collectInspirationAnalysis.mockClear();
+    repository.findByHash.mockResolvedValue(analysis);
+    await useCase.execute('https://cdn.angaly.test/p.jpg');
+    expect(collector.collectInspirationAnalysis).not.toHaveBeenCalled();
+  });
+
+  it('does not reuse an answer produced by a different model than the selected one', async () => {
+    repository.findByHash.mockResolvedValue({ ...analysis, modelVersion: 'gemini-2.5-flash' });
+
+    await useCase.execute('https://cdn.angaly.test/p.jpg');
+
+    expect(aiClient.analyzeInspiration).toHaveBeenCalledTimes(1);
+  });
+
+  it('re-reads a legacy cached row that has no garment profile yet', async () => {
+    repository.findByHash.mockResolvedValue({ ...analysis, profile: null });
+
+    await useCase.execute('https://cdn.angaly.test/p.jpg');
+
+    expect(aiClient.analyzeInspiration).toHaveBeenCalledTimes(1);
   });
 
   it('sends the downscaled image once and caches the result by original hash', async () => {

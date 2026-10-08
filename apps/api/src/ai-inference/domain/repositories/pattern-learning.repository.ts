@@ -9,6 +9,8 @@ export interface PatternLearningRecordData {
   style: string | null;
   cutType: string;
   details: Record<string, string>;
+  /** Photo the project started from, if any — lets the final choices label the AI's analysis. */
+  inspirationMediaId?: string | null;
 }
 
 export interface PatternLearningRow {

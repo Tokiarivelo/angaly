@@ -1,6 +1,6 @@
 import { Injectable } from '@nestjs/common';
-import type { Prisma } from '@angaly/database';
-import type { InspirationAnalysisResponse } from '@angaly/types';
+import { Prisma } from '@angaly/database';
+import type { GarmentProfile, InspirationAnalysisResponse } from '@angaly/types';
 import { PrismaService } from '../../../prisma/prisma.service';
 import type { IInspirationAnalysisRepository } from '../../domain/repositories/inspiration-analysis.repository';
 
@@ -13,6 +13,7 @@ export class PrismaInspirationAnalysisRepository implements IInspirationAnalysis
     if (!row) return null;
     return {
       features: row.features as Record<string, string>,
+      profile: row.profile as GarmentProfile | null,
       suggestedCutType: row.suggestedCutType,
       confidence: row.confidence,
       modelVersion: row.modelVersion,
@@ -22,6 +23,9 @@ export class PrismaInspirationAnalysisRepository implements IInspirationAnalysis
   async save(imageHash: string, analysis: InspirationAnalysisResponse): Promise<void> {
     const data = {
       features: analysis.features as Prisma.InputJsonValue,
+      profile: analysis.profile
+        ? (analysis.profile as unknown as Prisma.InputJsonValue)
+        : Prisma.JsonNull,
       suggestedCutType: analysis.suggestedCutType,
       confidence: analysis.confidence,
       modelVersion: analysis.modelVersion,

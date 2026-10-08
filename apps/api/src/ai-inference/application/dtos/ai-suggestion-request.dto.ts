@@ -17,7 +17,8 @@ export class AiSuggestionRequestDto {
   measurements!: Record<string, number>;
 
   @IsOptional()
-  @IsUrl()
+  // require_tld:false — local MinIO URLs (http://localhost:9000/…) are valid in development.
+  @IsUrl({ require_tld: false, require_protocol: true, protocols: ['http', 'https'] })
   inspirationImageUrl?: string;
 
   /** Fournisseur choisi dans Pattern Studio ; absent = réglage par défaut de l'atelier. */

@@ -1,3 +1,4 @@
+import type { InspirationAnalysisSnapshot, PatternExtParameters } from '@angaly/types';
 import { ApiProperty, ApiPropertyOptional } from '@nestjs/swagger';
 import { PatternStatus, PATTERN_STATUSES } from '../../domain/value-objects/pattern-status.vo';
 import { PatternVersionDto } from './pattern-version-response.dto';
@@ -32,6 +33,15 @@ export class PatternProjectResponseDto {
 
   @ApiPropertyOptional({ example: 'med-1' })
   inspirationMediaId!: string | null;
+
+  @ApiPropertyOptional({ description: 'Analyse IA de la photo (observations + profil du vêtement)' })
+  inspirationAnalysisJson?: InspirationAnalysisSnapshot | null;
+
+  @ApiPropertyOptional({
+    description: 'Paramètres étendus validés du moteur : aisance, ampleur, longueurs (null = défauts)',
+    example: { ease: 'CONFORT', fullness: { skirt: 2 }, lengths: { skirtPct: 100 } },
+  })
+  parametersExtJson?: PatternExtParameters | null;
 
   @ApiPropertyOptional({ example: 'http://localhost:9000/patterns/insp.jpg' })
   inspirationMediaUrl?: string | null;

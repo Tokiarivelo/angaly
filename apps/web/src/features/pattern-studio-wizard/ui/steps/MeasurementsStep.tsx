@@ -1,10 +1,23 @@
 'use client';
 
 import React, { useState } from 'react';
-import { UserCheck, HelpCircle, Check, Ruler } from 'lucide-react';
+import { UserCheck, Check, Ruler } from 'lucide-react';
 import { useMeasurementProfiles } from '../../hooks/useMeasurementProfiles';
 import { useSizeCharts } from '../../hooks/useSizeCharts';
-import type { SizeChartGender } from '@angaly/types';
+import {
+  MEASUREMENT_CATALOG,
+  MEASUREMENT_GROUP_LABELS,
+  checkMeasurementCoherence,
+  measurementFieldsFor,
+  validateMeasurementValues,
+  FIT_GARMENT_TYPES,
+  type FitGarmentType,
+  type PatternExtParameters,
+  type SizeChartGender,
+} from '@angaly/types';
+import { FitAdjustments } from './FitAdjustments';
+import { MeasurementFieldCard } from './MeasurementFieldCard';
+import type { FitChange } from '../../utils/fit-parameters';
 
 interface MeasurementsStepProps {
   selectedProfileId?: string | undefined;
@@ -12,19 +25,19 @@ interface MeasurementsStepProps {
   onSelectProfile: (profileId: string) => void;
   onUpdateMeasurement: (key: string, value: number) => void;
   onApplyMeasurements: (values: Record<string, number>) => void;
+  /** Drives which measurements are required / recommended (undefined = the common essentials). */
+  garmentType?: string | undefined;
+  fit?: PatternExtParameters | undefined;
+  onChangeFit?: ((change: FitChange) => void) | undefined;
 }
 
-// Vocabulaire canonique des mesures — identique à celui du profil "Mes mesures"
-// (apps/web/src/features/mes-mesures/consts/measurement-fields.const.ts) et à
-// celui attendu par le pattern-engine (packages/pattern-engine/src/rules/*).
-const DEFAULT_MEASUREMENT_KEYS = [
-  { key: 'TOUR_POITRINE', label: 'Tour de poitrine', hint: 'Mesurez horizontalement au point le plus fort de la poitrine.' },
-  { key: 'TOUR_TAILLE', label: 'Tour de taille', hint: 'Mesurez au creux de la taille, sans serrer.' },
-  { key: 'TOUR_BASSIN', label: 'Tour de bassin', hint: 'Mesurez horizontalement au point le plus fort du bassin.' },
-  { key: 'LONGUEUR_DOS', label: 'Longueur dos', hint: "De la base du cou jusqu'au creux de la taille." },
-  { key: 'CARRURE_DOS', label: 'Carrure dos', hint: 'Distance entre les emmanchures au dos.' },
-  { key: 'TOUR_COU', label: 'Tour de cou', hint: 'Mesurez à la base du cou.' },
-];
+// Vocabulaire canonique des mesures : `MEASUREMENT_CATALOG` (@angaly/types), partagé avec le
+// profil "Mes mesures", la validation de l'API et le pattern-engine (test anti-dérive côté API).
+
+const toFitGarment = (garmentType: string | undefined): FitGarmentType | null => {
+  const g = (garmentType ?? '').toUpperCase();
+  return (FIT_GARMENT_TYPES as readonly string[]).includes(g) ? (g as FitGarmentType) : null;
+};
 
 type MeasurementMode = 'MANUAL' | 'STANDARD_SIZE';
 
@@ -34,14 +47,28 @@ export const MeasurementsStep: React.FC<MeasurementsStepProps> = ({
   onSelectProfile,
   onUpdateMeasurement,
   onApplyMeasurements,
+  garmentType,
+  fit,
+  onChangeFit,
 }) => {
   const { data: profiles = [] } = useMeasurementProfiles();
   const [unit, setUnit] = useState<'cm' | 'inch'>('cm');
-  const [activeHint, setActiveHint] = useState<string | null>(null);
   const [mode, setMode] = useState<MeasurementMode>('MANUAL');
   const [gender, setGender] = useState<SizeChartGender>('FEMME');
+  const [showOthers, setShowOthers] = useState(false);
   const [selectedSizeLabel, setSelectedSizeLabel] = useState<string | null>(null);
   const { data: sizeChart = [], isLoading: isSizeChartLoading } = useSizeCharts(gender);
+
+  const garment = toFitGarment(garmentType);
+  const primaryFields = measurementFieldsFor(garment);
+  const primaryKeys = new Set(primaryFields.map((f) => f.key));
+  const otherFields = MEASUREMENT_CATALOG.filter((m) => !primaryKeys.has(m.key));
+  const { issues } = validateMeasurementValues(measurements);
+  const issueByKey = new Map(issues.map((issue) => [issue.key, issue.message]));
+  const coherenceWarnings = checkMeasurementCoherence(measurements);
+  const missingRequired = primaryFields.filter(
+    (f) => f.necessity === 'REQUIRED' && measurements[f.key] === undefined,
+  );
 
   const handleSelectSize = (label: string, values: Record<string, number>) => {
     setSelectedSizeLabel(label);
@@ -212,71 +239,85 @@ export const MeasurementsStep: React.FC<MeasurementsStepProps> = ({
           {mode === 'STANDARD_SIZE' ? 'Ajustez si besoin :' : profiles.length > 0 ? 'Ou ajustez vos mesures manuellement :' : 'Mensurations nécessaires :'}
         </h3>
 
+        {missingRequired.length > 0 && (
+          <p className="text-[11px] text-[#D8D3C8]/80" data-testid="missing-required">
+            Indispensables pour générer : {missingRequired.map((f) => f.label.toLowerCase()).join(', ')}.
+            Les autres mesures améliorent l’ajustement.
+          </p>
+        )}
+
         <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
-          {DEFAULT_MEASUREMENT_KEYS.map((field) => {
-            const rawVal = measurements[field.key];
-            const displayVal =
-              rawVal !== undefined
-                ? unit === 'inch'
-                  ? (rawVal / 2.54).toFixed(1)
-                  : rawVal.toString()
-                : '';
-
-            return (
-              <div
-                key={field.key}
-                className="bg-[#0C2650]/40 border border-[#C5B190]/20 rounded-xl p-4 flex flex-col justify-between"
-              >
-                <div className="flex items-center justify-between mb-2">
-                  <label htmlFor={field.key} className="text-white text-xs font-medium flex items-center gap-1.5">
-                    <span>{field.label}</span>
-                    <button
-                      type="button"
-                      onClick={() =>
-                        setActiveHint(activeHint === field.key ? null : field.key)
-                      }
-                      className="text-[#C5B190] hover:text-white"
-                      title={field.hint}
-                    >
-                      <HelpCircle className="w-3.5 h-3.5" />
-                    </button>
-                  </label>
-                  {rawVal && (
-                    <span className="text-xs text-[#C5B190] flex items-center gap-1 font-mono">
-                      <Check className="w-3 h-3 stroke-[3]" /> OK
-                    </span>
-                  )}
-                </div>
-
-                {activeHint === field.key && (
-                  <p className="text-[11px] text-[#C5B190] italic mb-2 bg-[#041329] p-2 rounded border border-[#C5B190]/20">
-                    {field.hint}
-                  </p>
-                )}
-
-                <div className="flex items-center gap-2">
-                  <input
-                    id={field.key}
-                    type="number"
-                    step="0.5"
-                    value={displayVal}
-                    onChange={(e) => {
-                      const num = parseFloat(e.target.value);
-                      if (!isNaN(num)) {
-                        const inCm = unit === 'inch' ? num * 2.54 : num;
-                        onUpdateMeasurement(field.key, inCm);
-                      }
-                    }}
-                    placeholder={`Ex: ${unit === 'cm' ? '88' : '34.5'}`}
-                    className="w-full bg-[#041329] border border-[#C5B190]/30 rounded-lg px-3 py-2 text-white text-sm focus:outline-none focus:border-[#C5B190]"
-                  />
-                  <span className="text-xs text-[#D8D3C8] font-mono shrink-0">{unit}</span>
-                </div>
-              </div>
-            );
-          })}
+          {primaryFields.map((field) => (
+            <MeasurementFieldCard
+              key={field.key}
+              fieldKey={field.key}
+              label={field.label}
+              hint={field.help}
+              valueCm={measurements[field.key]}
+              unit={unit}
+              badge={field.necessity === 'REQUIRED' ? 'Indispensable' : 'Recommandé'}
+              error={issueByKey.get(field.key)}
+              onChangeCm={(v) => onUpdateMeasurement(field.key, v)}
+            />
+          ))}
         </div>
+
+        {coherenceWarnings.length > 0 && (
+          <ul className="text-[11px] text-amber-200/90 list-disc pl-5 space-y-1" data-testid="coherence-warnings">
+            {coherenceWarnings.map((w) => (
+              <li key={w}>{w}</li>
+            ))}
+          </ul>
+        )}
+
+        {otherFields.length > 0 && (
+          <div>
+            <button
+              type="button"
+              onClick={() => setShowOthers((v) => !v)}
+              aria-expanded={showOthers}
+              className="text-xs text-[#C5B190] underline hover:text-white"
+            >
+              {showOthers ? 'Masquer les autres mesures' : 'Plus de mesures pour un ajustement parfait'}
+            </button>
+            {showOthers && (
+              <div className="mt-4 space-y-6">
+                {(Object.keys(MEASUREMENT_GROUP_LABELS) as Array<keyof typeof MEASUREMENT_GROUP_LABELS>).map(
+                  (group) => {
+                    const fields = otherFields.filter((f) => f.group === group);
+                    if (fields.length === 0) return null;
+                    return (
+                      <div key={group}>
+                        <p className="text-[#D8D3C8] text-xs uppercase tracking-wide mb-3">
+                          {MEASUREMENT_GROUP_LABELS[group]}
+                        </p>
+                        <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
+                          {fields.map((field) => (
+                            <MeasurementFieldCard
+                              key={field.key}
+                              fieldKey={field.key}
+                              label={field.label}
+                              hint={field.help}
+                              valueCm={measurements[field.key]}
+                              unit={unit}
+                              error={issueByKey.get(field.key)}
+                              onChangeCm={(v) => onUpdateMeasurement(field.key, v)}
+                            />
+                          ))}
+                        </div>
+                      </div>
+                    );
+                  },
+                )}
+              </div>
+            )}
+          </div>
+        )}
       </div>
+
+      {onChangeFit && (
+        <FitAdjustments garmentType={garmentType ?? ''} value={fit} onChange={onChangeFit} />
+      )}
 
       <p className="text-xs italic text-[#D8D3C8]/70 mt-6 text-center">
         Vos mesures sont des données personnelles protégées et ne sont utilisées que pour vos projets Angaly.

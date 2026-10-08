@@ -141,3 +141,28 @@ Le corsage de la robe suit maintenant la taille (couture côté buste → taille
 
 Une coupe inconnue ou absente donne exactement la géométrie historique (testé pour chaque règle). Les profils et
 helpers sont dans `shared/cut-profile.ts` ; les formes réutilisées (jupe, manche) dans `shared/shapes.ts`.
+
+
+## Paramètres étendus : aisance, ampleur, longueurs (Phase 5b S1 — contrat uniquement)
+
+`PatternParameters` accepte désormais, **tous optionnels** (absent = géométrie historique à
+l'identique) :
+
+| Paramètre | Valeurs / bornes | Pas | Défaut |
+|-----------|------------------|-----|--------|
+| `ease` | `AJUSTE` \| `CONFORT` \| `AMPLE` | — | `CONFORT` (= géométrie actuelle) |
+| `fullness.skirt` | 1 – 4 (ratio de tissu / largeur finie) | 0,25 | selon la coupe |
+| `fullness.sleeve` | 1 – 2,5 | 0,25 | selon le détail `manches` |
+| `lengths.skirtPct` | 40 – 130 (% de la longueur de référence) | 1 | 100 |
+| `lengths.sleevePct` | 0 – 100 (0 = sans manches) | 1 | 100 |
+| `lengths.bodicePct` | 80 – 120 | 1 | 100 |
+
+- Source des bornes : `packages/types/src/pattern-fit.ts` (`validatePatternExtParameters`) —
+  **rejet** (jamais de clamp silencieux) des valeurs hors bornes ou mal typées ; arrondi au pas.
+- Stockage : colonne `pattern_projects.parametersExtJson` (migration additive
+  `20261008130000_add_pattern_project_parameters_ext`), `PATCH /api/pattern-projects/:id` →
+  400 « Paramètres étendus invalides » ; `{}` ou `null` = retour aux défauts. Revalidé à la
+  génération et enregistré dans `parametersJson.parameters`.
+- **S1 ne change aucun contour** : les règles ignorent encore ces champs (S2 : `ease-profile.ts`,
+  `proportions.ts`, `warnings[]`). Le moteur n'importe pas `@angaly/types` ; les types sont
+  recopiés structurellement dans `types.ts`.

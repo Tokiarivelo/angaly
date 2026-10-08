@@ -23,6 +23,7 @@ export const CutStep: React.FC<CutStepProps> = ({
 }) => {
   const { mutate: requestSuggestion, data, isPending } = usePatternSuggestion();
 
+  const failed = data !== undefined && data.suggestion.modelVersion.startsWith('fallback');
   const suggestedCut = data
     ? CUTS.find((cut) => cut.id === data.suggestion.suggestedCutType)
     : undefined;
@@ -46,9 +47,22 @@ export const CutStep: React.FC<CutStepProps> = ({
           className="inline-flex items-center gap-2 px-3.5 py-2 rounded-lg text-xs font-semibold bg-[#0C2650] border border-[#C5B190]/30 text-[#C5B190] hover:border-[#C5B190] transition-colors disabled:opacity-60 shrink-0 self-start sm:self-auto"
         >
           <Sparkles className="w-3.5 h-3.5" />
-          {isPending ? 'Analyse en cours…' : 'Obtenir une suggestion IA'}
+          {isPending
+            ? 'Analyse en cours…'
+            : failed
+              ? 'Réessayer la suggestion IA'
+              : data
+                ? 'Régénérer la suggestion IA'
+                : 'Obtenir une suggestion IA'}
         </button>
       </div>
+
+      {failed && (
+        <p role="status" className="mb-4 text-xs text-amber-300 italic">
+          L’IA n’a pas pu répondre (modèle non configuré ou service indisponible) : la coupe
+          proposée n’est qu’une valeur par défaut. Réessayez ou choisissez un autre modèle IA.
+        </p>
+      )}
 
       {data && (
         <div className="mb-6 p-4 rounded-xl bg-[#C5B190]/10 border border-[#C5B190]/40 flex items-center justify-between gap-4 flex-wrap">

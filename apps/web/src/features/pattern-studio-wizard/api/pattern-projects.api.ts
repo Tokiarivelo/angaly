@@ -2,7 +2,10 @@ import { apiClient } from '@/lib/api-client';
 import { MediaEntityType } from '@angaly/types';
 import type {
   AiProviderId,
+  GarmentProfile,
+  InspirationAnalysisSnapshot,
   PatternAiSuggestionResponse,
+  PatternExtParameters,
   PatternProjectDto,
   PatternVersionDto,
 } from '@angaly/types';
@@ -14,7 +17,11 @@ export interface UpdatePatternProjectPayload {
   cutType?: string | undefined;
   detailsJson?: Record<string, string> | undefined;
   inspirationMediaId?: string | undefined;
+  /** Observations + garment profile, kept on the project so generation can use them. */
+  inspirationAnalysisJson?: InspirationAnalysisSnapshot | undefined;
   measurementProfileId?: string | undefined;
+  /** Ease / fullness / lengths; `{}` resets to the engine defaults. */
+  parametersExtJson?: PatternExtParameters | undefined;
 }
 
 export const fetchPatternProject = async (id: string): Promise<PatternProjectDto> => {
@@ -130,40 +137,39 @@ export const requestPatternSuggestion = async (
   }
 };
 
+export interface InspirationAnalysis {
+  suggestedCutType: string | null;
+  detectedFeatures: Record<string, string>;
+  /** Wizard-ready classification; null when the analysis is unavailable. */
+  profile: GarmentProfile | null;
+  confidence: number;
+}
+
 export const analyzeInspirationPhoto = async (
   imageUrl: string,
-): Promise<{
-  suggestedCutType: string;
-  detectedFeatures: Record<string, string>;
-  confidence: number;
-}> => {
+  aiProvider?: AiProviderId,
+): Promise<InspirationAnalysis> => {
   try {
     // Field names must match AnalyzeInspirationDto/AiInspirationController exactly
-    // (apps/api/src/ai-inference/presentation/controllers/ai-inspiration.controller.ts) —
-    // `imageUrl`/`detectedFeatures` never matched the real `inspirationImageUrl`/
-    // `detectedInspirationFeatures`, so this call always 400'd and silently fell
-    // through to the placeholder below for every real upload.
+    // (apps/api/src/ai-inference/presentation/controllers/ai-inspiration.controller.ts).
     const res = await apiClient.post<{
-      suggestedCutType: string;
+      suggestedCutType: string | null;
       detectedInspirationFeatures: Record<string, string>;
+      profile: GarmentProfile | null;
       confidence: number;
       isIndicativeOnly: boolean;
-    }>('/api/ai-inference/inspiration-analysis', { inspirationImageUrl: imageUrl });
+    }>('/api/ai-inference/inspiration-analysis', {
+      inspirationImageUrl: imageUrl,
+      ...(aiProvider ? { aiProvider } : {}),
+    });
     return {
       suggestedCutType: res.suggestedCutType,
-      detectedFeatures: res.detectedInspirationFeatures,
+      detectedFeatures: res.detectedInspirationFeatures ?? {},
+      profile: res.profile ?? null,
       confidence: res.confidence,
     };
   } catch {
-    // Graceful fallback: placeholder analysis
-    return {
-      suggestedCutType: 'SIRENE',
-      detectedFeatures: {
-        silhouette: 'Ajustée avec traîne légère',
-        encolure: 'Décolleté en V subtil',
-        manches: 'Manches longues semi-transparentes',
-      },
-      confidence: 0,
-    };
+    // No invented analysis: the customer simply fills the following steps by hand.
+    return { suggestedCutType: null, detectedFeatures: {}, profile: null, confidence: 0 };
   }
 };

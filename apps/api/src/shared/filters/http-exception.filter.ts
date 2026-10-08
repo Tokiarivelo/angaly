@@ -53,6 +53,12 @@ export class HttpExceptionFilter implements ExceptionFilter {
       this.logger.error(`Unhandled error: ${exception.message}`, exception.stack);
     }
 
+    if (exception instanceof HttpException) {
+      const line = `${request.method} ${request.url} → ${statusCode} ${message}`;
+      if (statusCode >= 500) this.logger.error(line);
+      else if (statusCode !== 401 && statusCode !== 404) this.logger.warn(line);
+    }
+
     const errorResponse: ErrorResponse = {
       success: false,
       error: {

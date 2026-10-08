@@ -1,3 +1,4 @@
+import type { InspirationAnalysisSnapshot, PatternExtParameters } from '@angaly/types';
 import type { PatternStatus } from '../value-objects/pattern-status.vo';
 import type { PatternVersionEntity } from './pattern-version.entity';
 
@@ -13,6 +14,8 @@ export interface PatternProjectProps {
   detailsJson: Record<string, unknown> | null;
   inspirationMediaId: string | null;
   inspirationMediaUrl?: string | null;
+  inspirationAnalysisJson?: InspirationAnalysisSnapshot | null;
+  parametersExtJson?: PatternExtParameters | null;
   status: PatternStatus;
   createdAt: Date;
   updatedAt: Date;
@@ -62,6 +65,14 @@ export class PatternProjectEntity {
     return this.props.detailsJson;
   }
 
+  get inspirationAnalysisJson(): InspirationAnalysisSnapshot | null {
+    return this.props.inspirationAnalysisJson ?? null;
+  }
+
+  get parametersExtJson(): PatternExtParameters | null {
+    return this.props.parametersExtJson ?? null;
+  }
+
   get inspirationMediaId(): string | null {
     return this.props.inspirationMediaId;
   }
@@ -103,6 +114,8 @@ export class PatternProjectEntity {
         | 'cutType'
         | 'detailsJson'
         | 'inspirationMediaId'
+        | 'inspirationAnalysisJson'
+        | 'parametersExtJson'
         | 'measurementProfileId'
       >
     >,

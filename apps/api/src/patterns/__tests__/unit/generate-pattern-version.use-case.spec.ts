@@ -4,6 +4,7 @@ import type { IPatternVersionRepository } from '../../domain/repositories/patter
 import type { GeneratePatternPiecesUseCase } from '../../../pattern-engine/application/use-cases/generate-pattern-pieces.use-case';
 import type { GetMeasurementProfileUseCase } from '../../../measurements/application/use-cases/get-measurement-profile.use-case';
 import type { EstimateMissingMeasurementsUseCase } from '../../../ai-inference/application/use-cases/estimate-missing-measurements.use-case';
+import { InspirationParametersService } from '../../application/services/inspiration-parameters.service';
 import { PatternProjectEntity } from '../../domain/entities/pattern-project.entity';
 import { PatternVersionEntity } from '../../domain/entities/pattern-version.entity';
 
@@ -16,6 +17,7 @@ describe('GeneratePatternVersionUseCase', () => {
   let mockEstimateMissingMeasurementsUseCase: jest.Mocked<EstimateMissingMeasurementsUseCase>;
   let mockProviderResolver: { resolveSelected: jest.Mock };
   let mockRecordLearning: { recordGenerated: jest.Mock };
+  let mockSuggest: { execute: jest.Mock };
 
   const mockProject = PatternProjectEntity.create({
     id: 'proj-1',
@@ -98,6 +100,18 @@ describe('GeneratePatternVersionUseCase', () => {
 
     mockProviderResolver = { resolveSelected: jest.fn().mockResolvedValue(undefined) };
     mockRecordLearning = { recordGenerated: jest.fn().mockResolvedValue(undefined) };
+    mockSuggest = {
+      execute: jest.fn().mockResolvedValue({
+        suggestion: {
+          suggestedCutType: 'SIRENE',
+          suggestedDetails: { col: 'BATEAU', dos: 'N_IMPORTE_QUOI', longueur: 'MIDI' },
+          detectedInspirationFeatures: null,
+          confidence: 0.8,
+          modelVersion: 'claude-haiku-4-5-20251001',
+        },
+        isIndicativeOnly: false,
+      }),
+    };
 
     useCase = new GeneratePatternVersionUseCase(
       mockProjectRepo,
@@ -107,6 +121,8 @@ describe('GeneratePatternVersionUseCase', () => {
       mockEstimateMissingMeasurementsUseCase,
       mockProviderResolver as any,
       mockRecordLearning as any,
+      new InspirationParametersService(),
+      mockSuggest as any,
     );
   });
 
@@ -338,5 +354,164 @@ describe('GeneratePatternVersionUseCase', () => {
     const warnings = version.parametersJson.warnings as string[];
     expect(warnings).toEqual([]);
   });
-});
 
+  describe('with a stored photo analysis', () => {
+    const analysedProject = (overrides: Record<string, unknown> = {}) =>
+      PatternProjectEntity.create({
+        id: 'proj-photo',
+        projectRef: 'ANG-PAT-2026-00009',
+        customerId: 'cust-1',
+        measurementProfileId: null,
+        garmentType: 'ROBE',
+        occasion: 'MARIAGE',
+        style: 'GLAMOUR',
+        cutType: 'SIRENE',
+        detailsJson: { manches: 'LONGUES' },
+        inspirationMediaId: 'media-1',
+        inspirationAnalysisJson: {
+          features: { silhouette: 'ajustée', tissu: 'tulle' },
+          profile: {
+            isGarment: true,
+            garmentType: 'ROBE',
+            occasion: 'MARIAGE',
+            style: 'GLAMOUR',
+            cutType: 'SIRENE',
+            details: { manches: 'SANS_MANCHES', decollete: 'COEUR', longueur: 'SOL' },
+            constructionMethod: 'MIXED',
+            presentation: 'MANNEQUIN',
+            constructionNotes: 'Traîne à draper sur mannequin.',
+          },
+        },
+        status: 'DRAFT',
+        createdAt: new Date(),
+        updatedAt: new Date(),
+        ...overrides,
+      });
+
+    it('keeps the customer choices, fills the gaps from the photo and then from the AI', async () => {
+      mockProjectRepo.findById.mockResolvedValueOnce(analysedProject());
+
+      const version = await useCase.execute('proj-photo', 'cust-1');
+
+      expect(mockGeneratePiecesUseCase.execute).toHaveBeenCalledWith(
+        expect.objectContaining({
+          cutType: 'SIRENE',
+          details: {
+            manches: 'LONGUES', // customer choice wins over the photo
+            decollete: 'COEUR', // from the photo
+            longueur: 'SOL', // from the photo
+            col: 'BATEAU', // from the AI (valid)
+            // dos: invalid AI value is dropped
+          },
+        }),
+        expect.any(Object),
+      );
+      expect(mockSuggest.execute).toHaveBeenCalledWith(
+        expect.objectContaining({ inspirationFeatures: { silhouette: 'ajustée', tissu: 'tulle' } }),
+      );
+      const stored = version.parametersJson as { inspiration: Record<string, unknown> };
+      expect(stored.inspiration).toMatchObject({
+        observations: { tissu: 'tulle' },
+        presentation: 'MANNEQUIN',
+        constructionMethod: 'MIXED',
+        detailKeysFromPhoto: ['decollete', 'longueur'],
+        detailKeysFromAi: ['col'],
+      });
+    });
+
+    it('warns that a draped garment is finished on a mannequin', async () => {
+      mockProjectRepo.findById.mockResolvedValueOnce(analysedProject());
+
+      const version = await useCase.execute('proj-photo', 'cust-1');
+
+      const { warnings } = version.parametersJson as { warnings: string[] };
+      expect(warnings.some((w) => w.includes('sur mannequin') && w.includes('Traîne à draper'))).toBe(true);
+    });
+
+    it('does not call the AI when nothing is missing or when the AI is unavailable', async () => {
+      mockProjectRepo.findById.mockResolvedValueOnce(
+        analysedProject({
+          detailsJson: {
+            manches: 'LONGUES', col: 'ROND', decollete: 'SAGE', dos: 'FERME', longueur: 'MAXI', fermeture: 'AUCUNE',
+          },
+        }),
+      );
+      await useCase.execute('proj-photo', 'cust-1');
+      expect(mockSuggest.execute).not.toHaveBeenCalled();
+
+      mockSuggest.execute.mockRejectedValueOnce(new Error('boom'));
+      mockProjectRepo.findById.mockResolvedValueOnce(analysedProject());
+      await expect(useCase.execute('proj-photo', 'cust-1')).resolves.toBeDefined();
+    });
+
+    it('is unchanged for projects without a photo analysis', async () => {
+      await useCase.execute('proj-1', 'cust-1');
+      expect(mockSuggest.execute).not.toHaveBeenCalled();
+    });
+  });
+  describe('extended parameters and measurement validation', () => {
+    const projectWith = (parametersExtJson: unknown) =>
+      PatternProjectEntity.create({
+        id: 'proj-ext',
+        projectRef: 'ANG-PAT-2026-00009',
+        customerId: 'cust-1',
+        measurementProfileId: null,
+        garmentType: 'JUPE',
+        occasion: null,
+        style: null,
+        cutType: 'EVASEE',
+        detailsJson: null,
+        inspirationMediaId: null,
+        parametersExtJson: parametersExtJson as any,
+        status: 'DRAFT',
+        createdAt: new Date(),
+        updatedAt: new Date(),
+      });
+
+    it('passes validated ease / fullness / lengths to the engine and records them', async () => {
+      mockProjectRepo.findById.mockResolvedValueOnce(
+        projectWith({ ease: 'AMPLE', fullness: { skirt: 2 }, lengths: { skirtPct: 90 } }),
+      );
+
+      const version = await useCase.execute('proj-ext', 'cust-1');
+
+      expect(mockGeneratePiecesUseCase.execute).toHaveBeenCalledWith(
+        expect.objectContaining({
+          ease: 'AMPLE',
+          fullness: { skirt: 2 },
+          lengths: { skirtPct: 90 },
+        }),
+        expect.any(Object),
+      );
+      expect((version.parametersJson as any).parameters.ease).toBe('AMPLE');
+    });
+
+    it('sends no extended key at all when the project has none (historical geometry)', async () => {
+      await useCase.execute('proj-1', 'cust-1');
+      const params = mockGeneratePiecesUseCase.execute.mock.calls[0]![0] as unknown as Record<string, unknown>;
+      expect(params).not.toHaveProperty('ease');
+      expect(params).not.toHaveProperty('fullness');
+      expect(params).not.toHaveProperty('lengths');
+    });
+
+    it('drops out-of-range stored values instead of feeding them to the engine', async () => {
+      mockProjectRepo.findById.mockResolvedValueOnce(
+        projectWith({ ease: 'TROP', fullness: { skirt: 99 }, lengths: { skirtPct: 90 } }),
+      );
+
+      await useCase.execute('proj-ext', 'cust-1');
+
+      const params = mockGeneratePiecesUseCase.execute.mock.calls[0]![0] as unknown as Record<string, unknown>;
+      expect(params).not.toHaveProperty('ease');
+      expect(params).not.toHaveProperty('fullness');
+      expect(params['lengths']).toEqual({ skirtPct: 90 });
+    });
+
+    it('rejects implausible manual measurements with a 400', async () => {
+      await expect(
+        useCase.execute('proj-1', 'cust-1', { measurements: { TOUR_TAILLE: 900 } }),
+      ).rejects.toThrow('Mesures invalides');
+      expect(mockGeneratePiecesUseCase.execute).not.toHaveBeenCalled();
+    });
+  });
+});

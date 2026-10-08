@@ -6,7 +6,7 @@ import { MeasurementUnit } from '@angaly/types';
 import { Button } from '@/components/ui/button';
 import { measurementProfileSchema } from '../schemas/measurement-profile.schema';
 import type { MeasurementProfileFormValues } from '../schemas/measurement-profile.schema';
-import { MEASUREMENT_FIELDS } from '../consts/measurement-fields.const';
+import { MEASUREMENT_FIELD_GROUPS } from '../consts/measurement-fields.const';
 import { MeasurementFieldRow } from './MeasurementFieldRow';
 import type { MeasurementProfileDto } from '../api/measurement-profiles.api';
 
@@ -92,17 +92,24 @@ export const MeasurementProfileFormDrawer = ({
                 En centimètres (cm). Vos mesures sont des données personnelles protégées.
               </p>
 
-              <div className="bg-white rounded border border-border p-4">
-                {MEASUREMENT_FIELDS.map((field) => (
-                  <MeasurementFieldRow
-                    key={field.key}
-                    fieldKey={field.key}
-                    label={field.label}
-                    help={field.help}
-                    register={register}
-                  />
-                ))}
-              </div>
+              {MEASUREMENT_FIELD_GROUPS.map((group) => (
+                <div key={group.group} className="bg-white rounded border border-border p-4">
+                  <h4 className="text-xs uppercase tracking-wide text-angaly-slate mb-1">{group.label}</h4>
+                  {group.fields.map((field) => (
+                    <div key={field.key}>
+                      <MeasurementFieldRow
+                        fieldKey={field.key}
+                        label={field.label}
+                        help={field.help}
+                        register={register}
+                      />
+                      {errors.values?.[field.key]?.message && (
+                        <p className="text-xs text-red-500 pb-2">{errors.values[field.key]?.message}</p>
+                      )}
+                    </div>
+                  ))}
+                </div>
+              ))}
             </div>
           </div>
 

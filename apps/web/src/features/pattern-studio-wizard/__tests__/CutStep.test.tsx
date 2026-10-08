@@ -110,4 +110,31 @@ describe('CutStep', () => {
       ),
     );
   });
+
+  it('offers a retry when the AI could not answer, then a regenerate once it did', async () => {
+    vi.mocked(apiClient.post)
+      .mockRejectedValueOnce(new Error('network'))
+      .mockResolvedValueOnce({
+        suggestion: {
+          suggestedCutType: 'SIRENE',
+          suggestedDetails: {},
+          detectedInspirationFeatures: null,
+          confidence: 0.7,
+          modelVersion: 'claude-haiku-4-5-20251001',
+        },
+        isIndicativeOnly: false,
+      });
+
+    render(
+      <CutStep selectedCut="DROITE" onSelect={onSelect} garmentType="ROBE" occasion={null} style={null} />,
+      { wrapper: withQueryClient() },
+    );
+
+    fireEvent.click(screen.getByText('Obtenir une suggestion IA'));
+    await waitFor(() => expect(screen.getByRole('status')).toHaveTextContent(/n’a pas pu répondre/));
+
+    fireEvent.click(screen.getByText('Réessayer la suggestion IA'));
+    await waitFor(() => expect(screen.getByText('Régénérer la suggestion IA')).toBeInTheDocument());
+    expect(screen.queryByRole('status')).toBeNull();
+  });
 });

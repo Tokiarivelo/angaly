@@ -1,3 +1,4 @@
+import { BadRequestException } from '@nestjs/common';
 import { UpdatePatternProjectStepUseCase } from '../../application/use-cases/update-pattern-project-step.use-case';
 import { IPatternProjectRepository } from '../../domain/repositories/pattern-project.repository';
 import { PatternProjectEntity } from '../../domain/entities/pattern-project.entity';
@@ -60,5 +61,46 @@ describe('UpdatePatternProjectStepUseCase', () => {
       cutType: 'SIRENE',
     }));
     expect(updated).toBeDefined();
+  });
+  describe('parametersExtJson', () => {
+    it('stores valid extended parameters (snapped to their step)', async () => {
+      await useCase.execute('proj-1', 'cust-1', {
+        parametersExtJson: { ease: 'AMPLE', fullness: { skirt: 2.1 }, lengths: { skirtPct: 95 } },
+      });
+
+      expect(mockProjectRepo.update).toHaveBeenCalledWith(
+        'proj-1',
+        expect.objectContaining({
+          parametersExtJson: { ease: 'AMPLE', fullness: { skirt: 2 }, lengths: { skirtPct: 95 } },
+        }),
+      );
+    });
+
+    it('stores null (engine defaults) when an empty object is sent', async () => {
+      await useCase.execute('proj-1', 'cust-1', { parametersExtJson: {} });
+
+      expect(mockProjectRepo.update).toHaveBeenCalledWith(
+        'proj-1',
+        expect.objectContaining({ parametersExtJson: null }),
+      );
+    });
+
+    it('rejects out-of-range values with a 400 and saves nothing', async () => {
+      await expect(
+        useCase.execute('proj-1', 'cust-1', {
+          parametersExtJson: { ease: 'AMPLE', fullness: { skirt: 12 } },
+        }),
+      ).rejects.toBeInstanceOf(BadRequestException);
+      expect(mockProjectRepo.update).not.toHaveBeenCalled();
+    });
+
+    it('keeps the stored value when the field is not part of the update', async () => {
+      await useCase.execute('proj-1', 'cust-1', { occasion: 'Mariage' });
+
+      expect(mockProjectRepo.update).toHaveBeenCalledWith(
+        'proj-1',
+        expect.objectContaining({ parametersExtJson: null }),
+      );
+    });
   });
 });

@@ -27,18 +27,111 @@ describe('MeasurementsStep', () => {
     } as any);
   });
 
-  it('renders the six canonical measurement fields', () => {
+  it('renders the required and recommended fields of the garment', () => {
     render(
       <MeasurementsStep
+        garmentType="ROBE"
         onSelectProfile={onSelectProfile}
         onUpdateMeasurement={onUpdateMeasurement}
         onApplyMeasurements={onApplyMeasurements}
       />,
     );
 
-    for (const label of ['Tour de poitrine', 'Tour de taille', 'Tour de bassin', 'Longueur dos', 'Carrure dos', 'Tour de cou']) {
+    for (const label of ['Tour de poitrine', 'Tour de taille', 'Tour de bassin', 'Longueur dos', 'Carrure dos']) {
       expect(screen.getByText(label)).toBeInTheDocument();
     }
+    // Recommended for a dress, shown but flagged as such.
+    expect(screen.getByText('Longueur devant')).toBeInTheDocument();
+    expect(screen.getAllByText('Recommandé').length).toBeGreaterThan(0);
+    // Not relevant to a dress: tucked away in "more measurements".
+    expect(screen.queryByText('Tour de cheville')).not.toBeInTheDocument();
+  });
+
+  it('adapts the fields to a trouser (no bust, but thigh and crotch height)', () => {
+    render(
+      <MeasurementsStep
+        garmentType="PANTALON"
+        onSelectProfile={onSelectProfile}
+        onUpdateMeasurement={onUpdateMeasurement}
+        onApplyMeasurements={onApplyMeasurements}
+      />,
+    );
+
+    expect(screen.queryByLabelText('Tour de poitrine')).not.toBeInTheDocument();
+    expect(screen.getByText('Tour de cuisse')).toBeInTheDocument();
+    expect(screen.getByText('Hauteur de fourche')).toBeInTheDocument();
+  });
+
+  it('reveals every other catalogue measurement on demand, grouped', () => {
+    render(
+      <MeasurementsStep
+        garmentType="PANTALON"
+        onSelectProfile={onSelectProfile}
+        onUpdateMeasurement={onUpdateMeasurement}
+        onApplyMeasurements={onApplyMeasurements}
+      />,
+    );
+
+    expect(screen.queryByText('Tour de poignet')).not.toBeInTheDocument();
+    fireEvent.click(screen.getByRole('button', { name: /Plus de mesures/ }));
+    expect(screen.getByText('Tour de poignet')).toBeInTheDocument();
+    expect(screen.getByText('Bras')).toBeInTheDocument();
+  });
+
+  it('stores typed values in cm and flags an implausible one', () => {
+    const { container } = render(
+      <MeasurementsStep
+        garmentType="JUPE"
+        measurements={{ TOUR_TAILLE: 700 }}
+        onSelectProfile={onSelectProfile}
+        onUpdateMeasurement={onUpdateMeasurement}
+        onApplyMeasurements={onApplyMeasurements}
+      />,
+    );
+
+    expect(screen.getByText(/dépasse le maximum plausible/)).toBeInTheDocument();
+    fireEvent.change(container.querySelector('#TOUR_BASSIN')!, { target: { value: '98' } });
+    expect(onUpdateMeasurement).toHaveBeenCalledWith('TOUR_BASSIN', 98);
+  });
+
+  it('lists the missing essentials and warns about incoherent values', () => {
+    render(
+      <MeasurementsStep
+        garmentType="ROBE"
+        measurements={{ TOUR_POITRINE: 80, TOUR_SOUS_POITRINE: 95 }}
+        onSelectProfile={onSelectProfile}
+        onUpdateMeasurement={onUpdateMeasurement}
+        onApplyMeasurements={onApplyMeasurements}
+      />,
+    );
+
+    expect(screen.getByTestId('missing-required')).toHaveTextContent('tour de taille');
+    expect(screen.getByTestId('coherence-warnings')).toHaveTextContent('sous la poitrine');
+  });
+
+  it('shows the fit adjustments only when the wizard wires them', () => {
+    const onChangeFit = vi.fn();
+    const { rerender } = render(
+      <MeasurementsStep
+        garmentType="JUPE"
+        onSelectProfile={onSelectProfile}
+        onUpdateMeasurement={onUpdateMeasurement}
+        onApplyMeasurements={onApplyMeasurements}
+      />,
+    );
+    expect(screen.queryByTestId('fit-adjustments')).not.toBeInTheDocument();
+
+    rerender(
+      <MeasurementsStep
+        garmentType="JUPE"
+        onChangeFit={onChangeFit}
+        onSelectProfile={onSelectProfile}
+        onUpdateMeasurement={onUpdateMeasurement}
+        onApplyMeasurements={onApplyMeasurements}
+      />,
+    );
+    fireEvent.click(screen.getByRole('radio', { name: /Ample/ }));
+    expect(onChangeFit).toHaveBeenCalledWith({ field: 'ease', value: 'AMPLE' });
   });
 
   it('does not show the standard-size picker until that mode is selected', () => {
@@ -94,6 +187,7 @@ describe('MeasurementsStep', () => {
   it('toggles the measurement hint on demand', () => {
     render(
       <MeasurementsStep
+        garmentType="ROBE"
         onSelectProfile={onSelectProfile}
         onUpdateMeasurement={onUpdateMeasurement}
         onApplyMeasurements={onApplyMeasurements}

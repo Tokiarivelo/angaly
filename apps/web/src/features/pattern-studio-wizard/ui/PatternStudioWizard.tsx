@@ -17,6 +17,8 @@ import { CutStep } from './steps/CutStep';
 import { DetailsStep } from './steps/DetailsStep';
 import { InspirationStep } from './steps/InspirationStep';
 import { MeasurementsStep } from './steps/MeasurementsStep';
+import { applyFitChange } from '../utils/fit-parameters';
+import { stepKeyAt } from '../types/wizard-state.types';
 
 interface PatternStudioWizardProps {
   projectId: string;
@@ -29,6 +31,7 @@ export const PatternStudioWizard: React.FC<PatternStudioWizardProps> = ({ projec
     projectRef,
     updateField,
     updateDetail,
+    applyInspiration,
     isStepValid,
     goToNextStep,
     goToPreviousStep,
@@ -37,6 +40,8 @@ export const PatternStudioWizard: React.FC<PatternStudioWizardProps> = ({ projec
 
   const { mutate: generate, isPending: isGenerating } = useGeneratePattern(projectId);
   const { data: selectableProviders } = useSelectableAiProviders();
+
+  const stepKey = stepKeyAt(currentStep);
 
   const handleNextOrGenerate = () => {
     if (currentStep === 7) {
@@ -87,28 +92,40 @@ export const PatternStudioWizard: React.FC<PatternStudioWizardProps> = ({ projec
       {/* Main Wizard Form Card */}
       <main className="flex-1 max-w-3xl w-full mx-auto p-4 sm:p-8 flex flex-col justify-center my-6">
         <div className="bg-[#0C2650] border border-[#C5B190]/30 rounded-2xl p-6 sm:p-10 shadow-2xl">
-          {currentStep === 1 && (
+          {stepKey === 'inspiration' && (
+            <InspirationStep
+              inspirationImageUrl={formData.inspirationImageUrl}
+              inspirationMediaId={formData.inspirationMediaId}
+              detectedFeatures={formData.detectedFeatures}
+              isGarment={formData.inspirationIsGarment}
+              profile={formData.inspirationProfile}
+              aiProvider={formData.aiProvider}
+              onInspirationProcessed={applyInspiration}
+            />
+          )}
+
+          {stepKey === 'garmentType' && (
             <GarmentTypeStep
               selectedType={formData.garmentType}
               onSelect={(type) => updateField('garmentType', type)}
             />
           )}
 
-          {currentStep === 2 && (
+          {stepKey === 'occasion' && (
             <OccasionStep
               selectedOccasion={formData.occasion}
               onSelect={(occ) => updateField('occasion', occ)}
             />
           )}
 
-          {currentStep === 3 && (
+          {stepKey === 'style' && (
             <StyleStep
               selectedStyle={formData.style}
               onSelect={(st) => updateField('style', st)}
             />
           )}
 
-          {currentStep === 4 && (
+          {stepKey === 'cut' && (
             <CutStep
               selectedCut={formData.cutType}
               onSelect={(cut) => updateField('cutType', cut)}
@@ -119,30 +136,18 @@ export const PatternStudioWizard: React.FC<PatternStudioWizardProps> = ({ projec
             />
           )}
 
-          {currentStep === 5 && (
+          {stepKey === 'details' && (
             <DetailsStep
               selectedDetails={formData.details}
               onSelectDetail={updateDetail}
             />
           )}
 
-          {currentStep === 6 && (
-            <InspirationStep
-              inspirationImageUrl={formData.inspirationImageUrl}
-              detectedFeatures={formData.detectedFeatures}
-              onInspirationProcessed={({ mediaId, url, detectedFeatures, suggestedCutType }) => {
-                updateField('inspirationMediaId', mediaId);
-                updateField('inspirationImageUrl', url);
-                updateField('detectedFeatures', detectedFeatures);
-                if (suggestedCutType && !formData.cutType) {
-                  updateField('cutType', suggestedCutType);
-                }
-              }}
-            />
-          )}
-
-          {currentStep === 7 && (
+          {stepKey === 'measurements' && (
             <MeasurementsStep
+              garmentType={formData.garmentType}
+              fit={formData.fit}
+              onChangeFit={(change) => updateField('fit', applyFitChange(formData.fit, change))}
               selectedProfileId={formData.measurementProfileId}
               measurements={formData.measurements}
               onSelectProfile={(id) => updateField('measurementProfileId', id)}
@@ -166,7 +171,7 @@ export const PatternStudioWizard: React.FC<PatternStudioWizardProps> = ({ projec
           />
         </div>
 
-        {(currentStep === 4 || currentStep === 7) && (
+        {(stepKey === 'inspiration' || stepKey === 'cut' || stepKey === 'measurements') && (
           <AiModelSelector
             providers={selectableProviders?.providers ?? []}
             value={formData.aiProvider}
