@@ -630,3 +630,82 @@ export function validatePatternExtParameters(input: unknown): {
 
   return { value, issues };
 }
+
+// ============================================================
+// Fit read from a photo (Phase 5b S3)
+// ============================================================
+
+export const FABRIC_BEHAVIORS = ['FLUIDE', 'STRUCTURE', 'RIGIDE', 'STRETCH'] as const;
+export type FabricBehavior = (typeof FABRIC_BEHAVIORS)[number];
+
+export const FABRIC_BEHAVIOR_LABELS: Record<FabricBehavior, string> = {
+  FLUIDE: 'Fluide',
+  STRUCTURE: 'Structuré',
+  RIGIDE: 'Rigide',
+  STRETCH: 'Extensible',
+};
+
+export type FitCertainty = 'HIGH' | 'MEDIUM';
+
+/**
+ * Ease / fullness / lengths proposed by the photo analysis. Already bounded and filtered by the
+ * ai-service (`normalize_fit`), and validated again by the API before it reaches the engine.
+ * `certainty` lists, for each kept field (`ease`, `fullness.skirt`…), how sure the model was.
+ */
+export interface GarmentFit extends PatternExtParameters {
+  /** Informative only — never changes geometry. */
+  fabricBehavior?: FabricBehavior;
+  certainty?: Record<string, FitCertainty>;
+}
+
+/** Dotted keys of the extended parameters, as used by `certainty` and the merge traceability. */
+export type PatternExtKey =
+  | 'ease'
+  | 'fullness.skirt'
+  | 'fullness.sleeve'
+  | 'lengths.skirtPct'
+  | 'lengths.sleevePct'
+  | 'lengths.bodicePct';
+
+export function listPatternExtKeys(ext: PatternExtParameters | null | undefined): PatternExtKey[] {
+  if (!ext) return [];
+  const keys: PatternExtKey[] = [];
+  if (ext.ease) keys.push('ease');
+  if (ext.fullness?.skirt !== undefined) keys.push('fullness.skirt');
+  if (ext.fullness?.sleeve !== undefined) keys.push('fullness.sleeve');
+  if (ext.lengths?.skirtPct !== undefined) keys.push('lengths.skirtPct');
+  if (ext.lengths?.sleevePct !== undefined) keys.push('lengths.sleevePct');
+  if (ext.lengths?.bodicePct !== undefined) keys.push('lengths.bodicePct');
+  return keys;
+}
+
+/**
+ * Merges extended parameters key by key, in priority order (first source wins per key):
+ * `merge(client, photo, ai)`. Each source is validated first, so an invalid value is skipped
+ * rather than poisoning the result.
+ */
+export function mergePatternExtParameters(
+  ...sources: Array<PatternExtParameters | null | undefined>
+): { value: PatternExtParameters; origin: Partial<Record<PatternExtKey, number>> } {
+  const value: PatternExtParameters = {};
+  const origin: Partial<Record<PatternExtKey, number>> = {};
+  sources.forEach((source, index) => {
+    const valid = validatePatternExtParameters(source).value;
+    if (valid.ease && value.ease === undefined) {
+      value.ease = valid.ease;
+      origin['ease'] = index;
+    }
+    for (const group of ['fullness', 'lengths'] as const) {
+      const from = valid[group] as Record<string, number> | undefined;
+      if (!from) continue;
+      for (const [name, v] of Object.entries(from)) {
+        const target = ((value[group] ??= {}) as Record<string, number>);
+        if (target[name] === undefined) {
+          target[name] = v;
+          origin[`${group}.${name}` as PatternExtKey] = index;
+        }
+      }
+    }
+  });
+  return { value, origin };
+}

@@ -1,3 +1,4 @@
+import { PatternEngine, RobeRule } from '@angaly/pattern-engine';
 import type { InspirationAnalysisSnapshot } from '@angaly/types';
 import { InspirationParametersService } from '../../application/services/inspiration-parameters.service';
 
@@ -34,6 +35,8 @@ describe('InspirationParametersService', () => {
       cutType: 'DROITE',
       details: {},
       fromPhotoKeys: [],
+      ext: {},
+      extKeysFromPhoto: [],
     });
     expect(service.merge({ cutType: null, details: {} }, null).cutType).toBe('DROITE');
   });
@@ -59,5 +62,72 @@ describe('InspirationParametersService', () => {
     expect(draped?.method).toBe('DRAPING');
     expect(draped?.warning).toContain('mannequin');
     expect(draped?.warning).toContain('Cascade.');
+  });
+  describe('extended fit (ease / fullness / lengths)', () => {
+    const project = { cutType: null, details: {} };
+    const photo = (fit: unknown, garmentType = 'ROBE') =>
+      ({
+        features: {},
+        profile: { isGarment: true, garmentType, occasion: null, style: null, cutType: null, details: {}, fit },
+      }) as any;
+
+    it('takes the photo suggestions when the customer chose nothing, and traces them', () => {
+      const merged = service.merge(
+        project,
+        photo({ ease: 'AMPLE', fullness: { skirt: 2 }, lengths: { skirtPct: 90 }, fabricBehavior: 'FLUIDE' }),
+      );
+      expect(merged.ext).toEqual({ ease: 'AMPLE', fullness: { skirt: 2 }, lengths: { skirtPct: 90 } });
+      expect(merged.extKeysFromPhoto.sort()).toEqual(['ease', 'fullness.skirt', 'lengths.skirtPct']);
+    });
+
+    it('lets the customer win per key; the photo only fills the rest', () => {
+      const merged = service.merge(
+        { ...project, parametersExt: { ease: 'AJUSTE', fullness: { skirt: 1.5 } } },
+        photo({ ease: 'AMPLE', fullness: { skirt: 3, sleeve: 1.5 } }),
+      );
+      expect(merged.ext).toEqual({ ease: 'AJUSTE', fullness: { skirt: 1.5, sleeve: 1.5 } });
+      expect(merged.extKeysFromPhoto).toEqual(['fullness.sleeve']);
+    });
+
+    it('an explicit CONFORT from the customer beats an AMPLE suggestion', () => {
+      const merged = service.merge({ ...project, parametersExt: { ease: 'CONFORT' } }, photo({ ease: 'AMPLE' }));
+      expect(merged.ext.ease).toBe('CONFORT');
+      expect(merged.extKeysFromPhoto).toEqual([]);
+    });
+
+    it('rejects out-of-range or mistyped photo values instead of clamping them', () => {
+      const merged = service.merge(
+        project,
+        photo({ ease: 'GIGANTESQUE', fullness: { skirt: 9, sleeve: '2' }, lengths: { skirtPct: 90 } }),
+      );
+      expect(merged.ext).toEqual({ lengths: { skirtPct: 90 } });
+    });
+
+    it('ignores the fit of a non-garment photo and a missing fit', () => {
+      const none = { features: {}, profile: { isGarment: false, fit: { ease: 'AMPLE' } } } as any;
+      expect(service.merge(project, none).ext).toEqual({});
+      expect(service.merge(project, null).ext).toEqual({});
+      expect(service.merge(project, photo(undefined)).ext).toEqual({});
+    });
+
+    it('a roomy-dress photo yields a wider pattern than a close-fitting one (engine behaviour)', () => {
+      const engine = new PatternEngine();
+      [RobeRule].forEach((rule) => engine.registerRule(rule));
+      const measurements = { TOUR_POITRINE: 92, TOUR_TAILLE: 74, TOUR_BASSIN: 98, LONGUEUR_DOS: 42 };
+      const widthFor = (fit: unknown) => {
+        const { ext, cutType, details } = service.merge(project, photo(fit));
+        const result = engine.generate(
+          { garmentType: 'ROBE', cutType, style: null, details, ...ext },
+          measurements,
+        );
+        return result.pieces.reduce(
+          (sum, p) => sum + Math.max(...p.outlineMm.map((pt) => pt.x)) - Math.min(...p.outlineMm.map((pt) => pt.x)),
+          0,
+        );
+      };
+      expect(widthFor({ ease: 'AMPLE' })).toBeGreaterThan(widthFor({ ease: 'AJUSTE' }));
+      expect(widthFor({ ease: 'AMPLE' })).toBeGreaterThan(widthFor(undefined));
+      expect(widthFor({ fullness: { skirt: 3 } })).toBeGreaterThan(widthFor({ fullness: { skirt: 1 } }));
+    });
   });
 });

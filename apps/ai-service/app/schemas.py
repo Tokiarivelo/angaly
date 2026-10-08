@@ -137,6 +137,17 @@ class InspirationAnalysisRequest(BaseModel):
     model_config = {"populate_by_name": True}
 
 
+class GarmentFit(BaseModel):
+    """Bounded, validated fit proposals read from the photo (see `normalize_fit`). Never geometry."""
+    ease: str | None = None
+    fullness: dict[str, float] | None = None
+    lengths: dict[str, float] | None = None
+    fabric_behavior: str | None = Field(default=None, alias="fabricBehavior")
+    certainty: dict[str, str] = Field(default_factory=dict)
+
+    model_config = {"populate_by_name": True}
+
+
 class GarmentProfile(BaseModel):
     """Wizard-ready classification of the photo, restricted to the closed vocabulary of
     `app/garment_knowledge.py`. `is_garment=False` means nothing may be pre-filled."""
@@ -151,6 +162,8 @@ class GarmentProfile(BaseModel):
     # WORN | MANNEQUIN | FLAT | SKETCH — how the garment is shown in the photo.
     presentation: str | None = None
     construction_notes: str | None = Field(default=None, alias="constructionNotes")
+    # Ease / fullness / lengths read from the photo — optional, only certain & in-range values survive.
+    fit: GarmentFit | None = None
 
     model_config = {"populate_by_name": True}
 

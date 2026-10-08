@@ -21,7 +21,6 @@ import { GetMeasurementProfileUseCase } from '../../../measurements/application/
 import {
   AiUsage,
   validateMeasurementValues,
-  validatePatternExtParameters,
   type AiProviderId,
   type InspirationAnalysisSnapshot,
 } from '@angaly/types';
@@ -86,7 +85,11 @@ export class GeneratePatternVersionUseCase {
     // fitting engine values (then, best-effort, the AI fills what is still empty).
     const analysis = project.inspirationAnalysisJson;
     const merged = this.inspirationParameters.merge(
-      { cutType: project.cutType, details: (project.detailsJson as Record<string, string>) ?? {} },
+      {
+        cutType: project.cutType,
+        details: (project.detailsJson as Record<string, string>) ?? {},
+        parametersExt: project.parametersExtJson,
+      },
       analysis,
     );
     const aiFilledKeys = await this.fillMissingDetailsWithAi(
@@ -96,9 +99,10 @@ export class GeneratePatternVersionUseCase {
       dto?.aiProvider,
     );
 
-    // Extended inputs (ease, fullness, lengths): re-validated here too, so a row written by an older
-    // client or by hand can never push an out-of-range value into the engine. Absent = defaults.
-    const ext = validatePatternExtParameters(project.parametersExtJson).value;
+    // Extended inputs (ease, fullness, lengths): the customer's choices first, then the photo's
+    // suggestions — both re-validated by the merge, so an out-of-range value never reaches the
+    // engine. Absent = defaults.
+    const ext = merged.ext;
 
     const parameters: PatternParameters = {
       garmentType,
@@ -195,6 +199,8 @@ export class GeneratePatternVersionUseCase {
               constructionNotes: analysis.profile?.constructionNotes ?? null,
               detailKeysFromPhoto: merged.fromPhotoKeys,
               detailKeysFromAi: aiFilledKeys,
+              extKeysFromPhoto: merged.extKeysFromPhoto,
+              fabricBehavior: analysis.profile?.fit?.fabricBehavior ?? null,
             }
           : null,
         metadata: generationResult.metadata,

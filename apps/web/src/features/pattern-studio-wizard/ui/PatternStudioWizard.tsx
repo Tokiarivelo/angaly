@@ -2,7 +2,7 @@
 
 import React from 'react';
 import Link from 'next/link';
-import { ArrowLeft } from 'lucide-react';
+import { AlertTriangle, ArrowLeft } from 'lucide-react';
 import { usePatternWizard } from '../hooks/usePatternWizard';
 import { useGeneratePattern } from '../hooks/useGeneratePattern';
 import { useSelectableAiProviders } from '../hooks/useSelectableAiProviders';
@@ -17,7 +17,7 @@ import { CutStep } from './steps/CutStep';
 import { DetailsStep } from './steps/DetailsStep';
 import { InspirationStep } from './steps/InspirationStep';
 import { MeasurementsStep } from './steps/MeasurementsStep';
-import { applyFitChange } from '../utils/fit-parameters';
+import { applyFitChange, suggestedFitFrom } from '../utils/fit-parameters';
 import { stepKeyAt } from '../types/wizard-state.types';
 
 interface PatternStudioWizardProps {
@@ -38,7 +38,16 @@ export const PatternStudioWizard: React.FC<PatternStudioWizardProps> = ({ projec
     goToStep,
   } = usePatternWizard(projectId);
 
-  const { mutate: generate, isPending: isGenerating } = useGeneratePattern(projectId);
+  const {
+    mutate: generate,
+    isPending,
+    isSuccess,
+    isError: isGenerationError,
+    error: generationError,
+  } = useGeneratePattern(projectId);
+  // Stay on the loading screen after success too: the redirect to the preview page can take a moment
+  // (route compile / data load) and the wizard must not flash back in the meantime.
+  const isGenerating = isPending || isSuccess;
   const { data: selectableProviders } = useSelectableAiProviders();
 
   const stepKey = stepKeyAt(currentStep);
@@ -147,6 +156,7 @@ export const PatternStudioWizard: React.FC<PatternStudioWizardProps> = ({ projec
             <MeasurementsStep
               garmentType={formData.garmentType}
               fit={formData.fit}
+              suggestedFit={suggestedFitFrom(formData.inspirationProfile)}
               onChangeFit={(change) => updateField('fit', applyFitChange(formData.fit, change))}
               selectedProfileId={formData.measurementProfileId}
               measurements={formData.measurements}
@@ -162,10 +172,29 @@ export const PatternStudioWizard: React.FC<PatternStudioWizardProps> = ({ projec
             />
           )}
 
+          {isGenerationError && (
+            <div
+              role="alert"
+              className="mt-8 flex items-start gap-3 rounded-lg border border-red-400/40 bg-red-500/10 px-4 py-3 text-sm text-red-100"
+            >
+              <AlertTriangle className="w-4 h-4 mt-0.5 shrink-0" />
+              <div>
+                <p className="font-medium">La génération du patron a échoué.</p>
+                <p className="text-red-100/80 text-xs mt-1">
+                  {generationError instanceof Error && generationError.message
+                    ? generationError.message
+                    : 'Une erreur est survenue.'}{' '}
+                  Vérifiez vos mesures puis réessayez.
+                </p>
+              </div>
+            </div>
+          )}
+
           <WizardFooterNav
             currentStep={currentStep}
             isValid={isStepValid(currentStep)}
             isSubmitting={isGenerating}
+            submittingLabel={currentStep === 7 ? 'Génération…' : undefined}
             onPrevious={goToPreviousStep}
             onNext={handleNextOrGenerate}
           />

@@ -1,6 +1,6 @@
 # Phase 5b — Fidélité photo, aisance paramétrique, blocs de drapé & modèle local
 
-**Statut : 🚧 S1 et S2 livrées (2026-10-08) ; S3 → S8 à faire.** Dépend de : Phase 4 (pattern-engine, wizard) et
+**Statut : 🚧 S1, S2 et S3 livrées (2026-10-08) ; S4 → S8 à faire.** Dépend de : Phase 4 (pattern-engine, wizard) et
 Phase 5 (ai-inference, analyse de photo). Prolonge `docs/features/ai-inference.md`,
 `docs/features/pattern-engine.md`, `docs/features/patterns.md` et
 `docs/features/ai-training-data.md`.
@@ -143,7 +143,17 @@ un projet sans paramètres étendus se génère identique à avant.
 (contour fermé, sans point NaN), bornes, composition coupe × aisance, snapshots.
 **Acceptation** : couverture ≥ 80 % ; tous les snapshots `CONFORT` identiques à l'existant.
 
-### S3 — L'analyse photo remplit les paramètres étendus
+### S3 — L'analyse photo remplit les paramètres étendus  ✅ livrée 2026-10-08
+
+> **Livré** : `GarmentProfile.fit` (ai-service `normalize_fit` + prompt + 3 nouveaux few-shot + bornes
+> miroir testées contre `pattern-fit.ts`) ; fusion API **client > photo** clé par clé
+> (`mergePatternExtParameters`, traçabilité `parametersJson.inspiration.extKeysFromPhoto`) ; fiche
+> « Ajustements déduits de la photo » (étape Inspiration, lecture seule) et curseurs « Suggéré par l'IA —
+> modifiable » + *Réinitialiser* (étape Mesures). Test de comportement : une photo ample donne un patron
+> plus large qu'une photo ajustée. **Écarts avec le plan** : (1) l'appel IA « texte seul » ne demande pas
+> encore les paramètres étendus ; (2) le e2e Playwright n'est pas écrit ; (3) **maquette Stitch non
+> consultée** pour ces blocs (styles repris de l'existant) ; (4) `CONFORT` choisi par le client est stocké
+> explicitement (pour primer sur une suggestion `AMPLE`).
 
 **But** : les observations influencent enfin la géométrie, de façon validée.
 

@@ -23,6 +23,32 @@ const profile = {
 };
 
 describe('InspirationStep', () => {
+  it('lists the fit deduced from the photo, and nothing when there is none', () => {
+    const { rerender } = render(
+      <InspirationStep
+        inspirationImageUrl="https://cdn/p.jpg"
+        isGarment
+        profile={{ ...profile, fit: { ease: 'AMPLE', fullness: { skirt: 2 }, fabricBehavior: 'FLUIDE' } } as never}
+        onInspirationProcessed={vi.fn()}
+      />,
+    );
+    const rows = screen.getByTestId('fit-rows');
+    expect(within(rows).getByText('Ajustements déduits de la photo')).toBeInTheDocument();
+    expect(within(rows).getByText('Ample')).toBeInTheDocument();
+    expect(within(rows).getByText('×2')).toBeInTheDocument();
+    expect(within(rows).getByText('Fluide')).toBeInTheDocument();
+
+    rerender(
+      <InspirationStep
+        inspirationImageUrl="https://cdn/p.jpg"
+        isGarment
+        profile={profile as never}
+        onInspirationProcessed={vi.fn()}
+      />,
+    );
+    expect(screen.queryByTestId('fit-rows')).not.toBeInTheDocument();
+  });
+
   it('shows the full garment sheet under the preview', () => {
     render(
       <InspirationStep

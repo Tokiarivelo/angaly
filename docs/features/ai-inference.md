@@ -215,3 +215,27 @@ jamais la géométrie (ADR-005) ; aucune donnée personnelle (ni client, ni mesu
 - [x] `ai-service-http-client` testé directement (les 3 méthodes HTTP + dégradation gracieuse)
 - [ ] Vrai modèle entraîné (fine-tuning/dataset labellisé) — hors de portée sans infrastructure ML dédiée ; l'existant est un wrapper prompt-engineered sur Gemini, grounded par la table de tailles standard
 - [x] `docs/checklist-implementation.md` : `ai-inference` reflète l'état réel (🟡, branché mais sans modèle entraîné)
+
+
+## Ajustements déduits de la photo (Phase 5b S3)
+
+Le profil d'analyse (`GarmentProfile`) porte un bloc optionnel `fit` : `ease` (AJUSTE|CONFORT|AMPLE),
+`fullness.skirt|sleeve`, `lengths.skirtPct|sleevePct|bodicePct`, `fabricBehavior` (FLUIDE|STRUCTURE|RIGIDE|STRETCH,
+informatif) et `certainty` (HIGH|MEDIUM par champ). Bornes et pas : `packages/types/src/pattern-fit.ts`, recopiés
+dans `apps/ai-service/app/garment_knowledge.py` (`FIT_NUMBER_BOUNDS`, test anti-dérive `test_fit_extraction.py`).
+
+**`normalize_fit` (ai-service)** — « si doute ⇒ omettre » :
+- un champ sans certitude HIGH/MEDIUM est ignoré ; valeur non numérique, NaN, booléen → ignorée ;
+- valeur hors bornes **mais < 2× la borne haute** (ou > moitié de la borne basse) : ramenée à la borne et loguée ;
+  valeur aberrante (> 2× la borne haute, négative, ou < moitié de la borne basse) : **rejetée** et loguée ;
+- arrondi au pas (0,25 pour l'ampleur, 1 pour les %) ;
+- champs hors sujet supprimés : pas d'ampleur/longueur de jupe pour pantalon/chemise/veste, pas d'ampleur de
+  manche pour un vêtement `SANS_MANCHES`, rien pour un non-vêtement.
+
+**Fusion API** (`InspirationParametersService.merge`) : pour chaque clé, `choix du client > photo`, chaque source
+revalidée par `validatePatternExtParameters` ; les clés prises à la photo sont tracées dans
+`parametersJson.inspiration.extKeysFromPhoto` (+ `fabricBehavior`). Le moteur ne reçoit que des valeurs bornées.
+
+**Web** : la fiche (étape Inspiration) liste les ajustements en lecture seule ; l'étape Mesures préremplit les
+curseurs avec la suggestion (« Suggéré par l'IA — modifiable ») ; toucher un curseur enregistre le choix du client
+(qui prime), *Réinitialiser* revient à la suggestion.

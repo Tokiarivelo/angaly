@@ -1,14 +1,33 @@
 import React from 'react';
-import { Sparkles } from 'lucide-react';
+import { Sparkles, Check, Loader2 } from 'lucide-react';
+import { GENERATION_STAGES, useGenerationProgress } from '../hooks/useGenerationProgress';
 
-export const GenerationLoadingScreen = () => {
+interface GenerationLoadingScreenProps {
+  title?: string;
+  description?: string;
+  /** Show the per-stage checklist (generation) or only the spinner (page opening). */
+  showStages?: boolean;
+}
+
+export const GenerationLoadingScreen: React.FC<GenerationLoadingScreenProps> = ({
+  title = 'Génération de votre patron en cours…',
+  description = 'Notre moteur de patronage calcule vos pièces avec une précision millimétrique, conformément à vos mensurations et vos choix de coupe.',
+  showStages = true,
+}) => {
+  const { stageIndex, elapsedSeconds, isSlow } = useGenerationProgress(showStages);
+
   return (
-    <div className="min-h-[60vh] flex flex-col items-center justify-center p-6 text-center">
+    <div
+      role="status"
+      aria-live="polite"
+      aria-busy="true"
+      className="min-h-[60vh] flex flex-col items-center justify-center p-6 text-center"
+    >
       {/* Animated couture silhouette line drawing */}
       <div className="relative w-36 h-36 mb-8 flex items-center justify-center">
         <div className="absolute inset-0 rounded-full border border-[#C5B190]/20 animate-ping" />
         <div className="absolute inset-2 rounded-full border border-[#C5B190]/40 animate-spin [animation-duration:8s]" />
-        
+
         {/* Stylized SVG silhouette */}
         <svg
           viewBox="0 0 100 100"
@@ -30,13 +49,42 @@ export const GenerationLoadingScreen = () => {
         </span>
       </div>
 
-      <h2 className="font-serif text-2xl sm:text-3xl font-light text-white mb-3">
-        Génération de votre patron en cours…
-      </h2>
-      <p className="text-[#D8D3C8] text-sm font-light max-w-md mx-auto leading-relaxed">
-        Notre moteur de patronage calcule vos pièces avec une précision millimétrique,
-        conformément à vos mensurations et vos choix de coupe.
-      </p>
+      <h2 className="font-serif text-2xl sm:text-3xl font-light text-white mb-3">{title}</h2>
+      <p className="text-[#D8D3C8] text-sm font-light max-w-md mx-auto leading-relaxed">{description}</p>
+
+      {showStages && (
+        <>
+          <ol className="mt-8 space-y-2 text-left text-sm" data-testid="generation-stages">
+            {GENERATION_STAGES.map((stage, index) => {
+              const done = index < stageIndex;
+              const current = index === stageIndex;
+              return (
+                <li
+                  key={stage}
+                  aria-current={current ? 'step' : undefined}
+                  className={`flex items-center gap-2.5 ${
+                    done ? 'text-[#C5B190]' : current ? 'text-white' : 'text-[#D8D3C8]/40'
+                  }`}
+                >
+                  {done ? (
+                    <Check className="w-4 h-4 stroke-[3]" />
+                  ) : current ? (
+                    <Loader2 className="w-4 h-4 animate-spin" />
+                  ) : (
+                    <span className="w-4 h-4 rounded-full border border-current opacity-60" />
+                  )}
+                  <span>{stage}</span>
+                </li>
+              );
+            })}
+          </ol>
+          <p className="mt-6 text-[11px] text-[#D8D3C8]/60" data-testid="generation-elapsed">
+            {isSlow
+              ? `Toujours en cours (${elapsedSeconds} s) — si des mesures manquent, l’estimation par IA prend un peu plus de temps. Ne fermez pas cette page.`
+              : `${elapsedSeconds} s — cela prend généralement quelques secondes.`}
+          </p>
+        </>
+      )}
     </div>
   );
 };

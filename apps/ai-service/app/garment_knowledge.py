@@ -15,7 +15,11 @@ Descriptive output only — never geometry (ADR-005).
 
 from __future__ import annotations
 
+import logging
+import math
 from typing import Any
+
+logger = logging.getLogger("angaly.ai_service")
 
 # --- Closed vocabularies ---------------------------------------------------------------------
 
@@ -122,6 +126,56 @@ PRESENTATIONS: dict[str, str] = {
 # What the wizard calls each detail, used when a garment type makes a detail meaningless.
 _NO_SLEEVES_NECK_FOR = {"JUPE", "PANTALON"}
 
+
+# --- Fit (ease / fullness / lengths) -----------------------------------------------------------
+# Mirrors `packages/types/src/pattern-fit.ts` (checked by tests/test_taxonomy_sync.py). The model only
+# proposes bounded numbers; the pattern-engine alone turns them into geometry (ADR-005).
+
+EASE_LEVELS: dict[str, str] = {
+    "AJUSTE": "près du corps : le tissu épouse la silhouette, aucune aisance visible",
+    "CONFORT": "aisance standard : tombe naturellement, ni serré ni flottant",
+    "AMPLE": "visiblement ample : le tissu flotte autour du corps, plis de mouvement larges",
+}
+
+FABRIC_BEHAVIORS: dict[str, str] = {
+    "FLUIDE": "tombe en plis souples et suit le mouvement (crêpe, soie, viscose, mousseline)",
+    "STRUCTURE": "tient sa forme (gabardine, popeline épaisse, coton dense)",
+    "RIGIDE": "forme sculptée qui se tient seule (taffetas, duchesse, mikado, entoilé)",
+    "STRETCH": "épouse en s'étirant (jersey, maille, élasthanne)",
+}
+
+# name -> (min, max, step); same bounds as FULLNESS_BOUNDS / LENGTH_BOUNDS in pattern-fit.ts.
+FIT_NUMBER_BOUNDS: dict[str, tuple[float, float, float]] = {
+    "fullness.skirt": (1.0, 4.0, 0.25),
+    "fullness.sleeve": (1.0, 2.5, 0.25),
+    "lengths.skirtPct": (40.0, 130.0, 1.0),
+    "lengths.sleevePct": (0.0, 100.0, 1.0),
+    "lengths.bodicePct": (80.0, 120.0, 1.0),
+}
+
+_SKIRT_GARMENTS = {"JUPE", "ROBE", "ROBE_MARIEE"}
+_SLEEVE_GARMENTS = {"ROBE", "VESTE", "COSTUME", "CHEMISE", "ROBE_MARIEE"}
+_BODICE_GARMENTS = _SLEEVE_GARMENTS | {"AUTRE"}
+_CERTAINTY_KEPT = {"HIGH", "MEDIUM"}
+
+FIT_GUIDE = """\
+Ajustements (`fit`, optionnel — omets tout champ dont tu n'es pas SÛR ; mieux vaut ne rien dire qu'inventer) :
+- ease : AJUSTE / CONFORT / AMPLE (voir le vocabulaire). Juge l'espace entre le tissu et le corps, pas la
+  taille de la personne. Une robe qui tombe droit sans toucher le corps = AMPLE ; un fourreau moulant = AJUSTE.
+- fullness.skirt (1 à 4, pas de 0,25) = quantité de tissu de la jupe rapportée à sa largeur finie :
+  1 = jupe droite sans fronces ; ≈1,5 = légèrement évasée ; ≈2 = plis/fronces réguliers visibles ;
+  ≈3 = très froncée ou plissée serrée ; 4 = volume maximal (cercle, tulle gonflé).
+- fullness.sleeve (1 à 2,5) : 1 = manche droite ; ≈1,5 = manche légèrement bouffante ; ≈2 = ballon marqué.
+  Seulement s'il y a des manches.
+- lengths.skirtPct (40 à 130) : longueur de la jupe en % de la longueur « normale » du type (100 = standard
+  pour le détail `longueur` choisi). lengths.sleevePct (0 à 100) : 0 = sans manches, 100 = poignet.
+  lengths.bodicePct (80 à 120) : buste court (<100) / long (>100) par rapport à la taille naturelle.
+- fabricBehavior : FLUIDE / STRUCTURE / RIGIDE / STRETCH (informatif, jamais de géométrie).
+- certainty : pour CHAQUE champ numérique ou ease que tu donnes, une clé de même nom
+  (ex. "ease", "fullness.skirt") valant HIGH ou MEDIUM. Un champ sans certitude HIGH/MEDIUM sera ignoré.
+- Ne donne jamais de valeur hors des bornes ci-dessus. Si le vêtement est porté, ne confonds pas les plis
+  du corps en mouvement avec l'ampleur du tissu."""
+
 DECISION_PROCEDURE = """\
 Procédure (suis-la dans l'ordre) :
 1. Est-ce une photo où un vêtement est le sujet principal (porté, sur cintre, mannequin, à plat,
@@ -147,7 +201,8 @@ Procédure (suis-la dans l'ordre) :
 8. presentation : portée (WORN), sur mannequin (MANNEQUIN), à plat/cintre (FLAT) ou croquis (SKETCH).
    Si le vêtement est porté ou sur mannequin, les plis visibles peuvent venir de la pose : ne conclus
    DRAPING que si le drapé est structurel (le tissu serait impossible à tracer à plat).
-9. confidence : 0.9+ si tout est net, 0.5–0.7 si cadrage partiel ou flou, <0.4 si tu devines."""
+9. fit : applique le guide « Ajustements » ci-dessous ; omets `fit` (null) si rien n'est lisible.
+10. confidence : 0.9+ si tout est net, 0.5–0.7 si cadrage partiel ou flou, <0.4 si tu devines."""
 
 # Worked examples (textual few-shot — no images, they only calibrate vocabulary and restraint).
 FEW_SHOT_EXAMPLES: list[dict[str, Any]] = [
@@ -163,6 +218,12 @@ FEW_SHOT_EXAMPLES: list[dict[str, Any]] = [
             "constructionMethod": "MIXED",
             "presentation": "MANNEQUIN",
             "constructionNotes": "Bustier ajusté à tracer à plat ; jupe en tulle et traîne à draper sur mannequin.",
+            "fit": {
+                "ease": "AJUSTE",
+                "fullness": {"skirt": 3.0},
+                "fabricBehavior": "RIGIDE",
+                "certainty": {"ease": "HIGH", "fullness.skirt": "MEDIUM"},
+            },
         },
     },
     {
@@ -177,6 +238,7 @@ FEW_SHOT_EXAMPLES: list[dict[str, Any]] = [
             "constructionMethod": "FLAT_PATTERN",
             "presentation": "WORN",
             "constructionNotes": None,
+            "fit": {"ease": "AJUSTE", "fabricBehavior": "STRUCTURE", "certainty": {"ease": "HIGH"}},
         },
     },
     {
@@ -191,7 +253,34 @@ FEW_SHOT_EXAMPLES: list[dict[str, Any]] = [
             "constructionMethod": "FLAT_PATTERN",
             "presentation": "FLAT",
             "constructionNotes": None,
+            "fit": {
+                "fullness": {"skirt": 2.0},
+                "lengths": {"skirtPct": 100},
+                "fabricBehavior": "FLUIDE",
+                "certainty": {"fullness.skirt": "HIGH", "lengths.skirtPct": "MEDIUM"},
+            },
         },
+    },
+    {
+        "scene": "Robe longue en lin beige, coupe droite très ample, manches ballon courtes, portée sans ceinture.",
+            "profile": {
+                "isGarment": True,
+                "garmentType": "ROBE",
+                "occasion": "QUOTIDIEN",
+                "style": "MINIMALISTE",
+                "cutType": "OVERSIZE",
+                "details": {"manches": "BALLON", "longueur": "MAXI"},
+                "constructionMethod": "FLAT_PATTERN",
+                "presentation": "WORN",
+                "constructionNotes": None,
+                "fit": {
+                    "ease": "AMPLE",
+                    "fullness": {"sleeve": 1.5},
+                    "lengths": {"sleevePct": 30},
+                    "fabricBehavior": "FLUIDE",
+                    "certainty": {"ease": "HIGH", "fullness.sleeve": "MEDIUM", "lengths.sleevePct": "MEDIUM"},
+                },
+            },
     },
     {
         "scene": "Mannequin de couture drapé d'un long tissu rouge plissé en cascade sur une épaule, sans coutures visibles (type lamba/sari).",
@@ -205,12 +294,13 @@ FEW_SHOT_EXAMPLES: list[dict[str, Any]] = [
             "constructionMethod": "DRAPING",
             "presentation": "MANNEQUIN",
             "constructionNotes": "Entièrement drapé : épingler le tissu sur mannequin, plis en cascade depuis l'épaule ; patron plat limité à la doublure/base.",
+            "fit": None,
         },
     },
     {
         "scene": "Photo d'un plat de riz sur une table.",
         "profile": {"isGarment": False, "garmentType": None, "occasion": None, "style": None, "cutType": None, "details": {},
-                    "constructionMethod": None, "presentation": None, "constructionNotes": None},
+                    "constructionMethod": None, "presentation": None, "constructionNotes": None, "fit": None},
     },
 ]
 
@@ -234,10 +324,13 @@ def build_taxonomy_prompt() -> str:
         _format_vocab("cutType :", CUT_TYPES),
         _format_vocab("constructionMethod :", CONSTRUCTION_METHODS),
         _format_vocab("presentation :", PRESENTATIONS),
+        _format_vocab("fit.ease :", EASE_LEVELS),
+        _format_vocab("fit.fabricBehavior :", FABRIC_BEHAVIORS),
     ]
     for group, options in DETAIL_OPTIONS.items():
         parts.append(_format_vocab(f"details.{group} :", options))
     parts.append(DECISION_PROCEDURE)
+    parts.append(FIT_GUIDE)
     examples = "\n".join(
         f"- Scène : {ex['scene']}\n  profile : {json.dumps(ex['profile'], ensure_ascii=False)}"
         for ex in FEW_SHOT_EXAMPLES
@@ -260,6 +353,75 @@ def _pick(value: Any, allowed: dict[str, str]) -> str | None:
     return candidate if candidate in allowed else None
 
 
+def _round_to_step(value: float, step: float) -> float:
+    rounded = round(round(value / step) * step, 4)
+    return int(rounded) if float(rounded).is_integer() else rounded
+
+
+def _fit_number(path: str, value: Any, certainty: dict[str, str]) -> float | None:
+    """Bounded, certain, rounded number — or None. Wildly aberrant values (beyond twice the upper bound,
+    or below half the lower one) are rejected; mildly out-of-range ones are clamped and logged."""
+    if isinstance(value, bool) or not isinstance(value, (int, float)) or not math.isfinite(value):
+        return None
+    if certainty.get(path) not in _CERTAINTY_KEPT:
+        return None
+    low, high, step = FIT_NUMBER_BOUNDS[path]
+    if value > high * 2 or value < 0 or (low > 0 and value < low / 2):
+        logger.warning("fit.%s=%r rejected: aberrant (bounds %s..%s)", path, value, low, high)
+        return None
+    if value < low or value > high:
+        logger.warning("fit.%s=%r clamped to bounds %s..%s", path, value, low, high)
+        value = min(high, max(low, value))
+    return _round_to_step(float(value), step)
+
+
+def normalize_fit(raw: Any, garment_type: str, details: dict[str, str]) -> dict[str, Any] | None:
+    """Keeps only certain, in-range, garment-relevant fit values. Nothing left ⇒ None."""
+    if not isinstance(raw, dict):
+        return None
+    raw_certainty = raw.get("certainty")
+    certainty: dict[str, str] = (
+        {k: str(v).strip().upper() for k, v in raw_certainty.items() if isinstance(k, str)}
+        if isinstance(raw_certainty, dict)
+        else {}
+    )
+    result: dict[str, Any] = {}
+    kept: dict[str, str] = {}
+
+    ease = _pick(raw.get("ease"), EASE_LEVELS)
+    if ease and certainty.get("ease") in _CERTAINTY_KEPT:
+        result["ease"] = ease
+        kept["ease"] = certainty["ease"]
+
+    sleeveless = details.get("manches") == "SANS_MANCHES"
+    allowed = {
+        "fullness.skirt": garment_type in _SKIRT_GARMENTS,
+        "lengths.skirtPct": garment_type in _SKIRT_GARMENTS,
+        "fullness.sleeve": garment_type in _SLEEVE_GARMENTS and not sleeveless,
+        "lengths.sleevePct": garment_type in _SLEEVE_GARMENTS,
+        "lengths.bodicePct": garment_type in _BODICE_GARMENTS,
+    }
+    for path, ok in allowed.items():
+        if not ok:
+            continue
+        group, name = path.split(".")
+        group_raw = raw.get(group)
+        value = _fit_number(path, group_raw.get(name) if isinstance(group_raw, dict) else None, certainty)
+        if value is None:
+            continue
+        result.setdefault(group, {})[name] = value
+        kept[path] = certainty[path]
+
+    behavior = _pick(raw.get("fabricBehavior"), FABRIC_BEHAVIORS)
+    if behavior:
+        result["fabricBehavior"] = behavior
+
+    if not kept and "fabricBehavior" not in result:
+        return None
+    result["certainty"] = kept
+    return result
+
+
 def normalize_profile(raw: dict[str, Any] | None) -> dict[str, Any]:
     """Keeps only taxonomy-valid values. Not a garment ⇒ everything else is emptied."""
     empty: dict[str, Any] = {
@@ -272,6 +434,7 @@ def normalize_profile(raw: dict[str, Any] | None) -> dict[str, Any]:
         "constructionMethod": None,
         "presentation": None,
         "constructionNotes": None,
+        "fit": None,
     }
     if not raw or raw.get("isGarment") is not True:
         return empty
@@ -305,4 +468,5 @@ def normalize_profile(raw: dict[str, Any] | None) -> dict[str, Any]:
         "presentation": _pick(raw.get("presentation"), PRESENTATIONS),
         # Notes only make sense when part of the garment is draped.
         "constructionNotes": notes if construction in {"DRAPING", "MIXED"} else None,
+        "fit": normalize_fit(raw.get("fit"), garment_type, details),
     }

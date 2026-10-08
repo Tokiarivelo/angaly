@@ -48,3 +48,65 @@ describe('fitControlsFor', () => {
     expect(fitControlsFor(garment)).toEqual(expected);
   });
 });
+
+import { buildFitRows, effectiveFit, suggestedFitFrom } from '../utils/fit-parameters';
+import type { GarmentProfile } from '@angaly/types';
+
+const profile = (fit: unknown, isGarment = true): GarmentProfile =>
+  ({ isGarment, garmentType: 'ROBE', occasion: null, style: null, cutType: null, details: {}, fit }) as GarmentProfile;
+
+describe('suggestedFitFrom', () => {
+  it('returns the validated photo suggestion', () => {
+    expect(suggestedFitFrom(profile({ ease: 'AMPLE', fullness: { skirt: 2 }, fabricBehavior: 'FLUIDE' }))).toEqual({
+      ease: 'AMPLE',
+      fullness: { skirt: 2 },
+    });
+  });
+
+  it('drops invalid values, and ignores non-garments, missing fit and empty results', () => {
+    expect(suggestedFitFrom(profile({ ease: 'GIGANTESQUE', lengths: { skirtPct: 90 } }))).toEqual({
+      lengths: { skirtPct: 90 },
+    });
+    expect(suggestedFitFrom(profile({ ease: 'AMPLE' }, false))).toBeUndefined();
+    expect(suggestedFitFrom(profile(undefined))).toBeUndefined();
+    expect(suggestedFitFrom(profile({ fabricBehavior: 'FLUIDE' }))).toBeUndefined();
+    expect(suggestedFitFrom(null)).toBeUndefined();
+  });
+});
+
+describe('effectiveFit', () => {
+  it('uses the suggestion until the customer chooses, key by key', () => {
+    const { value, fromSuggestion } = effectiveFit(
+      { ease: 'CONFORT' },
+      { ease: 'AMPLE', fullness: { skirt: 2 } },
+    );
+    expect(value).toEqual({ ease: 'CONFORT', fullness: { skirt: 2 } });
+    expect(fromSuggestion).toEqual(['fullness.skirt']);
+  });
+
+  it('is empty without any source', () => {
+    expect(effectiveFit(undefined, undefined)).toEqual({ value: {}, fromSuggestion: [] });
+  });
+});
+
+describe('buildFitRows', () => {
+  it('lists the suggestions in French, nothing when there is none', () => {
+    const rows = buildFitRows(
+      profile({
+        ease: 'AMPLE',
+        fullness: { skirt: 2.5 },
+        lengths: { skirtPct: 90, sleevePct: 0 },
+        fabricBehavior: 'RIGIDE',
+      }),
+    );
+    expect(rows).toEqual([
+      { label: 'Aisance', value: 'Ample' },
+      { label: 'Ampleur de jupe', value: '×2.5' },
+      { label: 'Longueur de jupe', value: '90 %' },
+      { label: 'Longueur de manche', value: '0 %' },
+      { label: 'Tissu', value: 'Rigide' },
+    ]);
+    expect(buildFitRows(profile(undefined))).toEqual([]);
+    expect(buildFitRows(undefined)).toEqual([]);
+  });
+});

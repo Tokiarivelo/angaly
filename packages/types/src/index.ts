@@ -3,7 +3,7 @@
 // Enums mirror packages/database/prisma/schema.prisma 1:1 — keep both in sync.
 
 import type { ProviderCredentials } from './ai-providers';
-import type { PatternExtParameters } from './pattern-fit';
+import type { GarmentFit, PatternExtParameters } from './pattern-fit';
 
 // ============================================================
 // Enums
@@ -822,6 +822,8 @@ export interface GarmentProfile {
   presentation?: 'WORN' | 'MANNEQUIN' | 'FLAT' | 'SKETCH' | null;
   /** Where the drape is and how to approach it (French), only for DRAPING/MIXED. */
   constructionNotes?: string | null;
+  /** Ease / fullness / lengths read from the photo (bounded, certain values only). Absent on older analyses. */
+  fit?: GarmentFit | null;
 }
 
 /** What the photo analysis found, stored on the pattern project so generation can use it. */

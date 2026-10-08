@@ -1,5 +1,11 @@
 import {
   EASE_LEVELS,
+  EASE_LEVEL_LABELS,
+  FABRIC_BEHAVIOR_LABELS,
+  listPatternExtKeys,
+  type GarmentProfile,
+  type PatternExtKey,
+  mergePatternExtParameters,
   validatePatternExtParameters,
   type EaseLevel,
   type PatternExtParameters,
@@ -52,4 +58,56 @@ export function applyFitChange(
 
   const { value, issues } = validatePatternExtParameters(draft);
   return issues.length > 0 ? (current ?? {}) : value;
+}
+
+/** What the photo analysis suggests (validated again here), or `undefined` for a non-garment / no fit. */
+export function suggestedFitFrom(profile: GarmentProfile | null | undefined): PatternExtParameters | undefined {
+  if (!profile?.isGarment || !profile.fit) return undefined;
+  const { value } = validatePatternExtParameters(profile.fit);
+  return listPatternExtKeys(value).length > 0 ? value : undefined;
+}
+
+/** The customer's choice wins; the photo suggestion fills the rest — what generation will really use. */
+export function effectiveFit(
+  chosen: PatternExtParameters | undefined,
+  suggested: PatternExtParameters | undefined,
+): { value: PatternExtParameters; fromSuggestion: PatternExtKey[] } {
+  const merged = mergePatternExtParameters(chosen, suggested);
+  return {
+    value: merged.value,
+    fromSuggestion: listPatternExtKeys(merged.value).filter((key) => merged.origin[key] === 1),
+  };
+}
+
+/** Read-only rows describing what the photo suggests (labels in French), for the garment sheet. */
+export function buildFitRows(profile: GarmentProfile | null | undefined): Array<{ label: string; value: string }> {
+  const suggested = suggestedFitFrom(profile);
+  const rows: Array<{ label: string; value: string | undefined }> = [
+    { label: 'Aisance', value: suggested?.ease ? EASE_LEVEL_LABELS[suggested.ease] : undefined },
+    {
+      label: 'Ampleur de jupe',
+      value: suggested?.fullness?.skirt !== undefined ? `×${suggested.fullness.skirt}` : undefined,
+    },
+    {
+      label: 'Ampleur de manche',
+      value: suggested?.fullness?.sleeve !== undefined ? `×${suggested.fullness.sleeve}` : undefined,
+    },
+    {
+      label: 'Longueur de jupe',
+      value: suggested?.lengths?.skirtPct !== undefined ? `${suggested.lengths.skirtPct} %` : undefined,
+    },
+    {
+      label: 'Longueur de manche',
+      value: suggested?.lengths?.sleevePct !== undefined ? `${suggested.lengths.sleevePct} %` : undefined,
+    },
+    {
+      label: 'Longueur du buste',
+      value: suggested?.lengths?.bodicePct !== undefined ? `${suggested.lengths.bodicePct} %` : undefined,
+    },
+    {
+      label: 'Tissu',
+      value: profile?.fit?.fabricBehavior ? FABRIC_BEHAVIOR_LABELS[profile.fit.fabricBehavior] : undefined,
+    },
+  ];
+  return rows.filter((row): row is { label: string; value: string } => row.value !== undefined);
 }

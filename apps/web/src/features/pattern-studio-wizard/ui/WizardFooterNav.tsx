@@ -9,6 +9,8 @@ interface WizardFooterNavProps {
   onPrevious: () => void;
   onNext: () => void;
   nextLabel?: string;
+  /** Label while submitting (default "Traitement…"). */
+  submittingLabel?: string | undefined;
 }
 
 export const WizardFooterNav: React.FC<WizardFooterNavProps> = ({
@@ -19,6 +21,7 @@ export const WizardFooterNav: React.FC<WizardFooterNavProps> = ({
   onPrevious,
   onNext,
   nextLabel,
+  submittingLabel,
 }) => {
   const isFinalStep = currentStep === totalSteps;
 
@@ -42,6 +45,7 @@ export const WizardFooterNav: React.FC<WizardFooterNavProps> = ({
         type="button"
         onClick={onNext}
         disabled={!isValid || isSubmitting}
+        aria-busy={isSubmitting}
         className={`inline-flex items-center gap-2 px-8 py-3 rounded text-xs uppercase tracking-wider font-semibold transition-all ${
           isFinalStep
             ? 'bg-[#936C3E] text-white hover:bg-[#B59A70] shadow-lg shadow-[#936C3E]/20'
@@ -51,7 +55,7 @@ export const WizardFooterNav: React.FC<WizardFooterNavProps> = ({
         {isSubmitting ? (
           <>
             <Loader2 className="w-4 h-4 animate-spin" />
-            <span>Traitement…</span>
+            <span>{submittingLabel ?? 'Traitement…'}</span>
           </>
         ) : isFinalStep ? (
           <>

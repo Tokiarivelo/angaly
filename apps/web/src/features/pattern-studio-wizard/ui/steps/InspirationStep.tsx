@@ -17,6 +17,7 @@ import { STYLES } from '../../consts/styles.const';
 import { CUTS } from '../../consts/cuts.const';
 import { DETAIL_GROUPS } from '../../consts/details.const';
 import { useUploadInspirationPhoto } from '../../hooks/useUploadInspirationPhoto';
+import { buildFitRows } from '../../utils/fit-parameters';
 
 interface InspirationStepProps {
   inspirationImageUrl?: string | undefined;
@@ -257,6 +258,28 @@ export const InspirationStep: React.FC<InspirationStepProps> = ({
               </div>
             ))}
           </dl>
+
+          {buildFitRows(profile).length > 0 && (
+            <div className="mt-5" data-testid="fit-rows">
+              <p className="text-[11px] uppercase tracking-wider text-[#C5B190] mb-2">
+                Ajustements déduits de la photo
+              </p>
+              <dl className="grid grid-cols-1 sm:grid-cols-2 gap-3">
+                {buildFitRows(profile).map((row) => (
+                  <div
+                    key={row.label}
+                    className="flex items-center gap-2 text-xs bg-[#041329]/80 px-3 py-2 rounded-lg border border-[#C5B190]/10"
+                  >
+                    <dt className="font-medium text-white">{row.label} :</dt>
+                    <dd className="text-[#D8D3C8] truncate">{row.value}</dd>
+                  </div>
+                ))}
+              </dl>
+              <p className="mt-2 text-[11px] text-[#D8D3C8]/70 italic">
+                Suggestions indicatives, modifiables à l’étape Mesures.
+              </p>
+            </div>
+          )}
 
           {profile.constructionNotes && (
             <p

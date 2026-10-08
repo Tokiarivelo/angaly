@@ -33,7 +33,20 @@ profondeur d'emmanchure, **pince de poitrine**, manches (bras/poignet/emmanchure
 catalogue n'est lue par aucune règle. L'avertissement « Autre » vient du moteur (`IPatternRule.warnings?`).
 `@vitest/coverage-v8` installé dans pattern-engine : couverture 89,6 % (moteur : 159 tests).
 
-**Prochaine action : S3** — l'analyse photo remplit `ease/fullness/lengths` (prompt + `normalize_profile`
+**S3 livrée** (voir `docs/features/ai-inference.md`) : `GarmentProfile.fit` extrait par l'IA (ai-service
+`normalize_fit`, bornes miroir testées), fusion API client > photo, fiche + curseurs « suggéré par l'IA ».
+Tests : pytest 79 (94 %), API patterns verts, web wizard 72. ⚠️ Stitch non consulté pour ces blocs UI ; l'appel IA
+« texte seul » ne demande pas encore les paramètres étendus ; e2e Playwright non écrit.
+
+**Correctif UX (même commit)** : « Générer mon patron » — l'écran de chargement reste affiché pendant la requête
+**et** jusqu'à la redirection (avant : le wizard réapparaissait entre la fin de la requête et l'ouverture de
+l'aperçu), étapes animées + compteur + message « toujours en cours », bouton « Génération… » désactivé,
+`loading.tsx` sur `/pattern-studio/projects/[projectId]`, et bannière d'erreur si la génération échoue.
+Tests : `GenerationLoading.test.tsx`, `PatternStudioWizard.generate.test.tsx`.
+
+**Prochaine action : S4** — blocs de drapé déterministes (jupe froncée/plissée/cercle, portefeuille, col bénitier :
+`packages/pattern-engine/src/blocks/*.ts`, `DrapeSpec`, métrage indicatif, `warnings[]`) — voir la phase 5b §S4.
+(Ancien texte S3 :) l'analyse photo remplit `ease/fullness/lengths` (prompt + `normalize_profile`
 bornage + fusion API client > photo > IA) et écran « Ajustements déduits de la photo » (consulter Stitch via
 `agy` avant JSX). Dette : brancher les mesures restantes du catalogue (sous-poitrine, hauteur de poitrine,
 carrures, cuisse…), migrer l'avertissement AUTRE dans la règle.

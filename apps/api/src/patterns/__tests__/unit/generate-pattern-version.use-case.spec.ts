@@ -430,6 +430,36 @@ describe('GeneratePatternVersionUseCase', () => {
       await expect(useCase.execute('proj-photo', 'cust-1')).resolves.toBeDefined();
     });
 
+    it('uses the photo fit suggestions for ease / fullness, yields to the customer, and traces them', async () => {
+      mockProjectRepo.findById.mockResolvedValueOnce(
+        analysedProject({
+          parametersExtJson: { fullness: { skirt: 1.5 } },
+          inspirationAnalysisJson: {
+            features: { silhouette: 'ample' },
+            profile: {
+              isGarment: true,
+              garmentType: 'ROBE',
+              occasion: null,
+              style: null,
+              cutType: 'EVASEE',
+              details: {},
+              fit: { ease: 'AMPLE', fullness: { skirt: 3 }, fabricBehavior: 'FLUIDE' },
+            },
+          },
+        }),
+      );
+
+      const version = await useCase.execute('proj-photo', 'cust-1');
+
+      expect(mockGeneratePiecesUseCase.execute).toHaveBeenCalledWith(
+        expect.objectContaining({ ease: 'AMPLE', fullness: { skirt: 1.5 } }),
+        expect.any(Object),
+      );
+      const trace = (version.parametersJson as any).inspiration;
+      expect(trace.extKeysFromPhoto).toEqual(['ease']);
+      expect(trace.fabricBehavior).toBe('FLUIDE');
+    });
+
     it('is unchanged for projects without a photo analysis', async () => {
       await useCase.execute('proj-1', 'cust-1');
       expect(mockSuggest.execute).not.toHaveBeenCalled();

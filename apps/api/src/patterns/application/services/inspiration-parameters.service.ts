@@ -1,5 +1,12 @@
 import { Injectable } from '@nestjs/common';
-import type { GarmentProfile, InspirationAnalysisSnapshot } from '@angaly/types';
+import {
+  listPatternExtKeys,
+  mergePatternExtParameters,
+  type GarmentProfile,
+  type InspirationAnalysisSnapshot,
+  type PatternExtKey,
+  type PatternExtParameters,
+} from '@angaly/types';
 import {
   PATTERN_DETAIL_OPTIONS,
   isValidPatternDetail,
@@ -10,6 +17,10 @@ export interface MergedParameters {
   details: Record<string, string>;
   /** Detail groups taken from the photo analysis because the customer left them empty. */
   fromPhotoKeys: string[];
+  /** Ease / fullness / lengths, validated: customer's choices first, then what the photo suggests. */
+  ext: PatternExtParameters;
+  /** Extended keys (`ease`, `fullness.skirt`…) that came from the photo. */
+  extKeysFromPhoto: PatternExtKey[];
 }
 
 export interface DrapingAdvice {
@@ -26,7 +37,11 @@ export interface DrapingAdvice {
 @Injectable()
 export class InspirationParametersService {
   merge(
-    project: { cutType: string | null; details: Record<string, string> },
+    project: {
+      cutType: string | null;
+      details: Record<string, string>;
+      parametersExt?: PatternExtParameters | null;
+    },
     analysis: InspirationAnalysisSnapshot | null,
   ): MergedParameters {
     const profile = analysis?.profile;
@@ -41,10 +56,18 @@ export class InspirationParametersService {
       }
     }
 
+    // Per key: the customer's explicit choice wins, the photo only fills what is still empty.
+    // Both sources are re-validated (bounds, types): an invalid value is skipped, never clamped.
+    const photoFit = profile?.isGarment ? profile.fit : null;
+    const { value: ext, origin } = mergePatternExtParameters(project.parametersExt, photoFit);
+    const extKeysFromPhoto = listPatternExtKeys(ext).filter((key) => origin[key] === 1);
+
     return {
       cutType: project.cutType ?? (profile?.isGarment ? profile.cutType : null) ?? 'DROITE',
       details,
       fromPhotoKeys,
+      ext,
+      extKeysFromPhoto,
     };
   }
 

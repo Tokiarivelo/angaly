@@ -28,6 +28,8 @@ interface MeasurementsStepProps {
   /** Drives which measurements are required / recommended (undefined = the common essentials). */
   garmentType?: string | undefined;
   fit?: PatternExtParameters | undefined;
+  /** Ease / fullness / lengths suggested by the photo analysis. */
+  suggestedFit?: PatternExtParameters | undefined;
   onChangeFit?: ((change: FitChange) => void) | undefined;
 }
 
@@ -49,6 +51,7 @@ export const MeasurementsStep: React.FC<MeasurementsStepProps> = ({
   onApplyMeasurements,
   garmentType,
   fit,
+  suggestedFit,
   onChangeFit,
 }) => {
   const { data: profiles = [] } = useMeasurementProfiles();
@@ -316,7 +319,12 @@ export const MeasurementsStep: React.FC<MeasurementsStepProps> = ({
       </div>
 
       {onChangeFit && (
-        <FitAdjustments garmentType={garmentType ?? ''} value={fit} onChange={onChangeFit} />
+        <FitAdjustments
+          garmentType={garmentType ?? ''}
+          value={fit}
+          suggested={suggestedFit}
+          onChange={onChangeFit}
+        />
       )}
 
       <p className="text-xs italic text-[#D8D3C8]/70 mt-6 text-center">
