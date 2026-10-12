@@ -11,6 +11,7 @@ export const PATTERN_DETAIL_OPTIONS = {
   dos: ['FERME', 'DECOLLETE_V', 'DOS_NU', 'GOUTTE', 'TRANSPARENT'],
   longueur: ['MINI', 'MIDI', 'MAXI', 'SOL', 'ASYMETRIQUE'],
   fermeture: ['ZIP_INVISIBLE', 'BOUTONS', 'CEINTURE_NOUEE', 'CEINTURE_INTEGREE', 'AUCUNE'],
+  corsage: ['LISSE', 'FRONCES_SOUS_POITRINE'],
 } as const satisfies Record<string, readonly string[]>;
 
 export type PatternDetailGroup = keyof typeof PATTERN_DETAIL_OPTIONS;

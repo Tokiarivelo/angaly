@@ -2,8 +2,9 @@
 
 import React, { useEffect, useMemo, useRef, useState } from 'react';
 import dynamic from 'next/dynamic';
-import { Hand, Pause, Play, RotateCcw } from 'lucide-react';
+import { Hand, Maximize2, Minimize2, Pause, Play, RotateCcw } from 'lucide-react';
 import type { ViewName, ViewRequest } from './Garment3DViewer';
+import type { FabricLook } from './fabricTextures';
 import { WebGlBoundary } from './WebGlBoundary';
 import type { PatternPieceDto } from '@angaly/types';
 import { buildGarmentModel, type FitStatus } from '../utils/garment3d/garment-model';
@@ -24,6 +25,8 @@ interface Garment3DPanelProps {
   garmentType: string;
   measurements: Record<string, number> | null | undefined;
   selectedPieceId: string | null;
+  /** Fabric read from the inspiration photo (print, colours), shown on the 3D garment. */
+  fabric?: FabricLook | null | undefined;
 }
 
 const STATUS_LABELS: Record<FitStatus, { label: string; className: string }> = {
@@ -43,6 +46,7 @@ export const Garment3DPanel: React.FC<Garment3DPanelProps> = ({
   garmentType,
   measurements,
   selectedPieceId,
+  fabric,
 }) => {
   const [assembly, setAssembly] = useState(1);
   const [isPlaying, setIsPlaying] = useState(false);
@@ -50,6 +54,8 @@ export const Garment3DPanel: React.FC<Garment3DPanelProps> = ({
   const [transparent, setTransparent] = useState(false);
   // Hand tool: the left button moves the scene instead of rotating it.
   const [panMode, setPanMode] = useState(false);
+  // Full screen: the whole panel (stage, controls, settings) covers the window; Escape leaves it.
+  const [fullscreen, setFullscreen] = useState(false);
   const [viewRequest, setViewRequest] = useState<ViewRequest | null>(null);
   const [viewerKey, setViewerKey] = useState(0);
   const [contextLost, setContextLost] = useState(false);
@@ -83,6 +89,20 @@ export const Garment3DPanel: React.FC<Garment3DPanelProps> = ({
     // The animation restarts only when playback is toggled, not on every assembly update.
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [isPlaying]);
+
+  useEffect(() => {
+    if (!fullscreen) return undefined;
+    const onKey = (event: KeyboardEvent): void => {
+      if (event.key === 'Escape') setFullscreen(false);
+    };
+    window.addEventListener('keydown', onKey);
+    const previousOverflow = document.body.style.overflow;
+    document.body.style.overflow = 'hidden';
+    return () => {
+      window.removeEventListener('keydown', onKey);
+      document.body.style.overflow = previousOverflow;
+    };
+  }, [fullscreen]);
 
   const requestView = (view: ViewName): void => {
     setViewRequest((previous) => ({ view, nonce: (previous?.nonce ?? 0) + 1 }));
@@ -120,9 +140,19 @@ export const Garment3DPanel: React.FC<Garment3DPanelProps> = ({
   const { model } = result;
 
   return (
-    <div className="flex-1 min-h-[440px] bg-[#041329] border border-[#C5B190]/30 rounded-xl p-4 sm:p-6 flex flex-col gap-4">
+    <div
+      data-testid="garment-3d-panel"
+      data-fullscreen={String(fullscreen)}
+      className={
+        fullscreen
+          ? 'fixed inset-0 z-[100] overflow-y-auto bg-[#041329] p-4 sm:p-6 flex flex-col gap-4'
+          : 'flex-1 min-h-[440px] bg-[#041329] border border-[#C5B190]/30 rounded-xl p-4 sm:p-6 flex flex-col gap-4'
+      }
+    >
       <div
-        className="relative h-[420px] rounded-lg overflow-hidden border border-[#C5B190]/20 focus:outline-none focus:ring-1 focus:ring-[#C5B190]"
+        className={`relative rounded-lg overflow-hidden border border-[#C5B190]/20 focus:outline-none focus:ring-1 focus:ring-[#C5B190] ${
+          fullscreen ? 'flex-1 min-h-[300px]' : 'h-[420px]'
+        }`}
         data-testid="garment-3d-stage"
         tabIndex={0}
         onKeyDown={handleStageKey}
@@ -144,6 +174,7 @@ export const Garment3DPanel: React.FC<Garment3DPanelProps> = ({
             selectedPieceId={selectedPieceId}
             viewRequest={viewRequest}
             onContextLost={() => setContextLost(true)}
+            fabric={fabric}
           />
         </WebGlBoundary>
         <p className="pointer-events-none absolute bottom-2 left-3 text-[11px] text-[#D8D3C8]/60">
@@ -173,6 +204,16 @@ export const Garment3DPanel: React.FC<Garment3DPanelProps> = ({
           Éclater
         </button>
 
+        <button
+          type="button"
+          aria-pressed={fullscreen}
+          onClick={() => setFullscreen((v) => !v)}
+          title={fullscreen ? 'Quitter le plein écran (Échap)' : 'Afficher en plein écran'}
+          className="ml-auto inline-flex items-center gap-1.5 px-3 py-1.5 rounded-lg bg-[#0C2650] border border-[#C5B190]/30 text-[#C5B190] hover:border-[#C5B190] order-last"
+        >
+          {fullscreen ? <Minimize2 className="w-3.5 h-3.5" /> : <Maximize2 className="w-3.5 h-3.5" />}
+          {fullscreen ? 'Quitter le plein écran' : 'Plein écran'}
+        </button>
         <button
           type="button"
           aria-pressed={panMode}

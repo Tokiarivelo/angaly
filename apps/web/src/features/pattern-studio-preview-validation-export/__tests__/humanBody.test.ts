@@ -1,52 +1,13 @@
-import { readFileSync } from 'node:fs';
-import { resolve } from 'node:path';
 import { describe, expect, it } from 'vitest';
-import { buildTorsoRings, readBodyMeasurements } from '../utils/garment3d/body-model';
-import { buildHairShell, fitHumanBody, morphFor, type HumanBaseData } from '../utils/garment3d/human-body';
+import { bodyLandmarks, buildTorsoRings, readBodyMeasurements } from '../utils/garment3d/body-model';
+import { envelopeFromMesh, findJoint } from '../utils/garment3d/body-envelope';
+import { buildGarmentModel, drapeGarment } from '../utils/garment3d/garment-model';
+import { fitHumanBody, JOINT_INSET, morphFor, POSE } from '../utils/garment3d/human-body';
+import { loadHumanBase } from './helpers/humanBase';
+import { buildHair, eyeball, faceColors, findFaceLandmarks, sculptFace } from '../utils/garment3d/head-features';
 
-/** Reads the real asset (public/models/human-base.glb) so the fit is tested on the actual mesh. */
-const loadBase = (): HumanBaseData & { raw: { indices: Uint32Array } } => {
-  const buf = readFileSync(resolve(__dirname, '../../../../public/models/human-base.glb'));
-  const jsonLength = buf.readUInt32LE(12);
-  const json = JSON.parse(buf.subarray(20, 20 + jsonLength).toString()) as {
-    accessors: Array<{ bufferView: number }>;
-    bufferViews: Array<{ byteOffset: number; byteLength: number }>;
-    meshes: Array<{ primitives: Array<{ attributes: { POSITION: number }; indices: number; targets: Array<{ POSITION: number }> }>; extras: Record<string, never> }>;
-  };
-  const bin = buf.subarray(20 + jsonLength + 8);
-  const slice = (accessor: number): ArrayBuffer => {
-    const view = json.bufferViews[json.accessors[accessor]!.bufferView]!;
-    return bin.buffer.slice(bin.byteOffset + view.byteOffset, bin.byteOffset + view.byteOffset + view.byteLength) as ArrayBuffer;
-  };
-  const mesh = json.meshes[0]!;
-  const primitive = mesh.primitives[0]!;
-  const extras = mesh.extras as unknown as {
-    morphNames: string[];
-    armWeights: number[];
-    landmarksFemale: number[];
-    landmarksMale: number[];
-    landmarksFemaleChild: number[];
-    landmarksMaleChild: number[];
-  };
-  const morphs: Record<string, Float32Array> = {};
-  extras.morphNames.forEach((name, i) => {
-    morphs[name] = new Float32Array(slice(primitive.targets[i]!.POSITION));
-  });
-  const indices = new Uint32Array(slice(primitive.indices));
-  return {
-    positions: new Float32Array(slice(primitive.attributes.POSITION)),
-    indices,
-    morphs,
-    armWeights: Float32Array.from(extras.armWeights),
-    landmarksFemale: extras.landmarksFemale,
-    landmarksMale: extras.landmarksMale,
-    landmarksFemaleChild: extras.landmarksFemaleChild,
-    landmarksMaleChild: extras.landmarksMaleChild,
-    raw: { indices },
-  };
-};
-
-const base = loadBase();
+const human = loadHumanBase();
+const base = { ...human, raw: { indices: human.indices } };
 
 const fit = (templateId: string, measurements: Record<string, number> = {}) => {
   const body = readBodyMeasurements(measurements, templateId);
@@ -70,12 +31,89 @@ describe('human body fit', () => {
     }
   });
 
-  it('brings bust, waist and hip close to the measured girths (never wider than the garment ellipse)', () => {
-    const { body, result } = fit('FEMME_STANDARD', { TOUR_POITRINE: 92, TOUR_TAILLE: 74, TOUR_BASSIN: 100 });
-    expect(result.circumferences.waist).toBeGreaterThan(0.6);
-    expect(result.circumferences.waist).toBeLessThan(body.waist * 1.08);
-    expect(result.circumferences.hip).toBeLessThan(body.hip * 1.08);
-    expect(result.circumferences.bust).toBeLessThan(body.bust * 1.08);
+  it.each(['FEMME_STANDARD', 'FEMME_RONDE', 'HOMME_STANDARD'])('brings bust, waist and hip within 5 %% of the measured girths (%s)', (id) => {
+    const { body, result } = fit(id);
+    for (const key of ['bust', 'waist', 'hip'] as const) {
+      expect(result.circumferences[key] / body[key]).toBeGreaterThan(0.95);
+      expect(result.circumferences[key] / body[key]).toBeLessThan(1.05);
+    }
+  });
+
+  it('puts the shoulder joints at the measured shoulder width, keeping the arms attached', () => {
+    const { body, result } = fit('FEMME_STANDARD', { LARGEUR_EPAULE: 13, TOUR_COU: 35 });
+    const l = bodyLandmarks(body);
+    const joint = findJoint(result.positions, base.armWeights, l.shoulderY, body.height / 1.7);
+    expect(joint).not.toBeNull();
+    // The hinge sits JOINT_INSET inside the shoulder seam point (the deltoid lies beyond it).
+    const s = body.height / 1.7;
+    expect(Math.abs(joint!.x - (body.shoulderWidth / 2 - JOINT_INSET * s))).toBeLessThan(0.015);
+  });
+
+  it('drapes a dress over the fitted body: no skin through the bodice, sleeves along the arms', () => {
+    const measurements = { TOUR_POITRINE: 88, TOUR_TAILLE: 68, TOUR_BASSIN: 94, LONGUEUR_DOS: 40 };
+    const closed = (pts: Array<[number, number]>) => [...pts, pts[0]!].map(([x, y]) => ({ x, y }));
+    const piece = (id: string, name: string, pts: Array<[number, number]>, quantity: number) => ({
+      id,
+      versionId: 'v',
+      name,
+      dimensionsJson: { outlineMm: closed(pts) },
+      fabricRecommendation: null,
+      quantity,
+      grainlineJson: null,
+      seamAllowanceCm: 1,
+      notchesJson: [],
+    });
+    const built = buildGarmentModel(
+      [
+        piece('cd', 'Corsage Devant', [[0, 0], [80, 0], [200, 50], [240, 242], [195, 440], [0, 440]], 1),
+        piece('cdos', 'Corsage Dos', [[0, 0], [75, 0], [190, 45], [210, 220], [165, 400], [0, 400]], 2),
+        piece('m', 'Manche', [[0, 150], [137, 0], [275, 150], [250, 580], [25, 580]], 2),
+      ],
+      'ROBE',
+      measurements,
+    );
+    if (!built.ok) throw new Error(built.reason);
+    const { body, rings, result } = fit('FEMME_STANDARD', measurements);
+    const env = envelopeFromMesh(result.positions, base.raw.indices, base.armWeights, body);
+    const panels = drapeGarment(built.model.layout, body, env);
+    const l = bodyLandmarks(body);
+    expect(rings.length).toBeGreaterThan(0);
+
+    // Every torso skin vertex between the waist and the bust is inside the bodice ring at its height.
+    const garment = panels.filter((p) => p.zone === 'bodice').flatMap((p) => {
+      const out: Array<{ y: number; a: number; r: number }> = [];
+      for (let i = 0; i < p.positions.length; i += 3) {
+        const x = p.positions[i]!;
+        const z = p.positions[i + 2]! - env.axisZ;
+        out.push({ y: p.positions[i + 1]!, a: Math.atan2(x, z), r: Math.hypot(x, z) });
+      }
+      return out;
+    });
+    let checked = 0;
+    let through = 0;
+    for (let i = 0; i < base.armWeights.length; i += 7) {
+      const y = result.positions[i * 3 + 1]!;
+      if (base.armWeights[i]! >= 0.5 || y < l.waistY + 0.03 || y > l.bustY) continue;
+      const x = result.positions[i * 3]!;
+      const z = result.positions[i * 3 + 2]! - env.axisZ;
+      const a = Math.atan2(x, z);
+      const near = garment.filter((g) => Math.abs(g.y - y) < 0.006 && Math.abs(g.a - a) < 0.1);
+      if (near.length === 0) continue;
+      checked += 1;
+      if (Math.max(...near.map((g) => g.r)) < Math.hypot(x, z) - 0.003) through += 1;
+    }
+    expect(checked).toBeGreaterThan(50);
+    expect(through / checked).toBeLessThan(0.02);
+
+    // The left sleeve's centre is close to the left arm's centre.
+    const sleeve = panels.find((p) => p.zone === 'sleeve' && p.id.endsWith('-1') && !p.id.endsWith('--1'))!;
+    const mean = (arr: Float32Array, k: number) => {
+      let sum = 0;
+      for (let i = k; i < arr.length; i += 3) sum += arr[i]!;
+      return sum / (arr.length / 3);
+    };
+    expect(mean(sleeve.positions, 0)).toBeGreaterThan(0.15);
+    expect(mean(sleeve.positions, 1)).toBeLessThan(l.shoulderY);
   });
 
   it('follows the measurements: a larger waist gives a larger body', () => {
@@ -105,6 +143,36 @@ describe('human body fit', () => {
     },
   );
 
+  it.each([
+    ['FEMME_STANDARD', 0],
+    ['HOMME_STANDARD', 1],
+  ] as const)('stands in the reference pose (%s): knees and hands at the measured distances, legs apart', (id, g) => {
+    const { body, result } = fit(id);
+    const p = result.positions;
+    const kneeY = 0.285 * body.height;
+    let kneeMin = Infinity;
+    let kneeMax = -Infinity;
+    let handX = 0;
+    let handCount = 0;
+    let innerAnkle = Infinity;
+    for (let i = 0; i < base.armWeights.length; i += 1) {
+      const x = p[i * 3]!;
+      const y = p[i * 3 + 1]!;
+      if (x > 0 && base.armWeights[i]! < 0.05 && Math.abs(y - kneeY) < 0.01) {
+        kneeMin = Math.min(kneeMin, x);
+        kneeMax = Math.max(kneeMax, x);
+      }
+      if (x > 0 && base.armWeights[i]! < 0.05 && y < 0.08) innerAnkle = Math.min(innerAnkle, x);
+      if (x > 0 && base.armWeights[i]! > 0.95 && y < 0.62 * body.height) {
+        handX += x;
+        handCount += 1;
+      }
+    }
+    expect(Math.abs((kneeMin + kneeMax) / 2 - POSE.knee[g] * body.height)).toBeLessThan(0.02);
+    expect(Math.abs(handX / handCount - POSE.hand[g] * body.height)).toBeLessThan(0.06);
+    expect(innerAnkle).toBeGreaterThan(0); // the feet never cross the midline
+  });
+
   it('keeps both feet on the floor', () => {
     const { result } = fit('HOMME_STANDARD');
     let lowest = Infinity;
@@ -112,22 +180,127 @@ describe('human body fit', () => {
     expect(Math.abs(lowest)).toBeLessThan(0.02);
   });
 
-  it('builds a hair cap on the skull only (no hair below the neck line)', () => {
+  it('finds the face: eyes on both sides above the nose, the mouth under it', () => {
     const { body, result } = fit('FEMME_STANDARD');
-    const hair = buildHairShell(result.positions, base.raw.indices, body);
-    expect(hair.indices.length).toBeGreaterThan(300);
+    const face = findFaceLandmarks(result.positions, base.armWeights, body, base.indices);
+    expect(face).not.toBeNull();
+    const f = face!;
+    expect(f.eye.x).toBeGreaterThan(0.022);
+    expect(f.eye.x).toBeLessThan(0.042);
+    expect(f.eye.y).toBeGreaterThan(f.noseTip.y + 0.015);
+    expect(f.mouth.y).toBeLessThan(f.noseTip.y - 0.015);
+    expect(f.top - f.mouth.y).toBeLessThan(0.25);
+    // The eyeball sits behind the lid rim, inside the head.
+    const ball = eyeball(f, body);
+    expect(ball.centre.z + ball.radius).toBeLessThan(f.rimZ);
+    expect(ball.radius).toBeGreaterThan(0.009);
+    // The opening read on the lids: a fissure ~2 cm wide and well under 1.5 cm high.
+    expect(f.eyeHalf.w).toBeGreaterThan(0.007);
+    expect(f.eyeHalf.w).toBeLessThan(0.016);
+    expect(f.eyeHalf.h).toBeGreaterThan(0.002);
+    expect(f.eyeHalf.h).toBeLessThan(f.eyeHalf.w);
+  });
+
+  it('sculpts fuller lips and opens the eyes a little', () => {
+    const { body, result } = fit('FEMME_STANDARD');
+    const f = findFaceLandmarks(result.positions, base.armWeights, body, base.indices)!;
+    const { positions, face } = sculptFace(result.positions, f, body);
+    expect(face.eyeHalf.h).toBeGreaterThan(f.eyeHalf.h);
+    let lipForward = 0;
+    let moved = 0;
+    for (let i = 0; i < positions.length; i += 3) {
+      const dz = positions[i + 2]! - result.positions[i + 2]!;
+      const dy = positions[i + 1]! - result.positions[i + 1]!;
+      if (Math.abs(result.positions[i]!) < 0.01 && Math.abs(result.positions[i + 1]! - (f.mouth.y + 0.0045)) < 0.002 && result.positions[i + 2]! > f.skull.z) {
+        lipForward = Math.max(lipForward, dz);
+      }
+      // Far from the face (hands, feet, back), nothing moves.
+      if (result.positions[i + 1]! < f.mouth.y - 0.1 && (dz !== 0 || dy !== 0)) moved += 1;
+    }
+    expect(lipForward).toBeGreaterThan(0.001);
+    expect(moved).toBe(0);
+  });
+
+  it('colours lips warmer than the cheeks, in linear RGB for every vertex', () => {
+    const { body, result } = fit('FEMME_STANDARD');
+    const f = findFaceLandmarks(result.positions, base.armWeights, body)!;
+    const colors = faceColors(result.positions, f, body.skin, '#3a2a1f', body);
+    expect(colors.length).toBe(result.positions.length);
+    const nearest = (x: number, y: number) => {
+      let best = 0;
+      let d = Infinity;
+      for (let i = 0; i < result.positions.length; i += 3) {
+        if (result.positions[i + 2]! < f.skull.z) continue;
+        const e = Math.hypot(result.positions[i]! - x, result.positions[i + 1]! - y);
+        if (e < d) {
+          d = e;
+          best = i;
+        }
+      }
+      return best;
+    };
+    const lip = nearest(0, f.mouth.y - 0.003);
+    const cheek = nearest(0.055, f.mouth.y + 0.02);
+    // Redder: more red than green relative to the cheek.
+    expect(colors[lip]! / colors[lip + 1]!).toBeGreaterThan(colors[cheek]! / colors[cheek + 1]!);
+    // A man's stubble darkens the chin, not the forehead.
+    const bearded = faceColors(result.positions, f, body.skin, '#3a2a1f', body, true);
+    const chin = nearest(0, f.mouth.y - 0.03);
+    const forehead = nearest(0, f.eye.y + 0.035);
+    expect(bearded[chin]!).toBeLessThan(colors[chin]! * 0.95);
+    expect(bearded[forehead]!).toBeCloseTo(colors[forehead]!, 6);
+  });
+
+  it.each([
+    ['FEMME_STANDARD', 'long'],
+    ['HOMME_STANDARD', 'short'],
+  ] as const)('grows hair (%s, %s) over the skull, never over the face', (id, style) => {
+    const { body, result } = fit(id);
+    const f = findFaceLandmarks(result.positions, base.armWeights, body, base.indices)!;
+    const hair = buildHair(result.positions, base.armWeights, body, f, style);
+    expect(hair.indices.length).toBeGreaterThan(1000);
+    const count = hair.positions.length / 3;
+    expect(hair.uvs.length / 2).toBe(count);
+    expect(hair.shade.length).toBe(count);
+    expect(hair.alpha.length).toBe(count);
     let lowest = Infinity;
-    for (const i of hair.indices) lowest = Math.min(lowest, hair.positions[i * 3 + 1]!);
-    expect(lowest).toBeGreaterThan(body.height * 0.8);
+    for (let i = 0; i < hair.positions.length; i += 3) {
+      // Cut by the alpha test (the scalp layer's edge): not drawn.
+      if (hair.alpha[i / 3]! < 0.5) continue;
+      const x = hair.positions[i]!;
+      const y = hair.positions[i + 1]!;
+      const z = hair.positions[i + 2]!;
+      lowest = Math.min(lowest, y);
+      // Nothing in front of the eyes, the nose or the mouth.
+      if (Math.abs(x) < 0.05 && z > f.skull.z + 0.04) expect(y).toBeGreaterThan(f.eye.y + 0.02);
+    }
+    if (style === 'long') expect(lowest).toBeLessThan(f.mouth.y - 0.08); // to the shoulders
+    else expect(lowest).toBeGreaterThan(bodyLandmarks(body).napeY); // short cut: above the nape
+  });
+
+  it('gives a child a relatively larger head than an adult', () => {
+    const headShare = (id: string) => {
+      const { body, result } = fit(id);
+      const f = findFaceLandmarks(result.positions, base.armWeights, body)!;
+      return (f.top - f.mouth.y) / body.height;
+    };
+    expect(headShare('ENFANT_GARCON')).toBeGreaterThan(headShare('HOMME_STANDARD') * 1.1);
+    expect(headShare('ENFANT_10_ANS')).toBeGreaterThan(headShare('FEMME_STANDARD') * 1.1);
   });
 
   it('picks gender, weight and age morphs from the template and the waist', () => {
     const woman = morphFor(readBodyMeasurements({}, 'FEMME_STANDARD'), 'FEMME_STANDARD');
     const man = morphFor(readBodyMeasurements({}, 'HOMME_ATHLETIQUE'), 'HOMME_ATHLETIQUE');
     const child = morphFor(readBodyMeasurements({}, 'ENFANT_10_ANS'), 'ENFANT_10_ANS');
+    const boy = morphFor(readBodyMeasurements({}, 'ENFANT_GARCON'), 'ENFANT_GARCON');
+    expect(boy.age).toBe(1);
+    expect(boy.gender).toBeGreaterThan(child.gender); // children: less dimorphic, still a boy and a girl
     expect(woman.gender).toBe(0);
     expect(man.gender).toBe(1);
     expect(man.muscle).toBeGreaterThan(woman.muscle);
+    const strong = morphFor(readBodyMeasurements({}, 'HOMME_COSTAUD'), 'HOMME_COSTAUD');
+    expect(strong.gender).toBe(1);
+    expect(strong.muscle).toBeGreaterThan(man.muscle);
     expect(child.age).toBe(1);
     expect(woman.age).toBe(0);
   });

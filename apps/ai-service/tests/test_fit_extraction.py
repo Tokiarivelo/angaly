@@ -11,6 +11,7 @@ from fastapi.testclient import TestClient
 from app.garment_knowledge import (
     EASE_LEVELS,
     FABRIC_BEHAVIORS,
+    FABRIC_PRINTS,
     FEW_SHOT_EXAMPLES,
     FIT_NUMBER_BOUNDS,
     build_taxonomy_prompt,
@@ -43,6 +44,8 @@ def test_bounds_and_vocabularies_match_the_shared_source() -> None:
     assert levels and re.findall(r"'([A-Z_]+)'", levels.group(1)) == list(EASE_LEVELS)
     behaviors = re.search(r"FABRIC_BEHAVIORS = \[([^\]]*)\]", ts)
     assert behaviors and re.findall(r"'([A-Z_]+)'", behaviors.group(1)) == list(FABRIC_BEHAVIORS)
+    prints = re.search(r"FABRIC_PRINTS = \[([^\]]*)\]", ts)
+    assert prints and re.findall(r"'([A-Z_]+)'", prints.group(1)) == list(FABRIC_PRINTS)
 
 
 def _robe(fit: dict | None, **extra: object) -> dict:
@@ -98,6 +101,12 @@ def test_mild_overshoot_is_clamped_but_aberrant_values_are_rejected() -> None:
 def test_non_numbers_and_aberrant_numbers_are_rejected(bad: object) -> None:
     fit = normalize_fit({"fullness": {"skirt": bad}, "certainty": {"fullness.skirt": "HIGH"}}, "JUPE", {})
     assert fit is None
+
+
+def test_fabric_print_and_colours_are_kept_alone_and_validated() -> None:
+    fit = normalize_fit({"fabricPrint": "pois", "fabricColor": "#F4F2EE", "motifColor": "#5a1a22"}, "ROBE", {})
+    assert fit == {"fabricPrint": "POIS", "fabricColor": "#f4f2ee", "motifColor": "#5a1a22", "certainty": {}}
+    assert normalize_fit({"fabricPrint": "ZEBRE", "fabricColor": "white", "motifColor": "#12345"}, "ROBE", {}) is None
 
 
 def test_unknown_ease_and_behavior_are_ignored() -> None:

@@ -145,6 +145,9 @@ class GarmentFit(BaseModel):
     fullness: dict[str, float] | None = None
     lengths: dict[str, float] | None = None
     fabric_behavior: str | None = Field(default=None, alias="fabricBehavior")
+    fabric_print: str | None = Field(default=None, alias="fabricPrint")
+    fabric_color: str | None = Field(default=None, alias="fabricColor")
+    motif_color: str | None = Field(default=None, alias="motifColor")
     certainty: dict[str, str] = Field(default_factory=dict)
 
     model_config = {"populate_by_name": True}

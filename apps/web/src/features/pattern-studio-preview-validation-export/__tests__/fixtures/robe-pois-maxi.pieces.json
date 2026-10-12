@@ -1,0 +1,347 @@
+{
+ "reference": "robe-pois-maxi",
+ "generatedBy": "packages/pattern-engine (createDefaultEngine), parameters of apps/ai-service/ml/data/references/robe-pois-maxi.json",
+ "measurements": {
+  "TOUR_POITRINE": 88,
+  "TOUR_TAILLE": 68,
+  "TOUR_BASSIN": 94,
+  "LONGUEUR_DOS": 40,
+  "TOUR_COU": 36,
+  "LONGUEUR_BRAS": 58,
+  "LARGEUR_EPAULE": 11.8
+ },
+ "pieces": [
+  {
+   "id": "p0",
+   "versionId": "ref",
+   "name": "Corsage Devant",
+   "quantity": 1,
+   "dimensionsJson": {
+    "outlineMm": [
+     {
+      "x": 0,
+      "y": 75
+     },
+     {
+      "x": 15,
+      "y": 74
+     },
+     {
+      "x": 29,
+      "y": 69
+     },
+     {
+      "x": 42,
+      "y": 62
+     },
+     {
+      "x": 53,
+      "y": 53
+     },
+     {
+      "x": 62,
+      "y": 42
+     },
+     {
+      "x": 69,
+      "y": 29
+     },
+     {
+      "x": 74,
+      "y": 15
+     },
+     {
+      "x": 75,
+      "y": 0
+     },
+     {
+      "x": 193,
+      "y": 50
+     },
+     {
+      "x": 245,
+      "y": 242.00000000000003
+     },
+     {
+      "x": 275,
+      "y": 352
+     },
+     {
+      "x": 252,
+      "y": 357
+     },
+     {
+      "x": 229,
+      "y": 362
+     },
+     {
+      "x": 206,
+      "y": 367
+     },
+     {
+      "x": 183,
+      "y": 372
+     },
+     {
+      "x": 160,
+      "y": 376
+     },
+     {
+      "x": 138,
+      "y": 380
+     },
+     {
+      "x": 115,
+      "y": 384
+     },
+     {
+      "x": 92,
+      "y": 387
+     },
+     {
+      "x": 69,
+      "y": 389
+     },
+     {
+      "x": 46,
+      "y": 391
+     },
+     {
+      "x": 23,
+      "y": 392
+     },
+     {
+      "x": 0,
+      "y": 392
+     },
+     {
+      "x": 0,
+      "y": 75
+     }
+    ]
+   },
+   "fabricRecommendation": null,
+   "grainlineJson": null,
+   "seamAllowanceCm": 1,
+   "notchesJson": []
+  },
+  {
+   "id": "p1",
+   "versionId": "ref",
+   "name": "Empiècement Devant",
+   "quantity": 1,
+   "dimensionsJson": {
+    "outlineMm": [
+     {
+      "x": 214,
+      "y": 0
+     },
+     {
+      "x": 190,
+      "y": 88
+     },
+     {
+      "x": 0,
+      "y": 88
+     },
+     {
+      "x": 0,
+      "y": 0
+     },
+     {
+      "x": 214,
+      "y": 0
+     }
+    ]
+   },
+   "fabricRecommendation": null,
+   "grainlineJson": null,
+   "seamAllowanceCm": 1,
+   "notchesJson": []
+  },
+  {
+   "id": "p2",
+   "versionId": "ref",
+   "name": "Corsage Dos",
+   "quantity": 2,
+   "dimensionsJson": {
+    "outlineMm": [
+     {
+      "x": 0,
+      "y": 20
+     },
+     {
+      "x": 15,
+      "y": 20
+     },
+     {
+      "x": 29,
+      "y": 18
+     },
+     {
+      "x": 42,
+      "y": 17
+     },
+     {
+      "x": 53,
+      "y": 14
+     },
+     {
+      "x": 62,
+      "y": 11
+     },
+     {
+      "x": 69,
+      "y": 8
+     },
+     {
+      "x": 74,
+      "y": 4
+     },
+     {
+      "x": 75,
+      "y": 0
+     },
+     {
+      "x": 193,
+      "y": 45
+     },
+     {
+      "x": 215,
+      "y": 220.00000000000003
+     },
+     {
+      "x": 160,
+      "y": 400
+     },
+     {
+      "x": 0,
+      "y": 400
+     },
+     {
+      "x": 0,
+      "y": 20
+     }
+    ]
+   },
+   "fabricRecommendation": null,
+   "grainlineJson": null,
+   "seamAllowanceCm": 1,
+   "notchesJson": []
+  },
+  {
+   "id": "p3",
+   "versionId": "ref",
+   "name": "Jupe Devant",
+   "quantity": 1,
+   "dimensionsJson": {
+    "outlineMm": [
+     {
+      "x": 0,
+      "y": 0
+     },
+     {
+      "x": 190,
+      "y": 10
+     },
+     {
+      "x": 260,
+      "y": 200
+     },
+     {
+      "x": 575,
+      "y": 893
+     },
+     {
+      "x": 0,
+      "y": 893
+     },
+     {
+      "x": 0,
+      "y": 0
+     }
+    ]
+   },
+   "fabricRecommendation": null,
+   "grainlineJson": null,
+   "seamAllowanceCm": 1,
+   "notchesJson": []
+  },
+  {
+   "id": "p4",
+   "versionId": "ref",
+   "name": "Jupe Dos",
+   "quantity": 2,
+   "dimensionsJson": {
+    "outlineMm": [
+     {
+      "x": 0,
+      "y": 0
+     },
+     {
+      "x": 160,
+      "y": 10
+     },
+     {
+      "x": 235,
+      "y": 200
+     },
+     {
+      "x": 544,
+      "y": 893
+     },
+     {
+      "x": 0,
+      "y": 893
+     },
+     {
+      "x": 0,
+      "y": 0
+     }
+    ]
+   },
+   "fabricRecommendation": null,
+   "grainlineJson": null,
+   "seamAllowanceCm": 1,
+   "notchesJson": []
+  },
+  {
+   "id": "p5",
+   "versionId": "ref",
+   "name": "Manche",
+   "quantity": 2,
+   "dimensionsJson": {
+    "outlineMm": [
+     {
+      "x": 0,
+      "y": 150
+     },
+     {
+      "x": 171.875,
+      "y": 0
+     },
+     {
+      "x": 343.75,
+      "y": 150
+     },
+     {
+      "x": 295.625,
+      "y": 230
+     },
+     {
+      "x": 48.125,
+      "y": 230
+     },
+     {
+      "x": 0,
+      "y": 150
+     }
+    ]
+   },
+   "fabricRecommendation": null,
+   "grainlineJson": null,
+   "seamAllowanceCm": 1,
+   "notchesJson": []
+  }
+ ]
+}

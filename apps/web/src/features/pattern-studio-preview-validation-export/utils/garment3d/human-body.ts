@@ -1,5 +1,5 @@
+import { armpitHeight, findJoint } from './body-envelope';
 import { bodyLandmarks, bodyScale, ellipseCircumference, ringAt, type BodyMeasurements, type BodyRing } from './body-model';
-import { bodyLegRadius, SLEEVE_DROP } from './garment-model';
 
 /**
  * Fits the scanned-quality human base mesh (apps/web/public/models/human-base.glb, built from the
@@ -7,9 +7,9 @@ import { bodyLegRadius, SLEEVE_DROP } from './garment-model';
  * Pure number crunching on typed arrays — no three.js — so it is unit-testable and the viewer only
  * uploads the result to a BufferGeometry.
  *
- * Pipeline: 1. morphs (gender / weight / muscle) → 2. vertical warp onto the model's landmarks →
- * 3. torso & neck cross-sections scaled to the measured circumferences → 4. arms lowered to the
- * sleeve axis and sized to the arm length → 5. legs scaled to the thigh / knee / ankle girths.
+ * Pipeline: 1. morphs (gender / weight / muscle / age) → 2. vertical warp onto the model's landmarks →
+ * 3. torso girths → 4. shoulder width → 5. arm length and girths → 6. leg girths → 7. neck girth.
+ * Each step is a smooth shape-preserving map, so the scanned anatomy (collarbones, bust, joints) stays.
  */
 
 export interface HumanBaseData {
@@ -48,12 +48,18 @@ const smooth = (t: number): number => {
 
 /** Chooses the morphs that bring the base mesh closest to the measurements (the ring fit does the rest). */
 export const morphFor = (body: BodyMeasurements, templateId: string): HumanMorph => {
-  const male = templateId.startsWith('HOMME');
+  const male = templateId.startsWith('HOMME') || templateId === 'ENFANT_GARCON';
+  const child = templateId.startsWith('ENFANT');
   const waistRatio = body.waist / body.height;
-  const reference = male ? 0.48 : 0.41;
+  // Average waist ÷ stature: children have a relatively larger waist than adults.
+  const reference = child ? 0.43 : male ? 0.48 : 0.41;
   const weight = clamp((waistRatio - reference) / 0.1, -1, 1);
-  const muscle = templateId.includes('ATHLETIQUE') ? 0.9 : male ? 0.3 : 0.1;
-  return { gender: male ? 1 : 0, weight, muscle, age: templateId.startsWith('ENFANT') ? 1 : 0 };
+  // Muscle tone: full for the muscular (costaud) build, high for the athletic one.
+  const muscle = templateId.includes('COSTAUD') ? 1 : templateId.includes('ATHLETIQUE') ? 0.9 : male ? 0.3 : 0.1;
+  // Children are much less dimorphic than adults (no bust, similar hips): their gender morph stays near
+  // the middle (a full female morph gave the girl a bust).
+  const gender = child ? (male ? 0.85 : 0.45) : male ? 1 : 0;
+  return { gender, weight, muscle: child ? 0 : muscle, age: child ? 1 : 0 };
 };
 
 const applyMorphs = (data: HumanBaseData, morph: HumanMorph): Float32Array => {
@@ -78,13 +84,28 @@ const applyMorphs = (data: HumanBaseData, morph: HumanMorph): Float32Array => {
   return out;
 };
 
-/** Piecewise-linear map of y through (from → to) landmark pairs, extrapolating with the end slopes. */
-const warpY = (y: number, from: number[], to: number[]): number => {
-  const last = from.length - 1;
+/** Monotone cubic (Fritsch–Carlson) interpolation through (xs → ys), xs increasing; linear beyond the ends. */
+export const monotoneCubic = (xs: number[], ys: number[], x: number): number => {
+  const last = xs.length - 1;
+  const d = xs.slice(0, last).map((_, i) => (ys[i + 1]! - ys[i]!) / (xs[i + 1]! - xs[i]! || 1));
+  if (x <= xs[0]!) return ys[0]! + (x - xs[0]!) * d[0]!;
+  if (x >= xs[last]!) return ys[last]! + (x - xs[last]!) * d[last - 1]!;
+  const m = xs.map((_, i) => {
+    if (i === 0) return d[0]!;
+    if (i === last) return d[last - 1]!;
+    const a = d[i - 1]!;
+    const b = d[i]!;
+    return a * b <= 0 ? 0 : (2 * a * b) / (a + b); // harmonic mean: no overshoot
+  });
   let i = 0;
-  while (i < last - 1 && y > from[i + 1]!) i += 1;
-  const span = from[i + 1]! - from[i]!;
-  return to[i]! + ((y - from[i]!) / (span || 1)) * (to[i + 1]! - to[i]!);
+  while (i < last - 1 && x > xs[i + 1]!) i += 1;
+  const h = xs[i + 1]! - xs[i]!;
+  const t = (x - xs[i]!) / h;
+  const t2 = t * t;
+  const t3 = t2 * t;
+  return (
+    (2 * t3 - 3 * t2 + 1) * ys[i]! + (t3 - 2 * t2 + t) * h * m[i]! + (-2 * t3 + 3 * t2) * ys[i + 1]! + (t3 - t2) * h * m[i + 1]!
+  );
 };
 
 interface Section {
@@ -92,17 +113,15 @@ interface Section {
   b: number;
   cx: number;
   cz: number;
-  /** Convex-hull perimeter (m). */
+  /** Convex-hull perimeter (m): what a tape measure reads. */
   perimeter: number;
 }
 
 const DIRECTIONS = 48;
 
-/** Convex-hull perimeter of a horizontal slice (Cauchy: perimeter = ∮ support function). */
-const slicePerimeter = (xs: number[], zs: number[]): number => {
+/** Convex-hull perimeter of a cross-section (Cauchy: perimeter = π × mean width). */
+const hullPerimeter = (xs: number[], zs: number[]): number => {
   if (xs.length < 3) return 0;
-  const cx = xs.reduce((s, v) => s + v, 0) / xs.length;
-  const cz = zs.reduce((s, v) => s + v, 0) / zs.length;
   let total = 0;
   for (let d = 0; d < DIRECTIONS; d += 1) {
     const t = (d / DIRECTIONS) * Math.PI;
@@ -111,21 +130,18 @@ const slicePerimeter = (xs: number[], zs: number[]): number => {
     let lo = Infinity;
     let hi = -Infinity;
     for (let k = 0; k < xs.length; k += 1) {
-      const p = (xs[k]! - cx) * ux + (zs[k]! - cz) * uz;
+      const p = xs[k]! * ux + zs[k]! * uz;
       if (p < lo) lo = p;
       if (p > hi) hi = p;
     }
-    total += hi - lo; // the width along u; the mean width times pi is the perimeter
+    total += hi - lo;
   }
   return (total / DIRECTIONS) * Math.PI;
 };
 
-/** The skin stays this fraction inside the torso ellipse the garment is built on. */
-const INSIDE = 0.985;
-const BIN = 0.02;
-const WINDOW = 0.016;
+const WINDOW = 0.012;
 
-const measureSection = (pos: Float32Array, indices: number[], y: number, side: 0 | 1 | -1): Section | null => {
+const measureSection = (pos: Float32Array, indices: number[], y: number, side: 0 | 1 | -1 = 0): Section | null => {
   const xs: number[] = [];
   const zs: number[] = [];
   for (const i of indices) {
@@ -139,13 +155,40 @@ const measureSection = (pos: Float32Array, indices: number[], y: number, side: 0
   const xMax = Math.max(...xs);
   const zMin = Math.min(...zs);
   const zMax = Math.max(...zs);
-  return {
-    a: (xMax - xMin) / 2,
-    b: (zMax - zMin) / 2,
-    cx: (xMax + xMin) / 2,
-    cz: (zMax + zMin) / 2,
-    perimeter: slicePerimeter(xs, zs),
+  return { a: (xMax - xMin) / 2, b: (zMax - zMin) / 2, cx: (xMax + xMin) / 2, cz: (zMax + zMin) / 2, perimeter: hullPerimeter(xs, zs) };
+};
+
+/** Taubin λ|μ smoothing (no shrinking) of the vertices whose mask is > 0, the step scaled by the mask. */
+const smoothMasked = (pos: Float32Array, indices: Uint32Array, mask: Float32Array, iterations: number): void => {
+  const n = mask.length;
+  const neighbours: Array<Set<number>> = Array.from({ length: n }, () => new Set<number>());
+  for (let t = 0; t < indices.length; t += 3) {
+    for (let e = 0; e < 3; e += 1) {
+      const a = indices[t + e]!;
+      const b = indices[t + ((e + 1) % 3)]!;
+      if (mask[a]! <= 0 && mask[b]! <= 0) continue;
+      neighbours[a]!.add(b);
+      neighbours[b]!.add(a);
+    }
+  }
+  const next = new Float32Array(pos.length);
+  const step = (factor: number): void => {
+    next.set(pos);
+    for (let i = 0; i < n; i += 1) {
+      const around = neighbours[i]!;
+      if (mask[i]! <= 0 || around.size === 0) continue;
+      for (let c = 0; c < 3; c += 1) {
+        let mean = 0;
+        for (const j of around) mean += pos[j * 3 + c]!;
+        next[i * 3 + c] = pos[i * 3 + c]! + factor * mask[i]! * (mean / around.size - pos[i * 3 + c]!);
+      }
+    }
+    pos.set(next);
   };
+  for (let it = 0; it < iterations; it += 1) {
+    step(0.5);
+    step(-0.53);
+  }
 };
 
 export interface FitResult {
@@ -161,27 +204,67 @@ const collect = (pos: Float32Array, arm: Float32Array, test: (y: number, aw: num
   return out;
 };
 
-interface Bin {
+interface Level {
   y: number;
-  /** Scale about the mesh section centre, target centre offset. */
-  fa: number;
-  fb: number;
-  czMesh: number;
-  dcz: number;
+  k: number;
+  cx: number;
+  cz: number;
 }
 
-/** Linear lookup in a list of bins sorted by height (some heights may be missing), clamped at both ends. */
-const lookup = <T extends { y: number }>(list: T[], y: number, mix: (a: T, b: T, t: number) => T): T => {
-  if (y <= list[0]!.y) return list[0]!;
-  const last = list[list.length - 1]!;
-  if (y >= last.y) return last;
-  let i = 0;
-  while (i < list.length - 2 && list[i + 1]!.y < y) i += 1;
-  const lo = list[i]!;
-  const hi = list[i + 1]!;
-  return mix(lo, hi, (y - lo.y) / (hi.y - lo.y || 1));
+/** [1 2 1] smoothing of a list of levels along the height, `passes` times (ends held). */
+const smoothLevels = (levels: Level[], passes: number): Level[] => {
+  let out = levels;
+  for (let p = 0; p < passes; p += 1) {
+    const prev = out;
+    out = prev.map((c, i) => {
+      const a = prev[Math.max(0, i - 1)]!;
+      const b = prev[Math.min(prev.length - 1, i + 1)]!;
+      return { y: c.y, k: (a.k + 2 * c.k + b.k) / 4, cx: (a.cx + 2 * c.cx + b.cx) / 4, cz: (a.cz + 2 * c.cz + b.cz) / 4 };
+    });
+  }
+  return out;
 };
 
+/** Linear lookup in levels sorted by height, clamped at both ends. */
+const levelAt = (levels: Level[], y: number): Level => {
+  if (y <= levels[0]!.y) return levels[0]!;
+  const last = levels[levels.length - 1]!;
+  if (y >= last.y) return last;
+  let i = 0;
+  while (i < levels.length - 2 && levels[i + 1]!.y < y) i += 1;
+  const a = levels[i]!;
+  const b = levels[i + 1]!;
+  const t = (y - a.y) / (b.y - a.y || 1);
+  return { y, k: lerp(a.k, b.k, t), cx: lerp(a.cx, b.cx, t), cz: lerp(a.cz, b.cz, t) };
+};
+
+/**
+ * Where the arm hinges (arm weight ≈ ½) sits this far inside the shoulder seam point (per metre of
+ * stature scale): the deltoid lies beyond it. Calibrated by overlaying front views on reference bodies:
+ * with 0 the shoulders were ~4 cm too wide.
+ */
+export const JOINT_INSET = 0.025;
+
+/**
+ * Relaxed standing pose, as fractions of the stature, read from reference front views (female, male):
+ * the hands' centre and the knees' centre from the body's axis. The scan stands wider, arms higher.
+ */
+export const POSE = { hand: [0.182, 0.315], knee: [0.041, 0.058] } as const;
+
+/** Rotates (vx, vy) — an angle measured from straight down towards +x — by `delta` radians. */
+const rotateDown = (vx: number, vy: number, delta: number): [number, number] => {
+  const c = Math.cos(delta);
+  const sn = Math.sin(delta);
+  return [vx * c - vy * sn, vy * c + vx * sn];
+};
+
+/**
+ * Fits the scanned body to the measurements while keeping its anatomy. Every change is a smooth,
+ * shape-preserving map: one isotropic factor per height (about the cross-section centre) for the torso
+ * girths, a lateral factor for the shoulder width that carries the arms along rigidly, length and girth
+ * about each arm's own axis, and girths about each leg's own centre. Nothing is clamped against the
+ * garment: the garment drapes over this body instead (see garment-model.ts).
+ */
 export const fitHumanBody = (
   data: HumanBaseData,
   body: BodyMeasurements,
@@ -194,264 +277,347 @@ export const fitHumanBody = (
   const l = bodyLandmarks(body);
   const s = bodyScale(body);
 
-  // 2. Vertical warp: the mesh's own landmarks land on the model's.
+  // 1. Vertical warp through the reliable landmarks only: floor, crotch, top. The scan's waist, hip, bust
+  //    and nape are estimates (narrowest/widest bands, a fixed nape ratio); pinning them squeezed and
+  //    stretched bands of the body (+50 % waist → bust on the man, legs shortened) and made bulges at
+  //    the buttock/thigh, the thighs and the knees. The girths (2) shape the waist, bust and hip instead.
   const g = clamp(morph.gender, 0, 1);
   const age = clamp(morph.age, 0, 1);
   const from = data.landmarksFemale.map((v, i) =>
     lerp(lerp(v, data.landmarksMale[i]!, g), lerp(data.landmarksFemaleChild[i]!, data.landmarksMaleChild[i]!, g), age),
   );
-  const to = [0, l.crotchY, l.hipY, l.waistY, l.bustY, l.napeY, body.height];
-  for (let i = 1; i < to.length; i += 1) to[i] = Math.max(to[i]!, to[i - 1]! + 0.01);
+  const fromKeys = [from[0]!, from[1]!, from[6]!];
+  const toKeys = [0, clamp(l.crotchY, 0.3 * body.height, 0.55 * body.height), body.height];
   const sizeRatio = body.height / (from[6] ?? 1);
   for (let i = 0; i < n; i += 1) {
-    pos[i * 3 + 1] = warpY(pos[i * 3 + 1]!, from, to);
-    // Width and depth follow the stature; the sections below refine them.
+    pos[i * 3 + 1] = monotoneCubic(fromKeys, toKeys, pos[i * 3 + 1]!);
     pos[i * 3]! *= sizeRatio;
     pos[i * 3 + 2]! *= sizeRatio;
   }
 
-  // 3. Torso sections (crotch → just under the shoulders) scaled to the model's rings, and the neck
-  //    to the neck girth. The shoulder line itself keeps the scanned slope (see 4).
-  const blendLength = 0.1 * s;
-  const torsoIdx = collect(pos, arm, (y, aw) => aw < 0.5 && y >= l.crotchY && y <= l.napeY + 0.1);
-  const torsoTop = l.shoulderY - 0.1 * s;
-  const neckBottom = l.napeY + 0.02 * s;
-  const neckTop = l.napeY + 0.055 * s; // the neck ends under the chin; the jaw keeps its shape
-  const neckRadius = body.neck / (2 * Math.PI);
-  const neckIdx = collect(pos, arm, (y, aw, x) => aw < 0.5 && y >= neckBottom - 0.02 && y <= neckTop + 0.01 && Math.abs(x) < 0.1);
-  const sectionBin = (y: number, target: { a: number; b: number; cz: number }, idx: number[] = torsoIdx, range: [number, number] = [0.4, 2.2]): Bin | null => {
-    const section = measureSection(pos, idx, y, 0);
-    if (!section) return null;
-    const fa = clamp(target.a / Math.max(section.a, 1e-3), range[0], range[1]);
-    const fb = clamp(target.b / Math.max(section.b, 1e-3), range[0], range[1]);
-    // Mixed-axis scale → correct so the hull perimeter equals the ellipse circumference.
-    const scaled = section.perimeter * Math.sqrt((fa * fa + fb * fb) / 2);
-    const k = scaled > 1e-6 ? clamp(ellipseCircumference(target.a, target.b) / scaled, 0.8, 1.25) : 1;
-    return { y, fa: fa * k, fb: fb * k, czMesh: section.cz, dcz: target.cz - section.cz };
-  };
-  const smoothBins = (raw: Bin[]): Bin[] =>
-    raw.map((b, i) => {
-      const prev = raw[Math.max(0, i - 1)]!;
-      const next = raw[Math.min(raw.length - 1, i + 1)]!;
-      return {
-        y: b.y,
-        fa: (prev.fa + 2 * b.fa + next.fa) / 4,
-        fb: (prev.fb + 2 * b.fb + next.fb) / 4,
-        czMesh: b.czMesh,
-        dcz: (prev.dcz + 2 * b.dcz + next.dcz) / 4,
-      };
+  // Pose values: the women's for children too (measured on a boy reference: hands at 0.17, knees at
+  // 0.043 of the stature, like the woman's).
+  const poseG = age > 0.5 ? 0 : g;
+  const armpitY = armpitHeight(body);
+  const mirror = (i: number): number => (pos[i * 3]! < 0 ? -1 : 1);
+
+  // 2. Torso girths: one isotropic factor per height, crotch → armpit, about the section centre.
+  //    Above the armpit it fades to 1 at the base of the neck; below the crotch it fades out over the
+  //    upper thighs (the legs get their own fit in 5). The arms follow their joint rigidly.
+  const torsoIdx = collect(pos, arm, (y, aw) => aw < 0.5 && y >= l.crotchY - 0.03 && y <= l.napeY + 0.03);
+  const rawLevels: Level[] = [];
+  for (let y = l.crotchY + 0.012; y <= armpitY + 1e-6; y += 0.01) {
+    const section = measureSection(pos, torsoIdx, y);
+    if (!section || section.perimeter <= 0) continue;
+    const ring = ringAt(rings, y);
+    const target = ellipseCircumference(ring.a, ring.b);
+    rawLevels.push({ y, k: clamp(target / section.perimeter, 0.72, 1.4), cx: 0, cz: section.cz });
+  }
+  if (rawLevels.length > 1) {
+    const levels = smoothLevels(rawLevels, 10);
+    const kA = levels[levels.length - 1]!.k;
+    const below = 0.12 * s;
+    const torsoAt = (y: number): Level => {
+      const level = levelAt(levels, y);
+      if (y > armpitY) return { ...level, k: lerp(kA, 1, smooth((y - armpitY) / (l.napeY - armpitY))) };
+      if (y < l.crotchY) return { ...level, k: lerp(1, level.k, 1 - smooth((l.crotchY - y) / below)) };
+      return level;
+    };
+    const joint = findJoint(pos, arm, l.shoulderY, s);
+    const jointLevel = joint ? torsoAt(joint.y) : null;
+    // Below the crotch the hip factor must not be applied about the torso's centre and faded out: that
+    // pushed the top of the thighs out and back and let them go lower down (a saddlebag bump and a crease
+    // under the buttock). There, each leg is moved as a whole by what the crotch section does to its
+    // centre, and its girth factor fades about the leg's own centre — identical at the crotch, no bump.
+    const crotch = torsoAt(l.crotchY);
+    const legLine = ([1, -1] as const).map((sign) => {
+      const idx = collect(pos, arm, (y, aw, x) => aw < 0.05 && y < l.crotchY && (x < 0 ? -1 : 1) === sign);
+      const centres: Level[] = [];
+      for (let y = l.crotchY - below - 0.02; y <= l.crotchY; y += 0.01) {
+        const section = measureSection(pos, idx, Math.min(y, l.crotchY - 0.012), sign);
+        if (section) centres.push({ y, k: 1, cx: section.cx, cz: section.cz });
+      }
+      return centres.length > 1 ? smoothLevels(centres, 6) : null;
     });
-  const torsoRaw: Bin[] = [];
-  for (let y = l.crotchY; y <= torsoTop; y += BIN) {
-    const r = ringAt(rings, y);
-    const bin = sectionBin(y, { a: r.a, b: r.b, cz: r.cz ?? 0 });
-    if (bin) torsoRaw.push(bin);
-  }
-  const neckRaw: Bin[] = [];
-  for (let y = neckBottom; y <= neckTop + 1e-6; y += BIN / 2) {
-    const bin = sectionBin(y, { a: neckRadius * 0.95, b: neckRadius * 1.05, cz: 0 }, neckIdx, [0.85, 1.25]);
-    if (bin) bin.dcz = 0;
-    if (bin) neckRaw.push(bin);
-  }
-  const torsoBins = smoothBins(torsoRaw);
-  const neckBins = smoothBins(neckRaw);
-  const mixBin = (a: Bin, b: Bin, t: number): Bin => ({
-    y: lerp(a.y, b.y, t),
-    fa: lerp(a.fa, b.fa, t),
-    fb: lerp(a.fb, b.fb, t),
-    czMesh: lerp(a.czMesh, b.czMesh, t),
-    dcz: lerp(a.dcz, b.dcz, t),
-  });
-  const fitSection = (i: number, b: Bin, strength: number, clampToRing: boolean): void => {
-    const y = pos[i * 3 + 1]!;
-    const tw = (1 - arm[i]!) * strength;
-    if (tw <= 0) return;
-    pos[i * 3] = pos[i * 3]! * (1 + (b.fa - 1) * tw);
-    const z = pos[i * 3 + 2]!;
-    pos[i * 3 + 2] = (z - b.czMesh) * (1 + (b.fb - 1) * tw) + b.czMesh + b.dcz * tw;
-    if (!clampToRing) return;
-    // Bumps (bust, buttocks) may not go beyond the model's ellipse, which the garment rings wrap.
-    const r = ringAt(rings, y);
-    const q = Math.hypot(pos[i * 3]! / r.a, (pos[i * 3 + 2]! - (r.cz ?? 0)) / r.b);
-    if (q > INSIDE) {
-      const pull = 1 - tw * (1 - INSIDE / q);
-      pos[i * 3] = pos[i * 3]! * pull;
-      pos[i * 3 + 2] = (r.cz ?? 0) + (pos[i * 3 + 2]! - (r.cz ?? 0)) * pull;
+    for (let i = 0; i < n; i += 1) {
+      const y = pos[i * 3 + 1]!;
+      const aw = arm[i]!;
+      if (y < l.crotchY - below || y > l.napeY + 0.04 * s) continue;
+      const x = pos[i * 3]!;
+      const z = pos[i * 3 + 2]!;
+      let nx: number;
+      let nz: number;
+      const line = legLine[x < 0 ? 1 : 0];
+      if (y < l.crotchY && aw < 0.5 && line) {
+        const c = levelAt(line, y);
+        const f = lerp(1, crotch.k, 1 - smooth((l.crotchY - y) / below));
+        nx = c.cx * crotch.k + (x - c.cx) * f;
+        nz = crotch.cz + (c.cz - crotch.cz) * crotch.k + (z - c.cz) * f;
+      } else {
+        const level = torsoAt(y);
+        nx = x * level.k;
+        nz = level.cz + (z - level.cz) * level.k;
+      }
+      if (aw > 0 && joint && jointLevel) {
+        // The arm moves with its joint instead of being scaled.
+        const ax = x + mirror(i) * joint.x * (jointLevel.k - 1);
+        const az = z + (joint.z - jointLevel.cz) * (jointLevel.k - 1);
+        nx = lerp(nx, ax, aw);
+        nz = lerp(nz, az, aw);
+      }
+      pos[i * 3] = nx;
+      pos[i * 3 + 2] = nz;
     }
-  };
-  for (let i = 0; i < n; i += 1) {
-    const y = pos[i * 3 + 1]!;
-    if (torsoBins.length > 0 && y >= l.crotchY - blendLength && y <= torsoTop + 0.12 * s) {
-      // Full strength from the crotch up; fading out over 10 cm below it (the legs take over) and
-      // over 6 cm above the shoulder-line limit.
-      const below = y < l.crotchY ? 1 - smooth((l.crotchY - y) / blendLength) : 1;
-      const above = 1 - smooth((y - torsoTop) / (0.12 * s));
-      fitSection(i, lookup(torsoBins, clamp(y, l.crotchY, torsoTop), mixBin), below * above, true);
+    // The rest of each leg follows the same shift (a wider pelvis carries the legs apart).
+    for (const [side, line] of legLine.entries()) {
+      if (!line) continue;
+      const c = levelAt(line, l.crotchY - below);
+      const dx = c.cx * (crotch.k - 1);
+      const dz = (c.cz - crotch.cz) * (crotch.k - 1);
+      for (let i = 0; i < n; i += 1) {
+        if (arm[i]! >= 0.05 || pos[i * 3 + 1]! >= l.crotchY - below || (pos[i * 3]! < 0 ? 1 : 0) !== side) continue;
+        pos[i * 3]! += dx;
+        pos[i * 3 + 2]! += dz;
+      }
     }
-    if (neckBins.length > 0 && y >= neckBottom - 0.015 * s) {
-      const up = smooth((y - (neckBottom - 0.015 * s)) / (0.015 * s));
-      const down = 1 - smooth((y - neckTop) / (0.025 * s));
-      // Only the neck column: the shoulder line next to it keeps its slope.
-      const column = 1 - smooth((Math.abs(pos[i * 3]!) - 0.06 * s) / (0.04 * s));
-      fitSection(i, lookup(neckBins, clamp(y, neckBottom, neckTop), mixBin), up * down * column, false);
+    for (let i = 0; i < n; i += 1) {
+      // Arm vertices outside the torso band (the hands) still follow the joint.
+      const y = pos[i * 3 + 1]!;
+      if (!joint || !jointLevel || arm[i]! <= 0 || !(y < l.crotchY - below)) continue;
+      pos[i * 3]! += arm[i]! * mirror(i) * joint.x * (jointLevel.k - 1);
+      pos[i * 3 + 2]! += arm[i]! * (joint.z - jointLevel.cz) * (jointLevel.k - 1);
     }
   }
 
-  // 4. Shoulders and arms. The shoulder line is widened/narrowed so the joint of this very mesh (where
-  //    the arm weight crosses one half) lands on the sleeve start; then the arms are sized to the arm
-  //    length and lowered onto the sleeve axis (right-arm frame, mirrored for the left one).
-  const sleeveX = ringAt(rings, l.shoulderY).a + 0.012;
-  const sleeveY = l.shoulderY - SLEEVE_DROP * s;
-  const measureJoint = (): { x: number; y: number } | null => {
-    let jx = 0;
-    let jy = 0;
-    let count = 0;
-    for (let i = 0; i < n; i += 1) {
-      const y = pos[i * 3 + 1]!;
-      if (arm[i]! < 0.4 || arm[i]! > 0.6 || y < l.shoulderY - 0.1 * s || y > l.shoulderY + 0.05 * s) continue;
-      jx += Math.abs(pos[i * 3]!);
-      jy += y;
-      count += 1;
-    }
-    return count > 0 ? { x: jx / count, y: jy / count } : null;
-  };
-  const joint0 = measureJoint();
+  // 3. Shoulder width: the shoulder line is widened/narrowed about the neck column and the arms are
+  //    carried along rigidly, so the deltoids and the collarbones keep their scanned shape.
+  const joint0 = findJoint(pos, arm, l.shoulderY, s);
   if (joint0) {
-    const widen = clamp(sleeveX / Math.max(joint0.x, 1e-3), 0.75, 1.3);
+    const w = clamp((body.shoulderWidth / 2 - JOINT_INSET * s) / joint0.x, 0.9, 1.12);
     for (let i = 0; i < n; i += 1) {
       const y = pos[i * 3 + 1]!;
-      const w = smooth((y - (l.shoulderY - 0.32 * s)) / (0.3 * s)) * (1 - smooth((y - l.shoulderY) / (0.1 * s)));
-      // The neck column (|x| < 3.5 cm) is left alone; the widening fades in over the next 4 cm.
-      const lateral = smooth((Math.abs(pos[i * 3]!) - 0.035 * s) / (0.04 * s));
-      if (w > 0) pos[i * 3]! *= 1 + (widen - 1) * w * lateral;
+      const aw = arm[i]!;
+      const band = smooth((y - (armpitY - 0.08 * s)) / (0.08 * s)) * (1 - smooth((y - l.napeY) / (0.04 * s)));
+      const lateral = smooth((Math.abs(pos[i * 3]!) - 0.045 * s) / (0.05 * s));
+      const torsoX = pos[i * 3]! * (1 + (w - 1) * band * lateral);
+      const armX = pos[i * 3]! + mirror(i) * joint0.x * (w - 1);
+      pos[i * 3] = lerp(torsoX, armX, aw);
     }
   }
-  const joint = measureJoint();
-  const pivotX = joint?.x ?? sleeveX;
-  const pivotY = joint?.y ?? sleeveY;
-  let reach = 0;
-  for (let i = 0; i < n; i += 1) {
-    if (arm[i]! < 0.95 || pos[i * 3]! <= 0) continue;
-    const d = Math.hypot(pos[i * 3]! - pivotX, pos[i * 3 + 1]! - pivotY);
-    if (d > reach) {
-      reach = d;
+
+  // 4. Arms: length about the joint along the arm's own axis, girth about that axis (upper arm → wrist).
+  const joint = findJoint(pos, arm, l.shoulderY, s);
+  if (joint) {
+    const idx = collect(pos, arm, (_y, aw, x) => aw > 0.9 && x > 0);
+    let mx = 0;
+    let my = 0;
+    for (const i of idx) {
+      mx += pos[i * 3]! - joint.x;
+      my += pos[i * 3 + 1]! - joint.y;
     }
-  }
-  if (reach > 0.05) {
-    // The scanned A-pose is kept (the sleeve axis follows it, see SLEEVE_TILT): the arms are only
-    // sized to the arm length about the joint and anchored on the sleeve start.
-    const scale = clamp((body.armLength + 0.17 * s) / reach, 0.92, 1.08);
+    // The scanned A-pose arm hangs in the frontal plane: its axis is the mean direction from the joint.
+    const len = Math.hypot(mx, my) || 1;
+    const dir = { x: mx / len, y: my / len };
+    const local = (i: number) => {
+      const px = Math.abs(pos[i * 3]!) - joint.x;
+      const py = pos[i * 3 + 1]! - joint.y;
+      const t = px * dir.x + py * dir.y;
+      return { t, rx: px - t * dir.x, ry: py - t * dir.y, rz: pos[i * 3 + 2]! - joint.z };
+    };
+    let reach = 0;
+    for (const i of idx) reach = Math.max(reach, local(i).t);
+    const hand = 0.17 * s;
+    const L = clamp((body.armLength + hand) / Math.max(reach, 1e-3), 0.9, 1.1);
+    const girthAt = (t: number): number => {
+      const xs: number[] = [];
+      const zs: number[] = [];
+      for (const i of idx) {
+        const p = local(i);
+        if (Math.abs(p.t - t) > 0.012) continue;
+        // Cross-section coordinates: across the axis in the frontal plane, and depth.
+        xs.push(p.rx * -dir.y + p.ry * dir.x);
+        zs.push(p.rz);
+      }
+      return hullPerimeter(xs, zs);
+    };
+    const tUpper = 0.28 * (reach - hand);
+    const tWrist = reach - hand;
+    const pu = girthAt(tUpper);
+    const pw = girthAt(tWrist - 0.01);
+    const gu = pu > 0 ? clamp(body.upperArm / pu, 0.82, 1.3) : 1;
+    const gw = pw > 0 ? clamp(body.wrist / pw, 0.85, 1.2) : 1;
+    const girth = (t: number): number => {
+      if (t < tUpper) return lerp(1, gu, smooth(t / tUpper));
+      if (t < tWrist) return lerp(gu, gw, smooth((t - tUpper) / (tWrist - tUpper)));
+      return lerp(gw, 1, smooth((t - tWrist) / 0.05));
+    };
+    // Pose: the arm swings about the joint, in the frontal plane, until the hand's centre reaches the
+    // reference distance from the body's axis. Each vertex turns by the angle × its arm weight, so the
+    // armpit and the deltoid bend smoothly instead of shearing.
+    const handDistance = (reach - hand / 2) * L;
+    const targetX = lerp(POSE.hand[0], POSE.hand[1], poseG) * body.height;
+    const current = Math.atan2(dir.x, -dir.y);
+    const wanted = Math.asin(clamp((targetX - joint.x) / Math.max(handDistance, 1e-3), 0.05, 0.95));
+    const swing = clamp(wanted - current, -0.6, 0.2);
     for (let i = 0; i < n; i += 1) {
       const aw = arm[i]!;
       if (aw <= 0) continue;
-      const sign = pos[i * 3]! < 0 ? -1 : 1;
-      const k = 1 + (scale - 1) * aw;
-      const px = (Math.abs(pos[i * 3]!) - pivotX) * k;
-      const py = (pos[i * 3 + 1]! - pivotY) * k;
-      // The anchoring grows with the distance from the joint, so the shoulder cap is not torn.
-      const along = smooth(Math.hypot(px, py) / (0.32 * s));
-      pos[i * 3] = sign * (pivotX + px + (sleeveX - pivotX) * aw * along);
-      pos[i * 3 + 1] = pivotY + py + (sleeveY - pivotY) * aw * along;
+      const p = local(i);
+      const k = girth(Math.max(0, p.t));
+      const [vx, vy] = rotateDown(p.t * L * dir.x + p.rx * k, p.t * L * dir.y + p.ry * k, swing * smooth(aw));
+      const nx = joint.x + vx;
+      const ny = joint.y + vy;
+      const nz = joint.z + p.rz * k;
+      pos[i * 3] = mirror(i) * lerp(Math.abs(pos[i * 3]!), nx, aw);
+      pos[i * 3 + 1] = lerp(pos[i * 3 + 1]!, ny, aw);
+      pos[i * 3 + 2] = lerp(pos[i * 3 + 2]!, nz, aw);
     }
   }
 
-  // 5. Legs. The scanned legs are kept (calf, knee and thigh shapes are what make a body look real):
-  //    only a gentle girth factor (±10 %) and the move of each leg under the pelvis, where the trousers
-  //    expect it. Both are measured at three heights (thigh, knee, ankle) and blended in between.
-  const ankleY = l.ankleY;
+  // 5. Legs: girths at the thigh, knee and ankle, each leg scaled about its own (smoothed) centre line.
+  //    The legs are never moved sideways: the stance of the scan is kept.
+  const thighY = l.crotchY - 0.05 * s;
+  const kneeY = 0.285 * body.height;
+  const ankleY = l.ankleY + 0.015 * s;
   for (const sign of [1, -1] as const) {
-    const idx = collect(pos, arm, (y, aw, x) => aw < 0.05 && y < l.crotchY && (x < 0 ? -1 : 1) === sign);
-    const heights = [ankleY + 0.04 * s, (l.crotchY + ankleY) / 2, l.crotchY - 0.12 * s];
-    const controls = heights.map((y) => {
+    const idx = collect(pos, arm, (y, aw, x) => aw < 0.05 && y < l.crotchY + 0.1 * s && (x < 0 ? -1 : 1) === sign);
+    const factor = (y: number, girth: number): number => {
       const section = measureSection(pos, idx, y, sign);
-      const cone = bodyLegRadius(body, y);
-      const radius = section ? Math.sqrt(Math.max(section.a * section.b, 1e-6)) : 0;
-      return {
-        f: radius > 0 ? clamp((cone * 0.96) / radius, 0.9, 1.1) : 1,
-        dx: section ? sign * Math.max(0.09 * s, cone * 0.95) - section.cx : 0,
-        cx: section?.cx ?? sign * 0.09 * s,
-        cz: section?.cz ?? 0,
-      };
-    });
-    const blend = (y: number, pick: (c: (typeof controls)[number]) => number): number => {
-      if (y <= heights[0]!) return pick(controls[0]!);
-      if (y >= heights[2]!) return pick(controls[2]!);
-      const k = y < heights[1]! ? 0 : 1;
-      const t = smooth((y - heights[k]!) / (heights[k + 1]! - heights[k]!));
-      return lerp(pick(controls[k]!), pick(controls[k + 1]!), t);
+      return section && section.perimeter > 0 ? clamp(girth / section.perimeter, 0.85, 1.2) : 1;
     };
+    const controls = [
+      [ankleY, factor(ankleY, body.ankle)],
+      [kneeY, factor(kneeY, body.knee)],
+      [thighY, factor(thighY, body.thigh)],
+    ] as const;
+    const fAt = (y: number): number => {
+      const f = monotoneCubic(controls.map((c) => c[0]), controls.map((c) => c[1]), clamp(y, ankleY, thighY));
+      // A long fade into the hip: a short one pinched the thigh under the buttock (a saddlebag above it).
+      if (y > thighY) return lerp(f, 1, smooth((y - thighY) / (l.crotchY + 0.1 * s - thighY)));
+      if (y < ankleY) return lerp(1, f, smooth(y / ankleY));
+      return f;
+    };
+    const centres: Level[] = [];
+    for (let y = 0.02 * s; y <= l.crotchY; y += 0.02) {
+      const section = measureSection(pos, idx, y, sign);
+      if (section) centres.push({ y, k: 1, cx: section.cx, cz: section.cz });
+    }
+    if (centres.length < 2) continue;
+    const line = smoothLevels(centres, 8);
     for (const i of idx) {
       const y = pos[i * 3 + 1]!;
-      const upper = smooth((l.crotchY - y) / blendLength); // the torso fit hands over to the leg fit
-      const f = 1 + (blend(y, (c) => c.f) - 1) * upper;
-      const cx = blend(y, (c) => c.cx);
-      const cz = blend(y, (c) => c.cz);
-      pos[i * 3] = cx + blend(y, (c) => c.dx) * upper + (pos[i * 3]! - cx) * f;
-      pos[i * 3 + 2] = cz + (pos[i * 3 + 2]! - cz) * f;
+      // Above the crotch both halves of the pelvis meet on the midline: the factor fades to 1 there.
+      const midline = y > l.crotchY ? smooth(Math.abs(pos[i * 3]!) / (0.05 * s)) : 1;
+      const f = 1 + (fAt(y) - 1) * midline;
+      const c = levelAt(line, y);
+      pos[i * 3] = c.cx + (pos[i * 3]! - c.cx) * f;
+      pos[i * 3 + 2] = c.cz + (pos[i * 3 + 2]! - c.cz) * f;
     }
   }
 
-  const at = (y: number): number => measureSection(pos, torsoIdx, y, 0)?.perimeter ?? 0;
+  // 5b. Stance: each leg swings about its hip joint (frontal plane) until the knee's centre reaches the
+  //     reference distance from the axis — never so far that the knees would cross. The rotation fades
+  //     out over the upper thigh, so the buttock, the hip and the crotch keep their shape.
+  // Both legs are collected before either moves: a foot swung across the midline must not be taken
+  // for the other leg.
+  const legs = ([1, -1] as const).map((sign) => ({
+    sign,
+    idx: collect(pos, arm, (y, aw, x) => aw < 0.05 && y < l.crotchY + 0.06 * s && (x < 0 ? -1 : 1) === sign),
+  }));
+  for (const { sign, idx } of legs) {
+    const knee = measureSection(pos, idx, kneeY, sign);
+    const foot = measureSection(pos, idx, 0.025 * s, sign);
+    if (!knee) continue;
+    const pivot = { x: 0.085 * s, y: l.crotchY + 0.08 * s };
+    const kneeX = Math.abs(knee.cx);
+    const clearance = 0.004 * body.height;
+    let angle = Math.atan2(kneeX - lerp(POSE.knee[0], POSE.knee[1], poseG) * body.height, pivot.y - kneeY);
+    // Neither the knees nor the feet may meet: the inner edges keep a few millimetres from the axis.
+    const room = (inner: number, y: number): number => Math.atan2(Math.max(0, inner - clearance), pivot.y - y);
+    angle = Math.min(angle, room(kneeX - knee.a, kneeY));
+    if (foot) angle = Math.min(angle, room(Math.abs(foot.cx) - foot.a, 0.025 * s));
+    angle = clamp(angle, -0.15, 0.25);
+    if (Math.abs(angle) < 1e-4) continue;
+    const top = l.crotchY + 0.05 * s;
+    const full = l.crotchY - 0.12 * s;
+    for (const i of idx) {
+      const y = pos[i * 3 + 1]!;
+      const w = 1 - smooth((y - full) / (top - full));
+      if (w <= 0) continue;
+      const [vx, vy] = rotateDown(sign * pos[i * 3]! - pivot.x, y - pivot.y, -angle * w);
+      pos[i * 3] = sign * (pivot.x + vx);
+      pos[i * 3 + 1] = pivot.y + vy;
+    }
+  }
+  // Back on the floor (the swing tilts the feet by a few millimetres).
+  let lowest = Infinity;
+  for (let i = 0; i < n; i += 1) lowest = Math.min(lowest, pos[i * 3 + 1]!);
+  if (Number.isFinite(lowest) && Math.abs(lowest) < 0.03) for (let i = 0; i < n; i += 1) pos[i * 3 + 1]! -= lowest;
+
+  // 6. Neck girth (a mild factor on the neck column only; the jaw and the trapezius keep their shape).
+  const neckIdx = collect(pos, arm, (y, aw, x) => aw < 0.5 && Math.abs(x) < 0.08 * s && Math.abs(y - (l.napeY + 0.03 * s)) < 0.03);
+  const neck = measureSection(pos, neckIdx, l.napeY + 0.03 * s);
+  if (neck && neck.perimeter > 0) {
+    const k = clamp(body.neck / neck.perimeter, 0.9, 1.12);
+    for (let i = 0; i < n; i += 1) {
+      const y = pos[i * 3 + 1]!;
+      if (arm[i]! >= 0.5) continue;
+      const w =
+        smooth((y - (l.napeY - 0.01 * s)) / (0.03 * s)) *
+        (1 - smooth((y - (l.napeY + 0.05 * s)) / (0.03 * s))) *
+        (1 - smooth((Math.abs(pos[i * 3]!) - 0.05 * s) / (0.03 * s)));
+      if (w <= 0) continue;
+      const f = 1 + (k - 1) * w;
+      pos[i * 3]! *= f;
+      pos[i * 3 + 2] = neck.cz + (pos[i * 3 + 2]! - neck.cz) * f;
+    }
+  }
+
+  // 6b. Children: a relatively larger head (≈ 1/7 of the stature at 10 years, against 1/7.7 on the
+  //     scan's child shape). The head grows about the base of the neck and the neck gets shorter to keep
+  //     the stature (children have short necks): the torso, the nape and every garment landmark stay.
+  if (age > 0) {
+    const k = 1 + 0.08 * age;
+    const neckY = l.napeY + 0.02 * s;
+    let neckZ = 0;
+    let count = 0;
+    for (let i = 0; i < n; i += 1) {
+      if (arm[i]! < 0.5 && Math.abs(pos[i * 3 + 1]! - neckY) < 0.01 && Math.abs(pos[i * 3]!) < 0.05 * s) {
+        neckZ += pos[i * 3 + 2]!;
+        count += 1;
+      }
+    }
+    neckZ = count ? neckZ / count : 0;
+    let top = -Infinity;
+    for (let i = 0; i < n; i += 1) {
+      const y = pos[i * 3 + 1]!;
+      const w = arm[i]! < 0.5 ? smooth((y - neckY) / (0.06 * s)) : 0;
+      if (w > 0) {
+        const f = 1 + (k - 1) * w;
+        pos[i * 3]! *= f;
+        pos[i * 3 + 1] = neckY + (y - neckY) * f;
+        pos[i * 3 + 2] = neckZ + (pos[i * 3 + 2]! - neckZ) * f;
+      }
+      top = Math.max(top, pos[i * 3 + 1]!);
+    }
+    const overflow = top - body.height;
+    for (let i = 0; i < n; i += 1) {
+      const y = pos[i * 3 + 1]!;
+      if (arm[i]! >= 0.5 || y <= l.napeY) continue;
+      pos[i * 3 + 1] = y - overflow * smooth((y - l.napeY) / (0.05 * s));
+    }
+  }
+
+  // 7. Polish: the hips, buttocks and legs (ankle → waist) are smoothed without shrinking, so the
+  //    buttock–thigh fold and the knees read as one continuous skin after all the fits above.
+  const polish = new Float32Array(n);
+  for (let i = 0; i < n; i += 1) {
+    if (arm[i]! >= 0.05) continue;
+    const y = pos[i * 3 + 1]!;
+    polish[i] = 0.8 * smooth((y - (l.ankleY + 0.02 * s)) / (0.06 * s)) * (1 - smooth((y - (l.hipY + 0.04 * s)) / (0.1 * s)));
+  }
+  smoothMasked(pos, data.indices, polish, 6);
+
+  const at = (y: number): number => measureSection(pos, torsoIdx, y)?.perimeter ?? 0;
   return { positions: pos, circumferences: { bust: at(l.bustY), waist: at(l.waistY), hip: at(l.hipY) } };
-};
-
-export interface HairShell {
-  positions: Float32Array;
-  indices: Uint32Array;
-}
-
-/**
- * Hair cap: the triangles of the scalp (crown, back and sides above the nape, not the face),
- * pushed 7 mm out along the surface so it reads as hair volume over the skull.
- */
-export const buildHairShell = (positions: Float32Array, indices: Uint32Array, body: BodyMeasurements): HairShell => {
-  const s = bodyScale(body);
-  const top = body.height;
-  // Centre of the skull in z, from the vertices of the upper head.
-  let sumZ = 0;
-  let count = 0;
-  for (let i = 0; i < positions.length / 3; i += 1) {
-    const y = positions[i * 3 + 1]!;
-    if (y > top - 0.12 * s && y < top - 0.03 * s) {
-      sumZ += positions[i * 3 + 2]!;
-      count += 1;
-    }
-  }
-  const centreZ = count ? sumZ / count : 0;
-  const inHair = (i: number): boolean => {
-    const x = Math.abs(positions[i * 3]!);
-    const y = positions[i * 3 + 1]!;
-    const z = positions[i * 3 + 2]!;
-    if (x > 0.074 * s || y < top - 0.25 * s) return false; // ears and the neck stay bare
-    // Hairline: a plane tilted down at the back (hair reaches the nape) and up at the front (forehead).
-    const dz = z - centreZ;
-    const line = dz < 0 ? top - 0.07 * s + 1.5 * dz : top - 0.07 * s + 1.8 * dz;
-    return y >= line;
-  };
-  const normals = new Float32Array(positions.length);
-  for (let t = 0; t < indices.length; t += 3) {
-    const a = indices[t]!;
-    const b = indices[t + 1]!;
-    const c = indices[t + 2]!;
-    const e1 = [0, 1, 2].map((k) => positions[b * 3 + k]! - positions[a * 3 + k]!);
-    const e2 = [0, 1, 2].map((k) => positions[c * 3 + k]! - positions[a * 3 + k]!);
-    const nx = e1[1]! * e2[2]! - e1[2]! * e2[1]!;
-    const ny = e1[2]! * e2[0]! - e1[0]! * e2[2]!;
-    const nz = e1[0]! * e2[1]! - e1[1]! * e2[0]!;
-    for (const v of [a, b, c]) {
-      normals[v * 3]! += nx;
-      normals[v * 3 + 1]! += ny;
-      normals[v * 3 + 2]! += nz;
-    }
-  }
-  const out = new Float32Array(positions);
-  for (let i = 0; i < positions.length / 3; i += 1) {
-    const len = Math.hypot(normals[i * 3]!, normals[i * 3 + 1]!, normals[i * 3 + 2]!) || 1;
-    for (let k = 0; k < 3; k += 1) out[i * 3 + k]! += (normals[i * 3 + k]! / len) * (0.008 + 0.006 * Math.max(0, centreZ - positions[i * 3 + 2]!) / (0.1 * s)) * s;
-  }
-  const kept: number[] = [];
-  for (let t = 0; t < indices.length; t += 3) {
-    if (inHair(indices[t]!) && inHair(indices[t + 1]!) && inHair(indices[t + 2]!)) kept.push(indices[t]!, indices[t + 1]!, indices[t + 2]!);
-  }
-  return { positions: out, indices: Uint32Array.from(kept) };
 };

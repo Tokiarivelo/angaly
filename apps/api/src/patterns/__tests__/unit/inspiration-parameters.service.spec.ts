@@ -43,7 +43,7 @@ describe('InspirationParametersService', () => {
 
   it('lists missing groups and accepts only valid non-overriding AI values', () => {
     expect(service.missingGroups({ manches: 'LONGUES' })).toEqual([
-      'col', 'decollete', 'dos', 'longueur', 'fermeture',
+      'col', 'decollete', 'dos', 'longueur', 'fermeture', 'corsage',
     ]);
     const { details, acceptedKeys } = service.acceptSuggestedDetails(
       { manches: 'LONGUES' },

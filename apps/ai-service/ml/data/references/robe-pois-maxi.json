@@ -1,0 +1,140 @@
+{
+  "id": "robe-pois-maxi",
+  "createdAt": "2026-10-12",
+  "image": {
+    "file": "images (1).jpeg",
+    "sha256": "2fc30f410c25f670bccbfb9663952a8decd615a1b3c6af0f31218597d3f6b9ae",
+    "sizePx": [
+      335,
+      597
+    ],
+    "source": "Photo fournie par l'utilisateur (capture de réseau social « La robe tendance 2026 »), hors dépôt.",
+    "license": "Inconnue — usage interne. Ne pas l'ajouter au jeu S6 ni l'entraîner sans droits confirmés ; l'image passe par MinIO, jamais par le dépôt."
+  },
+  "observations": {
+    "silhouette": "robe longue, buste ajusté, taille naturelle marquée par une couture, jupe évasée qui s'ouvre dès la taille",
+    "encolure": "ras du cou ronde, à la base du cou",
+    "manches": "courtes, s'arrêtent 3 à 5 cm sous l'aisselle, tête légèrement bouffante",
+    "corsage": "ajusté, fronces sous la poitrine sur un empiècement jusqu'à la taille (détail corsage = FRONCES_SOUS_POITRINE)",
+    "jupe": "évasée en trapèze avec quelques plis souples dès la taille ; ourlet ≈ 2,6 fois la largeur de taille vue de face",
+    "longueur": "bas du mollet, ourlet ≈ 15 cm au-dessus du sol",
+    "tissu": "crêpe ou viscose fluide, fond blanc, pois bordeaux/noirs d'environ 1,5 cm",
+    "fermeture": "non visible (zip invisible au dos probable)"
+  },
+  "profile": {
+    "isGarment": true,
+    "garmentType": "ROBE",
+    "occasion": "QUOTIDIEN",
+    "style": "CLASSIQUE",
+    "cutType": "EVASEE",
+    "details": {
+      "manches": "COURTES",
+      "col": "ROND",
+      "longueur": "MAXI",
+      "corsage": "FRONCES_SOUS_POITRINE"
+    },
+    "constructionMethod": "FLAT_PATTERN",
+    "presentation": "WORN",
+    "constructionNotes": null,
+    "fit": {
+      "ease": "CONFORT",
+      "fullness": {
+        "skirt": 1.25,
+        "sleeve": 1.25
+      },
+      "lengths": {
+        "skirtPct": 94,
+        "sleevePct": 40
+      },
+      "fabricBehavior": "FLUIDE",
+      "certainty": {
+        "ease": "MEDIUM",
+        "fullness.skirt": "MEDIUM",
+        "fullness.sleeve": "MEDIUM",
+        "lengths.skirtPct": "MEDIUM",
+        "lengths.sleevePct": "MEDIUM"
+      },
+      "fabricPrint": "POIS",
+      "fabricColor": "#f4f2ee",
+      "motifColor": "#5a1a22"
+    },
+    "drapeBlocks": null
+  },
+  "engine": {
+    "parameters": {
+      "garmentType": "ROBE",
+      "cutType": "EVASEE",
+      "style": "CLASSIQUE",
+      "details": {
+        "manches": "COURTES",
+        "col": "ROND",
+        "longueur": "MAXI",
+        "corsage": "FRONCES_SOUS_POITRINE"
+      },
+      "ease": "CONFORT",
+      "fullness": {
+        "skirt": 1.25,
+        "sleeve": 1.25
+      },
+      "lengths": {
+        "skirtPct": 94,
+        "sleevePct": 40
+      }
+    },
+    "template": "FEMME_STANDARD",
+    "pieces": [
+      "Corsage Devant",
+      "Empiècement Devant",
+      "Corsage Dos",
+      "Jupe Devant",
+      "Jupe Dos",
+      "Manche"
+    ]
+  },
+  "fit3d": {
+    "method": "Patron du moteur → drapé sur le corps humain ajusté (FEMME_STANDARD) → mesures : tissu traversé par la peau, couverture par lancer de rayons depuis la peau, hauteur d'ourlet, fin de manche, encolure.",
+    "targets": {
+      "hemAboveFloorCm": [
+        13,
+        19
+      ],
+      "hemToWaistWidth": [
+        2.4,
+        3.0
+      ],
+      "sleeveEndBelowArmpitCm": [
+        6,
+        10
+      ],
+      "bustEaseCm": [
+        1,
+        6
+      ],
+      "waistEaseCm": [
+        1,
+        5
+      ],
+      "skinThroughFabric": 0,
+      "bareSkinUnderSleeveOrShoulder": 0.02
+    },
+    "obtained": {
+      "hemAboveFloorCm": 16.3,
+      "hemToWaistWidth": 2.62,
+      "sleeveEndBelowArmpitCm": 8.0,
+      "bustEaseCm": 3.4,
+      "waistEaseCm": 2.4,
+      "hipEaseCm": 4.3,
+      "skinThroughFabric": 0,
+      "bareSkin": {
+        "sleeves": 0.011,
+        "shoulders": 0,
+        "bodice": 0.008,
+        "skirt": 0.021
+      }
+    },
+    "otherTemplates": "FEMME_SABLIER, FEMME_RONDE, FEMME_PETITE, FEMME_GRANDE, FEMME_POIRE : aucune peau traversante, couverture ≥ 96,5 % par zone ; l'ourlet suit la hauteur de taille (longueur de jupe absolue)."
+  },
+  "limits": [
+    "Étiquette posée par un assistant IA en regardant la photo — à faire valider par une couturière avant de passer en HUMAN_CONFIRMED."
+  ]
+}

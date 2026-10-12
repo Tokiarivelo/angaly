@@ -312,6 +312,10 @@ l'avertissement « moulage requis » sans pièces trompeuses.
 - Versionnage des artefacts (`modelVersion`), reproductibilité (graines, `requirements` figés), carte du modèle
   (`docs/features/ai-model-settings.md`).
 
+**Références étudiées à la main** (2026-10-12) : `apps/ai-service/ml/data/references/*.json` — étiquette, paramètres moteur
+et ajustement 3D mesuré d'une photo (première fiche : robe longue à pois). Candidates S7 une fois l'image sur MinIO, les
+droits confirmés et l'étiquette validée (`HUMAN_CONFIRMED`) ; jamais dans le jeu S6.
+
 **Boucle d'amélioration** : ré-entraînement planifié (CRON) quand ≥ N nouveaux échantillons confirmés ; comparaison automatique
 à la version courante sur S6 ; promotion manuelle par l'admin.
 

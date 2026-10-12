@@ -31,7 +31,7 @@ describe('cut-profile', () => {
   it('lets decollete win over col, with a neutral default', () => {
     expect(resolveNeckline({})).toEqual({ widthMm: 80, depthMm: 0 });
     expect(resolveNeckline({ col: 'EN_V' }).depthMm).toBeGreaterThan(100);
-    expect(resolveNeckline({ col: 'EN_V', decollete: 'SAGE' }).depthMm).toBe(0);
+    expect(resolveNeckline({ col: 'EN_V', decollete: 'SAGE' }).depthMm).toBe(75);
     expect(resolveNeckline({ col: 'BATEAU' }).widthMm).toBeGreaterThan(resolveNeckline({ col: 'ROND' }).widthMm);
   });
 

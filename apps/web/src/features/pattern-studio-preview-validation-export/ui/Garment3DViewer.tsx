@@ -4,7 +4,11 @@ import React, { useEffect, useMemo, useRef } from 'react';
 import { Canvas, useThree } from '@react-three/fiber';
 import { AdaptiveDpr, GizmoHelper, GizmoViewport, OrbitControls } from '@react-three/drei';
 import * as THREE from 'three';
-import { SLEEVE_TILT, type GarmentModel, type PanelMeshData } from '../utils/garment3d/garment-model';
+import { drapeGarment, SLEEVE_TILT, type GarmentModel, type PanelMeshData } from '../utils/garment3d/garment-model';
+import { envelopeFromMesh } from '../utils/garment3d/body-envelope';
+import { loopSubdivide } from '../utils/garment3d/subdivide';
+import { cavityOcclusion } from '../utils/garment3d/surface-shading';
+import { defineMuscles } from '../utils/garment3d/muscle-definition';
 import { loftRings } from '../utils/garment3d/body-model';
 import { bodyLandmarks, bodyScale } from '../utils/garment3d/body-model';
 
@@ -16,7 +20,11 @@ import {
   createHairGeometry,
 } from '../utils/garment3d/mannequin-mesh';
 import { ringAt } from '../utils/garment3d/body-model';
-import { buildHairShell, fitHumanBody, morphFor } from '../utils/garment3d/human-body';
+import { fitHumanBody, morphFor, type FitResult } from '../utils/garment3d/human-body';
+import { buildHair, eyeball, faceColors, findFaceLandmarks, sculptFace, type HairStyle } from '../utils/garment3d/head-features';
+import { fabricMaterial, type FabricLook } from './fabricTextures';
+import { eyeTexture, hairTexture } from './headTextures';
+import { RoomEnvironment } from 'three/examples/jsm/environments/RoomEnvironment.js';
 import { useHumanBase } from './useHumanBase';
 
 interface Garment3DViewerProps {
@@ -32,9 +40,11 @@ interface Garment3DViewerProps {
   /** Snaps the camera to a preset view (numpad-style); a new `nonce` re-applies the same view. */
   viewRequest: ViewRequest | null;
   onContextLost?: (() => void) | undefined;
+  /** Fabric read from the photo (print and colours); absent ⇒ technical zone colours. */
+  fabric?: FabricLook | null | undefined;
 }
 
-export type ViewName = 'front' | 'back' | 'side' | 'top' | 'reset';
+export type ViewName = 'front' | 'back' | 'side' | 'top' | 'reset' | 'face';
 export interface ViewRequest {
   view: ViewName;
   nonce: number;
@@ -42,7 +52,10 @@ export interface ViewRequest {
 
 const VIEW_DISTANCE = 3.3;
 const VIEW_TARGET = new THREE.Vector3(0, 0.88, 0);
+/** Close-up on the face (head height of a 1.70 m body), looking at the eyes. */
+const FACE_TARGET = new THREE.Vector3(0, 1.58, 0.02);
 const VIEW_POSITIONS: Record<ViewName, [number, number, number]> = {
+  face: [0.12, 1.6, 0.85],
   front: [0, VIEW_TARGET.y, VIEW_DISTANCE],
   back: [0, VIEW_TARGET.y, -VIEW_DISTANCE],
   side: [VIEW_DISTANCE, VIEW_TARGET.y, 0],
@@ -76,7 +89,7 @@ const Invalidator: React.FC<{ signal: unknown[] }> = ({ signal }) => {
 };
 
 /** Applies a preset view to the camera and the (default) orbit controls. */
-const CameraRig: React.FC<{ request: ViewRequest | null }> = ({ request }) => {
+const CameraRig: React.FC<{ request: ViewRequest | null; stature: number }> = ({ request, stature }) => {
   const camera = useThree((state) => state.camera);
   const controls = useThree((state) => state.controls) as { target: THREE.Vector3; update: () => void } | null;
   const invalidate = useThree((state) => state.invalidate);
@@ -84,14 +97,18 @@ const CameraRig: React.FC<{ request: ViewRequest | null }> = ({ request }) => {
   useEffect(() => {
     if (!request) return;
     const [x, y, z] = VIEW_POSITIONS[request.view];
-    camera.position.set(x, y, z);
+    // The face close-up follows the head height (a child's head is lower).
+    const k = stature / 1.7;
+    const target = request.view === 'face' ? new THREE.Vector3(0, FACE_TARGET.y * k, FACE_TARGET.z) : VIEW_TARGET;
+    if (request.view === 'face') camera.position.set(x, y * k, z * Math.sqrt(k));
+    else camera.position.set(x, y, z);
     if (controls) {
-      controls.target.copy(VIEW_TARGET);
+      controls.target.copy(target);
       controls.update();
     }
-    camera.lookAt(VIEW_TARGET);
+    camera.lookAt(target);
     invalidate();
-  }, [request, camera, controls, invalidate]);
+  }, [request, stature, camera, controls, invalidate]);
 
   return null;
 };
@@ -148,29 +165,95 @@ const SculptedLimbMesh: React.FC<{
 };
 
 
+const HAIR_COLOR = '#4a3324';
+
+const smoothstep01 = (t: number): number => {
+  const x = Math.min(1, Math.max(0, t));
+  return x * x * (3 - 2 * x);
+};
+
+/** Hair style by morphology: long wavy hair for women and girls, a short textured cut for men and boys. */
+const hairStyleFor = (templateId: string): HairStyle =>
+  templateId.startsWith('HOMME') || templateId === 'ENFANT_GARCON' ? 'short' : 'long';
+
 /** Scanned-quality human body (CC0 MakeHuman mesh) fitted to the customer's measurements. */
-const Person: React.FC<{ model: GarmentModel; base: NonNullable<ReturnType<typeof useHumanBase>> }> = ({ model, base }) => {
+const Person: React.FC<{
+  model: GarmentModel;
+  base: NonNullable<ReturnType<typeof useHumanBase>>;
+  fit: FitResult;
+}> = ({ model, base, fit }) => {
   const { body } = model;
   const s = bodyScale(body);
-  const fit = useMemo(
-    () => fitHumanBody(base, body, model.torsoRings, morphFor(body, model.templateId)),
-    [base, body, model.torsoRings, model.templateId],
-  );
+  // The face, sculpted towards a portrait's (fuller lips, eyes a little more open).
+  const sculpted = useMemo(() => {
+    const found = findFaceLandmarks(fit.positions, base.armWeights, body, base.indices);
+    return found ? sculptFace(fit.positions, found, body) : { positions: fit.positions, face: null };
+  }, [fit, base, body]);
+  const face = sculpted.face;
   const geometry = useGeometry(() => {
+    // One Loop subdivision: smooth joints and silhouette (the scan is ~26 k triangles, 105 k after).
+    const subdivided = loopSubdivide({ positions: sculpted.positions, indices: base.indices });
+    // Muscular builds: the relief of the pectorals and the abdominals (none for women and children).
+    const tone = morphFor(body, model.templateId).muscle;
+    const smooth = { ...subdivided, positions: defineMuscles(subdivided.positions, body, smoothstep01((tone - 0.5) / 0.5)) };
     const g = new THREE.BufferGeometry();
-    g.setAttribute('position', new THREE.BufferAttribute(fit.positions, 3));
-    g.setIndex(new THREE.BufferAttribute(base.indices, 1));
+    g.setAttribute('position', new THREE.BufferAttribute(smooth.positions, 3));
+    // Skin colours darkened in the creases and hollows: the relief reads under a soft studio light.
+    const colors = faceColors(smooth.positions, face, body.skin, HAIR_COLOR, body, model.templateId.startsWith('HOMME'));
+    const light = cavityOcclusion(smooth.positions, smooth.indices);
+    for (let v = 0; v < light.length; v += 1) {
+      colors[v * 3] = colors[v * 3]! * light[v]!;
+      colors[v * 3 + 1] = colors[v * 3 + 1]! * light[v]!;
+      colors[v * 3 + 2] = colors[v * 3 + 2]! * light[v]!;
+    }
+    g.setAttribute('color', new THREE.BufferAttribute(colors, 3));
+    g.setIndex(new THREE.BufferAttribute(smooth.indices, 1));
     g.computeVertexNormals();
     return g;
-  }, [fit, base]);
+  }, [sculpted, base, face, body, model.templateId]);
   const hairGeometry = useGeometry(() => {
-    const hair = buildHairShell(fit.positions, base.indices, body);
     const g = new THREE.BufferGeometry();
+    if (!face) return g;
+    const hair = buildHair(fit.positions, base.armWeights, body, face, hairStyleFor(model.templateId));
     g.setAttribute('position', new THREE.BufferAttribute(hair.positions, 3));
+    g.setAttribute('uv', new THREE.BufferAttribute(hair.uvs, 2));
+    // Light factor and coverage per vertex (RGBA): the alpha test cuts the scalp layer at the hairline.
+    const shade = new Float32Array(hair.shade.length * 4);
+    hair.shade.forEach((k, i) => {
+      shade.fill(k, i * 4, i * 4 + 3);
+      shade[i * 4 + 3] = hair.alpha[i]!;
+    });
+    g.setAttribute('color', new THREE.BufferAttribute(shade, 4));
     g.setIndex(new THREE.BufferAttribute(hair.indices, 1));
     g.computeVertexNormals();
+    g.computeTangents();
     return g;
-  }, [fit, base, body]);
+  }, [fit, base, body, face, model.templateId]);
+  const hairMaps = useMemo(() => hairTexture(HAIR_COLOR), []);
+  const eyeMap = useMemo(() => eyeTexture(), []);
+  useEffect(
+    () => () => {
+      hairMaps?.dispose();
+      eyeMap?.dispose();
+    },
+    [hairMaps, eyeMap],
+  );
+  const ball = face ? eyeball(face, body) : null;
+  const eyeGeometry = useGeometry(() => {
+    const r = ball?.radius ?? 0.012;
+    const g = new THREE.SphereGeometry(r, 40, 24);
+    g.rotateX(Math.PI / 2); // the texture's top pole (pupil) looks forward (+z)
+    // The upper lid shades the top of the eyeball (vertex colours multiply the texture).
+    const p = g.getAttribute('position');
+    const shade = new Float32Array(p.count * 3);
+    for (let i = 0; i < p.count; i += 1) {
+      const up = p.getY(i) / r;
+      const k = 1 - 0.6 * Math.min(1, Math.max(0, (up - 0.05) / 0.6)) - 0.15 * Math.min(1, Math.max(0, (-up - 0.3) / 0.5));
+      shade.fill(k, i * 3, i * 3 + 3);
+    }
+    g.setAttribute('color', new THREE.BufferAttribute(shade, 3));
+    return g;
+  }, [ball?.radius]);
 
   return (
     <group>
@@ -179,13 +262,64 @@ const Person: React.FC<{ model: GarmentModel; base: NonNullable<ReturnType<typeo
         <meshBasicMaterial color="#020B17" transparent opacity={0.45} />
       </mesh>
       <mesh geometry={geometry}>
-        <meshPhysicalMaterial color={body.skin} roughness={0.62} metalness={0} sheen={0.6} sheenRoughness={0.5} sheenColor="#F2C9B0" />
+        <meshPhysicalMaterial
+          userData={{ skin: true }}
+          vertexColors
+          roughness={0.55}
+          metalness={0}
+          sheen={0.4}
+          sheenRoughness={0.6}
+          sheenColor="#E8A98A"
+          clearcoat={0.06}
+          clearcoatRoughness={0.6}
+        />
       </mesh>
-      <mesh geometry={hairGeometry}>
-        <meshStandardMaterial color="#2B1E18" roughness={0.7} metalness={0.05} side={THREE.DoubleSide} />
-      </mesh>
+      {ball &&
+        [1, -1].map((side) => (
+          <mesh key={side} geometry={eyeGeometry} position={[side * ball.centre.x, ball.centre.y, ball.centre.z]}>
+            <meshPhysicalMaterial map={eyeMap} vertexColors roughness={0.35} clearcoat={0.7} clearcoatRoughness={0.06} />
+          </mesh>
+        ))}
+      {face && hairMaps && (
+        <>
+          <mesh geometry={hairGeometry}>
+            <meshPhysicalMaterial
+              userData={{ hair: true }}
+              map={hairMaps}
+              vertexColors
+              alphaTest={0.5}
+              side={THREE.DoubleSide}
+              roughness={0.58}
+              anisotropy={0.45}
+              anisotropyRotation={Math.PI / 2}
+              sheen={0.35}
+              sheenRoughness={0.5}
+              sheenColor="#8a6a50"
+            />
+          </mesh>
+        </>
+      )}
     </group>
   );
+};
+
+/** Soft studio reflections (eyes, skin sheen, fabric) from a generated room, no network asset. */
+const StudioEnvironment: React.FC = () => {
+  const gl = useThree((state) => state.gl);
+  const scene = useThree((state) => state.scene);
+  useEffect(() => {
+    const pmrem = new THREE.PMREMGenerator(gl);
+    const room = new RoomEnvironment();
+    const env = pmrem.fromScene(room, 0.04).texture;
+    scene.environment = env;
+    scene.environmentIntensity = 0.25;
+    return () => {
+      scene.environment = null;
+      env.dispose();
+      pmrem.dispose();
+    };
+  }, [gl, scene]);
+  return null;
 };
 
 const radiusOf = (circumference: number): number => circumference / (2 * Math.PI);
@@ -336,10 +470,12 @@ const Panel: React.FC<{
   assembly: number;
   transparent: boolean;
   highlighted: boolean;
-}> = ({ panel, assembly, transparent, highlighted }) => {
+  cloth: { color: string; map: THREE.Texture | null } | null;
+}> = ({ panel, assembly, transparent, highlighted, cloth }) => {
   const geometry = useGeometry(() => {
     const g = new THREE.BufferGeometry();
     g.setAttribute('position', new THREE.BufferAttribute(panel.positions, 3));
+    g.setAttribute('uv', new THREE.BufferAttribute(panel.uvs, 2));
     g.setIndex(new THREE.BufferAttribute(panel.indices, 1));
     g.computeVertexNormals();
     return g;
@@ -362,7 +498,8 @@ const Panel: React.FC<{
     <group position={offset}>
       <mesh geometry={geometry}>
         <meshStandardMaterial
-          color={ZONE_COLORS[panel.zone]}
+          color={cloth?.color ?? ZONE_COLORS[panel.zone]}
+          map={cloth?.map ?? null}
           emissive={highlighted ? '#936C3E' : '#000000'}
           emissiveIntensity={highlighted ? 0.6 : 0}
           roughness={0.58}
@@ -397,8 +534,24 @@ export const Garment3DViewer: React.FC<Garment3DViewerProps> = ({
   selectedPieceId,
   viewRequest,
   onContextLost,
+  fabric,
 }) => {
   const human = useHumanBase();
+  const cloth = useMemo(() => fabricMaterial(fabric), [fabric]);
+  useEffect(() => () => cloth?.map?.dispose(), [cloth]);
+  // The body is fitted once per model; the garment is then draped on that very body (its hull, its
+  // arms, its legs). Until the mesh is loaded, the panels draped on the procedural mannequin are shown.
+  const fit = useMemo(
+    () => (human ? fitHumanBody(human, model.body, model.torsoRings, morphFor(model.body, model.templateId)) : null),
+    [human, model],
+  );
+  const panels = useMemo(
+    () =>
+      human && fit
+        ? drapeGarment(model.layout, model.body, envelopeFromMesh(fit.positions, human.indices, human.armWeights, model.body))
+        : model.panels,
+    [human, fit, model],
+  );
   const lost = useRef(onContextLost);
   lost.current = onContextLost;
 
@@ -418,21 +571,24 @@ export const Garment3DViewer: React.FC<Garment3DViewerProps> = ({
       }}
     >
       <color attach="background" args={['#041329']} />
-      <ambientLight intensity={0.4} color="#E8E2D5" />
-      <hemisphereLight args={['#FFFFFF', '#061938', 0.85]} />
-      <directionalLight position={[3, 4, 3.5]} intensity={1.5} color="#FFF8EE" />
-      <directionalLight position={[-3, 2.5, 2.5]} intensity={0.75} color="#94A8C7" />
+      <StudioEnvironment />
+      {/* Studio three-point light: a strong key high on one side, a weak cool fill (the relief stays readable). */}
+      <ambientLight intensity={0.15} color="#E8E2D5" />
+      <hemisphereLight args={['#FFFFFF', '#061938', 0.5]} />
+      <directionalLight position={[-2.8, 3.6, 2.2]} intensity={2.4} color="#FFF6EA" />
+      <directionalLight position={[3, 1.5, 2.8]} intensity={0.4} color="#A9BAD6" />
       <directionalLight position={[0, 3.5, -3.5]} intensity={1.1} color="#F0E6D2" />
       <directionalLight position={[0, -1, 1]} intensity={0.25} color="#C5B190" />
 
-      {showMannequin && (human ? <Person model={model} base={human} /> : <Mannequin model={model} />)}
-      {model.panels.map((panel) => (
+      {showMannequin && (human && fit ? <Person model={model} base={human} fit={fit} /> : <Mannequin model={model} />)}
+      {panels.map((panel) => (
         <Panel
           key={panel.id}
           panel={panel}
           assembly={assembly}
           transparent={transparent}
           highlighted={selectedPieceId !== null && panel.pieceIds.includes(selectedPieceId)}
+          cloth={cloth}
         />
       ))}
 
@@ -466,8 +622,8 @@ export const Garment3DViewer: React.FC<Garment3DViewerProps> = ({
       </GizmoHelper>
 
       <AdaptiveDpr pixelated />
-      <CameraRig request={viewRequest} />
-      <Invalidator signal={[assembly, showMannequin, transparent, selectedPieceId, model]} />
+      <CameraRig request={viewRequest} stature={model.body.height} />
+      <Invalidator signal={[assembly, showMannequin, transparent, selectedPieceId, model, panels]} />
     </Canvas>
   );
 };

@@ -121,6 +121,18 @@ describe('Garment3DPanel', () => {
     expect(screen.getByText(/enroulée autour du corps/)).toBeInTheDocument();
   });
 
+  it('toggles full screen with the button and leaves it with Escape', async () => {
+    const user = userEvent.setup();
+    render(<Garment3DPanel pieces={pieces} garmentType="JUPE" measurements={measurements} selectedPieceId={null} />);
+    const panel = await screen.findByTestId('garment-3d-panel');
+    expect(panel).toHaveAttribute('data-fullscreen', 'false');
+    await user.click(screen.getByRole('button', { name: 'Plein écran' }));
+    expect(panel).toHaveAttribute('data-fullscreen', 'true');
+    expect(screen.getByRole('button', { name: 'Main' })).toBeInTheDocument();
+    fireEvent.keyDown(window, { key: 'Escape' });
+    expect(panel).toHaveAttribute('data-fullscreen', 'false');
+  });
+
   it('has a hand tool that switches the left button from orbiting to moving the scene', async () => {
     render(<Garment3DPanel pieces={pieces} garmentType="JUPE" measurements={measurements} selectedPieceId={null} />);
     const hand = await screen.findByRole('button', { name: 'Main' });

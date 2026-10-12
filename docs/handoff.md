@@ -1,7 +1,7 @@
 # Fiche de Passation Inter-Agents (Handoff)
 
-> **Date** : 2026-10-02  
-> **Dernière mise à jour par** : Antigravity  
+> **Date** : 2026-10-12  
+> **Dernière mise à jour par** : Claude Code  
 > **Statut global du dépôt** : 🟢 **Vert** (typecheck monorepo 10/10 OK, tests pytest ai-service 42/42 OK [95% coverage], tests jest api 68/68 OK, tests vitest web 850/850 OK)
 
 ---
@@ -15,6 +15,75 @@ Lis docs/handoff.md et poursuis le travail selon les priorités définies.
 ```
 
 ---
+
+## 0 nonies. Session 2026-10-12 (référence, suite) — Fronces, motif, encolure, projet réel (Claude Code)
+
+- Fait (non commité) : groupe de détails `corsage` (FRONCES_SOUS_POITRINE → pièce `Empiècement Devant`, fronces en 3D) ;
+  motif du tissu dans l'analyse (`fit.fabricPrint/fabricColor/motifColor`) et texture dans le visualiseur ; point
+  d'encolure aplati ; `SAGE` = encolure ras du cou 75 × 75. Détail : fiche page § « 2026-10-12 (référence, suite) ».
+- Projet `dab617b9-628d-452e-a5aa-3c5fefd65ce5` : passé en robe à pois (version 2) via les cas d'usage de l'API ; sauvegarde
+  SQL des tables avant modification dans le scratchpad de la session (`backup_pattern_tables.sql`).
+- API : ne tournait pas (erreurs CORS « status null » dans le navigateur) ; relancée (`pnpm --filter @angaly/api dev`, port
+  3003). Le `.env` racine (3004) est périmé : l'API lit `apps/api/.env`, le web `apps/web/.env.local` (3003).
+- Tests : web 1059/1059, api 1287/1287, pattern-engine 214/214 (91 %), ai-service 122/122 (95,7 %). Lint : 2 erreurs
+  préexistantes dans le wizard (`CutStep.tsx`, `utils/drape-blocks.ts`, non modifiés).
+- Reste : valider l'étiquette ; jonction emmanchure dos vue de haut ; vérifier la page dans le navigateur connecté.
+
+## 0 octies. Session 2026-10-12 (référence) — Robe à pois : photo → patron → ajustement 3D (Claude Code)
+
+- Demande : analyser une photo (robe longue blanche à pois, encolure ronde, manches courtes, jupe évasée), générer le
+  patron, l'ajuster sur la personne 3D jusqu'à ce qu'il tombe juste, et en garder une trace pour l'entraînement.
+- Fait (non commité) :
+  - fiche de référence `apps/ai-service/ml/data/references/robe-pois-maxi.json` (+ README, test pytest) : étiquette
+    `GarmentProfile`, paramètres moteur, cibles/mesures d'ajustement ; image hors dépôt (sha256 seulement, droits inconnus) ;
+  - moteur : encolures courbes (`curveNeckline`), dos d'encolure 2 cm, `ROND` 75 × 75 mm ;
+  - 3D : tête de manche / emmanchure, couture d'épaule posée sur la crête, poussée hors du corps avant/arrière, carte de
+    hauteur des épaules (`BodyEnvelope.top`), deltoïde (`LimbFrame.cap`), blocs de jupe froncée/plissée/cercle drapés.
+  - Détail : fiche page § « 2026-10-12 (référence) ».
+- Tests : web 1053/1053 (nouveaux `referenceDressFit.test.ts`, bloc de jupe dans `garment3d.test.ts`), pattern-engine
+  213/213 (couverture 90,7 %), ai-service 121/121 (95,7 %) ; tsc et eslint propres.
+- Outil : script d'ajustement hors dépôt (scratchpad `fit/fitcheck.mts` : patron → drapé → peau traversante, couverture par
+  rayons, ourlet, manche, encolure) + banc de captures WebGL.
+- Reste : faire valider l'étiquette par une couturière et téléverser l'image sur MinIO (droits à confirmer) avant tout
+  entraînement S7 ; empiècement / fronces sous poitrine dans le moteur ; motif de tissu (pois) dans le visualiseur ;
+  vérifier dans `pnpm dev`.
+
+## 0 sexies. Session 2026-10-12 (suite) — Références, articulations, visage, cheveux, enfants (Claude Code)
+
+- Fait (non commité) : calage du corps sur des vues de référence (pose `POSE`, `JOINT_INSET`, rotation jambes/bras), recalage
+  vertical réduit (sol/entrejambe/sommet), `crotchRatio`/`napeRatio` par modèle, `HAUTEUR_FOURCHE`/`HAUTEUR_BASSIN` lus,
+  subdivision de Loop + lissage Taubin, visage (yeux, couleurs, sourcils, lèvres), cheveux générés (carré / courts), modèle
+  `ENFANT_GARCON`, préréglage caméra `face`. Fichiers nouveaux : `utils/garment3d/{subdivide,head-features}.ts`,
+  `ui/headTextures.ts`, tests `subdivide.test.ts`. Détail : fiche, § « 2026-10-12 (suite) ».
+- Tests : module 110/110, suite web complète verte (8 échecs observés uniquement sous charge CPU pendant les captures WebGL,
+  repassés seuls 147/147), tsc et eslint propres.
+- Outil : banc de captures WebGL (esbuild + Chrome headless + Playwright) dans le scratchpad, non versionné — à recréer si
+  besoin (entrée qui monte `Garment3DViewer` avec un modèle du moteur, serveur statique, `page.screenshot`).
+- Reste : vérifier dans `pnpm dev` sur un vrai projet ; cheveux par mèches (cartes) si on veut plus de finesse ; éventuel
+  modèle « enfant 5 ans ».
+
+## 0 quinquies. Session 2026-10-12 — Refonte morphologie 3D + drapé sur le corps réel (Claude Code)
+
+- Demande : corps 3D peu réaliste de face (articulations), vêtement non ajusté au corps comme sur la photo de référence.
+- Fait (non commité, avec le travail du 2026-10-09 encore non commité) : `human-body.ts` (ajustement réécrit, préserve le scan),
+  `body-envelope.ts` (nouveau : enveloppes convexes torse/jambes/bras, anneaux de tissu par fonction de support), `garment-model.ts`
+  (drapé réécrit : `drapeGarment`, `layout`, `proceduralEnvelope`), `Garment3DViewer.tsx` (drapé sur le corps ajusté, cheveux courts
+  hommes), `body-model.ts` (bug `LARGEUR_EPAULE` = une épaule). Détail : fiche `docs/pages/pattern-studio-preview-validation-export.md`
+  § « Refonte 2026-10-12 ».
+- Tests : vitest web 1032/1032 (nouveaux : `bodyEnvelope.test.ts`, drapé sans peau traversante + épaules + tours ±5 % dans
+  `humanBody.test.ts`), tsc et eslint propres. Stitch non consulté : aucun changement de JSX visible (logique 3D seulement).
+- Outil de vérification utilisé : rendu logiciel hors-ligne (script tsx qui ajuste/drape + rasteriseur numpy), non versionné.
+- Reste : petites zones de peau à la jonction emmanchure/tête de manche ; encolure devant du moteur sans profondeur par défaut
+  (le corsage monte jusqu'au cou) ; « ressemblance avec la photo » dépend aussi du profil IA → patron (coupe, ampleur, longueur) ;
+  vérifier dans le navigateur (`pnpm dev`) sur un vrai projet.
+
+## 0 quater. Session 2026-10-09 — Corps 3D : cohérence des proportions, plein écran
+
+- Fait (non commité) : plein écran du panneau 3D (`Garment3DPanel.tsx`, test ajouté) ; lissage Taubin jambes/fesses et cisaillement des jambes (`human-body.ts`) ; `'use client'` dans `GenerationLoadingScreen.tsx` ; proportions : `NAPE_Y` 1,42 → 1,45 et `crotchY = waistY - 0.28*s` (était 0.30) dans `body-model.ts`, tests `garment3d.test.ts` alignés sur `NAPE_Y`.
+- Refusé : rendu low-poly façon planche anatomique (retiré). La planche ne sert que de référence de proportions.
+- Vérifié visuellement : femme standard (face, côté) et homme athlétique. Non vérifié : enfant, autres morphologies femme.
+- Tests : vitest module preview 91/91, tsc et eslint propres.
+- Reste : bras en A-pose un peu longs, poitrine peu marquée, yeux/texture de peau, pose réglable. Attention : le `.next` d'`apps/web` a été supprimé pendant les captures, redémarrer `pnpm dev`.
 
 ## 0 ter. Session 2026-10-08 — Rendu 3D : Corps humain réaliste (Real Person 3D) & drapé haute couture
 
@@ -284,3 +353,12 @@ Modifications locales vérifiées et prêtes :
 
 ## Addendum 2026-10-08 (3) — Plan Phase 5b
 Plan complet (S1→S8) : `docs/phases/phase-5b-fidelite-photo-et-drapes.md` — paramètres étendus (aisance/ampleur/longueurs), blocs de drapé déterministes, jeu de référence + métriques, modèle local entraîné sur `ai_training_samples`, RGPD. Prochaine action : session S1. Ajouter la ligne Phase 5b à `docs/checklist-implementation.md`.
+
+## 0 septies — Visage, cheveux, modèle costaud (2026-10-12, Claude Code)
+
+- Yeux : ouverture lue sur les paupières (`eyeOpening`, triangles rastérisés) ; globe derrière les paupières. `sculptFace` : lèvres plus pleines, yeux un peu plus ouverts.
+- Relief : éclairage studio latéral + ombrage des creux (`surface-shading.ts`, `cavityOcclusion`).
+- Cheveux réécrits (`buildHair`, styles `long` | `short`) : couche de cuir chevelu coupée par alpha (ligne d'implantation lisse) + mèches sculptées ondulées (raie au milieu, jusqu'aux épaules) ; coupe courte rainurée + barbe de 3 jours (`faceColors(..., beard)`) pour les hommes.
+- Nouveau gabarit `HOMME_COSTAUD` (muscle 1) + `muscle-definition.ts` (pectoraux, abdos, V iliaque) appliqué dans le viewer.
+- Tests : module 115/115 (nouveaux `surfaceShading.test.ts`, `muscleDefinition.test.ts`), tsc + eslint propres. Rien n'est commité.
+- Reste : vérifier dans `pnpm dev` ; légère asymétrie de la ligne d'implantation chez le garçon ; lèvres encore un peu plates ; jambes du costaud fines. Fiche page mise à jour (section « 2026-10-12 (fin) »).

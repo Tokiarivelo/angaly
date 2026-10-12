@@ -10,7 +10,7 @@ import {
   resolveSkirtLengthMm,
   resolveSleeve,
 } from '../shared/cut-profile';
-import { skirtOutline, sleevePiece } from '../shared/shapes';
+import { curveNeckline, skirtOutline, sleevePiece, splitUnderbust } from '../shared/shapes';
 import {
   asymmetricHemPieces,
   buildOverskirtPiece,
@@ -31,6 +31,11 @@ import {
 } from '../shared/fit';
 
 const REQUIRED_MEASUREMENTS = ['TOUR_POITRINE', 'TOUR_TAILLE', 'TOUR_BASSIN', 'LONGUEUR_DOS'];
+/** Centre-back neck point below the shoulder-neck point (a drafted back neckline is a shallow curve). */
+const BACK_NECK_DEPTH_MM = 20;
+/** Under-bust gathers: fabric gathered onto the seam (1.5 × its length) and the midriff band's height. */
+const UNDERBUST_FULLNESS = 1.3;
+const MIDRIFF_RATIO = 0.2;
 
 export const RobeRule: IPatternRule = {
   garmentType: 'ROBE',
@@ -114,13 +119,13 @@ export const RobeRule: IPatternRule = {
       grainline: { angleDegrees: 90, originX: largeurCorsageDos / 2, originY: hauteurCorsageDos / 2 },
       notches: [{ positionAlongEdge: 0.5, edgeIndex: 1 }],
       outlineMm: [
-        { x: 0, y: 0 },
+        { x: 0, y: BACK_NECK_DEPTH_MM },
         { x: 75, y: 0 },
         { x: largeurCorsageDos, y: 45 },
         { x: largeurCorsageDos, y: hauteurCorsageDos * 0.55 },
         { x: largeurTailleDos, y: hauteurCorsageDos },
         { x: 0, y: hauteurCorsageDos },
-        { x: 0, y: 0 },
+        { x: 0, y: BACK_NECK_DEPTH_MM },
       ],
     };
 
@@ -154,6 +159,29 @@ export const RobeRule: IPatternRule = {
       neckWidthMm: 75,
       dartSegmentIdx: null,
     });
+    // Drafted necklines are curves, not the straight line from the centre to the shoulder.
+    corsageDevant.outlineMm = curveNeckline(corsageDevant.outlineMm);
+    corsageDos.outlineMm = curveNeckline(corsageDos.outlineMm);
+
+    // Fronces sous la poitrine : the front is cut under the bust, gathered onto a midriff band.
+    let midriff: PatternPieceGeometry | null = null;
+    if (parameters.details['corsage']?.toUpperCase() === 'FRONCES_SOUS_POITRINE') {
+      const bandMm = Math.round(Math.min(110, Math.max(60, hauteurCorsageDevant * MIDRIFF_RATIO)));
+      const split = splitUnderbust(corsageDevant.outlineMm, hauteurCorsageDevant - bandMm, UNDERBUST_FULLNESS);
+      if (split) {
+        corsageDevant.outlineMm = split.upper;
+        corsageDevant.grainline = { ...corsageDevant.grainline, originY: split.seamYMm / 2 };
+        midriff = {
+          name: 'Empiècement Devant',
+          fabricRecommendation: corsageDevant.fabricRecommendation,
+          quantity: 1,
+          seamAllowanceMm: 10,
+          grainline: { angleDegrees: 90, originX: largeurTailleDevant / 2, originY: bandMm / 2 },
+          notches: [{ positionAlongEdge: 0.5, edgeIndex: 0 }],
+          outlineMm: split.band,
+        };
+      }
+    }
 
     // Blocs de drapé (S4) : un bloc de jupe remplace les panneaux de jupe de la règle ; le portefeuille
     // croise le devant du corsage ; le col bénitier ajoute une pièce taillée dans le biais.
@@ -161,6 +189,7 @@ export const RobeRule: IPatternRule = {
     const waistCircumference = tt + 40 + 4 * profile.waistDeltaMm;
     let pieces: PatternPieceGeometry[] = [
       corsageDevant,
+      ...(midriff ? [midriff] : []),
       corsageDos,
       ...(drape.skirt
         ? buildSkirtBlock(drape.skirt, waistCircumference, longueurJupe)

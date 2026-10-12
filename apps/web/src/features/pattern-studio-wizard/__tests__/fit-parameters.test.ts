@@ -97,6 +97,7 @@ describe('buildFitRows', () => {
         fullness: { skirt: 2.5 },
         lengths: { skirtPct: 90, sleevePct: 0 },
         fabricBehavior: 'RIGIDE',
+        fabricPrint: 'POIS',
       }),
     );
     expect(rows).toEqual([
@@ -105,6 +106,7 @@ describe('buildFitRows', () => {
       { label: 'Longueur de jupe', value: '90 %' },
       { label: 'Longueur de manche', value: '0 %' },
       { label: 'Tissu', value: 'Rigide' },
+      { label: 'Motif', value: 'À pois' },
     ]);
     expect(buildFitRows(profile(undefined))).toEqual([]);
     expect(buildFitRows(undefined)).toEqual([]);

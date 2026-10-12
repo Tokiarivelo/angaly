@@ -3,6 +3,7 @@ import {
   DRAPE_BLOCK_LABELS,
   EASE_LEVEL_LABELS,
   FABRIC_BEHAVIOR_LABELS,
+  FABRIC_PRINT_LABELS,
   listPatternExtKeys,
   type DrapeSpec,
   type GarmentProfile,
@@ -125,6 +126,10 @@ export function buildFitRows(profile: GarmentProfile | null | undefined): Array<
     {
       label: 'Tissu',
       value: profile?.fit?.fabricBehavior ? FABRIC_BEHAVIOR_LABELS[profile.fit.fabricBehavior] : undefined,
+    },
+    {
+      label: 'Motif',
+      value: profile?.fit?.fabricPrint ? FABRIC_PRINT_LABELS[profile.fit.fabricPrint] : undefined,
     },
   ];
   return rows.filter((row): row is { label: string; value: string } => row.value !== undefined);

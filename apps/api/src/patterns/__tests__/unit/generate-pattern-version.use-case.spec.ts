@@ -418,7 +418,7 @@ describe('GeneratePatternVersionUseCase', () => {
       mockProjectRepo.findById.mockResolvedValueOnce(
         analysedProject({
           detailsJson: {
-            manches: 'LONGUES', col: 'ROND', decollete: 'SAGE', dos: 'FERME', longueur: 'MAXI', fermeture: 'AUCUNE',
+            manches: 'LONGUES', col: 'ROND', decollete: 'SAGE', dos: 'FERME', longueur: 'MAXI', fermeture: 'AUCUNE', corsage: 'LISSE',
           },
         }),
       );

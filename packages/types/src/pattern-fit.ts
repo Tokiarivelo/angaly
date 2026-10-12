@@ -860,6 +860,23 @@ export const FABRIC_BEHAVIOR_LABELS: Record<FabricBehavior, string> = {
   STRETCH: 'Extensible',
 };
 
+/** Look of the fabric (informative only — used by the 3D preview, never by the geometry). */
+export const FABRIC_PRINTS = ['UNI', 'POIS', 'RAYURES', 'CARREAUX', 'FLEURI', 'AUTRE'] as const;
+export type FabricPrint = (typeof FABRIC_PRINTS)[number];
+
+export const FABRIC_PRINT_LABELS: Record<FabricPrint, string> = {
+  UNI: 'Uni',
+  POIS: 'À pois',
+  RAYURES: 'Rayé',
+  CARREAUX: 'À carreaux',
+  FLEURI: 'Fleuri',
+  AUTRE: 'Autre imprimé',
+};
+
+/** `#rrggbb` colour, as the photo analysis gives the fabric's ground and motif colours. */
+export const isHexColor = (value: unknown): value is string =>
+  typeof value === 'string' && /^#[0-9a-fA-F]{6}$/.test(value);
+
 export type FitCertainty = 'HIGH' | 'MEDIUM';
 
 /**
@@ -870,6 +887,10 @@ export type FitCertainty = 'HIGH' | 'MEDIUM';
 export interface GarmentFit extends PatternExtParameters {
   /** Informative only — never changes geometry. */
   fabricBehavior?: FabricBehavior;
+  /** Print of the fabric, its ground colour and its motif colour (informative, for the 3D preview). */
+  fabricPrint?: FabricPrint;
+  fabricColor?: string;
+  motifColor?: string;
   certainty?: Record<string, FitCertainty>;
 }
 

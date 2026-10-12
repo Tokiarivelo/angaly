@@ -74,4 +74,12 @@ export const DETAIL_GROUPS: DetailGroup[] = [
       { id: 'AUCUNE', label: 'Ligne pure sans découpe' },
     ],
   },
+  {
+    id: 'corsage',
+    label: 'Corsage',
+    options: [
+      { id: 'LISSE', label: 'Corsage lisse' },
+      { id: 'FRONCES_SOUS_POITRINE', label: 'Fronces sous la poitrine (empiècement)' },
+    ],
+  },
 ];

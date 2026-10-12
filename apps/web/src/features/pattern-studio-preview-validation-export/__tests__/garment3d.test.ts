@@ -1,6 +1,7 @@
 import { describe, expect, it } from 'vitest';
 import type { PatternPieceDto } from '@angaly/types';
 import {
+  NAPE_Y,
   ellipseCircumference,
   ellipseSemiAxes,
   buildTorsoRings,
@@ -62,7 +63,7 @@ describe('body-model', () => {
     for (let i = 1; i < rings.length; i += 1) {
       expect(rings[i]!.y).toBeLessThan(rings[i - 1]!.y);
     }
-    const waist = ringAt(rings, 1.42 - body.backLength);
+    const waist = ringAt(rings, NAPE_Y - body.backLength);
     expect(ellipseCircumference(waist.a, waist.b)).toBeCloseTo(0.68, 3);
   });
 
@@ -123,8 +124,19 @@ describe('garment-model', () => {
     expect(result.model.generic).toBe(false);
     const legs = result.model.panels.filter((p) => p.zone === 'legs');
     expect(legs).toHaveLength(2);
-    const xs = legs.map((p) => p.positions[0]!);
-    expect(Math.sign(xs[0]!)).toBe(-Math.sign(xs[1]!));
+    const meanX = (panel: (typeof legs)[number]) => {
+      let sum = 0;
+      for (let i = 0; i < panel.positions.length; i += 3) sum += panel.positions[i]!;
+      return sum / (panel.positions.length / 3);
+    };
+    expect(Math.sign(meanX(legs[0]!))).toBe(-Math.sign(meanX(legs[1]!)));
+    // Below the crotch the two legs are apart (a real crotch seam, not a tube).
+    const l = bodyLandmarks(result.model.body);
+    for (const panel of legs) {
+      for (let i = 0; i < panel.positions.length; i += 3) {
+        if (panel.positions[i + 1]! < l.crotchY - 0.1) expect(Math.abs(panel.positions[i]!)).toBeGreaterThan(0.002);
+      }
+    }
     expect(result.model.fit.map((f) => f.label)).toContain('Bassin');
     for (const panel of legs) expect(Math.max(...panel.indices)).toBeLessThan(panel.positions.length / 3);
   });
@@ -191,6 +203,51 @@ describe('garment-model', () => {
     expect(hemWidth(300)).toBeGreaterThan(hemWidth(0));
   });
 
+  it('drapes skirt blocks (gathered panels, circle skirts) instead of dropping them', () => {
+    const bodice = robePieces().slice(0, 2);
+    // Gathered: one 72 × 2 cm wide rectangle per side, 90 cm long.
+    const gathered = buildGarmentModel(
+      [...bodice, piece('g', 'Jupe froncée (panneau)', closed([[0, 0], [720, 0], [720, 900], [0, 900]]), 2)],
+      'ROBE',
+      { TOUR_POITRINE: 88, TOUR_TAILLE: 68, TOUR_BASSIN: 94, LONGUEUR_DOS: 40 },
+    );
+    if (!gathered.ok) throw new Error(gathered.reason);
+    expect(gathered.model.ignored).toEqual([]);
+    expect(gathered.model.panels.filter((p) => p.zone === 'skirt').map((p) => p.role).sort()).toEqual(['back', 'front']);
+    // The fabric is 1.44 m round, but the waist seam draws it in: the ring at the waist stays near the body.
+    const ringWidth = (y: number): number => {
+      let w = 0;
+      for (const p of gathered.model.panels.filter((q) => q.zone === 'skirt')) {
+        for (let i = 0; i < p.positions.length; i += 3) if (Math.abs(p.positions[i + 1]! - y) < 0.01) w = Math.max(w, p.positions[i]!);
+      }
+      return w;
+    };
+    const waistY = bodyLandmarks(gathered.model.body).waistY;
+    expect(2 * Math.PI * ringWidth(waistY - 0.01)).toBeLessThan(1.0);
+    expect(ringWidth(waistY - 0.6)).toBeGreaterThan(ringWidth(waistY - 0.01) * 1.15);
+
+    // Half circle for a 72 cm waist: inner radius 72 / π cm, 80 cm long.
+    const inner = 720 / Math.PI;
+    const arc = (r: number, from: number, to: number) =>
+      Array.from({ length: 65 }, (_, i) => {
+        const phi = from + ((to - from) * i) / 64;
+        return { x: r * Math.sin(phi), y: r * Math.cos(phi) };
+      });
+    const sector = [...arc(inner, -Math.PI / 2, Math.PI / 2), ...arc(inner + 800, Math.PI / 2, -Math.PI / 2)];
+    const circle = buildGarmentModel(
+      [...bodice, piece('c', 'Jupe demi-cercle', [...sector, sector[0]!].map((p) => ({ x: p.x + 1200, y: p.y + 1200 })), 1)],
+      'ROBE',
+      { TOUR_POITRINE: 88, TOUR_TAILLE: 68, TOUR_BASSIN: 94, LONGUEUR_DOS: 40 },
+    );
+    if (!circle.ok) throw new Error(circle.reason);
+    expect(circle.model.ignored).toEqual([]);
+    // Its circumference grows by π per unit of depth: ~72 cm at the waist, ~2.5 m at mid-length.
+    const hip = circle.model.fit.find((f) => f.label === 'Bassin')!;
+    const depth = (waistY - bodyLandmarks(circle.model.body).hipY) * 100;
+    expect(hip.garmentCm).toBeGreaterThan(72 + Math.PI * depth * 0.85);
+    expect(hip.garmentCm).toBeLessThan(72 + Math.PI * depth * 1.15);
+  });
+
   it('classifies ease levels', () => {
     expect(fitStatus(-2)).toBe('tight');
     expect(fitStatus(2)).toBe('fitted');
@@ -227,9 +284,10 @@ describe('body templates', () => {
     expect(athletic.shoulderWidth).toBeCloseTo(0.5);
     expect(athletic.bust).toBeCloseTo(1.08);
 
-    const measured = readBodyMeasurements({ TOUR_POITRINE: 100, LARGEUR_EPAULE: 41 }, 'HOMME_ATHLETIQUE');
+    // LARGEUR_EPAULE is one shoulder (neck base → shoulder point): the width adds the neck on both sides.
+    const measured = readBodyMeasurements({ TOUR_POITRINE: 100, LARGEUR_EPAULE: 14 }, 'HOMME_ATHLETIQUE');
     expect(measured.bust).toBeCloseTo(1.0);
-    expect(measured.shoulderWidth).toBeCloseTo(0.41);
+    expect(measured.shoulderWidth).toBeCloseTo(2 * (0.42 / (2 * Math.PI) + 0.14), 3);
     expect(measured.waist).toBeCloseTo(0.82); // not measured → template
   });
 
@@ -238,7 +296,7 @@ describe('body templates', () => {
     const tall = readBodyMeasurements({ HAUTEUR_TAILLE_SOL: 114 });
     expect(tall.height).toBeCloseTo(1.9);
     expect(bodyLandmarks(tall).napeY).toBeGreaterThan(bodyLandmarks(standard).napeY);
-    expect(bodyLandmarks(standard).napeY).toBeCloseTo(1.42);
+    expect(bodyLandmarks(standard).napeY).toBeCloseTo(NAPE_Y);
     expect(readBodyMeasurements({ HAUTEUR_TAILLE_SOL: 9000 }).height).toBe(2.1);
   });
 

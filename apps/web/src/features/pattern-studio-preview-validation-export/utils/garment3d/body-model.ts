@@ -25,7 +25,16 @@ export interface BodyMeasurements {
   depth: { bust: number; waist: number; hip: number };
   headRadius: number;
   skin: string;
+  /** Nape (C7) height (m): the template's ratio of the stature. */
+  napeY: number;
+  /** Waist → crotch (the body rise, m): HAUTEUR_FOURCHE, else from the template's crotch height. */
+  rise: number;
+  /** Waist → hip level, where the hip girth is taken (m): HAUTEUR_BASSIN, else 65 % of the rise. */
+  hipDrop: number;
 }
+
+/** Height of the nape (C7, ≈ 0.853 of the stature) for the reference stature. */
+export const NAPE_Y = 1.45;
 
 /** Stature the fixed landmark offsets below were drawn for. */
 const REFERENCE_HEIGHT = 1.7;
@@ -51,15 +60,25 @@ export const readBodyMeasurements = (
   const t = getBodyTemplate(templateId);
   const waistFloor = cm(m['HAUTEUR_TAILLE_SOL'], 0);
   const height = waistFloor > 0 ? clamp(waistFloor / WAIST_HEIGHT_RATIO, 1.2, 2.1) : t.height;
+  const neck = clamp(cm(m['TOUR_COU'], t.neck), 0.26, 0.5);
+  // LARGEUR_EPAULE is ONE shoulder (base of the neck → shoulder point, catalogue 8–20 cm): the
+  // shoulder-to-shoulder width adds the neck on both sides.
+  const oneShoulder = cm(m['LARGEUR_EPAULE'], 0);
+  const shoulderWidth = oneShoulder > 0 ? 2 * (neck / (2 * Math.PI) + oneShoulder) : t.shoulderWidth;
+  const backLength = clamp(cm(m['LONGUEUR_DOS'], t.backLength), 0.3, 0.5);
+  const napeY = t.napeRatio * height;
+  const waistY = napeY - backLength;
+  const rise = clamp(cm(m['HAUTEUR_FOURCHE'], waistY - t.crotchRatio * height), 0.12 * height, 0.22 * height);
+  const hipDrop = clamp(cm(m['HAUTEUR_BASSIN'], 0.65 * rise), 0.35 * rise, 0.85 * rise);
   return {
     bust: clamp(cm(m['TOUR_POITRINE'], t.bust), 0.5, 1.5),
     waist: clamp(cm(m['TOUR_TAILLE'], t.waist), 0.5, 1.4),
     hip: clamp(cm(m['TOUR_BASSIN'], t.hip), 0.6, 1.6),
-    neck: clamp(cm(m['TOUR_COU'], t.neck), 0.26, 0.5),
-    backLength: clamp(cm(m['LONGUEUR_DOS'], t.backLength), 0.3, 0.5),
+    neck,
+    backLength,
     armLength: clamp(cm(m['LONGUEUR_BRAS'], t.armLength), 0.42, 0.72),
     height,
-    shoulderWidth: clamp(cm(m['LARGEUR_EPAULE'], t.shoulderWidth), 0.26, 0.56),
+    shoulderWidth: clamp(shoulderWidth, 0.26, 0.56),
     thigh: clamp(cm(m['TOUR_CUISSE'], t.thigh), 0.36, 0.85),
     knee: clamp(cm(m['TOUR_GENOU'], t.knee), 0.26, 0.55),
     ankle: clamp(cm(m['TOUR_CHEVILLE'], t.ankle), 0.15, 0.32),
@@ -68,6 +87,9 @@ export const readBodyMeasurements = (
     depth: t.depth,
     headRadius: t.headRadius,
     skin: t.skin,
+    napeY,
+    rise,
+    hipDrop,
   };
 };
 
@@ -102,22 +124,21 @@ export interface BodyLandmarks {
   ankleY: number;
 }
 
-export const NAPE_Y = 1.42;
 
 /** Scale of the fixed landmark offsets for a given stature. */
 export const bodyScale = scaleOf;
 
 export const bodyLandmarks = (body: BodyMeasurements): BodyLandmarks => {
   const s = scaleOf(body);
-  const napeY = NAPE_Y * s;
+  const napeY = body.napeY;
   const waistY = napeY - body.backLength;
   return {
     napeY,
     shoulderY: napeY - 0.05 * s,
     bustY: napeY - 0.2 * s,
     waistY,
-    hipY: waistY - 0.2 * s,
-    crotchY: waistY - 0.3 * s,
+    hipY: waistY - body.hipDrop,
+    crotchY: waistY - body.rise,
     ankleY: 0.08 * s,
   };
 };

@@ -1,3 +1,5 @@
+'use client';
+
 import React from 'react';
 import { Sparkles, Check, Loader2 } from 'lucide-react';
 import { GENERATION_STAGES, useGenerationProgress } from '../hooks/useGenerationProgress';

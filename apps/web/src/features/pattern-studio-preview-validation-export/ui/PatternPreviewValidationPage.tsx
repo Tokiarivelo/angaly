@@ -216,6 +216,7 @@ export const PatternPreviewValidationPage: React.FC<PatternPreviewValidationPage
               garmentType={project?.garmentType ?? 'ROBE'}
               measurements={measurements}
               selectedPieceId={activePieceId}
+              fabric={project?.inspirationAnalysisJson?.profile?.fit}
             />
           )}
 

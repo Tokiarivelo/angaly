@@ -17,6 +17,7 @@ from __future__ import annotations
 
 import logging
 import math
+import re
 from typing import Any
 
 logger = logging.getLogger("angaly.ai_service")
@@ -107,6 +108,10 @@ DETAIL_OPTIONS: dict[str, dict[str, str]] = {
         "CEINTURE_INTEGREE": "ceinture cousue / surpiquée à la taille",
         "AUCUNE": "aucune fermeture ni ceinture visible",
     },
+    "corsage": {
+        "LISSE": "devant du corsage d'un seul tenant, sans fronces",
+        "FRONCES_SOUS_POITRINE": "devant froncé sous la poitrine sur un empiècement (bande) jusqu'à la taille",
+    },
 }
 
 CONSTRUCTION_METHODS: dict[str, str] = {
@@ -144,6 +149,17 @@ FABRIC_BEHAVIORS: dict[str, str] = {
     "STRETCH": "épouse en s'étirant (jersey, maille, élasthanne)",
 }
 
+# Look of the fabric (informative, for the 3D preview); mirrors FABRIC_PRINTS in pattern-fit.ts.
+FABRIC_PRINTS: dict[str, str] = {
+    "UNI": "une seule couleur, sans motif",
+    "POIS": "pois / points réguliers",
+    "RAYURES": "rayures",
+    "CARREAUX": "carreaux, vichy, tartan",
+    "FLEURI": "motif floral",
+    "AUTRE": "autre imprimé (géométrique, wax, animalier…)",
+}
+_HEX_COLOR = re.compile(r"^#[0-9a-fA-F]{6}$")
+
 # name -> (min, max, step); same bounds as FULLNESS_BOUNDS / LENGTH_BOUNDS in pattern-fit.ts.
 FIT_NUMBER_BOUNDS: dict[str, tuple[float, float, float]] = {
     "fullness.skirt": (1.0, 4.0, 0.25),
@@ -171,6 +187,8 @@ Ajustements (`fit`, optionnel — omets tout champ dont tu n'es pas SÛR ; mieux
   pour le détail `longueur` choisi). lengths.sleevePct (0 à 100) : 0 = sans manches, 100 = poignet.
   lengths.bodicePct (80 à 120) : buste court (<100) / long (>100) par rapport à la taille naturelle.
 - fabricBehavior : FLUIDE / STRUCTURE / RIGIDE / STRETCH (informatif, jamais de géométrie).
+- fabricPrint : UNI / POIS / RAYURES / CARREAUX / FLEURI / AUTRE ; fabricColor = couleur du fond et
+  motifColor = couleur du motif, en hexadécimal « #rrggbb » (informatif : aperçu 3D seulement).
 - certainty : pour CHAQUE champ numérique ou ease que tu donnes, une clé de même nom
   (ex. "ease", "fullness.skirt") valant HIGH ou MEDIUM. Un champ sans certitude HIGH/MEDIUM sera ignoré.
 - Ne donne jamais de valeur hors des bornes ci-dessus. Si le vêtement est porté, ne confonds pas les plis
@@ -388,6 +406,7 @@ def build_taxonomy_prompt() -> str:
         _format_vocab("presentation :", PRESENTATIONS),
         _format_vocab("fit.ease :", EASE_LEVELS),
         _format_vocab("fit.fabricBehavior :", FABRIC_BEHAVIORS),
+        _format_vocab("fit.fabricPrint :", FABRIC_PRINTS),
     ]
     for group, options in DETAIL_OPTIONS.items():
         parts.append(_format_vocab(f"details.{group} :", options))
@@ -479,8 +498,16 @@ def normalize_fit(raw: Any, garment_type: str, details: dict[str, str]) -> dict[
     behavior = _pick(raw.get("fabricBehavior"), FABRIC_BEHAVIORS)
     if behavior:
         result["fabricBehavior"] = behavior
+    fabric_print = _pick(raw.get("fabricPrint"), FABRIC_PRINTS)
+    if fabric_print:
+        result["fabricPrint"] = fabric_print
+    for key in ("fabricColor", "motifColor"):
+        color = raw.get(key)
+        if isinstance(color, str) and _HEX_COLOR.match(color.strip()):
+            result[key] = color.strip().lower()
 
-    if not kept and "fabricBehavior" not in result:
+    informative = {"fabricBehavior", "fabricPrint", "fabricColor", "motifColor"}
+    if not kept and not informative & result.keys():
         return None
     result["certainty"] = kept
     return result
@@ -596,7 +623,7 @@ def normalize_profile(raw: dict[str, Any] | None) -> dict[str, Any]:
     raw_details = raw.get("details") or {}
     details: dict[str, str] = {}
     for group, options in DETAIL_OPTIONS.items():
-        if garment_type in _NO_SLEEVES_NECK_FOR and group in {"manches", "col", "decollete", "dos"}:
+        if garment_type in _NO_SLEEVES_NECK_FOR and group in {"manches", "col", "decollete", "dos", "corsage"}:
             continue
         picked = _pick(raw_details.get(group), options) if isinstance(raw_details, dict) else None
         if picked:

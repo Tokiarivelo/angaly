@@ -183,3 +183,128 @@ indisponible. Vêtements pris en charge : robe, jupe, chemise, veste, costume (p
 - **Outil Main** (bouton « Main ») : le glisser gauche déplace le rendu au lieu de le faire tourner (clic droit / Maj inchangés).
 - Pantalon : les jambes enveloppent désormais le bassin depuis la taille (plus de bassin nu entre les jambes).
 - Limites : pose figée (A), pas de visage/yeux texturés, enfant = morph MakeHuman « child » (≈10 ans).
+
+- 2026-10-08 : jambes et cuisses lissées (contrôles de girth tous les 3 cm, lissés en hauteur, puis lissage Taubin des sommets de la cheville au-dessous de l'entrejambe) — fin de l'aspect « embossé ».
+- 2026-10-09 : plein écran du panneau 3D (bouton « Plein écran », Échap pour sortir, tous les contrôles conservés) ; lissage Taubin élargi vers le bassin (raccord fesse–cuisse) et cisaillement linéaire de la jambe (plus de creux cuisse–genou) ; proportions corrigées d'après une planche de référence anatomique : nuque à 1,45 m (`NAPE_Y`) et entrejambe à 28 cm sous la taille (était 42 % de la stature, désormais ≈ 45 %) pour des jambes plus longues et un buste moins long. Un rendu « low-poly » a été essayé puis refusé par l'utilisateur (le corps reste réaliste).
+
+### Refonte 2026-10-12 — morphologie fidèle au scan et drapé sur le corps réel
+
+- **Corps (`human-body.ts`, réécrit)** : l'ancien ajustement écrasait le scan (facteurs largeur/profondeur séparés par tranche
+  jusqu'à ×2,2, peau ramenée dans l'ellipse du vêtement, élargissement des épaules qui déformait les deltoïdes, jambes tirées
+  vers le centre) → épaules en cintre, poitrine aplatie, genoux rentrés. Désormais chaque étape est une application lisse qui
+  conserve l'anatomie : recalage vertical monotone cubique (pas de pli aux repères) ; **un facteur isotrope par hauteur** (entrejambe
+  → aisselle, lissé) qui amène le périmètre de l'enveloppe convexe au tour mesuré ; largeur d'épaules par translation rigide des
+  bras ; longueur et tours (bras/poignet) autour de l'axe propre du bras ; tours cuisse/genou/cheville autour du centre de chaque
+  jambe (écartement du scan conservé) ; cou. Tours obtenus : poitrine/taille/bassin à ±5 % (testé). Cheveux courts pour les hommes.
+- **Bug corrigé (`body-model.ts`)** : `LARGEUR_EPAULE` est **une** épaule (base du cou → pointe, 8–20 cm au catalogue) ; le 3D la
+  lisait comme la carrure totale (26–56 cm) → épaules minuscules dès que la mesure était saisie. Largeur = 2 × (rayon du cou + épaule).
+- **Drapé (`body-envelope.ts`, nouveau ; `garment-model.ts`, réécrit)** : le vêtement n'est plus une ellipse à hauteur fixe mais
+  posé sur le corps : enveloppe convexe de chaque section (torse, chaque jambe, chaque bras le long de son axe, menton et crâne
+  exclus), échantillonnée finement sur les triangles. Chaque rangée du patron garde **son** tour (devant + dos) et repose sur
+  l'enveloppe + 4 mm, en tombant depuis ce qui la soutient au-dessus (poitrine, hanches, cuisses : `HANG` 30 cm). Les longueurs
+  sont mesurées le long du corps (le devant plus long passe sur la poitrine), les coutures côté sont à l'abscisse curviligne du
+  partage devant/dos, les épaules du corsage reposent sur l'arête d'épaule, les manches suivent l'axe réel du bras, le pantalon
+  a une vraie couture d'entrejambe, et les godets (plis) apparaissent seulement là où le patron a plus d'ampleur que le corps.
+  Le viewer ajuste le corps une fois puis drape dessus (`drapeGarment` + `envelopeFromMesh`, ≈ 0,25 s) ; avant le chargement du
+  GLB, le même drapé est fait sur le mannequin procédural (`proceduralEnvelope`).
+- Vérifié par rendus hors-ligne (face/profil/dos) : femme standard, forte, homme, enfant ; robe évasée manches longues, robe
+  sirène sans manches, chemise manches courtes, pantalon. Limites : petites zones de peau possibles à la jonction emmanchure /
+  tête de manche ; pas de simulation physique (pas de plis de compression aux coudes) ; pose A figée.
+
+### 2026-10-12 (suite) — Calage sur références, articulations lisses, visage, cheveux, enfants
+
+- **Calage sur références** (vues de face homme/femme superposées au rendu, silhouettes mesurées en fractions de la stature) :
+  pose de référence `POSE` (mains à 0,18/0,32 H, genoux à 0,041/0,058 H, femme/homme ; enfants = valeurs femme), bras et
+  jambes tournés autour de l'épaule/la hanche (jamais de genoux ni de pieds qui se croisent), `JOINT_INSET` 2,5 cm (épaules
+  4 cm trop larges avant). Silhouette femme et homme ≈ références à ±0,01 H.
+- **Articulations** : la jonction fesse–cuisse et les cuisses « bosselées » venaient du recalage vertical sur 7 repères dont 4
+  estimés (taille, bassin, buste, nuque du scan) : recalage désormais par sol/entrejambe/sommet seulement. Hauteur d'entrejambe
+  par morphologie (`crotchRatio` 0,453 femme/enfant, 0,47 homme) ou `HAUTEUR_FOURCHE`/`HAUTEUR_BASSIN` si mesurées ; nuque
+  par morphologie (`napeRatio` 0,853 adulte, 0,825 enfant). Sous l'entrejambe le facteur de bassin devient un décalage de jambe
+  + un tour autour de l'axe de la jambe ; transition de cuisse plus longue ; lissage Taubin hanches→chevilles ; **subdivision
+  de Loop** (×4 triangles, `subdivide.ts`) dans le viewer.
+- **Visage** (`head-features.ts`, `ui/headTextures.ts`) : repères trouvés sur le maillage (yeux = membranes profondes,
+  pointe du nez, bouche par anthropométrie), **globes oculaires** (iris/pupille/sclère générés, cornée vernie, ombre de
+  paupière), couleurs par sommet (lèvres, joues, sourcils, ligne de cils), peau physique + environnement studio généré
+  (`RoomEnvironment`, aucun téléchargement).
+- **Cheveux** : carré à raie au milieu (femmes, filles) ou coupe courte (hommes, garçons) générés au-dessus du crâne
+  (champ radial du crâne lissé), ligne d'implantation explicite, mèches qui tombent et rentrent aux pointes, texture de
+  mèches et pointes irrégulières (alpha), reflet anisotrope.
+- **Enfants** : modèle `ENFANT_GARCON` ajouté (`ENFANT_10_ANS` = fille), dimorphisme réduit, tête +8 % (cou raccourci,
+  stature conservée), pose enfant. Préréglage caméra interne `face` (gros plan, suit la stature).
+- Vérification : captures WebGL réelles du composant `Garment3DViewer` (Chrome headless + Playwright, bundle esbuild hors
+  dépôt), rendus de superposition hors ligne. Tests : `bodyEnvelope`, `subdivide`, `humanBody` (pose, visage, cheveux,
+  enfant) — 110 tests du module.
+- Limites : pas de cheveux par mèches individuelles ni de simulation ; visage peu expressif (le scan a les lèvres fines) ;
+  le garçon de référence est plus jeune (≈ 5 ans) que le modèle 10 ans.
+
+
+### 2026-10-12 (fin) — Relief du visage, cheveux sculptés, modèle costaud
+
+- **Yeux** : l'ouverture palpébrale est lue sur la surface (triangles rastérisés au mm, `eyeOpening`) ;
+  le globe se place juste derrière les paupières du scan (il dépassait sous la paupière inférieure).
+- **Visage** : `sculptFace` (lèvres plus pleines, fente palpébrale un peu plus ouverte) ; barbe de trois
+  jours pour les hommes adultes (`faceColors(..., beard)`).
+- **Relief** : éclairage studio (clé latérale haute, appoint froid faible) et ombrage des creux cuit dans
+  les couleurs de sommets (`surface-shading.ts` : `cavityOcclusion`, deux échelles).
+- **Cheveux** (`buildHair`, styles `long` | `short`) : couche de cuir chevelu dont le bord est coupé par
+  l'alpha des sommets (alpha test ½ → ligne d'implantation lisse, arrondie pour femmes/enfants, plus
+  carrée et légèrement dégarnie aux tempes pour les hommes) ; cheveux longs = mèches sculptées depuis une
+  raie au milieu, en rideau sur les coins du front, ondulées, qui reposent sur les épaules (coque radiale
+  du corps) ; coupe courte = masse rainurée avec volume sur le dessus. Échelle = taille de la tête (une
+  tête d'enfant est presque adulte).
+- **Gabarit `HOMME_COSTAUD`** (muscle 1) et `muscle-definition.ts` : pectoraux, ligne blanche, trois
+  intersections tendineuses, bords latéraux des abdominaux, V iliaque — appliqués après subdivision aux
+  carrures athlétique/costaud.
+- Tests : `surfaceShading.test.ts`, `muscleDefinition.test.ts`, `humanBody.test.ts` (ouverture des yeux,
+  sculpture, barbe, cheveux `long`/`short` avec alpha, morph costaud).
+
+
+### 2026-10-12 (référence) — Robe longue à pois : photo → patron → ajustement 3D
+
+- **Analyse de la photo** (fiche `apps/ai-service/ml/data/references/robe-pois-maxi.json`) : robe `ROBE` / `EVASEE`, encolure
+  `ROND`, manches `COURTES`, `MAXI` ; `fit` : `CONFORT`, ampleur jupe 1,25 et manche 1,25, longueur jupe 94 %, manche 40 %.
+  Cibles mesurées sur la photo : ourlet ≈ 15 cm au-dessus du sol, ourlet ≈ 2,6 × la taille vue de face, manche 3–5 cm
+  sous l'aisselle. Obtenu (FEMME_STANDARD) : ourlet 16,3 cm, rapport 2,62, aisance poitrine 3,4 / taille 2,4 cm, aucune
+  peau à travers le tissu, couverture des épaules et des manches ≥ 98,9 % (lancer de rayons depuis la peau).
+- **Moteur** : encolures tracées en courbe (quart d'ellipse, `curveNeckline`, 8 segments) au lieu d'un segment droit ;
+  milieu dos d'encolure à 2 cm ; `ROND` = 75 × 75 mm (ras du cou à la base du cou ; était 85 × 40, trop large et plat).
+- **3D** (`garment-model.ts`, `body-envelope.ts`) :
+  - manche : la couture de dessous de bras part de l'aisselle ; la tête de manche suit l'emmanchure (haute sur le
+    deltoïde, basse sous le bras) et entoure tout le deltoïde (`LimbFrame.cap`) — fini la manche au coude pour « courtes »
+    et le trou devant l'épaule ;
+  - couture d'épaule : chaque point de la couture (devant et dos, point d'encolure compris) se pose sur la crête de
+    l'épaule, le tissu voisin suit (interpolé le long de la couture) ; le corsage est repoussé hors du corps vers l'avant
+    / l'arrière seulement (plus de glissement de l'encolure vers les épaules) et reste au-dessus de la peau sur la pente
+    du trapèze (`BodyEnvelope.top`, carte de hauteur) ;
+  - le devant et le dos de l'épaule et les plis d'aisselle (peau pondérée « bras ») comptent dans le torse : le corsage
+    les couvre ;
+  - **blocs de jupe** (moteur S4) enfin visibles en 3D : jupe froncée / plissée (front + dos, fronces resserrées à la
+    taille puis ouvertes en plis) et jupe cercle (circonférence exacte à chaque profondeur). Avant : pièces ignorées.
+- Tests : `referenceDressFit.test.ts` (patron figé `__tests__/fixtures/robe-pois-maxi.pieces.json`, regénéré depuis les
+  paramètres de la fiche), `garment3d.test.ts` (blocs de jupe), `robe.rule.test.ts` (encolure courbe, dos, robe de
+  référence), `tests/test_reference_profiles.py` (étiquette valide). Aides de test : `helpers/humanBase.ts`,
+  `helpers/rayCast.ts`.
+- Limites : fronces sous la poitrine non tracées (pas d'empiècement dans le moteur) ; motif à pois non rendu (couleurs par
+  zone) ; petite pointe au point d'encolure-épaule ; la robe froncée tombe en colonne (pas de simulation).
+
+
+### 2026-10-12 (référence, suite) — Fronces sous poitrine, motif du tissu, point d'encolure, projet réel
+
+- **Fronces sous la poitrine** : nouveau groupe de détails `corsage` (`LISSE` | `FRONCES_SOUS_POITRINE`) dans
+  `@angaly/types`, le wizard (`details.const.ts`, rendu générique) et l'ai-service. Moteur (`robe.rule.ts`,
+  `splitUnderbust`) : le devant est coupé sous la poitrine ; la pièce `Empiècement Devant` va de la couture à la taille
+  (60–110 mm) ; le bas du devant fait 1,3 × la couture (creux de 4 cm max au-dessus de la poitrine + élargissement au
+  côté), milieu devant toujours au pli. 3D (`stackMidriff`) : l'empiècement s'empile sous le devant, la largeur en trop
+  au-dessus de la couture devient des fronces (plis ~2,5 cm), la couture est tracée.
+- **Motif du tissu** : `fit.fabricPrint` (`UNI`/`POIS`/`RAYURES`/`CARREAUX`/`FLEURI`/`AUTRE`), `fit.fabricColor`,
+  `fit.motifColor` (`#rrggbb`) — lus par l'analyse photo (prompt + `normalize_fit`), informatifs (jamais de géométrie).
+  Le visualiseur reçoit `fabric` (page → `Garment3DPanel` → `Garment3DViewer`) et habille les panneaux d'une texture
+  (`ui/fabricTextures.ts`, motif répété tous les 5 cm) posée sur des coordonnées de tissu à plat (`PanelMeshData.uvs`).
+  Sans motif ni couleur : couleurs techniques par zone, comme avant. Ligne « Motif » dans le récapitulatif du wizard.
+- **Point d'encolure** : près du cou, la couture d'épaule suit la pente propre de l'épaule (mesurée 3,5–6 cm plus loin) au
+  lieu de la crête qui remonte le cou ; la carte de hauteur des épaules ne s'applique plus près du cou.
+- **Décolleté `SAGE`** (« ras du cou ») = 75 × 75 mm, comme `ROND` (il plaçait le milieu devant au niveau de l'épaule).
+- **Projet `dab617b9-…`** (ex-pantalon) : photo téléversée sur MinIO, analyse de référence, paramètres et version 2
+  générée par les cas d'usage de l'API (script hors dépôt `apply-reference.cjs` dans le scratchpad) ; la version 1
+  (pantalon) reste dans l'historique.

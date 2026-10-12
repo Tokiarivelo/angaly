@@ -63,7 +63,8 @@ export interface Neckline {
 const DEFAULT_NECKLINE: Neckline = { widthMm: 80, depthMm: 0 };
 
 const DECOLLETE: Record<string, Neckline> = {
-  SAGE: { widthMm: 70, depthMm: 0 },
+  // « Ras du cou » : the crew neck at the base of the neck (same line as the round collarless neck).
+  SAGE: { widthMm: 75, depthMm: 75 },
   MOYEN: { widthMm: 90, depthMm: 80 },
   PLONGEANT: { widthMm: 100, depthMm: 220 },
   COEUR: { widthMm: 110, depthMm: 140 },
@@ -71,7 +72,8 @@ const DECOLLETE: Record<string, Neckline> = {
 };
 
 const COL: Record<string, Neckline> = {
-  ROND: { widthMm: 85, depthMm: 40 },
+  // Crew neck at the base of the neck: about a sixth of the neck girth + 1.5 cm wide and deep.
+  ROND: { widthMm: 75, depthMm: 75 },
   EN_V: { widthMm: 90, depthMm: 170 },
   BATEAU: { widthMm: 140, depthMm: 20 },
   OFFICIER: { widthMm: 60, depthMm: 0 },
