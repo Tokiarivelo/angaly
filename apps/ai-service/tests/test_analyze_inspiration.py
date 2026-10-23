@@ -35,7 +35,7 @@ def test_analyze_inspiration_sends_one_image_block_and_returns_features(mock_ant
     assert body["modelVersion"] == "claude-haiku-4-5-20251001"
 
     kwargs = create.call_args.kwargs
-    assert kwargs["max_tokens"] == 1024
+    assert kwargs["max_tokens"] == 4096
     blocks = kwargs["messages"][0]["content"]
     assert [b["type"] for b in blocks] == ["image", "text"]
     assert blocks[0]["source"]["media_type"] == "image/jpeg"
@@ -120,3 +120,20 @@ def test_suggest_parameters_prompt_without_history(mock_anthropic) -> None:
     )
     assert "Historique réel de l'atelier" in create.call_args.kwargs["messages"][0]["content"]
     assert "Aucune" in create.call_args.kwargs["messages"][0]["content"]
+
+
+@patch("app.services.providers.anthropic_provider.anthropic.Anthropic")
+def test_analyze_inspiration_skips_a_thinking_block_before_the_answer(mock_anthropic) -> None:
+    thinking = MagicMock(type="thinking", spec=["type", "thinking"])
+    answer = MagicMock(
+        type="text",
+        text='{"features": {"manches": "Courtes"}, "suggestedCutType": null, "confidence": 0.9, "modelVersion": "x"}',
+    )
+    mock_anthropic.return_value.messages.create.return_value = MagicMock(content=[thinking, answer])
+
+    body = client.post(
+        "/v1/pattern/analyze-inspiration",
+        json={"imageBase64": PIXEL, "provider": PROVIDER},
+    ).json()
+
+    assert body["features"] == {"manches": "Courtes"}

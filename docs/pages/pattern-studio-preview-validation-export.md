@@ -308,3 +308,227 @@ indisponible. Vêtements pris en charge : robe, jupe, chemise, veste, costume (p
 - **Projet `dab617b9-…`** (ex-pantalon) : photo téléversée sur MinIO, analyse de référence, paramètres et version 2
   générée par les cas d'usage de l'API (script hors dépôt `apply-reference.cjs` dans le scratchpad) ; la version 1
   (pantalon) reste dans l'historique.
+
+
+### 2026-10-12 (référence, fin) — Taille basse, jupe plissée, mannequin articulé
+
+- **Lecture corrigée de la photo** : corsage froncé sous la poitrine + **long empiècement ajusté jusqu'aux hanches** (taille
+  basse) + **jupe à plis creux** cousus à plat puis libres ; manches courtes bouffantes. Fiche de référence mise à jour
+  (`taille: BASSE`, `PLEATED_SKIRT` 20 plis creux de 55 mm, ampleur de manche 1,5, pose `MIROIR`).
+- **Moteur** : groupe de détails `taille` (`NATURELLE` | `BASSE`). `BASSE` : corsages prolongés de 110 mm sous la taille en
+  s'élargissant vers la hanche, jupe (ou bloc de jupe) raccourcie d'autant, tour de couture = bas de la basque.
+  `skirtOutline(…, hipDepthMm)`.
+- **3D** : le corsage s'ancre à sa ligne de taille (rang le plus étroit, `waistRowOf`) et descend sur les hanches ; la
+  jupe part de la couture basse (`ZoneGroup.topY`) ; une jupe froncée/plissée est cousue sur la longueur du bas du
+  corsage (`seamLength`) ; les plis s'ouvrent progressivement jusqu'à l'ourlet (ligne A) et le nombre de plis vient des
+  repères du patron.
+- **Mannequin articulé** (`utils/garment3d/pose.ts`) : épaule (écarter, lever devant, rotation), coude, hanche (écarter,
+  lever devant), genou, par membre ; bornes anatomiques ; préréglages « Debout » et « Selfie au miroir (comme la photo) ».
+  Le corps posé est habillé : enveloppe de bras propre à chaque côté (`BodyEnvelope.armRight`), axe du bras pris sur le
+  bras supérieur (coude plié), avant-bras exclu de l'épaule et du torse, tête de manche moins haute bras levé. Panneau 3D :
+  menu « Pose » et bouton « Articulations » (curseurs par articulation, « Remettre debout ») — écran Stitch « Validation
+  de Patron (Studio) » consulté : il ne prévoit pas de commandes 3D, style repris de la barre existante.
+- Projet `dab617b9-…` : version 3 générée avec ces paramètres.
+- Tests : `pose.test.ts`, `referenceDressFit.test.ts` (drapé sur la pose de la photo), `garment3d.test.ts` (basque),
+  `Garment3DPanel.test.tsx` (pose), `robe.rule.test.ts` (taille basse, robe de référence).
+- Limites : le léger croisé du devant froncé n'est pas tracé ; la main gauche ne tient pas la jupe (pas de contact) ; pas
+  de simulation de tissu (la jupe ne suit pas une jambe pliée au-delà de l'enveloppe).
+
+
+### 2026-10-21 — Patron superposé au modèle d'inspiration, pièce en surbrillance, 3D calée sur la photo
+
+> Pas de maquette Stitch (l'écran « Validation de Patron (Studio) », vérifié via MCP Stitch le 2026-10-21, n'a pas de
+> panneau modèle) : boutons segmentés et palette de l'écran (`#041329` / `#0C2650` / `#C5B190`, surbrillance `#FFC45C`).
+
+- **Panneau « Modèle d'inspiration »** (Comparer → Modèle) : le vêtement drapé vu de face (`utils/garment3d/photo-frame.ts`,
+  `projectGarment`) est posé dans le cadre du vêtement sur la photo. Cadre lu automatiquement (pixels de la couleur
+  `fit.fabricColor`, sinon ce qui diffère du fond, plus grande tache), ou **Caler** : glisser le cadre / ses coins ;
+  gardé par projet et par photo dans ce navigateur (`localStorage`), bouton baguette = recaler automatiquement.
+  - **Pièces** : toutes les pièces en couleurs (curseur d'opacité) ; **en rouge** les parties du modèle qu'aucune pièce ne
+    couvre, avec le taux de couverture (« Modèle couvert par le patron : 81 % ») — ce qui manque au patron.
+  - La **pièce sélectionnée** (liste, 2D, 3D) s'allume sur la photo ; une pièce de dos est hachurée (« au dos ») ; une
+    pièce intérieure (ceinture intérieure, coulisses) est signalée sans zone. **Clic sur la photo** = choisir la pièce.
+- **3D + Superposer** : la vue passe de face et la photo est **calée sur la 3D** (même hauteur, centrée, découpée au
+  canevas) d'après le cadre ci-dessus et le cadre du vêtement projeté par la caméra (`FrameReporter` du viewer,
+  `alignPhoto` de `ComparisonLayout`) ; elle suit rotation et zoom.
+- Le drapé (~100 ms) est partagé entre la 3D et la photo et gardé pour les 4 dernières entrées
+  (`utils/garment3d/model-cache.ts`) : revenir sur l'onglet 3D ne redrape plus.
+- Tests : `photoFrame`, `InspirationPanel`, `useInspirationOverlay` (+ cache), `PreviewModeTabs`.
+
+### 2026-10-13 — Modèle d'inspiration, comparaison 3D et atelier de retouche
+
+> Pas de maquette Stitch pour ces commandes (l'écran « Validation de Patron (Studio) » ne les prévoit pas) : le style
+> reprend la barre d'onglets existante (palette `#041329` / `#0C2650` / `#C5B190`). À valider visuellement avec `agy`.
+
+- **Comparer** (à droite des onglets) : vignette du **modèle d'inspiration** (`project.inspirationMediaUrl`) + sélecteur
+  « Comparer : Aucun | Modèle | 3D ». Le modèle ou la 3D s'affiche à côté de la vue courante (2 colonnes ≥ `lg`, empilé en
+  dessous). 3D + Modèle : case **Superposer** + curseur d'opacité (la photo recouvre la 3D). Comparer la 3D avec elle-même
+  est désactivé ; sans photo, « Modèle » est grisé. Panneau modèle : zoom (molette / boutons) et déplacement au glisser.
+- **Onglet « Atelier de retouche »** (`ui/studio/`) — planche de dessin SVG en millimètres :
+  - Outils : Sélection (V : point ou pièce entière), Main (H / Espace / molette = zoom, pincement tactile), Ajouter un point
+    (A), Supprimer un point (X), Dessiner une pièce (P : clics, Entrée / clic sur le 1er point = fermer, Échap, Retour
+    arrière), Mètre ruban (M), Cran (N), Droit-fil (G : tracer la flèche). Maj = angles de 45° (15° pour le droit-fil),
+    Alt = sans aimantation, flèches = 1 mm (Maj : 10 mm), Suppr = supprime le point, Ctrl+Z / Ctrl+Maj+Z / Ctrl+Y,
+    Ctrl+S = enregistrer, F = ajuster à l'écran.
+  - Aimantation (libre / 1 mm / 5 mm / 1 cm) sur la grille **et** sur les points existants ; grille adaptative ; longueurs
+    des bords ; échelle ; coordonnées du curseur.
+  - Inspecteur : nom, quantité, marge de couture, largeur / hauteur exactes, X / Y du point sélectionné, longueur de chaque
+    bord (modifiable, le point d'arrivée glisse le long du bord), miroir, pivoter 90°, ±5 %, lisser (courbe), simplifier,
+    dupliquer, supprimer ; alerte si le contour se croise.
+  - Onglet **Mesures du corps** : mesures du catalogue `@angaly/types` (`measurementFieldsFor`) → « Régénérer » relance le
+    moteur déterministe (`POST /api/pattern-projects/:id/generate` avec `measurements`) ; confirmation si des retouches
+    manuelles ne sont pas enregistrées.
+  - **Enregistrer une version** → `POST /api/pattern-versions/:id/edits` (nouvelle version, l'ancienne reste restaurable).
+- **Brouillon partagé** (`usePatternDraft`, historique 100 pas, une action = un pas) : les retouches sont visibles tout de
+  suite dans 2D / Ensemble / 3D avant d'être enregistrées (3D en `useDeferredValue`).
+- **Fluidité** : pendant un glissement, la pièce vit dans un état local du canevas, mis à jour au plus une fois par image
+  (`requestAnimationFrame`), et **un seul pas d'annulation** est validé au relâchement ; le curseur est lissé de même ;
+  champs numériques validés au blur / Entrée ; aucune dépendance ajoutée (événements pointeur natifs).
+- Fichiers : `utils/pattern-editing.ts`, `utils/studio-viewport.ts`, `hooks/{usePatternDraft,useSavePatternEdits,
+  useRegeneratePattern}.ts`, `ui/{InspirationPanel,ComparisonLayout,PreviewModeTabs}.tsx`, `ui/studio/*`.
+- Tests : `patternEditing`, `studioViewport`, `usePatternDraft`, `useSavePatternEdits`, `StudioCanvas`,
+  `PatternStudioEditor`, `PreviewModeTabs` (+ layout / panneau modèle), `PatternPreviewValidationPage` (comparaison) ;
+  API : `save-pattern-edits.use-case.spec.ts`.
+- Limites : contours en polygones (une courbe = plusieurs points, « Lisser » aide) ; pas d'e2e Playwright (la page est
+  derrière l'authentification serveur) ; une pièce dessinée à la main n'a pas de repère de pli.
+
+### 2026-10-14 — Tête de la femme : visage stylisé et chignon (référence buste argile)
+
+- Référence fournie par l'atelier : buste en argile, face + profil (visage stylisé, chignon haut, mèches qui encadrent
+  le visage). Calage par superposition face/profil (yeux, nez, bouche, menton, ligne du front, chignon) sur des rendus
+  argile hors ligne de la géométrie réelle.
+- **Visage** (`stylizeFace`, `head-features.ts`, modèles `FEMME_*` uniquement, après `sculptFace`) : bas du visage
+  raccourci (en écarts inter-pupillaires : yeux → bouche ≈ 0,79, yeux → menton ≈ 1,21 au lieu de ≈ 1,03 / 1,78),
+  mâchoire en V et petit menton avancé, nez et bouche affinés, yeux en amande plus larges au coin externe relevé.
+  Crâne, oreilles et cou ne bougent pas (le cou mesuré porte toujours les cols).
+- **Coiffure `bun`** (femmes ; les filles gardent `long`) : cheveux tirés en arrière = calotte rainurée vers le chignon,
+  oreilles dégagées, chignon haut à l'arrière (spires autour d'un noyau, quelques boucles lâches), trois fines mèches de
+  chaque côté depuis la raie, par-dessus les tempes, tombant devant les oreilles jusqu'à la mâchoire. Les cheveux sont
+  construits sur la tête sculptée (`sculpted.positions`).
+- Tests : `humanBody.test.ts` (stylisation : proportions, mâchoire −15 %, crâne/cou immobiles ; chignon : mèches jusqu'à
+  la mâchoire, chignon au-dessus de la tête, rien devant les yeux/nez/bouche).
+- Limites : cou plus épais et oreilles un peu plus décollées que la référence (volontaire : mesures réelles) ; pas de
+  boucle d'oreille ; le visage stylisé n'est pas appliqué aux hommes ni aux enfants.
+
+### 2026-10-14 — Modeler le patron directement sur le mannequin 3D
+
+- **Usage** : onglet « 3D sur mannequin » → « Modeler en 3D ». Le clic gauche **sur le vêtement** modèle (anneau du
+  pinceau sous le curseur) ; ailleurs il fait toujours tourner la vue. Outils : **Modeler** (G, tirer le contour près
+  d'une couture / d'un ourlet), **Ampleur** (W, élargir / resserrer le côté saisi sur une bande de hauteurs ; tirer le
+  tissu hors du corps élargit aussi), **Longueur** (L, tout ce qui est au-delà du point suit), **Lisser** (S). Rayon
+  1–40 cm (`[` `]`), atténuation (douce, linéaire, pointue, uniforme), « Pièces voisines » (la couture de côté du dos
+  suit celle du devant, les ourlets ensemble). Ctrl+Z / Ctrl+Y, abandonner, « Enregistrer une version ».
+- **2D automatique** : les gestes écrivent dans le même brouillon que l'Atelier de retouche (`usePatternDraft`) : la
+  pièce 2D, l'ensemble et le Studio montrent la retouche immédiatement ; un geste = une annulation. La pièce saisie est
+  sélectionnée. Un geste qui ferait se croiser un contour est refusé (la pièce garde sa dernière forme valide).
+- **Principe** : chaque sommet drapé connaît le point du contour de sa pièce (`PanelMeshData.edit`, `garment-model.ts`).
+  Le déplacement 3D (plan face à la caméra) est ramené à plat par le pseudo-inverse du jacobien du drapé sur le
+  triangle saisi (`utils/garment3d/sculpt.ts`), puis appliqué au **contour** de la pièce (densifié sous le pinceau),
+  et la pièce est drapée de nouveau. Le moteur `packages/pattern-engine` n'est pas modifié : il s'agit de retouches
+  manuelles, comme dans le Studio 2D.
+- **Pièces modelables** : devants / dos (moitiés au pli), empiècement empilé, manches, jambes de pantalon, jupes froncées
+  ou plissées (blocs), enveloppe générique. Non modelables en 3D : jupe en cercle, cols, plastron, cordelière (Studio 2D).
+- **Performance** : par retouche ~775 ms → ~75–135 ms de drapé (anneaux de manche résolus une fois par rangée, manches
+  en cache par pièce, drapé procédural seulement à la demande, corps humain et enveloppe conservés tant que les mesures
+  ne changent pas) ; au plus une mise à jour par image pendant le geste, la 3D reste différée (`useDeferredValue`).
+- **Fichiers** : `utils/garment3d/sculpt.ts`, `hooks/usePatternSculpt.ts`, `hooks/useSaveDraft.ts` (aussi utilisé par
+  le Studio), `ui/SculptBrush.tsx`, `ui/SculptToolbar.tsx`, `Garment3DPanel` (prop `editing`), `Garment3DViewer` (prop `sculpt`).
+- **Maquette** : aucun écran Stitch pour l'édition 3D (écran `ade57b6cba4241ae9464fd96b7e46d89` vérifié) — barre dans le
+  style des contrôles 3D existants, sélecteur segmenté repris de « Vue technique / Vue simplifiée ».
+- Tests : `sculpt.test.ts`, `usePatternSculpt.test.ts`, `useSaveDraft.test.ts`, `SculptToolbar.test.tsx`,
+  `Garment3DPanel.test.tsx` (modelage). Vérifié dans Chrome (projet `6726c934-…`, compte admin) : allongement de la jupe
+  par « Longueur », anneau visible sur tissu clair.
+- Limites : le pinceau n'agit que sur le contour (le drapé est construit à partir des largeurs des rangées) — saisir le
+  milieu d'un panneau avec « Modeler » ne fait rien si aucun bord n'est dans le rayon (utiliser Ampleur / Longueur) ;
+  les sommets ajoutés par les gestes s'accumulent (outil « Simplifier » du Studio).
+
+### 2026-10-14 — Mode Édition 3D (points du patron un à un, façon Blender)
+
+- **Modes** (barre sous la 3D, comme Blender) : **Objet** (regarder), **Sculpture** (pinceau, section précédente),
+  **Édition** (Tab). En Édition, chaque sommet du contour de chaque pièce est affiché sur le vêtement drapé (pastille
+  blanche, orange si sélectionné ; une pièce au pli ou une manche montre ses points sur les deux côtés).
+- **Sélection** : clic, Maj + clic (ajouter / retirer), glisser = rectangle, A (tout / rien), Alt+A (rien), Ctrl+L ou
+  « Pièce entière », Rayons X (Alt+Z) pour atteindre les points cachés. Navigation : Alt + glisser ou clic molette
+  (tourner), clic droit (déplacer), molette (zoom).
+- **Transformations modales** : G (déplacer, dans le plan face à la caméra), S (échelle autour de la médiane, X / Y sur
+  le patron), R (rotation vue à l'écran) ; pendant la transformation : X / Y / Z (axe, de nouveau = libre), chiffres
+  (valeur exacte : cm, facteur, degrés ; `-` change le signe), clic ou Entrée (valider), Échap ou clic droit (annuler,
+  sans pas d'annulation). **Édition proportionnelle** (O) : les points voisins de la même pièce suivent, rayon à la
+  molette pendant la transformation, atténuation au choix.
+- **Topologie** : X / Suppr (supprimer, ≥ 3 points par pièce), « Subdiviser » (milieu des arêtes dont les deux bouts
+  sont sélectionnés), Ctrl + clic sur une couture (insérer un point). Panneau « Transformation » : médiane X / Y (mm,
+  coordonnées du patron) éditable.
+- **2D** : chaque opération écrit dans le brouillon partagé (une annulation par opération) — Studio, pièce 2D et
+  ensemble suivent ; « Enregistrer une version » comme en Sculpture.
+- **Principe** : `utils/garment3d/mesh-edit.ts` place chaque point du contour sur le maillage drapé (barycentrique dans
+  les triangles de la pièce, grille spatiale ; ~27 ms pour une robe) et lit un déplacement 3D sur le patron par le
+  jacobien local du drapé (`sculpt.ts`). Seuls les points du **patron** sont éditables : l'intérieur d'un panneau drapé
+  est calculé à partir des largeurs du patron et n'a pas de point à plat (même limite qu'un logiciel de CAO couture).
+- **Fichiers** : `utils/garment3d/mesh-edit.ts`, `hooks/useMeshEdit.ts`, `ui/MeshEditLayer.tsx` (points, clic,
+  rectangle, transformations à la souris), `ui/MeshEditToolbar.tsx`, `SculptToolbar` (sélecteur de mode),
+  `usePatternDraft` (action `cancel`). Tests : `meshEdit.test.ts`, `useMeshEdit.test.ts`, `Garment3DPanel.test.tsx`,
+  `SculptToolbar.test.tsx`. Vérifié dans Chrome (projet `6726c934-…`) : rectangle → G → Y → clic, ourlet remonté.
+
+## 2026-10-14 — Rendu réaliste (tissu « photo »)
+
+Quand le profil porte `fit.fabricFinish` (VELOURS / SATIN), la vue 3D passe en rendu photo : fond studio gris dégradé,
+lumière rasante, pose « Présentation » par défaut, coutures masquées (réaffichées en modelage, en édition et sur la pièce
+sélectionnée). Velours = `meshPhysicalMaterial` avec reflet (sheen) de la teinte du tissu ; occlusion ambiante par sommet
+dans les creux des godets et des plis du ballon. Motifs procéduraux : `BROCART` (rinceaux, fleurs rouille), `ARABESQUE`
+(volutes) ; `contrastPrint` habille le plastron, `accentPrint` le ballon des manches et les bordures du plastron.
+Pièces cousues côte à côte (jupe en lés, manche en deux pièces) drapées en un seul panneau, coutures dessinées, chaque point
+reste éditable sur sa pièce. Col officier construit sur la section réelle du cou ; chignon couvrant tempes et oreilles.
+
+### 2026-10-15 — Retour, manche au poignet, col sur l'encolure
+
+- **Flèche de retour** (en-tête « Projet ANG-PAT-… ») : mène à `/mes-projets-patron` (`ROUTES.mesProjetsPatron`), plus au
+  studio. Écran Stitch vérifié (l'en-tête n'y a pas de flèche : changement de destination seulement). Test
+  `ProjectStatusHeader.test.tsx`.
+- **Manche qui ne suivait pas la main** (pose « Debout, bras le long du corps », et aussi « Présentation ») : l'avant-bras
+  quitte l'axe du haut du bras (coude fléchi même au repos, 9 cm vers l'avant au poignet) ; la manche était drapée
+  autour de cet axe droit et mesurée le long de lui. `LimbFrame.centre` (ligne centrale de l'avant-bras, prolongée
+  au-delà du poignet) et `LimbFrame.atLength` (longueurs le long de cette ligne) ; la manche s'empile avant le poignet
+  de la hauteur du poignet de robe (`endBefore`). Le poignet de robe est centré sur le poignet réel (< 3 cm).
+- **Peau à l'épaule près de la nuque** : le pied du col officier ne rejoignait l'encolure du corsage qu'au dos ; il la
+  rejoint tout autour (plastron compris). Peau visible sous 9 cm de la nuque : 55 → 2 points sur 381.
+- **Ceinture** : le rayon de la ceinture ignorait les manches mais pas les poignets ; mains à la taille (bras écartés),
+  elle s'étirait en barre jusqu'aux poignets.
+
+### 2026-10-15 (suite) — Corsages « matelassés »
+
+Les corsages ajustés montraient des « abdominaux » (sillon central, bandes sous la poitrine et sur le ventre). Ce n'était
+pas la géométrie mais l'ombrage des plis (`ao` de `drapeHalfPanel`) : normalisé par rang, il était le plus sombre là
+où les plis s'annulent (centre devant, coutures de côté) et basculait des rangs entiers à 4 mm de pli ; et le corsage
+recevait des godets de jupe dès 6 % d'excès. Désormais l'ombre suit la profondeur réelle du creux sous les crêtes
+voisines (`FOLD_AO_DEPTH` 3 cm), et un corsage n'a pas de godets (seulement ses fronces). Test `garment3dShading`.
+
+### 2026-10-15 (fin) — Mains, poignets, motifs
+
+- **Main posée sur la jupe** (pose Présentation) : `restHandOnSkirt` remplace `gripSkirt` — le tissu qui passerait
+  par-dessus la main est repoussé sous la paume ; la jupe n'est plus tirée vers la main (« robe attirée par la main »).
+- **Poignet de robe** : l'empilement d'une manche plus longue que le bras est plafonné (`STACK_MAX` 8 mm) et la
+  direction du poignet prise sur ~12 rangs (`CUFF_DIR_ROWS`) : le poignet s'arrête au poignet, le pouce ne le traverse
+  plus (pose Debout, bras le long du corps).
+- **Taille du motif** : `GarmentFit.motifSizeCm` (lu sur la photo, 0,5–60 cm) règle la répétition de l'imprimé
+  (`printTileM`) ; ex. grands lys brodés 14 cm (met-009), pois 2,5 cm (robe-portee-026).
+
+
+### 2026-10-16 — « Rendu réaliste » (simulation Blender, phase 3 de `docs/features/realistic-render-blender.md`)
+
+- **Maquette** : l'écran Stitch « Validation de Patron (Studio) » (`ade57b6cba4241ae9464fd96b7e46d89`, vérifié par MCP
+  Stitch le 2026-10-16) n'a ni visualiseur 3D ni bouton de rendu réaliste : mêmes boutons que le reste du panneau 3D
+  (fond `#0C2650`, bord or, état actif or plein).
+- **Sous les commandes du panneau 3D** (`RealisticRenderSection`, affichée quand une version existe :
+  `editing.versionId`) : bouton « Rendu réaliste » (désactivé pendant la simulation), état (« En file d'attente »,
+  « Simulation du tissu en cours » avec pastille, « Rendu réaliste prêt (déjà calculé) », « Le rendu a échoué : … »),
+  erreur du quota (429) ; une fois prêt, « Voir le rendu réaliste » / « Revenir à l'aperçu » et « Relancer ».
+- **Données** : `useRealisticRender(versionId, pose)` (react-query) — dernier rendu de la pose au chargement, `POST`
+  puis `GET …/:renderId` toutes les 5 s tant que `QUEUED`/`RUNNING` (`api/realistic-render.api.ts`). La pose suit le
+  préréglage du panneau (`Personnalisée` → simulée en Présentation, c'est dit sous le bouton).
+- **Visualiseur** (`RealisticRenderViewer`, Canvas à part : `Garment3DViewer` n'est pas modifié) : `.glb` Draco
+  (`GLTFLoader` + `DRACOLoader`, décodeur servi depuis `public/draco/`, copié de three 0.170), tissus de l'aperçu par
+  rôle de matériau (`clothRoleForMaterial` : robe, plastron, `:accent` = ballon de manche ; sans tissu lu, matériau du
+  `.glb`), mannequin ajusté au même corps et posé avec `simPose` (`simulatedPose`, repli sur le préréglage). Limite :
+  mannequin sans visage ni chignon (peau unie), éclairage simple.
+- Tests : `realisticRender.test.ts`, `useRealisticRender.test.ts`, `RealisticRenderSection.test.tsx` ; e2e
+  `e2e/pattern-studio/rendu-realiste.spec.ts` (voir `docs/testing.md`).

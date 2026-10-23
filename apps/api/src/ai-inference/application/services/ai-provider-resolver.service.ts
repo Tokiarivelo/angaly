@@ -72,6 +72,30 @@ export class AiProviderResolverService {
   }
 
   /**
+   * Last resort when neither the atelier default nor its fallbacks are usable (e.g. the default is
+   * GEMINI but only ANTHROPIC has a key): every other enabled, configured provider that can read a
+   * photo, those whose last test succeeded first. Never throws.
+   */
+  async resolveAnyConfigured(usage: AiUsage): Promise<ProviderCredentials[]> {
+    try {
+      const configs = (await this.providerConfigRepo.findAll())
+        .filter((c) => c.enabled && String(c.provider) !== String(AiProviderId.LOCAL_STATISTICAL))
+        .sort((a, b) => Number(String(b.status) === 'OK') - Number(String(a.status) === 'OK'));
+      const found: ProviderCredentials[] = [];
+      for (const config of configs) {
+        const credentials = await this.credentialsFor(config.provider, usage);
+        if (credentials) found.push(credentials);
+      }
+      return found;
+    } catch (err: unknown) {
+      this.logger.error(
+        `Erreur lors de la recherche d'un modèle configuré : ${err instanceof Error ? err.message : String(err)}`,
+      );
+      return [];
+    }
+  }
+
+  /**
    * Resolves credentials for an explicitly chosen provider (Pattern Studio model picker).
    * Returns undefined when the provider is not usable, so callers fall back to the atelier default.
    */

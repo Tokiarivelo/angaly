@@ -202,9 +202,10 @@ describe('resolveDrape / buildSkirtBlock', () => {
 describe('blocks in the rules', () => {
   it('JUPE: a skirt block replaces Devant/Dos and honours length and waist', () => {
     const base = gen('JUPE', []);
-    expect(base.pieces.map((p) => p.name)).toEqual(['Devant', 'Dos']);
+    // Every skirt has its waistband (shared/bottoms.ts).
+    expect(base.pieces.map((p) => p.name)).toEqual(['Devant', 'Dos', 'Ceinture']);
     const gathered = gen('JUPE', [{ kind: 'GATHERED_SKIRT', fullness: 2 }], { lengths: { skirtPct: 100 } });
-    expect(gathered.pieces).toHaveLength(1);
+    expect(gathered.pieces.map((p) => p.name).filter((n) => n !== 'Ceinture')).toHaveLength(1);
     expect(gathered.pieces[0]!.name).toMatch(/froncée/);
     // waist 74 cm + 4 cm ease = 78 cm; ×2 / 2 per panel
     expect(bbox(gathered.pieces[0]!).w).toBe(780);
@@ -221,12 +222,13 @@ describe('blocks in the rules', () => {
       'Devant — dessus croisé (droite sur gauche)',
       'Devant — dessous croisé',
       'Dos',
+      'Ceinture',
     ]);
     const both = gen('JUPE', [
       { kind: 'GATHERED_SKIRT', fullness: 2 },
       { kind: 'WRAP_FRONT', overlapMm: 100, side: 'RIGHT' },
     ]);
-    expect(both.pieces).toHaveLength(1);
+    expect(both.pieces).toHaveLength(2); // the gathered block and its waistband
     expect(both.warnings.some((w) => w.includes('portefeuille ignorée'))).toBe(true);
   });
 
@@ -282,7 +284,12 @@ describe('blocks in the rules', () => {
           expect(p.outlineMm.every((q) => Number.isFinite(q.x) && Number.isFinite(q.y))).toBe(true);
           expect(hasSelfIntersection(p.outlineMm), `${garment}/${skirt.kind}/${p.name}`).toBe(false);
         }
-        const bad = result.warnings.filter((w) => !w.includes('laize') && !w.includes('traîne') && !w.includes('portefeuille ignorée'));
+        // 4 plis de 10 mm : 82 cm d'ourlet, moins que les hanches — la mariée le signale à juste titre (jupon).
+        const narrow = garment === 'ROBE_MARIEE' && skirt.kind === 'PLEATED_SKIRT' && skirt.pleats === 4;
+        expect(result.warnings.some((w) => w.startsWith('Jupe plus étroite que son jupon')), `${garment}/${skirt.kind}`).toBe(narrow);
+        const bad = result.warnings.filter(
+          (w) => !w.includes('laize') && !w.includes('traîne') && !w.includes('portefeuille ignorée') && !w.startsWith('Jupe plus étroite'),
+        );
         expect(bad, `${garment}/${skirt.kind}`).toEqual([]);
       }
     }

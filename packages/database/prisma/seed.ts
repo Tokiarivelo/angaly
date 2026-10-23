@@ -2040,7 +2040,10 @@ async function main() {
     const patternProjectsData = [
       {
         projectRef: 'ANG-PAT-2026-00001',
-        garmentType: 'Robe de mariée',
+        // Identifiants du moteur (packages/pattern-engine) : un libellé (« Robe de mariée ») ne se génère pas.
+        garmentType: 'ROBE_MARIEE',
+        cutType: 'SIRENE',
+        detailsJson: { manches: 'SANS_MANCHES', decollete: 'PLONGEANT', longueur: 'SOL' },
         occasion: 'Mariage',
         style: 'Sirène',
         status: 'VALIDATED' as any,
@@ -2060,7 +2063,9 @@ async function main() {
       },
       {
         projectRef: 'ANG-PAT-2026-00002',
-        garmentType: 'Costume 3 pièces',
+        garmentType: 'COSTUME',
+        cutType: 'AJUSTEE',
+        detailsJson: { manches: 'LONGUES' },
         occasion: 'Gala',
         style: 'Slim fit',
         status: 'GENERATED' as any,
@@ -2081,7 +2086,9 @@ async function main() {
       },
       {
         projectRef: 'ANG-PAT-2026-00003',
-        garmentType: 'Robe de cocktail',
+        garmentType: 'ROBE',
+        cutType: 'EVASEE',
+        detailsJson: { longueur: 'ASYMETRIQUE' },
         occasion: 'Soirée',
         style: 'Asymétrique',
         status: 'DRAFT' as any,
@@ -2099,7 +2106,9 @@ async function main() {
       },
       {
         projectRef: 'ANG-PAT-2026-00004',
-        garmentType: 'Chemise Sur Mesure',
+        garmentType: 'CHEMISE',
+        cutType: 'DROITE',
+        detailsJson: { col: 'CHEMISIER', manches: 'LONGUES', fermeture: 'BOUTONS' },
         occasion: 'Business',
         style: 'Classique',
         status: 'REVIEW_REQUIRED' as any,
@@ -2127,6 +2136,8 @@ async function main() {
           customerId: customer.id,
           measurementProfileId: profile.id,
           garmentType: data.garmentType,
+          cutType: data.cutType,
+          detailsJson: data.detailsJson,
           occasion: data.occasion,
           style: data.style,
           status: data.status,

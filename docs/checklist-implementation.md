@@ -214,6 +214,10 @@ phase n'a pas été traitée en session dédiée (voir `.cursor/rules/006-phase-
 - [x] ✅ **pattern-studio-landing** — Landing Pattern Studio
 - [x] ✅ **pattern-studio-wizard** — Assistant de création (7 étapes)
 - [x] ✅ **pattern-studio-preview-validation-export** — Prévisualisation, validation, export
+- [x] ✅ **pattern-studio-catalogue** — Catalogue des patrons réalisables (photo d'inspiration, « Créer ce patron ») — maquette Stitch dédiée à générer
+  - [x] ✅ Modelage du patron sur le mannequin 3D (outils Modeler / Ampleur / Longueur / Lisser, 2D synchronisée) — 2026-10-14
+  - [x] ✅ Pièces de finition robe : ceinture nouée + nœud, poignets, parementures de robe-manteau (moteur + 3D) ; gigot ajusté au coude — 2026-10-14
+  - [x] ✅ Revers, jupe en lés, manche en deux pièces ; rendu 3D réaliste (velours, brocart, fond studio, occlusion, col sur le cou, chignon) — 2026-10-14
 - [x] ✅ **mes-projets-patron** — Liste des projets de patron
 - [x] ✅ **mes-mesures** — Profils de mesures
 - [x] ✅ **mes-creations** — Suivi des créations sur-mesure (stepper 6 étapes, `docs/pages/mes-creations.md`)
@@ -228,6 +232,16 @@ phase n'a pas été traitée en session dédiée (voir `.cursor/rules/006-phase-
       des règles `COSTUME`/`ROBE_MARIEE`/`AUTRE` manquantes (auparavant absorbées
       silencieusement par `VesteRule`/`RobeRule`/`ChemiseRule`) — voir
       `docs/features/patterns.md`, "Points d'attention".
+- [ ] 🟡 **cloth-sim** (rendu réaliste, Blender headless) — prototype (2026-10-15) et **phase 2 worker + API
+      (2026-10-16)** : module API `realistic-render` (file Postgres `SKIP LOCKED`, cache par clé de contenu, quota/jour,
+      endpoints worker `/api/internal/cloth-sim/*`), worker `cloth_sim/worker.py`, image Docker, service compose
+      (profil `cloth-sim`). Essai de bout en bout : `.glb` dans MinIO en 6 min 40. **Phase 3 web (2026-10-16)** :
+      bouton « Rendu réaliste », suivi, visualiseur `.glb` (Draco) sous le panneau 3D. e2e Playwright vert.
+      **Phase 4 tissus (2026-10-20)** : milieux devant/dos cousus (`seams._sew_halves`), mesure ourlet ÷ taille,
+      `calibrate_fabrics.py` ; la simulation suit le drapé à ±0,2, paramètres conservés. **§19 (2026-10-20)** :
+      seule la tête de manche cherche l'emmanchure à 7 cm (ourlet bfc4 −134 → −47 mm), jupon arrêté à 6 cm de
+      l'ourlet, RIGIDE assoupli (5 robes), STRETCH vérifié. Reste : écran complet vu dans l'app, phase 5 cloud
+      (si besoin). Voir `docs/features/realistic-render-blender.md` §16–19.
 
 ---
 

@@ -1,0 +1,11 @@
+[tool.pytest.ini_options]
+addopts = "--cov=cloth_sim --cov-report=term-missing --cov-fail-under=80"
+testpaths = ["tests"]
+
+[tool.ruff]
+line-length = 120
+# Blender 4.5 LTS embeds Python 3.11; keep the core runnable there.
+target-version = "py311"
+
+[tool.ruff.lint]
+select = ["E", "F", "I", "UP", "B"]

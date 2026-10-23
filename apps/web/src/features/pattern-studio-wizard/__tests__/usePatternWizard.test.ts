@@ -53,6 +53,34 @@ describe('usePatternWizard', () => {
     expect(result.current.isStepValid(1)).toBe(true);
   });
 
+  it('saves only the details the garment takes: a dress collar is dropped once trousers are chosen', async () => {
+    vi.mocked(apiClient.get).mockResolvedValueOnce({ ...MOCK_PROJECT, detailsJson: { col: 'CHALE', longueur: 'MIDI' } });
+    vi.mocked(apiClient.patch).mockResolvedValue(MOCK_PROJECT);
+    const { result } = renderHook(() => usePatternWizard('proj-1'), { wrapper: withQueryClient() });
+    await waitFor(() => expect(result.current.formData.details).toEqual({ col: 'CHALE', longueur: 'MIDI' }));
+    act(() => {
+      result.current.updateField('garmentType', 'PANTALON');
+    });
+    await waitFor(() => expect(apiClient.patch).toHaveBeenCalled());
+    const body = vi.mocked(apiClient.patch).mock.calls.at(-1)![1] as { garmentType: string; detailsJson: Record<string, string> };
+    expect(body.garmentType).toBe('PANTALON');
+    expect(body.detailsJson).toEqual({ longueur: 'MIDI' });
+  });
+
+  it('saves the valid typed measurements with the project and reads them back after a refresh', async () => {
+    vi.mocked(apiClient.get).mockResolvedValueOnce({ ...MOCK_PROJECT, parametersExtJson: { ease: 'AJUSTE', measurements: { TOUR_TAILLE: 72 } } });
+    vi.mocked(apiClient.patch).mockResolvedValue(MOCK_PROJECT);
+    const { result } = renderHook(() => usePatternWizard('proj-1'), { wrapper: withQueryClient() });
+    await waitFor(() => expect(result.current.formData.measurements).toEqual({ TOUR_TAILLE: 72 }));
+    act(() => {
+      // A value being typed (« 9 » on the way to « 98 ») is not saved: it would have the whole save refused.
+      result.current.updateField('measurements', { TOUR_TAILLE: 72, HAUTEUR_ENTREJAMBE: 78, TOUR_BASSIN: 9 });
+    });
+    await waitFor(() => expect(apiClient.patch).toHaveBeenCalled());
+    const body = vi.mocked(apiClient.patch).mock.calls.at(-1)![1] as { parametersExtJson: Record<string, unknown> };
+    expect(body.parametersExtJson).toEqual({ ease: 'AJUSTE', measurements: { TOUR_TAILLE: 72, HAUTEUR_ENTREJAMBE: 78 } });
+  });
+
   it('updates form fields and navigates between steps', async () => {
     vi.mocked(apiClient.get).mockResolvedValueOnce(MOCK_PROJECT);
     vi.mocked(apiClient.patch).mockResolvedValueOnce(MOCK_PROJECT);

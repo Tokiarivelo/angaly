@@ -1,9 +1,13 @@
 'use client';
 
-import React, { useMemo } from 'react';
+import React, { useDeferredValue, useMemo, useState } from 'react';
 import { usePatternVersion } from '../hooks/usePatternVersion';
 import { usePatternPieceSelection } from '../hooks/usePatternPieceSelection';
+import { usePatternDraft } from '../hooks/usePatternDraft';
+import type { CompareMode } from '../types/pattern-piece-view.types';
 import { useRequestReview } from '../hooks/useRequestReview';
+import { useInspirationOverlay } from '../hooks/useInspirationOverlay';
+import type { ScreenRect } from './Garment3DViewer';
 import { ProjectStatusHeader } from './ProjectStatusHeader';
 import { ReviewStatusTimeline } from './ReviewStatusTimeline';
 import { CorrectionNoteCard } from './CorrectionNoteCard';
@@ -15,11 +19,14 @@ import { PatternPieceCanvas } from './PatternPieceCanvas';
 import { PatternLayoutOverview } from './PatternLayoutOverview';
 import { Garment3DPanel } from './Garment3DPanel';
 import { PreviewModeTabs } from './PreviewModeTabs';
+import { InspirationPanel } from './InspirationPanel';
+import { ComparisonLayout } from './ComparisonLayout';
+import { PatternStudioEditor } from './studio/PatternStudioEditor';
 import { PatternPieceDetailsPanel } from './PatternPieceDetailsPanel';
 import { ValidationActionBar } from './ValidationActionBar';
 import { ExportPanel } from './ExportPanel';
 import { VersionHistoryDrawer } from './VersionHistoryDrawer';
-import { PatternStatus } from '@angaly/types';
+import { PatternStatus, validatePatternExtParameters } from '@angaly/types';
 import type { PatternPieceDto } from '@angaly/types';
 
 interface PatternPreviewValidationPageProps {
@@ -93,7 +100,7 @@ const DEFAULT_FALLBACK_PIECES: PatternPieceDto[] = [
 export const PatternPreviewValidationPage: React.FC<PatternPreviewValidationPageProps> = ({
   projectId,
 }) => {
-  const { data: project, isLoading } = usePatternVersion(projectId);
+  const { data: project, isLoading, isError } = usePatternVersion(projectId);
 
   const currentVersion =
     project?.currentVersion ??
@@ -101,12 +108,20 @@ export const PatternPreviewValidationPage: React.FC<PatternPreviewValidationPage
       ? project.versions[project.versions.length - 1]
       : null);
 
-  const pieces = useMemo(() => {
-    if (currentVersion?.pieces && currentVersion.pieces.length > 0) {
-      return currentVersion.pieces;
-    }
-    return DEFAULT_FALLBACK_PIECES;
-  }, [currentVersion]);
+  const hasSavedPieces = Boolean(currentVersion?.pieces && currentVersion.pieces.length > 0);
+  const savedPieces = useMemo(
+    () => (hasSavedPieces && currentVersion ? currentVersion.pieces : DEFAULT_FALLBACK_PIECES),
+    [hasSavedPieces, currentVersion],
+  );
+
+  // Hand edits made in the studio live here so the 2D, overview and 3D views all show them at once.
+  const draft = usePatternDraft(savedPieces);
+  const pieces = draft.pieces;
+  // The 3D drape is the costly part: let it lag a frame behind the drawing instead of blocking it.
+  const piecesFor3d = useDeferredValue(pieces);
+  const [compare, setCompare] = useState<CompareMode>('none');
+  const [overlay, setOverlay] = useState(false);
+  const [overlayOpacity, setOverlayOpacity] = useState(0.5);
 
   const {
     selectedPieceId,
@@ -121,7 +136,7 @@ export const PatternPreviewValidationPage: React.FC<PatternPreviewValidationPage
     zoomOut,
     resetZoom,
     toggleViewMode,
-  } = usePatternPieceSelection(pieces[0]?.id ?? null);
+  } = usePatternPieceSelection(savedPieces[0]?.id ?? null);
 
   const activePieceId = selectedPieceId ?? pieces[0]?.id ?? null;
   const activePiece = pieces.find((p) => p.id === activePieceId) ?? pieces[0] ?? null;
@@ -132,6 +147,13 @@ export const PatternPreviewValidationPage: React.FC<PatternPreviewValidationPage
   }, [currentVersion]);
 
   const notices = useMemo(() => parseGenerationNotices(currentVersion?.parametersJson), [currentVersion]);
+
+  // Garnitures the version was generated with (validated again: older versions have none).
+  const trims = useMemo(() => {
+    const parameters = currentVersion?.parametersJson?.['parameters'];
+    const raw = parameters && typeof parameters === 'object' ? (parameters as Record<string, unknown>)['trims'] : undefined;
+    return validatePatternExtParameters({ trims: raw }).value.trims?.items ?? null;
+  }, [currentVersion]);
 
   const measurements = useMemo(() => {
     const raw = currentVersion?.parametersJson?.['measurements'];
@@ -144,12 +166,111 @@ export const PatternPreviewValidationPage: React.FC<PatternPreviewValidationPage
   const status = project?.status ?? PatternStatus.GENERATED;
   const projectRef = project?.projectRef ?? `ANG-PAT-${projectId.slice(0, 5).toUpperCase()}`;
 
+  const inspirationUrl = project?.inspirationMediaUrl ?? null;
+  // Comparing a view with itself, or with a missing photo, makes no sense: fall back to no comparison.
+  const effectiveCompare: CompareMode =
+    (compare === '3d' && previewMode === '3d') || (compare === 'inspiration' && !inspirationUrl) ? 'none' : compare;
+  const overlayActive = overlay && previewMode === '3d' && effectiveCompare === 'inspiration';
+  // The pattern laid over the photo: shown beside a view, or the photo laid over the 3D.
+  const photoShown = effectiveCompare === 'inspiration' && Boolean(inspirationUrl);
+  const fabricLook = project?.inspirationAnalysisJson?.profile?.fit;
+  const inspirationOverlay = useInspirationOverlay({
+    projectId,
+    url: inspirationUrl,
+    pieces,
+    garmentType: project?.garmentType ?? 'ROBE',
+    measurements,
+    fabricColor: fabricLook?.fabricColor,
+    fabricBehavior: fabricLook?.fabricBehavior,
+    trims,
+    enabled: photoShown,
+  });
+  const pieceNames = useMemo(() => Object.fromEntries(pieces.map((p) => [p.id, p.name])), [pieces]);
+  const [garmentScreenRect, setGarmentScreenRect] = useState<ScreenRect | null>(null);
+
+  const garment3d = (
+    <Garment3DPanel
+      pieces={piecesFor3d}
+      garmentType={project?.garmentType ?? 'ROBE'}
+      measurements={measurements}
+      selectedPieceId={activePieceId}
+      fabric={project?.inspirationAnalysisJson?.profile?.fit}
+      trims={trims}
+      onGarmentScreenRect={overlayActive ? setGarmentScreenRect : undefined}
+      editing={{
+        draft,
+        projectId,
+        versionId: hasSavedPieces ? (currentVersion?.id ?? null) : null,
+        onSelectPiece: setSelectedPieceId,
+      }}
+    />
+  );
+
+  const primaryView =
+    previewMode === 'piece' ? (
+      <PatternPieceCanvas
+        piece={activePiece}
+        zoomLevel={zoomLevel}
+        viewMode={viewMode}
+        onZoomIn={zoomIn}
+        onZoomOut={zoomOut}
+        onResetZoom={resetZoom}
+        onToggleViewMode={toggleViewMode}
+      />
+    ) : previewMode === 'overview' ? (
+      <PatternLayoutOverview
+        pieces={pieces}
+        selectedPieceId={activePieceId}
+        onSelectPiece={(id) => {
+          setSelectedPieceId(id);
+          setPreviewMode('piece');
+        }}
+      />
+    ) : previewMode === '3d' ? (
+      garment3d
+    ) : (
+      <PatternStudioEditor
+        projectId={projectId}
+        versionId={hasSavedPieces ? (currentVersion?.id ?? null) : null}
+        garmentType={project?.garmentType ?? 'ROBE'}
+        measurements={measurements}
+        draft={draft}
+        activePieceId={activePieceId}
+        onSelectPiece={setSelectedPieceId}
+      />
+    );
+
+  const secondaryView =
+    overlayActive || effectiveCompare === 'none' ? null : effectiveCompare === 'inspiration' ? (
+      <InspirationPanel
+        url={inspirationUrl}
+        overlay={{ data: inspirationOverlay, selectedPieceId: activePieceId, pieceNames, onSelectPiece: setSelectedPieceId }}
+      />
+    ) : (
+      garment3d
+    );
+
   if (isLoading) {
     return (
       <div className="min-h-screen bg-[#041329] text-white flex items-center justify-center">
         <div className="flex flex-col items-center gap-3">
           <div className="w-8 h-8 rounded-full border-2 border-[#C5B190] border-t-transparent animate-spin" />
           <p className="text-sm text-[#D8D3C8]">Chargement de votre atelier numérique…</p>
+        </div>
+      </div>
+    );
+  }
+
+  // A project that cannot be read (someone else's, or gone) must say so: showing a sample pattern under the
+  // project's reference would pass for the real thing.
+  if (isError && !project) {
+    return (
+      <div className="min-h-screen bg-[#041329] text-white flex items-center justify-center px-4">
+        <div role="alert" className="max-w-md rounded-xl border border-[#C5B190]/30 bg-[#0C2650] p-6 text-center">
+          <h1 className="font-serif text-xl text-white">Projet de patron introuvable</h1>
+          <p className="mt-2 text-sm text-[#D8D3C8]">
+            Ce projet n’existe pas ou appartient à un autre compte. Connectez-vous avec le compte qui l’a créé.
+          </p>
         </div>
       </div>
     );
@@ -179,9 +300,19 @@ export const PatternPreviewValidationPage: React.FC<PatternPreviewValidationPage
           />
         )}
 
-        <PreviewModeTabs mode={previewMode} onChange={setPreviewMode} />
+        <PreviewModeTabs
+          mode={previewMode}
+          onChange={setPreviewMode}
+          inspirationUrl={inspirationUrl}
+          compare={effectiveCompare}
+          onCompareChange={setCompare}
+          overlay={overlayActive}
+          onOverlayChange={setOverlay}
+          overlayOpacity={overlayOpacity}
+          onOverlayOpacityChange={setOverlayOpacity}
+        />
 
-        {/* 3 Columns Layout: Pieces List | Preview (2D / ensemble / 3D) | Details Panel */}
+        {/* Pieces list | Preview (2D / ensemble / 3D / studio) [+ comparison] | Details panel */}
         <div className="flex flex-col lg:flex-row items-stretch gap-6">
           <PatternPiecesSidebar
             pieces={pieces}
@@ -189,38 +320,17 @@ export const PatternPreviewValidationPage: React.FC<PatternPreviewValidationPage
             onSelectPiece={(id) => setSelectedPieceId(id)}
           />
 
-          {previewMode === 'piece' && (
-            <PatternPieceCanvas
-              piece={activePiece}
-              zoomLevel={zoomLevel}
-              viewMode={viewMode}
-              onZoomIn={zoomIn}
-              onZoomOut={zoomOut}
-              onResetZoom={resetZoom}
-              onToggleViewMode={toggleViewMode}
-            />
-          )}
-          {previewMode === 'overview' && (
-            <PatternLayoutOverview
-              pieces={pieces}
-              selectedPieceId={activePieceId}
-              onSelectPiece={(id) => {
-                setSelectedPieceId(id);
-                setPreviewMode('piece');
-              }}
-            />
-          )}
-          {previewMode === '3d' && (
-            <Garment3DPanel
-              pieces={pieces}
-              garmentType={project?.garmentType ?? 'ROBE'}
-              measurements={measurements}
-              selectedPieceId={activePieceId}
-              fabric={project?.inspirationAnalysisJson?.profile?.fit}
-            />
-          )}
+          <ComparisonLayout
+            primary={primaryView}
+            secondary={secondaryView}
+            overlay={
+              overlayActive && inspirationUrl
+                ? { url: inspirationUrl, opacity: overlayOpacity, photoRect: inspirationOverlay.rect, target: garmentScreenRect }
+                : null
+            }
+          />
 
-          <PatternPieceDetailsPanel piece={activePiece} />
+          {previewMode !== 'studio' && effectiveCompare === 'none' && <PatternPieceDetailsPanel piece={activePiece} />}
         </div>
 
         {/* Action Bar */}

@@ -126,6 +126,12 @@ Tout champ DTO : `@ApiProperty({ description, example })`.
 
 ## Règles Angaly Pattern Studio
 
+**Toute tâche de génération ou de création de patron** (photo d'inspiration → paramètres → patron → 3D, nouvelle option
+de manche/col/devant, patron qui ne ressemble pas au modèle) suit le skill
+[`.agents/skills/pattern-generation/`](.agents/skills/pattern-generation/SKILL.md) (même contenu que
+`.claude/skills/pattern-generation/`) : lecture de la photo, génération, boucle de vérification 3D contre la photo,
+liste de contrôle d'une nouvelle option.
+
 - `apps/ai-service` (Python/FastAPI) suggère des **paramètres**, ne produit jamais de
   géométrie de patron — c'est le rôle de `packages/pattern-engine` (déterministe, TypeScript
   pur, zéro dépendance externe)

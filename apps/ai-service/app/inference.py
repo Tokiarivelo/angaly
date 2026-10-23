@@ -174,9 +174,39 @@ def analyze_inspiration(request: InspirationAnalysisRequest) -> InspirationAnaly
         return result
     except Exception as exc:
         logger.exception("analyze_inspiration failed: %s", exc)
+        local = _local_analysis(request)
+        if local is not None:
+            return local
         return InspirationAnalysisResponse(
             features={}, profile=None, suggestedCutType=None, confidence=0.0, modelVersion="fallback-0.0.0"
         )
+
+
+def _local_analysis(request: InspirationAnalysisRequest) -> InspirationAnalysisResponse | None:
+    """The local photo model (`app/local_vision.py`) when the vision provider failed: no credits, timeout, no key.
+    Its answer goes through the same validation as a provider's; None when the model is not installed."""
+    try:
+        from . import local_vision
+
+        if not local_vision.available():
+            return None
+        image_bytes = base64.b64decode(request.image_base64, validate=True)
+        predicted = local_vision.predict_profile(image_bytes)
+        if predicted is None:
+            return None
+        raw, confidence = predicted
+        profile = GarmentProfile.model_validate(normalize_profile(raw))
+        logger.info("analyze_inspiration: local model answered (%s, confidence %.2f)", local_vision.model_version(), confidence)
+        return InspirationAnalysisResponse(
+            features={"source": "modèle local Angaly (lecture approximative, à vérifier)"} if profile.is_garment else {},
+            profile=profile,
+            suggestedCutType=profile.cut_type if profile.is_garment else None,
+            confidence=round(min(0.6, confidence), 2),
+            modelVersion=local_vision.model_version() or "local-vision",
+        )
+    except Exception as exc:  # the fallback must never fail the request
+        logger.exception("local vision analysis failed: %s", exc)
+        return None
 
 
 def estimate_missing_measurements(

@@ -1,5 +1,5 @@
 import { armpitHeight, findJoint } from './body-envelope';
-import { bodyLandmarks, bodyScale, ellipseCircumference, ringAt, type BodyMeasurements, type BodyRing } from './body-model';
+import { bodyLandmarks, bodyScale, DEFAULT_SHOULDER_DROP, ellipseCircumference, ringAt, type BodyMeasurements, type BodyRing } from './body-model';
 
 /**
  * Fits the scanned-quality human base mesh (apps/web/public/models/human-base.glb, built from the
@@ -245,6 +245,13 @@ const levelAt = (levels: Level[], y: number): Level => {
  */
 export const JOINT_INSET = 0.025;
 
+/** Bounds of the factor applied to the scan's shoulder width. */
+const SHOULDER_WIDTH_FACTOR = [0.78, 1.12] as const;
+const TEMPLATE_WIDTH_FACTOR_MIN = 0.9;
+
+/** Most a measured shoulder slope raises or lowers the shoulder point (m at 1.70 m). */
+const SLOPE_LIFT_MAX = 0.035;
+
 /**
  * Relaxed standing pose, as fractions of the stature, read from reference front views (female, male):
  * the hands' centre and the knees' centre from the body's axis. The scan stands wider, arms higher.
@@ -300,6 +307,8 @@ export const fitHumanBody = (
   const poseG = age > 0.5 ? 0 : g;
   const armpitY = armpitHeight(body);
   const mirror = (i: number): number => (pos[i * 3]! < 0 ? -1 : 1);
+  // Until the shoulder slope is applied (3b), the joints stand on the scan's own shoulder line.
+  const scanShoulderY = l.napeY - DEFAULT_SHOULDER_DROP * s;
 
   // 2. Torso girths: one isotropic factor per height, crotch → armpit, about the section centre.
   //    Above the armpit it fades to 1 at the base of the neck; below the crotch it fades out over the
@@ -323,7 +332,7 @@ export const fitHumanBody = (
       if (y < l.crotchY) return { ...level, k: lerp(1, level.k, 1 - smooth((l.crotchY - y) / below)) };
       return level;
     };
-    const joint = findJoint(pos, arm, l.shoulderY, s);
+    const joint = findJoint(pos, arm, scanShoulderY, s);
     const jointLevel = joint ? torsoAt(joint.y) : null;
     // Below the crotch the hip factor must not be applied about the torso's centre and faded out: that
     // pushed the top of the thighs out and back and let them go lower down (a saddlebag bump and a crease
@@ -391,9 +400,11 @@ export const fitHumanBody = (
 
   // 3. Shoulder width: the shoulder line is widened/narrowed about the neck column and the arms are
   //    carried along rigidly, so the deltoids and the collarbones keep their scanned shape.
-  const joint0 = findJoint(pos, arm, l.shoulderY, s);
+  const joint0 = findJoint(pos, arm, scanShoulderY, s);
   if (joint0) {
-    const w = clamp((body.shoulderWidth / 2 - JOINT_INSET * s) / joint0.x, 0.9, 1.12);
+    // The scan's shoulders are broad (its joint ~0.166 m out for 1.70 m): the average woman already takes 0.9 of them,
+    // narrow ones (carrure 34, LARGEUR_EPAULE 10) about 0.8. Unmeasured shoulders keep the template's 0.9 floor.
+    const w = clamp((body.shoulderWidth / 2 - JOINT_INSET * s) / joint0.x, body.shoulderMeasured ? SHOULDER_WIDTH_FACTOR[0] : TEMPLATE_WIDTH_FACTOR_MIN, SHOULDER_WIDTH_FACTOR[1]);
     for (let i = 0; i < n; i += 1) {
       const y = pos[i * 3 + 1]!;
       const aw = arm[i]!;
@@ -402,6 +413,21 @@ export const fitHumanBody = (
       const torsoX = pos[i * 3]! * (1 + (w - 1) * band * lateral);
       const armX = pos[i * 3]! + mirror(i) * joint0.x * (w - 1);
       pos[i * 3] = lerp(torsoX, armX, aw);
+    }
+  }
+
+  // 3b. Shoulder slope (PENTE_EPAULE): square shoulders stand higher, sloping ones lower. The shoulder line turns about
+  //     the base of the neck (nothing moves there, all of the lift at the joint) and the arms are carried along.
+  const lift = clamp(DEFAULT_SHOULDER_DROP * s - (body.shoulderDrop ?? DEFAULT_SHOULDER_DROP * s), -SLOPE_LIFT_MAX * s, SLOPE_LIFT_MAX * s);
+  const slopeJoint = lift !== 0 ? findJoint(pos, arm, scanShoulderY, s) : null;
+  if (slopeJoint) {
+    const neckR = body.neck / (2 * Math.PI);
+    const span = Math.max(0.02 * s, slopeJoint.x - neckR);
+    for (let i = 0; i < n; i += 1) {
+      const y = pos[i * 3 + 1]!;
+      const ramp = smooth((Math.abs(pos[i * 3]!) - neckR) / span);
+      const band = smooth((y - (armpitY - 0.06 * s)) / (0.08 * s));
+      pos[i * 3 + 1] = y + lerp(lift * ramp * band, lift, arm[i]!);
     }
   }
 
@@ -477,7 +503,7 @@ export const fitHumanBody = (
   // 5. Legs: girths at the thigh, knee and ankle, each leg scaled about its own (smoothed) centre line.
   //    The legs are never moved sideways: the stance of the scan is kept.
   const thighY = l.crotchY - 0.05 * s;
-  const kneeY = 0.285 * body.height;
+  const kneeY = body.kneeY ?? 0.285 * body.height;
   const ankleY = l.ankleY + 0.015 * s;
   for (const sign of [1, -1] as const) {
     const idx = collect(pos, arm, (y, aw, x) => aw < 0.05 && y < l.crotchY + 0.1 * s && (x < 0 ? -1 : 1) === sign);

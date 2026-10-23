@@ -1,6 +1,6 @@
 import { Controller, Logger, Post, Body, UseGuards } from '@nestjs/common';
 import { JwtAuthGuard } from '../../../auth/presentation/guards/jwt-auth.guard';
-import { IsEnum, IsNotEmpty, IsOptional, IsUrl } from 'class-validator';
+import { IsBoolean, IsEnum, IsNotEmpty, IsOptional, IsUrl } from 'class-validator';
 import { AiProviderId, AiUsage, type GarmentProfile } from '@angaly/types';
 import { AiProviderResolverService } from '../../application/services/ai-provider-resolver.service';
 import { AnalyzeInspirationImageUseCase } from '../../application/use-cases/analyze-inspiration-image.use-case';
@@ -15,6 +15,11 @@ class AnalyzeInspirationDto {
   @IsOptional()
   @IsEnum(AiProviderId)
   aiProvider?: AiProviderId;
+
+  /** Skip the cached answer and read the photo again (the new answer replaces the cached one). */
+  @IsOptional()
+  @IsBoolean()
+  refresh?: boolean;
 }
 
 @UseGuards(JwtAuthGuard)
@@ -51,6 +56,7 @@ export class AiInspirationController {
       const { analysis, attempts } = await this.analyzeInspirationImage.executeWithAttempts(
         dto.inspirationImageUrl,
         provider,
+        { refresh: dto.refresh === true },
       );
       this.logger.log(
         `inspiration-analysis done in ${Date.now() - startedAt}ms model=${analysis.modelVersion} confidence=${analysis.confidence} garment=${analysis.profile?.isGarment ?? 'n/a'}`,
@@ -65,6 +71,8 @@ export class AiInspirationController {
         /** The chosen model could not answer (no vision / error) and another one did. */
         usedFallback: attempts.some((a) => a.outcome !== 'OK') && attempts.some((a) => a.outcome === 'OK'),
         attempts,
+        /** The ai-service did not answer at all (not started / wrong URL): no model could be asked. */
+        aiServiceUnreachable: attempts.some((a) => a.outcome === 'UNREACHABLE'),
         isIndicativeOnly:
           analysis.confidence < 0.5 ||
           analysis.modelVersion.startsWith('fallback') ||
@@ -84,6 +92,7 @@ export class AiInspirationController {
         modelUsed: null,
         usedFallback: false,
         attempts: [],
+        aiServiceUnreachable: false,
         isIndicativeOnly: true,
       };
     }

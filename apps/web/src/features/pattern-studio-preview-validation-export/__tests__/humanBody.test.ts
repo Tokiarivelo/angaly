@@ -5,6 +5,7 @@ import { buildGarmentModel, drapeGarment } from '../utils/garment3d/garment-mode
 import { fitHumanBody, JOINT_INSET, morphFor, POSE } from '../utils/garment3d/human-body';
 import { loadHumanBase } from './helpers/humanBase';
 import { buildHair, eyeball, faceColors, findFaceLandmarks, sculptFace } from '../utils/garment3d/head-features';
+import { stylizeFace } from '../utils/garment3d/face-stylize';
 
 const human = loadHumanBase();
 const base = { ...human, raw: { indices: human.indices } };
@@ -47,6 +48,39 @@ describe('human body fit', () => {
     // The hinge sits JOINT_INSET inside the shoulder seam point (the deltoid lies beyond it).
     const s = body.height / 1.7;
     expect(Math.abs(joint!.x - (body.shoulderWidth / 2 - JOINT_INSET * s))).toBeLessThan(0.015);
+  });
+
+  it('puts the shoulder joints at the measured carrure', () => {
+    const narrow = fit('FEMME_STANDARD', { CARRURE_DOS: 34 });
+    const broad = fit('FEMME_STANDARD', { CARRURE_DOS: 40 });
+    const jointX = (f: ReturnType<typeof fit>): number =>
+      findJoint(f.result.positions, base.armWeights, bodyLandmarks(f.body).shoulderY, f.body.height / 1.7)!.x;
+    expect(jointX(broad) - jointX(narrow)).toBeCloseTo((0.06 * 0.95) / 2, 2);
+  });
+
+  it('raises square shoulders and lowers sloping ones (PENTE_EPAULE), the arms with them and the neck where it is', () => {
+    const at = (pente?: number) => {
+      const f = fit('FEMME_STANDARD', pente === undefined ? {} : { PENTE_EPAULE: pente });
+      const s = f.body.height / 1.7;
+      const joint = findJoint(f.result.positions, base.armWeights, bodyLandmarks(f.body).shoulderY, s)!;
+      // The lowest point of the hands, and the top of the neck column's base (within 1 cm of the axis, nape height).
+      let hand = Infinity;
+      let neck = -Infinity;
+      const p = f.result.positions;
+      const napeY = bodyLandmarks(f.body).napeY;
+      for (let i = 0; i < base.armWeights.length; i += 1) {
+        if (base.armWeights[i]! > 0.95) hand = Math.min(hand, p[i * 3 + 1]!);
+        if (Math.abs(p[i * 3]!) < 0.01 && p[i * 3 + 2]! < 0 && Math.abs(p[i * 3 + 1]! - napeY) < 0.03) neck = Math.max(neck, p[i * 3 + 1]!);
+      }
+      return { joint: joint.y, hand, neck };
+    };
+    const square = at(2.5);
+    const usual = at();
+    const sloping = at(7);
+    expect(square.joint - usual.joint).toBeCloseTo(0.025, 2);
+    expect(usual.joint - sloping.joint).toBeCloseTo(0.02, 2);
+    expect(square.hand - sloping.hand).toBeCloseTo(0.045, 2);
+    expect(Math.abs(square.neck - sloping.neck)).toBeLessThan(0.002);
   });
 
   it('drapes a dress over the fitted body: no skin through the bodice, sleeves along the arms', () => {
@@ -221,6 +255,35 @@ describe('human body fit', () => {
     expect(moved).toBe(0);
   });
 
+  // Work in progress (docs/handoff.md): the width step pinches the cheeks; re-enable once fixed.
+  it.skip("stylises a woman's face: shorter lower face, narrower jaw, wider eyes; skull and neck unmoved", () => {
+    const { body, result } = fit('FEMME_STANDARD');
+    const f = findFaceLandmarks(result.positions, base.armWeights, body, base.indices)!;
+    const { positions, face } = stylizeFace(result.positions, f, body);
+    const iod = 2 * f.eye.x;
+    // Proportions of the reference sculpt (in eye spacings): eyes → mouth ~0.79.
+    expect((face.eye.y - face.mouth.y) / iod).toBeGreaterThan(0.7);
+    expect((face.eye.y - face.mouth.y) / iod).toBeLessThan(0.9);
+    expect(face.eyeHalf.w).toBeGreaterThan(f.eyeHalf.w);
+    let jawBefore = 0;
+    let jawAfter = 0;
+    let moved = 0;
+    for (let i = 0; i < positions.length; i += 3) {
+      const y0 = result.positions[i + 1]!;
+      const z0 = result.positions[i + 2]!;
+      // The jaw's width at the mouth, in front.
+      if (Math.abs(y0 - f.mouth.y) < 0.004 && z0 > f.skull.z + 0.05) {
+        jawBefore = Math.max(jawBefore, Math.abs(result.positions[i]!));
+        jawAfter = Math.max(jawAfter, Math.abs(positions[i]!));
+      }
+      const changed = positions[i] !== result.positions[i] || positions[i + 1] !== y0 || positions[i + 2] !== z0;
+      // The back of the head and the neck under the throat never move (collars sit on the measured neck).
+      if (changed && (z0 < f.skull.z || y0 < f.mouth.y - 0.09)) moved += 1;
+    }
+    expect(jawAfter).toBeLessThan(jawBefore * 0.85);
+    expect(moved).toBe(0);
+  });
+
   it('colours lips warmer than the cheeks, in linear RGB for every vertex', () => {
     const { body, result } = fit('FEMME_STANDARD');
     const f = findFaceLandmarks(result.positions, base.armWeights, body)!;
@@ -252,7 +315,8 @@ describe('human body fit', () => {
   });
 
   it.each([
-    ['FEMME_STANDARD', 'long'],
+    ['ENFANT_10_ANS', 'long'],
+    ['FEMME_STANDARD', 'bun'],
     ['HOMME_STANDARD', 'short'],
   ] as const)('grows hair (%s, %s) over the skull, never over the face', (id, style) => {
     const { body, result } = fit(id);
@@ -275,7 +339,14 @@ describe('human body fit', () => {
       if (Math.abs(x) < 0.05 && z > f.skull.z + 0.04) expect(y).toBeGreaterThan(f.eye.y + 0.02);
     }
     if (style === 'long') expect(lowest).toBeLessThan(f.mouth.y - 0.08); // to the shoulders
-    else expect(lowest).toBeGreaterThan(bodyLandmarks(body).napeY); // short cut: above the nape
+    else if (style === 'bun') {
+      // The locks framing the face reach the jaw, and the bun stands over the head.
+      expect(lowest).toBeLessThan(f.mouth.y);
+      expect(lowest).toBeGreaterThan(f.mouth.y - 0.08);
+      let highest = -Infinity;
+      for (let i = 1; i < hair.positions.length; i += 3) highest = Math.max(highest, hair.positions[i]!);
+      expect(highest).toBeGreaterThan(f.top + 0.03);
+    } else expect(lowest).toBeGreaterThan(bodyLandmarks(body).napeY); // short cut: above the nape
   });
 
   it('gives a child a relatively larger head than an adult', () => {

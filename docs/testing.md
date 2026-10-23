@@ -125,6 +125,17 @@ Parcours critiques attendus (un par phase, voir `docs/phases/`) :
 - Prise de rendez-vous (Phase 2)
 - Checkout prêt-à-porter (Phase 2/3)
 - Création d'un projet Angaly Pattern Studio de bout en bout (Phase 4)
+- `e2e/pattern-studio/rendu-realiste.spec.ts` — « Rendu réaliste » sur le panneau 3D : demande, suivi, affichage du
+  `.glb` simulé (fixture), retour à l'aperçu. Se connecte avec le client du seed (`E2E_EMAIL`/`E2E_PASSWORD`), cherche
+  un projet avec une version par l'API (`E2E_API_URL`, défaut `http://localhost:3003`) et n'intercepte que les
+  endpoints du rendu réaliste (le worker Blender n'est pas dans la pile de dev). Ignoré (`skip`) sans projet. ≈ 2 min :
+  en Chrome sans interface, la 3D est dessinée par SwiftShader et ralentit les minuteries de la page.
+
+Sur une machine sans le Chromium de Playwright mais avec Google Chrome, et un web ailleurs que sur 3000 :
+
+```bash
+PLAYWRIGHT_BASE_URL=http://localhost:3100 PLAYWRIGHT_CHANNEL=chrome pnpm --filter @angaly/web test:e2e
+```
 
 ## Avant de considérer une page/un module terminé
 

@@ -1,6 +1,7 @@
 import React from 'react';
 import type { UseFormRegister } from 'react-hook-form';
 import { HelpCircle } from 'lucide-react';
+import { MeasurementGuideImage } from '@/components/shared/MeasurementGuideImage';
 import type { MeasurementProfileFormValues } from '../schemas/measurement-profile.schema';
 
 interface MeasurementFieldRowProps {
@@ -24,7 +25,8 @@ export const MeasurementFieldRow = ({
         </label>
         <div className="relative flex items-center justify-center w-5 h-5 text-angaly-slate cursor-help hover:text-angaly-primary">
           <HelpCircle className="w-4 h-4" />
-          <div className="absolute left-full ml-2 w-48 p-2 text-xs text-white bg-angaly-primary rounded opacity-0 pointer-events-none group-hover:opacity-100 z-10">
+          <div className="absolute left-full ml-2 w-56 p-2 text-xs text-white bg-angaly-primary rounded opacity-0 pointer-events-none group-hover:opacity-100 z-10">
+            <MeasurementGuideImage measurementKey={fieldKey} className="w-full h-auto mb-2 rounded" />
             {help}
           </div>
         </div>

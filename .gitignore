@@ -35,6 +35,11 @@ apps/ai-service/**/__pycache__/
 apps/ai-service/ml/notebooks/.ipynb_checkpoints/
 apps/ai-service/ml/models/
 apps/ai-service/ml/data/raw/
+
+# Python (cloth-sim)
+apps/cloth-sim/.venv/
+apps/cloth-sim/.blender/
+apps/cloth-sim/**/__pycache__/
 *.pyc
 
 # Editors / OS

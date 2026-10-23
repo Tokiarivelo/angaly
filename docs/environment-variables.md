@@ -235,6 +235,32 @@ relai interne, etc.
 
 ---
 
+## 9. Rendu réaliste — worker `cloth-sim` (`CLOTH_SIM_*`)
+
+Simulation de tissu Blender lancée par le bouton « Rendu réaliste » (`docs/features/realistic-render-blender.md`).
+L'API tient la file d'attente (table `realistic_renders`) ; le worker (`apps/cloth-sim`, `python -m cloth_sim.worker`)
+la consomme par `/api/internal/cloth-sim/jobs/*`, jamais exposé par le reverse proxy.
+
+| Variable | Où | Défaut | Description |
+| --- | --- | --- | --- |
+| `CLOTH_SIM_WORKER_TOKEN` | api + worker | — | Secret partagé (`Authorization: Bearer …`). **Vide côté API = endpoints du worker coupés (503)**. Générer : `openssl rand -hex 32`. |
+| `CLOTH_SIM_MAX_PER_DAY` | api | `10` | Rendus simulés par utilisateur sur 24 h glissantes (`429` au-delà). Les copies du cache ne comptent pas. |
+| `CLOTH_SIM_TIMEOUT_S` | api + worker | `600` | Délai maximal d'un job (export + Blender). Le worker tue Blender au-delà ; l'API rend un job `RUNNING` muet depuis ce délai + 2 min. |
+| `CLOTH_SIM_MAX_ATTEMPTS` | api | `2` | Tentatives par job (un worker mort en cours de route rend son job une fois). |
+| `CLOTH_SIM_REVISION` | api | `1` | Entre dans la clé de cache : l'incrémenter quand la simulation change assez pour ne plus réutiliser les anciens rendus. |
+| `CLOTH_SIM_API_URL` | worker | — | Base de l'API, préfixe compris (`http://api:3003/api` en Docker, `http://localhost:3003/api` en dev). |
+| `BLENDER` | worker | `.blender/blender-*/blender` | Binaire Blender 4.5 LTS (`/opt/blender/blender` dans l'image). |
+| `CLOTH_SIM_EXPORT_CMD` | worker | `node <tsx> tools/export-job.ts` | Commande d'export du job (lancée depuis `apps/web`). |
+| `CLOTH_SIM_SIM_ARGS` | worker | — | Options passées à `simulate.py` (ex. `--frames 60 --no-petticoat`). |
+| `CLOTH_SIM_POLL_S` | worker | `10` | Attente entre deux interrogations d'une file vide. |
+| `CLOTH_SIM_WORKDIR` / `CLOTH_SIM_KEEP_WORKDIR` | worker | dossier temporaire / `0` | Dossier de travail des jobs ; `1` le garde après le job (diagnostic). |
+| `CLOTH_SIM_ONCE` | worker | `0` | `1` : un seul job puis sortie (tests, cron). |
+
+Un job par processus : `CLOTH_SIM_CONCURRENCY` (§7 de la fiche) se traduit par le nombre de conteneurs `cloth-sim`.
+`GCP_PROJECT` / `GCP_REGION` / `CLOTH_SIM_JOB_NAME` (mode Cloud Run, phase 5) ne sont pas encore utilisées.
+
+---
+
 ## 8. Initialisation pas-à-pas en développement local
 
 Pour configurer l'ensemble de votre environnement local en une seule fois :

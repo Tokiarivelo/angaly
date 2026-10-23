@@ -10,6 +10,10 @@ from app.garment_knowledge import normalize_profile
 REFERENCES = sorted((Path(__file__).resolve().parent.parent / "ml" / "data" / "references").glob("*.json"))
 
 
+def _without_certainty(blocks: list[dict] | None) -> list[dict] | None:
+    return [{k: v for k, v in b.items() if k != "certainty"} for b in blocks] if blocks else blocks
+
+
 def test_references_exist() -> None:
     assert REFERENCES, "ml/data/references holds at least one reference"
 
@@ -22,7 +26,9 @@ def test_reference_profile_is_a_valid_label(path: Path) -> None:
     assert len(reference["image"]["sha256"]) == 64
     assert reference["image"]["source"] and reference["image"]["license"]
     profile = reference["profile"]
-    assert normalize_profile(profile) == profile
+    # Drape blocks carry the model's certainty as input; the validated label drops it.
+    expected = {"trims": None, **profile, "drapeBlocks": _without_certainty(profile.get("drapeBlocks"))}
+    assert normalize_profile(profile) == expected
 
 
 @pytest.mark.parametrize("path", REFERENCES, ids=lambda p: p.stem)
@@ -37,3 +43,5 @@ def test_reference_engine_parameters_follow_the_label(path: Path) -> None:
     for key in ("ease", "fullness", "lengths"):  # the fabric's look is informative only
         if key in fit:
             assert parameters[key] == fit[key]
+    if profile.get("drapeBlocks"):
+        assert parameters["drape"]["blocks"] == _without_certainty(profile["drapeBlocks"])

@@ -198,3 +198,14 @@ def test_prompt_and_examples_teach_the_blocks() -> None:
     assert len(with_blocks) >= 2
     for example in with_blocks:
         assert normalize_profile(example["profile"])["drapeBlocks"], example["scene"]
+
+
+def test_a_shaped_collar_drops_the_depth_class_that_would_flatten_it() -> None:
+    v_neck = normalize_profile(
+        {"isGarment": True, "garmentType": "ROBE", "details": {"col": "EN_V", "decollete": "MOYEN", "manches": "COURTES"}}
+    )
+    assert v_neck["details"] == {"col": "EN_V", "manches": "COURTES"}
+    round_neck = normalize_profile(
+        {"isGarment": True, "garmentType": "ROBE", "details": {"col": "ROND", "decollete": "SAGE"}}
+    )
+    assert round_neck["details"] == {"col": "ROND", "decollete": "SAGE"}

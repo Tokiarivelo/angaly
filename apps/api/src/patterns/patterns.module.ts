@@ -22,6 +22,7 @@ import { RequestReviewUseCase } from './application/use-cases/request-review.use
 import { ExportPatternVersionUseCase } from './application/use-cases/export-pattern-version.use-case';
 import { ListPatternVersionsUseCase } from './application/use-cases/list-pattern-versions.use-case';
 import { RestorePatternVersionUseCase } from './application/use-cases/restore-pattern-version.use-case';
+import { SavePatternEditsUseCase } from './application/use-cases/save-pattern-edits.use-case';
 
 import { PatternProjectsController } from './presentation/controllers/pattern-projects.controller';
 import { PatternVersionsController } from './presentation/controllers/pattern-versions.controller';
@@ -58,6 +59,7 @@ import { InspirationParametersService } from './application/services/inspiration
     ExportPatternVersionUseCase,
     ListPatternVersionsUseCase,
     RestorePatternVersionUseCase,
+    SavePatternEditsUseCase,
   ],
   exports: [
     PATTERN_PROJECT_REPOSITORY,

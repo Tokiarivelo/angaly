@@ -1,3 +1,5 @@
+import { applyTrimsAndBoning, trimNotions } from './shared/trims';
+import { applyConstruction, isSeparateFabric } from './shared/construction';
 import {
   type GarmentType,
   type IPatternEngine,
@@ -51,9 +53,20 @@ export class PatternEngine implements IPatternEngine {
       );
     }
 
-    const pieces = rule.computePieces(parameters, measurements);
+    // Garnitures (berthe, sleeve frills) and a corset's boning are added on top of any rule's pieces.
+    const trimmed = applyTrimsAndBoning(parameters, rule.computePieces(parameters, measurements));
+    // Construction pieces (lining, interfacing, flounces, godets, peplum, bustle…) are derived from those pieces.
+    const construction = applyConstruction(parameters, measurements, trimmed);
+    const pieces = construction.pieces;
+    // The rule's own notions (zip, buttons, elastic), those of the trims and boning, and of the construction pieces.
+    const notions = [
+      ...(rule.notions?.(parameters, measurements, trimmed) ?? []),
+      ...trimNotions(parameters, measurements, trimmed),
+      ...construction.notions,
+    ];
 
-    const yardage = estimateYardage(pieces);
+    // Lining and interfacing are bought apart: the main fabric's yardage leaves them out.
+    const yardage = estimateYardage(pieces.filter((p) => !isSeparateFabric(p.name)));
     const widthWarnings = yardage.oversize.map(
       (o) =>
         `Pièce « ${o.name} » : tissu d'au moins ${Math.ceil(o.neededWidthMm / 10)} cm de large requis (laize standard ${yardage.fabricWidthMm / 10} cm).`,
@@ -65,11 +78,13 @@ export class PatternEngine implements IPatternEngine {
         ...(rule.warnings?.(parameters, measurements) ?? []),
         ...checkPieceGeometry(pieces),
         ...widthWarnings,
+        ...construction.warnings,
       ],
       metadata: {
         engineVersion: ENGINE_VERSION,
         generatedAt: new Date().toISOString(),
         yardage: { fabricWidthMm: yardage.fabricWidthMm, lengthMm: yardage.lengthMm, method: yardage.method },
+        ...(notions.length > 0 ? { notions } : {}),
       },
     };
   }

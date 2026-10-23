@@ -24,6 +24,8 @@ import { OrdersModule } from './orders/orders.module';
 import { PaymentsModule } from './payments/payments.module';
 import { NotificationsModule } from './notifications/notifications.module';
 import { PatternsModule } from './patterns/patterns.module';
+import { PatternCatalogModule } from './pattern-catalog/pattern-catalog.module';
+import { RealisticRenderModule } from './realistic-render/realistic-render.module';
 import { AdminAiSettingsModule } from './admin-ai-settings/admin-ai-settings.module';
 import { UsersModule } from './users/users.module';
 import { ContentModule } from './content/content.module';
@@ -65,6 +67,8 @@ import { HealthController } from './shared/health/health.controller';
     PaymentsModule,
     NotificationsModule,
     PatternsModule,
+    PatternCatalogModule,
+    RealisticRenderModule,
     MessagesModule,
     AdminAiSettingsModule,
     UsersModule,

@@ -12,11 +12,11 @@
     "license": "Inconnue — usage interne. Ne pas l'ajouter au jeu S6 ni l'entraîner sans droits confirmés ; l'image passe par MinIO, jamais par le dépôt."
   },
   "observations": {
-    "silhouette": "robe longue, buste ajusté, taille naturelle marquée par une couture, jupe évasée qui s'ouvre dès la taille",
+    "silhouette": "robe longue : corsage froncé sous la poitrine, long empiècement ajusté jusqu'aux hanches (taille basse), jupe plissée qui s'ouvre en A",
     "encolure": "ras du cou ronde, à la base du cou",
-    "manches": "courtes, s'arrêtent 3 à 5 cm sous l'aisselle, tête légèrement bouffante",
-    "corsage": "ajusté, fronces sous la poitrine sur un empiècement jusqu'à la taille (détail corsage = FRONCES_SOUS_POITRINE)",
-    "jupe": "évasée en trapèze avec quelques plis souples dès la taille ; ourlet ≈ 2,6 fois la largeur de taille vue de face",
+    "manches": "courtes, tête bouffante, s'arrêtent sous l'aisselle",
+    "corsage": "devant froncé croisé en cache-cœur sous la poitrine, sur un empiècement ajusté de la poitrine aux hanches",
+    "jupe": "plis creux réguliers cousus à plat sur les hanches puis libres ; ourlet ≈ 2,5 fois la largeur de taille vue de face",
     "longueur": "bas du mollet, ourlet ≈ 15 cm au-dessus du sol",
     "tissu": "crêpe ou viscose fluide, fond blanc, pois bordeaux/noirs d'environ 1,5 cm",
     "fermeture": "non visible (zip invisible au dos probable)"
@@ -31,7 +31,8 @@
       "manches": "COURTES",
       "col": "ROND",
       "longueur": "MAXI",
-      "corsage": "FRONCES_SOUS_POITRINE"
+      "corsage": "CROISE_FRONCE",
+      "taille": "BASSE"
     },
     "constructionMethod": "FLAT_PATTERN",
     "presentation": "WORN",
@@ -39,17 +40,15 @@
     "fit": {
       "ease": "CONFORT",
       "fullness": {
-        "skirt": 1.25,
-        "sleeve": 1.25
+        "sleeve": 1.5
       },
       "lengths": {
         "skirtPct": 94,
-        "sleevePct": 40
+        "sleevePct": 25
       },
       "fabricBehavior": "FLUIDE",
       "certainty": {
         "ease": "MEDIUM",
-        "fullness.skirt": "MEDIUM",
         "fullness.sleeve": "MEDIUM",
         "lengths.skirtPct": "MEDIUM",
         "lengths.sleevePct": "MEDIUM"
@@ -58,7 +57,15 @@
       "fabricColor": "#f4f2ee",
       "motifColor": "#5a1a22"
     },
-    "drapeBlocks": null
+    "drapeBlocks": [
+      {
+        "kind": "PLEATED_SKIRT",
+        "pleats": 20,
+        "depthMm": 55,
+        "type": "BOX",
+        "certainty": "MEDIUM"
+      }
+    ]
   },
   "engine": {
     "parameters": {
@@ -69,25 +76,34 @@
         "manches": "COURTES",
         "col": "ROND",
         "longueur": "MAXI",
-        "corsage": "FRONCES_SOUS_POITRINE"
+        "corsage": "CROISE_FRONCE",
+        "taille": "BASSE"
       },
       "ease": "CONFORT",
       "fullness": {
-        "skirt": 1.25,
-        "sleeve": 1.25
+        "sleeve": 1.5
       },
       "lengths": {
         "skirtPct": 94,
-        "sleevePct": 40
+        "sleevePct": 25
+      },
+      "drape": {
+        "blocks": [
+          {
+            "kind": "PLEATED_SKIRT",
+            "pleats": 20,
+            "depthMm": 55,
+            "type": "BOX"
+          }
+        ]
       }
     },
     "template": "FEMME_STANDARD",
     "pieces": [
-      "Corsage Devant",
+      "Corsage Devant croisé",
       "Empiècement Devant",
       "Corsage Dos",
-      "Jupe Devant",
-      "Jupe Dos",
+      "Jupe plissée plis creux (panneau)",
       "Manche"
     ]
   },
@@ -136,5 +152,9 @@
   },
   "limits": [
     "Étiquette posée par un assistant IA en regardant la photo — à faire valider par une couturière avant de passer en HUMAN_CONFIRMED."
-  ]
+  ],
+  "pose": {
+    "preset": "MIROIR",
+    "note": "selfie au miroir : bras gauche levé, main (téléphone) devant le visage ; bras droit le long du corps, main tenant la jupe"
+  }
 }

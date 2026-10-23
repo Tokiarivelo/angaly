@@ -8,8 +8,19 @@
  * Composition with the cut: `delta_final = cut.delta + ease.delta` (the cut gives the silhouette,
  * the ease gives the comfort). All deltas are millimetres per quarter-body piece.
  */
-import type { EaseLevel, PatternParameters } from '../types';
+import type { EaseLevel, FabricBehaviorKind, MeasurementSet, PatternParameters } from '../types';
 import type { CutProfile, LegProfile, SleeveSpec, TopAdjustments } from './cut-profile';
+
+/**
+ * Hip girth (cm) the garment must pass over: the larger of the hip (`TOUR_BASSIN`, on the bones) and the full hip
+ * (`TOUR_HANCHE_COMPLET`, over the belly as well). A prominent belly makes the full hip the larger; a skirt cut on the
+ * hip alone then pulls across it.
+ */
+export function hipGirthCm(measurements: MeasurementSet, fallback = 95): number {
+  const hip = measurements['TOUR_BASSIN'] ?? fallback;
+  const full = measurements['TOUR_HANCHE_COMPLET'];
+  return full !== undefined && full > hip ? full : hip;
+}
 
 export interface EaseProfile {
   bustDeltaMm: number;
@@ -23,6 +34,34 @@ const EASE_PROFILES: Record<EaseLevel, EaseProfile> = {
   CONFORT: { bustDeltaMm: 0, waistDeltaMm: 0, hipDeltaMm: 0, armholeDeltaMm: 0 },
   AMPLE: { bustDeltaMm: 30, waistDeltaMm: 25, hipDeltaMm: 30, armholeDeltaMm: 15 },
 };
+
+/**
+ * Wearing ease (mm, on the whole circumference) a pattern in woven cloth never goes under, whatever the cut and the
+ * ease level add up to. The cut and ease deltas are per quarter of the body, so they count four times round it: a
+ * PRINCESSE cut (waist −15) made AJUSTE (waist −15) came out 12 cm under the waist and 8 cm under the bust — a
+ * velvet coat-dress that cannot close, whose straight A-line from that waist then passed exactly through the hip and
+ * clung to the hips and seat before flaring (a mermaid instead of an A). The floor is DROITE + CONFORT's own ease, so
+ * that geometry is unchanged; fitted cuts stay the closest, never smaller than the body. Stretch cloth has no floor.
+ */
+export const MIN_WEARING_EASE_MM = { bust: 20, waist: 20, hip: 10 } as const;
+
+/**
+ * Front and back quarter widths widened alike, if needed, so that the whole round (2 × (front + back)) is at least
+ * the body's circumference + `easeMm`. Unchanged for stretch cloth or when there is room already.
+ */
+export function floorQuarters(
+  front: number,
+  back: number,
+  bodyMm: number,
+  easeMm: number,
+  fabric: FabricBehaviorKind | undefined,
+): [number, number] {
+  if (fabric === 'STRETCH') return [front, back];
+  const missing = bodyMm + easeMm - 2 * (front + back);
+  if (missing <= 0) return [front, back];
+  const each = Math.ceil(missing / 4);
+  return [front + each, back + each];
+}
 
 export function resolveEaseProfile(ease: EaseLevel | undefined): EaseProfile {
   return EASE_PROFILES[ease ?? 'CONFORT'] ?? EASE_PROFILES.CONFORT;
@@ -83,22 +122,31 @@ export function skirtFullnessExtraMm(
   return Math.round((f - 1) * hipWidthMm);
 }
 
+/** Shoulder-to-wrist length (mm) when the customer's arm was not measured. */
+export const DEFAULT_ARM_LENGTH_MM = 590;
+
 /**
  * Applies `lengths.sleevePct` (0 = no sleeve) and `fullness.sleeve` (sleeve-top width multiplier,
- * 1 = unchanged) to a sleeve spec. Null stays null.
+ * 1 = unchanged) to a sleeve spec. Null stays null. `sleevePct` is a share of the whole arm (100 = the
+ * wrist), as the photo analysis reads it — not of the chosen sleeve's own length.
  */
 export function fitSleeve(
   sleeve: SleeveSpec | null,
   parameters: Pick<PatternParameters, 'fullness' | 'lengths'>,
+  armLengthMm = DEFAULT_ARM_LENGTH_MM,
 ): SleeveSpec | null {
   if (!sleeve) return sleeve;
   const pct = parameters.lengths?.sleevePct;
   if (pct === 0) return null;
   const full = parameters.fullness?.sleeve;
+  const fuller = full !== undefined && full > 1;
+  const flares = sleeve.kind === 'BELL';
   return {
     ...sleeve,
-    lengthMm: resolveLengthMm(sleeve.lengthMm, pct, [80, 900]),
-    topRatio: full !== undefined && full > 1 ? sleeve.topRatio * full : sleeve.topRatio,
+    lengthMm: pct === undefined ? sleeve.lengthMm : Math.min(900, Math.max(40, Math.round((armLengthMm * pct) / 100))),
+    // A bell opens at the cuff, every other puffed sleeve gets wider at the head.
+    topRatio: fuller && !flares ? sleeve.topRatio * full : sleeve.topRatio,
+    cuffRatio: fuller && flares ? sleeve.cuffRatio * full : sleeve.cuffRatio,
   };
 }
 
@@ -134,11 +182,16 @@ export interface TorsoFitOptions {
  *  - shoulder tip: `CARRURE_DEVANT|DOS` (half the width) else neck + `LARGEUR_EPAULE`,
  *    clamped to [neck + 40 mm, default + 30 mm];
  *  - underarm height: `PROFONDEUR_EMMANCHURE` (+ 20 mm for the nape offset);
- *  - bust dart on the side seam (front): needs `TOUR_SOUS_POITRINE` + `TOUR_POITRINE`; its
- *    intake is 5 mm per cm of cup difference beyond 12 cm (capped at 60 mm), at `HAUTEUR_POITRINE`
+ *  - bust dart on the side seam (front): needs `TOUR_POITRINE` and `TOUR_HAUT_POITRINE` (the cup: 12 mm of intake
+ *    per cm of full bust over high bust beyond 2.5 cm) or else `TOUR_SOUS_POITRINE` (5 mm per cm of difference beyond
+ *    12 cm); intake capped at 60 mm, at `HAUTEUR_POITRINE`
  *    and pointing at `ECARTEMENT_POINTS_POITRINE / 2` from centre front.
  * Returns a new outline; the input is never mutated.
  */
+/** Shoulder drop below the neck point (mm) a measured slope may give, and how much less the back drops. */
+const SHOULDER_DROP_BOUNDS_MM = [15, 90] as const;
+const BACK_SLOPE_LESS_MM = 5;
+
 export function fitTorsoOutline(outline: Outline, m: Record<string, number>, o: TorsoFitOptions): Outline {
   const out = outline.map((p) => ({ ...p }));
   const top = o.armholeTopIdx ?? 2;
@@ -155,6 +208,13 @@ export function fitTorsoOutline(outline: Outline, m: Record<string, number>, o: 
     tip.x = Math.round(clamp(target, o.neckWidthMm + 40, tip.x + 30));
   }
 
+  // Pente d'épaule mesurée (base du cou → pointe d'épaule, à la verticale) : épaules carrées ou tombantes. Le dos
+  // tombe un peu moins que le devant (la couture d'épaule est avancée).
+  const pente = m['PENTE_EPAULE'];
+  if (pente !== undefined) {
+    tip.y = Math.round(clamp(pente * 10 - (o.side === 'back' ? BACK_SLOPE_LESS_MM : 0), SHOULDER_DROP_BOUNDS_MM[0], SHOULDER_DROP_BOUNDS_MM[1]));
+  }
+
   const next = out[under + 1];
   const profondeur = m['PROFONDEUR_EMMANCHURE'];
   if (profondeur !== undefined && next) {
@@ -168,15 +228,28 @@ export function fitTorsoOutline(outline: Outline, m: Record<string, number>, o: 
   return out;
 }
 
+/**
+ * Bust dart intake (mm) from the cup. The high bust (under the arms, over the bust) against the full bust is the
+ * sewist's cup measure: 2.5 cm apart is a B cup, the block's own; each cm more takes 12 mm more. Without it, the
+ * underbust gives a rougher one. Undefined without either.
+ */
+export function bustDartIntakeMm(m: Record<string, number>): number | undefined {
+  const poitrine = m['TOUR_POITRINE'];
+  if (poitrine === undefined) return undefined;
+  const haut = m['TOUR_HAUT_POITRINE'];
+  if (haut !== undefined) return clamp(Math.round((poitrine - haut - 2.5) * 12), 0, 60);
+  const sous = m['TOUR_SOUS_POITRINE'];
+  if (sous !== undefined) return clamp(Math.round((poitrine - sous - 12) * 5), 0, 60);
+  return undefined;
+}
+
 /** Inserts a bust dart wedge on the segment `segIdx → segIdx+1`, in place. No-op if not applicable. */
 function addBustDart(out: Outline, segIdx: number, m: Record<string, number>): void {
-  const sous = m['TOUR_SOUS_POITRINE'];
-  const poitrine = m['TOUR_POITRINE'];
+  const intake = bustDartIntakeMm(m);
   const a = out[segIdx];
   const b = out[segIdx + 1];
-  if (sous === undefined || poitrine === undefined || !a || !b) return;
+  if (intake === undefined || !a || !b) return;
 
-  const intake = clamp(Math.round((poitrine - sous - 12) * 5), 0, 60);
   if (intake < 8) return;
   const half = intake / 2;
   const lo = Math.min(a.y, b.y) + half + 5;

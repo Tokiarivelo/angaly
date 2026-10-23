@@ -77,6 +77,7 @@ describe('AiInspirationController (integration)', () => {
     expect(analyzeInspirationImage.executeWithAttempts).toHaveBeenCalledWith(
       'https://cdn.angaly.test/inspiration.jpg',
       undefined,
+      { refresh: false },
     );
     expect(response.body).toMatchObject({
       suggestedCutType: 'SIRENE',
@@ -106,6 +107,21 @@ describe('AiInspirationController (integration)', () => {
     expect(response.body).toMatchObject({ usedFallback: true, modelUsed: 'gpt-4o-mini' });
   });
 
+  it('reports an unreachable ai-service instead of a model configuration problem', async () => {
+    analyzeInspirationImage.executeWithAttempts.mockResolvedValue({
+      analysis: { features: {}, profile: null, suggestedCutType: null, confidence: 0, modelVersion: 'fallback-unreachable-0.0.0' },
+      attempts: [{ provider: 'ANTHROPIC', model: 'claude-haiku-4-5-20251001', outcome: 'UNREACHABLE' }],
+    });
+
+    const response = await request(server())
+      .post('/ai-inference/inspiration-analysis')
+      .set('Authorization', 'Bearer valid-token')
+      .send({ inspirationImageUrl: 'https://cdn.angaly.test/inspiration.jpg', aiProvider: 'ANTHROPIC' })
+      .expect(201);
+
+    expect(response.body).toMatchObject({ aiServiceUnreachable: true, modelUsed: null, profile: null });
+  });
+
   it('analyses the photo with the model chosen in the wizard', async () => {
     const credentials = { provider: 'ANTHROPIC', model: 'claude-haiku-4-5-20251001', apiKey: 'k' };
     providerResolver.resolveSelected.mockResolvedValue(credentials);
@@ -130,6 +146,7 @@ describe('AiInspirationController (integration)', () => {
     expect(analyzeInspirationImage.executeWithAttempts).toHaveBeenCalledWith(
       'https://cdn.angaly.test/inspiration.jpg',
       credentials,
+      { refresh: false },
     );
   });
 

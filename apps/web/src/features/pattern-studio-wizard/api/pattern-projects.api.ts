@@ -146,6 +146,8 @@ export interface InspirationAnalysis {
   /** The chosen model could not answer (e.g. local model: no vision) and a fallback model did. */
   usedFallback?: boolean;
   modelUsed?: string | null;
+  /** The AI service itself did not answer (not started / unreachable): no model could be asked. */
+  aiServiceUnreachable?: boolean;
 }
 
 export const analyzeInspirationPhoto = async (
@@ -163,6 +165,7 @@ export const analyzeInspirationPhoto = async (
       isIndicativeOnly: boolean;
       usedFallback?: boolean;
       modelUsed?: string | null;
+      aiServiceUnreachable?: boolean;
     }>('/api/ai-inference/inspiration-analysis', {
       inspirationImageUrl: imageUrl,
       ...(aiProvider ? { aiProvider } : {}),
@@ -174,6 +177,7 @@ export const analyzeInspirationPhoto = async (
       confidence: res.confidence,
       usedFallback: res.usedFallback ?? false,
       modelUsed: res.modelUsed ?? null,
+      aiServiceUnreachable: res.aiServiceUnreachable ?? false,
     };
   } catch {
     // No invented analysis: the customer simply fills the following steps by hand.

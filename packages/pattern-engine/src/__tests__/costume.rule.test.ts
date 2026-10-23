@@ -48,7 +48,8 @@ describe('CostumeRule', () => {
 
     const pieces = CostumeRule.computePieces(params, measurements);
 
-    expect(pieces.length).toBe(7);
+    // Jacket (4) + trousers: front, back, band, slanted pockets (bag + facing), zip fly (facing + shield).
+    expect(pieces.length).toBe(11);
 
     // Jacket half
     expect(pieces.find((p) => p.name === 'Devant Veste (Costume)')).toBeDefined();
@@ -92,6 +93,19 @@ describe('CostumeRule', () => {
     };
 
     const pieces = CostumeRule.computePieces(params, measurements);
-    expect(pieces.length).toBe(7);
+    // Jacket (4) + trousers: front, back, band, slanted pockets (bag + facing), zip fly (facing + shield).
+    expect(pieces.length).toBe(11);
+  });
+
+  it('takes a shawl collar in place of the tailored collar when col = CHALE', () => {
+    const measurements: MeasurementSet = { TOUR_POITRINE: 92, TOUR_TAILLE: 76, TOUR_BASSIN: 98, LONGUEUR_DOS: 42 };
+    const names = (details: Record<string, string>) =>
+      CostumeRule.computePieces({ garmentType: 'COSTUME', cutType: 'AJUSTEE', style: null, details }, measurements).map(
+        (p) => p.name,
+      );
+    const shawl = names({ col: 'CHALE' });
+    expect(shawl.some((n) => n.startsWith('Col châle'))).toBe(true);
+    expect(shawl.some((n) => n.startsWith('Col Tailleur'))).toBe(false);
+    expect(names({}).some((n) => n.startsWith('Col Tailleur'))).toBe(true);
   });
 });

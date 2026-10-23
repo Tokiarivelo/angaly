@@ -10,6 +10,8 @@ export interface GenerationNotices {
   approach: { id: ConstructionApproach; label: string; reason: string | null } | null;
   mannequinSheet: MannequinSheet | null;
   yardageMm: number | null;
+  /** Notions (mercerie) the engine listed: bead rows, bones, waist tape. */
+  notions: Array<{ label: string; lengthMm: number | null; quantity: number | null }>;
 }
 
 const isRecord = (v: unknown): v is Record<string, unknown> => typeof v === 'object' && v !== null && !Array.isArray(v);
@@ -45,10 +47,18 @@ export function parseGenerationNotices(parametersJson: Record<string, unknown> |
       : null;
   const metadata = isRecord(json['metadata']) ? json['metadata'] : {};
   const yardage = isRecord(metadata['yardage']) ? metadata['yardage'] : {};
+  const notions = (Array.isArray(metadata['notions']) ? metadata['notions'] : [])
+    .filter((n): n is Record<string, unknown> => isRecord(n) && typeof n['label'] === 'string')
+    .map((n) => ({
+      label: n['label'] as string,
+      lengthMm: typeof n['lengthMm'] === 'number' ? n['lengthMm'] : null,
+      quantity: typeof n['quantity'] === 'number' ? n['quantity'] : null,
+    }));
   return {
     warnings,
     approach,
     mannequinSheet: parseSheet(json['mannequinSheet']),
     yardageMm: typeof yardage['lengthMm'] === 'number' ? yardage['lengthMm'] : null,
+    notions,
   };
 }

@@ -38,7 +38,7 @@ describe('JupeRule', () => {
 
     const pieces = JupeRule.computePieces(params, measurements);
 
-    expect(pieces.length).toBe(2);
+    expect(pieces.map((p) => p.name)).toEqual(['Devant', 'Dos', 'Ceinture']);
     const devant = pieces.find((p) => p.name === 'Devant');
     const dos = pieces.find((p) => p.name === 'Dos');
 

@@ -128,6 +128,24 @@ SMTP_HOST, SMTP_PORT, SMTP_SECURE, SMTP_USER, SMTP_PASSWORD, SMTP_FROM
   docs/features/notifications.md)
 ```
 
+### Rendu réaliste (worker `cloth-sim`, optionnel)
+
+Worker Blender de `docs/features/realistic-render-blender.md` (image ≈ 1,5 Go, 2 vCPU et jusqu'à 4 Go pendant un
+job de 3 à 6 min). Il n'est démarré qu'avec le profil `cloth-sim` :
+
+```bash
+# .env.prod : CLOTH_SIM_WORKER_TOKEN=$(openssl rand -hex 32) — lu par l'API et par le worker
+docker compose -f docker-compose.prod.yml --profile cloth-sim up -d --build cloth-sim
+```
+
+- Sans `CLOTH_SIM_WORKER_TOKEN`, l'API répond 503 sur `/api/internal/cloth-sim/*` et le worker refuse de démarrer.
+- `/api/internal/` est fermé par le reverse proxy (`docker/nginx/conf.d/angaly.conf`, `docker/caddy/Caddyfile`) : le
+  worker joint l'API par le réseau Docker (`http://api:3003/api`).
+- Le `.glb` est déposé dans MinIO (bucket `patterns`, `realistic-renders/<id>/`) par une URL présignée : l'URL
+  présignée porte l'hôte `MINIO_ENDPOINT` de l'API (`minio` en Docker), que le worker doit pouvoir joindre.
+- Arrêt : `stop_grace_period` de 11 min, le worker finit le job en cours (SIGTERM) avant de s'arrêter.
+- Migration Prisma `20261016120000_add_realistic_renders` (table `realistic_renders`), appliquée par `db.migrate.prod`.
+
 ### NextAuth et le reverse proxy
 
 `apps/web` utilise NextAuth (v5 — encore en beta au moment de l'implémentation, mais seule

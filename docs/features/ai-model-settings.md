@@ -214,3 +214,25 @@ admin sélectionne un modèle mort.
 - [x] `apps/ai-service` : `LOCAL_STATISTICAL` demandé sans artefact → repli Gemini transparent (testé)
 - [x] Frontend : `AiModelSettingsPage` teste la sélection, la désactivation d'un modèle indisponible, l'appel de mise à jour
 - [x] `docs/checklist-implementation.md` mis à jour
+
+## Modèle local de lecture de photo (`local-vision`, 2026-10-20)
+
+Lecture de photo d'inspiration **sans fournisseur externe**, utilisée automatiquement quand le fournisseur de vision échoue
+(crédits épuisés, délai, clé absente) — l'ai-service n'est toujours appelé que par l'API (`ai-inference`).
+
+- **Modèle** : encodeur d'image CLIP ViT-B/32 (OpenAI, licence MIT ; export ONNX quantifié Xenova, 89 Mo) exécuté sur CPU
+  par `onnxruntime` (`app/local_vision.py`), deux vues par photo (recadrage central + photo entière) → embedding 1024 ;
+  une régression logistique par champ (type de vêtement — dont « pas un vêtement » —, coupe, présentation, occasion, style,
+  aisance, longueur, manches, col, encolure) et une régression ridge pour `fullness.skirt`. Un champ n'est rempli que si sa
+  probabilité dépasse un seuil choisi en validation croisée (≥ 70 % de bonnes réponses au-dessus) ; la confiance renvoyée
+  est plafonnée à 0,6. La réponse repasse par `normalize_profile` comme celle d'un fournisseur ; jamais de géométrie.
+- **Données** : lectures de photos libres de droits faites par Claude Opus 5.5 à la demande de l'utilisateur
+  (`ml/data/vision/labels_part*.py`, + `dress_benchmark_opus_analysis.json`, `garment_benchmark_opus_analysis.json`,
+  `~/angaly-sleeves/analysis.json`), **non validées par une couturière**. Photos hors dépôt (`~/angaly-*`, licences dans
+  les `candidates.jsonl`). Le jeu de référence (`ml/data/eval`, 116 photos) n'est **jamais** utilisé à l'entraînement :
+  exclu par nom, par contenu (SHA-256) et par ressemblance (similarité CLIP ≥ 0,95).
+- **Entraîner** : `cd apps/ai-service && .venv/bin/python ml/scripts/train_vision_model.py` (embeddings mis en cache dans
+  `ml/models/vision_embeddings.npz`) → `ml/models/vision_profile.joblib` + `ml/data/vision/metrics.json`. L'encodeur :
+  `ml/models/clip/vision_model_quantized.onnx` (téléchargé depuis Hugging Face `Xenova/clip-vit-base-patch32`). Les deux
+  sont gitignorés (comme les autres artefacts) : sans eux, l'analyse retombe comme avant (`fallback-0.0.0`).
+- **Mesures** : voir `ml/data/vision/metrics.json` (validation croisée et jeu de référence).

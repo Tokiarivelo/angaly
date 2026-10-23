@@ -4,6 +4,7 @@ import type {
   PatternVersionDto,
   PatternExportDto,
   PatternExportFormat,
+  SavePatternEditsRequest,
 } from '@angaly/types';
 
 export const fetchPatternProjectDetail = async (
@@ -53,6 +54,17 @@ export const restoreVersion = async (
 ): Promise<PatternVersionDto> => {
   const res = await apiClient.post<PatternVersionDto | { data: PatternVersionDto }>(
     `/api/pattern-versions/${versionId}/restore`,
+  );
+  return 'data' in res ? res.data : res;
+};
+
+export const savePatternEdits = async (
+  versionId: string,
+  request: SavePatternEditsRequest,
+): Promise<PatternVersionDto> => {
+  const res = await apiClient.post<PatternVersionDto | { data: PatternVersionDto }>(
+    `/api/pattern-versions/${versionId}/edits`,
+    request,
   );
   return 'data' in res ? res.data : res;
 };

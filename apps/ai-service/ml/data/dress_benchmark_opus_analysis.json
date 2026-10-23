@@ -1,0 +1,870 @@
+{
+ "_about": "Lecture des photos du banc d'essai par Claude Opus 5.5 (session Claude Code du 2026-10-14), faute de crédits pour l'API de vision. Mêmes champs que GarmentProfile (details, cutType, fit). Non validé par une couturière : hors entraînement.",
+ "ref-pois.jpeg": {
+  "cutType": "EVASEE",
+  "details": {
+   "manches": "COURTES",
+   "col": "ROND",
+   "dos": "FERME",
+   "longueur": "MAXI",
+   "fermeture": "AUCUNE",
+   "corsage": "FRONCES_SOUS_POITRINE",
+   "taille": "BASSE"
+  },
+  "fit": {
+   "ease": "CONFORT",
+   "fullness": {
+    "skirt": 2.5,
+    "sleeve": 1.5
+   },
+   "lengths": {
+    "skirtPct": 100,
+    "sleevePct": 25
+   },
+   "fabricBehavior": "FLUIDE",
+   "fabricPrint": "POIS",
+   "fabricColor": "#F4F2EE",
+   "motifColor": "#5A1A2A"
+  },
+  "blocks": [
+   {
+    "kind": "PLEATED_SKIRT",
+    "pleats": 16,
+    "depthMm": 40,
+    "type": "KNIFE"
+   }
+  ],
+  "note": "Maxi blanche à pois, manches courtes bouffantes, fronces sous poitrine, jupe plissée."
+ },
+ "robe-portee-001.jpg": {
+  "cutType": "EVASEE",
+  "details": {
+   "manches": "SANS_MANCHES",
+   "col": "BATEAU",
+   "longueur": "MIDI",
+   "corsage": "LISSE",
+   "taille": "BASSE"
+  },
+  "fit": {
+   "ease": "AJUSTE",
+   "fullness": {
+    "skirt": 1.6
+   },
+   "lengths": {
+    "skirtPct": 95
+   },
+   "fabricBehavior": "FLUIDE",
+   "fabricColor": "#141414"
+  },
+  "blocks": [
+   {
+    "kind": "GATHERED_SKIRT",
+    "fullness": 1.6
+   }
+  ],
+  "note": "Noire épaules dénudées, corsage ajusté, taille basse, jupe froncée mi-mollet."
+ },
+ "robe-portee-004.jpg": {
+  "cutType": "EVASEE",
+  "details": {
+   "manches": "CLOCHE",
+   "col": "EN_V",
+   "decollete": "MOYEN",
+   "longueur": "MAXI",
+   "taille": "HAUTE"
+  },
+  "fit": {
+   "ease": "CONFORT",
+   "fullness": {
+    "skirt": 1.6,
+    "sleeve": 1.2
+   },
+   "lengths": {
+    "skirtPct": 100,
+    "sleevePct": 100
+   },
+   "fabricBehavior": "FLUIDE",
+   "fabricPrint": "AUTRE",
+   "fabricColor": "#9A3A22",
+   "motifColor": "#2A1A10"
+  },
+  "blocks": [],
+  "note": "Maxi imprimée années 70, col V, taille empire, manches cloche évasées du coude."
+ },
+ "robe-portee-009.jpg": {
+  "cutType": "DROITE",
+  "details": {
+   "manches": "LONGUES",
+   "col": "CHEMISIER",
+   "decollete": "MOYEN",
+   "longueur": "MINI",
+   "corsage": "LISSE"
+  },
+  "fit": {
+   "ease": "CONFORT",
+   "fullness": {
+    "skirt": 1.2
+   },
+   "lengths": {
+    "skirtPct": 100,
+    "sleevePct": 100
+   },
+   "fabricBehavior": "FLUIDE",
+   "fabricPrint": "POIS",
+   "fabricColor": "#4A2A1A",
+   "motifColor": "#F0E8DC",
+   "contrastColor": "#F4F0E6"
+  },
+  "blocks": [],
+  "note": "Robe chasuble courte à pois, grand col pointu blanc, manches longues, poignets blancs."
+ },
+ "robe-portee-019.jpg": {
+  "cutType": "EVASEE",
+  "details": {
+   "manches": "CAP",
+   "col": "ROND",
+   "decollete": "MOYEN",
+   "longueur": "MIDI",
+   "fermeture": "CEINTURE_INTEGREE",
+   "corsage": "LISSE",
+   "taille": "NATURELLE"
+  },
+  "fit": {
+   "ease": "AJUSTE",
+   "fullness": {
+    "skirt": 2.4
+   },
+   "lengths": {
+    "skirtPct": 80
+   },
+   "fabricBehavior": "STRUCTURE",
+   "fabricPrint": "POIS",
+   "fabricColor": "#1E4FC8",
+   "motifColor": "#FFFFFF"
+  },
+  "blocks": [
+   {
+    "kind": "GATHERED_SKIRT",
+    "fullness": 2.4
+   }
+  ],
+  "note": "Bleue à gros pois, mancherons, ceinture, jupe froncée au genou."
+ },
+ "robe-portee-022.jpg": {
+  "cutType": "DROITE",
+  "details": {
+   "manches": "SANS_MANCHES",
+   "col": "ROND",
+   "decollete": "SAGE",
+   "longueur": "MIDI",
+   "fermeture": "CEINTURE_INTEGREE",
+   "corsage": "LISSE",
+   "taille": "NATURELLE"
+  },
+  "fit": {
+   "ease": "CONFORT",
+   "fullness": {
+    "skirt": 1.5
+   },
+   "lengths": {
+    "skirtPct": 90
+   },
+   "fabricBehavior": "FLUIDE",
+   "fabricPrint": "POIS",
+   "fabricColor": "#D8D8D8",
+   "motifColor": "#303030"
+  },
+  "blocks": [],
+  "note": "Robe à pois sans manches ceinturée (photo années 50, robe de droite)."
+ },
+ "robe-portee-026.jpg": {
+  "cutType": "EVASEE",
+  "details": {
+   "manches": "EVEQUE",
+   "col": "OFFICIER",
+   "longueur": "SOL",
+   "fermeture": "CEINTURE_NOUEE",
+   "corsage": "LISSE",
+   "taille": "HAUTE"
+  },
+  "fit": {
+   "ease": "CONFORT",
+   "fullness": {
+    "skirt": 1.8,
+    "sleeve": 1.2
+   },
+   "lengths": {
+    "skirtPct": 100,
+    "sleevePct": 100
+   },
+   "fabricBehavior": "FLUIDE",
+   "fabricColor": "#F2D21C",
+   "fabricPrint": "POIS",
+   "motifColor": "#F8EC9A",
+   "motifSizeCm": 2.5
+  },
+  "blocks": [],
+  "note": "Jaune années 70, col montant, taille empire nouée, manches évêque transparentes, volant d'ourlet. Plumetis : pois jaune pâle sur fond jaune (relu le 2026-10-15)."
+ },
+ "met-dress-002.jpg": {
+  "cutType": "SIRENE",
+  "details": {
+   "manches": "TROIS_QUARTS",
+   "col": "OFFICIER",
+   "longueur": "SOL",
+   "fermeture": "CEINTURE_INTEGREE",
+   "corsage": "LISSE",
+   "taille": "NATURELLE"
+  },
+  "fit": {
+   "ease": "AJUSTE",
+   "fullness": {
+    "skirt": 3.0,
+    "sleeve": 1.3
+   },
+   "lengths": {
+    "skirtPct": 100,
+    "sleevePct": 55
+   },
+   "fabricBehavior": "FLUIDE",
+   "fabricColor": "#E8DCC0"
+  },
+  "blocks": [
+   {
+    "kind": "TRAIN",
+    "lengthMm": 400
+   }
+  ],
+  "note": "Edwardienne ivoire, col montant en dentelle, manches au coude, ceinture, jupe en corolle avec traîne."
+ },
+ "met-dress-003.jpg": {
+  "cutType": "AJUSTEE",
+  "details": {
+   "manches": "SANS_MANCHES",
+   "col": "EN_V",
+   "decollete": "PLONGEANT",
+   "longueur": "SOL",
+   "corsage": "LISSE",
+   "taille": "BASSE"
+  },
+  "fit": {
+   "ease": "AJUSTE",
+   "fullness": {
+    "skirt": 2.2
+   },
+   "lengths": {
+    "skirtPct": 100
+   },
+   "fabricBehavior": "FLUIDE",
+   "fabricColor": "#121212"
+  },
+  "blocks": [
+   {
+    "kind": "TRAIN",
+    "lengthMm": 500
+   }
+  ],
+  "note": "Noire, grand décolleté en V, corsage cuirasse long sur les hanches, jupe étroite à traîne."
+ },
+ "met-dress-005.jpg": {
+  "cutType": "PRINCESSE",
+  "details": {
+   "manches": "LONGUES",
+   "col": "OFFICIER",
+   "longueur": "SOL",
+   "corsage": "LISSE",
+   "taille": "NATURELLE"
+  },
+  "fit": {
+   "ease": "AJUSTE",
+   "fullness": {
+    "skirt": 3.0,
+    "sleeve": 1.2
+   },
+   "lengths": {
+    "skirtPct": 100,
+    "sleevePct": 100
+   },
+   "fabricBehavior": "STRUCTURE",
+   "fabricColor": "#9A8A3E"
+  },
+  "blocks": [],
+  "note": "Moutarde, col montant à pèlerine de dentelle, corselet de velours, manches longues, jupe cloche."
+ },
+ "met-dress-006.jpg": {
+  "cutType": "PRINCESSE",
+  "details": {
+   "manches": "LONGUES",
+   "col": "BATEAU",
+   "longueur": "SOL",
+   "corsage": "LISSE",
+   "taille": "NATURELLE"
+  },
+  "fit": {
+   "ease": "AJUSTE",
+   "fullness": {
+    "skirt": 2.6
+   },
+   "lengths": {
+    "skirtPct": 100,
+    "sleevePct": 100
+   },
+   "fabricBehavior": "STRUCTURE",
+   "fabricColor": "#C8357A"
+  },
+  "blocks": [
+   {
+    "kind": "TRAIN",
+    "lengthMm": 700
+   }
+  ],
+  "note": "Rose, berthe drapée épaules dégagées, manches longues, ceinture noire, jupe à longue traîne."
+ },
+ "met-dress-007.jpg": {
+  "cutType": "EVASEE",
+  "details": {
+   "manches": "EVEQUE",
+   "col": "ROND",
+   "longueur": "SOL",
+   "corsage": "FRONCES_SOUS_POITRINE",
+   "taille": "NATURELLE"
+  },
+  "fit": {
+   "ease": "CONFORT",
+   "fullness": {
+    "skirt": 1.8,
+    "sleeve": 1.2
+   },
+   "lengths": {
+    "skirtPct": 100,
+    "sleevePct": 100
+   },
+   "fabricBehavior": "FLUIDE",
+   "fabricColor": "#F0D8C8"
+  },
+  "blocks": [],
+  "note": "Robe d'intérieur rose pâle, encolure froncée, taille smockée, manches évêque à poignet de dentelle."
+ },
+ "met-dress-009.jpg": {
+  "cutType": "EVASEE",
+  "details": {
+   "manches": "BALLON",
+   "col": "OFFICIER",
+   "longueur": "SOL",
+   "corsage": "LISSE"
+  },
+  "fit": {
+   "ease": "CONFORT",
+   "fullness": {
+    "skirt": 1.8,
+    "sleeve": 1.6
+   },
+   "lengths": {
+    "skirtPct": 100,
+    "sleevePct": 100
+   },
+   "fabricBehavior": "FLUIDE",
+   "fabricColor": "#5E6E62",
+   "fabricPrint": "FLEURI",
+   "motifColor": "#EFE6DA",
+   "motifSizeCm": 14
+  },
+  "blocks": [],
+  "note": "Robe d'intérieur brodée de lys, col montant, manches gigot, ligne trapèze sans couture de taille. Grands lys brodés crème et petites fleurs roses sur le devant (relu le 2026-10-15)."
+ },
+ "met-dress-013.jpg": {
+  "cutType": "AJUSTEE",
+  "details": {
+   "manches": "LONGUES",
+   "col": "OFFICIER",
+   "longueur": "SOL",
+   "fermeture": "BOUTONS",
+   "corsage": "LISSE",
+   "taille": "BASSE"
+  },
+  "fit": {
+   "ease": "AJUSTE",
+   "fullness": {
+    "skirt": 1.6
+   },
+   "lengths": {
+    "skirtPct": 100,
+    "sleevePct": 100
+   },
+   "fabricBehavior": "STRUCTURE",
+   "fabricColor": "#2E5A6A"
+  },
+  "blocks": [
+   {
+    "kind": "PLEATED_SKIRT",
+    "pleats": 24,
+    "depthMm": 40,
+    "type": "KNIFE"
+   }
+  ],
+  "note": "Bleu canard, col montant, boutonnée, corsage basque long, jupe plissée couteau étroite."
+ },
+ "met-dress-030.jpg": {
+  "cutType": "PRINCESSE",
+  "details": {
+   "manches": "COURTES",
+   "decollete": "MOYEN",
+   "col": "BATEAU",
+   "longueur": "SOL",
+   "fermeture": "CEINTURE_INTEGREE",
+   "corsage": "LISSE",
+   "taille": "NATURELLE"
+  },
+  "fit": {
+   "ease": "AJUSTE",
+   "fullness": {
+    "skirt": 3.2,
+    "sleeve": 2
+   },
+   "lengths": {
+    "skirtPct": 100,
+    "sleevePct": 18
+   },
+   "fabricBehavior": "STRUCTURE",
+   "fabricColor": "#D8D8D0"
+  },
+  "blocks": [
+   {
+    "kind": "TRAIN",
+    "lengthMm": 600
+   }
+  ],
+  "note": "Satin argent, petites manches bouffantes hors épaule, ceinture bijou, jupe cloche à traîne."
+ },
+ "met-dress-033.jpg": {
+  "cutType": "PRINCESSE",
+  "details": {
+   "manches": "CAP",
+   "decollete": "CARRE",
+   "longueur": "SOL",
+   "corsage": "LISSE",
+   "taille": "NATURELLE"
+  },
+  "fit": {
+   "ease": "AJUSTE",
+   "fullness": {
+    "skirt": 3.4
+   },
+   "lengths": {
+    "skirtPct": 100
+   },
+   "fabricBehavior": "STRUCTURE",
+   "fabricColor": "#E8A8A8"
+  },
+  "blocks": [
+   {
+    "kind": "TRAIN",
+    "lengthMm": 500
+   }
+  ],
+  "note": "Satin rose, encolure carrée bordée de dentelle, mancherons, jupe très ample à traîne."
+ },
+ "met-dress-035.jpg": {
+  "cutType": "PRINCESSE",
+  "details": {
+   "manches": "COURTES",
+   "decollete": "CARRE",
+   "longueur": "SOL",
+   "corsage": "LISSE",
+   "taille": "NATURELLE"
+  },
+  "fit": {
+   "ease": "AJUSTE",
+   "fullness": {
+    "skirt": 3.1,
+    "sleeve": 1.8
+   },
+   "lengths": {
+    "skirtPct": 100,
+    "sleevePct": 22
+   },
+   "fabricBehavior": "STRUCTURE",
+   "fabricColor": "#E8E0CC"
+  },
+  "blocks": [],
+  "note": "Satin ivoire, encolure carrée, petites manches bouffantes, corsage pointu, jupe en A."
+ },
+ "met-dress-001.jpg": {
+  "cutType": "PRINCESSE",
+  "details": {
+   "manches": "COURTES",
+   "decollete": "CARRE",
+   "longueur": "SOL",
+   "corsage": "LISSE",
+   "taille": "NATURELLE"
+  },
+  "fit": {
+   "ease": "AJUSTE",
+   "fullness": {
+    "skirt": 3.5,
+    "sleeve": 1.6
+   },
+   "lengths": {
+    "skirtPct": 100,
+    "sleevePct": 22
+   },
+   "fabricBehavior": "FLUIDE",
+   "fabricColor": "#CDB896"
+  },
+  "blocks": [],
+  "note": "Dentelle beige, encolure carrée, petites manches bouffantes, boléro, jupe à volants étagés."
+ },
+ "met-dress-008.jpg": {
+  "cutType": "PRINCESSE",
+  "details": {
+   "manches": "COURTES",
+   "col": "EN_V",
+   "decollete": "MOYEN",
+   "longueur": "SOL",
+   "corsage": "CROISE_FRONCE",
+   "taille": "NATURELLE"
+  },
+  "fit": {
+   "ease": "AJUSTE",
+   "fullness": {
+    "skirt": 3.0,
+    "sleeve": 1.4
+   },
+   "lengths": {
+    "skirtPct": 100,
+    "sleevePct": 22
+   },
+   "fabricBehavior": "FLUIDE",
+   "fabricColor": "#D8A020"
+  },
+  "blocks": [
+   {
+    "kind": "TRAIN",
+    "lengthMm": 600
+   }
+  ],
+  "note": "Soie jaune, corsage croisé drapé en V, petites manches bouffantes à nœuds, jupe drapée à traîne."
+ },
+ "met-dress-019.jpg": {
+  "cutType": "DROITE",
+  "details": {
+   "manches": "EVEQUE",
+   "col": "OFFICIER",
+   "longueur": "SOL",
+   "corsage": "LISSE"
+  },
+  "fit": {
+   "ease": "CONFORT",
+   "fullness": {
+    "skirt": 1.6,
+    "sleeve": 1.3
+   },
+   "lengths": {
+    "skirtPct": 100,
+    "sleevePct": 100
+   },
+   "fabricBehavior": "FLUIDE",
+   "fabricColor": "#E6E0D2"
+  },
+  "blocks": [
+   {
+    "kind": "TRAIN",
+    "lengthMm": 800
+   }
+  ],
+  "note": "Robe d'intérieur ivoire, col montant, manches longues froncées (évêque), devant plissé, traîne."
+ },
+ "met-dress-021.jpg": {
+  "cutType": "PRINCESSE",
+  "details": {
+   "manches": "LONGUES",
+   "col": "OFFICIER",
+   "longueur": "SOL",
+   "corsage": "CROISE_FRONCE",
+   "taille": "NATURELLE"
+  },
+  "fit": {
+   "ease": "AJUSTE",
+   "fullness": {
+    "skirt": 3.0
+   },
+   "lengths": {
+    "skirtPct": 100,
+    "sleevePct": 100
+   },
+   "fabricBehavior": "STRUCTURE",
+   "fabricColor": "#3A1418"
+  },
+  "blocks": [
+   {
+    "kind": "TRAIN",
+    "lengthMm": 500
+   }
+  ],
+  "note": "Velours bordeaux, col montant à jabot, corsage croisé drapé, manches longues à bandes, traîne."
+ },
+ "met-dress-023.jpg": {
+  "cutType": "PRINCESSE",
+  "details": {
+   "manches": "BALLON",
+   "col": "CHALE",
+   "dos": "FERME",
+   "longueur": "SOL",
+   "taille": "NATURELLE",
+   "devant": "MANTEAU_OUVERT",
+   "fermeture": "CORDELIERE"
+  },
+  "fit": {
+   "ease": "AJUSTE",
+   "fullness": {
+    "skirt": 2.1,
+    "sleeve": 2.5
+   },
+   "lengths": {
+    "skirtPct": 100,
+    "sleevePct": 100
+   },
+   "fabricBehavior": "STRUCTURE",
+   "fabricColor": "#1A2448",
+   "contrastColor": "#E6DCC2"
+  },
+  "blocks": [],
+  "note": "Robe-manteau en velours bleu nuit ouverte sur un plastron crème brodé, grands revers châle, col montant, manches gigot énormes, cordelière nouée à la taille."
+ },
+ "met-dress-038.jpg": {
+  "cutType": "PRINCESSE",
+  "details": {
+   "manches": "LONGUES",
+   "col": "CHEMISIER",
+   "longueur": "SOL",
+   "fermeture": "BOUTONS",
+   "corsage": "LISSE"
+  },
+  "fit": {
+   "ease": "AJUSTE",
+   "fullness": {
+    "skirt": 2.6
+   },
+   "lengths": {
+    "skirtPct": 100,
+    "sleevePct": 100
+   },
+   "fabricBehavior": "STRUCTURE",
+   "fabricColor": "#C01818"
+  },
+  "blocks": [],
+  "note": "Manteau-robe rouge croisé à double boutonnage, col rabattu, manches longues, ligne princesse."
+ },
+ "met-dress-041.jpg": {
+  "cutType": "PRINCESSE",
+  "details": {
+   "manches": "COURTES",
+   "decollete": "CARRE",
+   "longueur": "SOL",
+   "corsage": "LISSE",
+   "taille": "NATURELLE"
+  },
+  "fit": {
+   "ease": "AJUSTE",
+   "fullness": {
+    "skirt": 3.3,
+    "sleeve": 2.4
+   },
+   "lengths": {
+    "skirtPct": 100,
+    "sleevePct": 25
+   },
+   "fabricBehavior": "STRUCTURE",
+   "fabricColor": "#D8C48A"
+  },
+  "blocks": [],
+  "note": "Brocart doré, énormes manches courtes bouffantes, encolure carrée, jupe cloche."
+ },
+ "met-dress-043.jpg": {
+  "cutType": "OVERSIZE",
+  "details": {
+   "manches": "PAPILLON",
+   "col": "LAVALLIERE",
+   "longueur": "SOL",
+   "corsage": "LISSE"
+  },
+  "fit": {
+   "ease": "AMPLE",
+   "fullness": {
+    "skirt": 2.6,
+    "sleeve": 1.5
+   },
+   "lengths": {
+    "skirtPct": 100,
+    "sleevePct": 70
+   },
+   "fabricBehavior": "FLUIDE",
+   "fabricColor": "#D8DCC8"
+  },
+  "blocks": [],
+  "note": "Déshabillé vert d'eau, nœud au cou, manches évasées 3/4 à volants étagés, ample."
+ },
+ "met-dress-044.jpg": {
+  "cutType": "SIRENE",
+  "details": {
+   "manches": "COURTES",
+   "col": "ROND",
+   "decollete": "MOYEN",
+   "longueur": "SOL",
+   "corsage": "LISSE",
+   "taille": "NATURELLE"
+  },
+  "fit": {
+   "ease": "AJUSTE",
+   "fullness": {
+    "skirt": 2.6,
+    "sleeve": 1.1
+   },
+   "lengths": {
+    "skirtPct": 100,
+    "sleevePct": 25
+   },
+   "fabricBehavior": "FLUIDE",
+   "fabricColor": "#101010"
+  },
+  "blocks": [
+   {
+    "kind": "TRAIN",
+    "lengthMm": 600
+   }
+  ],
+  "note": "Noire pailletée, encolure ronde, manches courtes, ajustée aux hanches puis évasée, traîne."
+ },
+ "met-dress-045.jpg": {
+  "cutType": "PRINCESSE",
+  "details": {
+   "manches": "CLOCHE",
+   "col": "EN_V",
+   "decollete": "SAGE",
+   "longueur": "SOL",
+   "fermeture": "BOUTONS",
+   "taille": "BASSE"
+  },
+  "fit": {
+   "ease": "CONFORT",
+   "fullness": {
+    "skirt": 2.6,
+    "sleeve": 1.1
+   },
+   "lengths": {
+    "skirtPct": 100,
+    "sleevePct": 85
+   },
+   "fabricBehavior": "STRUCTURE",
+   "fabricColor": "#161616"
+  },
+  "blocks": [],
+  "note": "Deuil noir, col V, corsage basque boutonné, manches évasées à dentelle, jupe ample à volant."
+ },
+ "met-dress-047.jpg": {
+  "cutType": "PRINCESSE",
+  "details": {
+   "manches": "BALLON",
+   "col": "OFFICIER",
+   "longueur": "SOL",
+   "corsage": "LISSE",
+   "taille": "NATURELLE"
+  },
+  "fit": {
+   "ease": "AJUSTE",
+   "fullness": {
+    "skirt": 3.5,
+    "sleeve": 1.9
+   },
+   "lengths": {
+    "skirtPct": 100,
+    "sleevePct": 100
+   },
+   "fabricBehavior": "STRUCTURE",
+   "fabricColor": "#2A3A20"
+  },
+  "blocks": [],
+  "note": "Velours vert, col montant à jabot, manches gigot à poignets froncés, jupe cloche à bandes."
+ },
+ "met-dress-050.jpg": {
+  "cutType": "AJUSTEE",
+  "details": {
+   "manches": "LONGUES",
+   "col": "OFFICIER",
+   "longueur": "SOL",
+   "fermeture": "BOUTONS",
+   "corsage": "LISSE",
+   "taille": "BASSE"
+  },
+  "fit": {
+   "ease": "AJUSTE",
+   "fullness": {
+    "skirt": 2.5
+   },
+   "lengths": {
+    "skirtPct": 100,
+    "sleevePct": 100
+   },
+   "fabricBehavior": "STRUCTURE",
+   "fabricColor": "#2E4A80"
+  },
+  "blocks": [],
+  "note": "Bleue, col montant, veste basque boutonnée, manches longues ajustées, jupe étroite."
+ },
+ "met-dress-052.jpg": {
+  "cutType": "PRINCESSE",
+  "details": {
+   "manches": "LONGUES",
+   "col": "OFFICIER",
+   "longueur": "SOL",
+   "corsage": "LISSE",
+   "taille": "NATURELLE"
+  },
+  "fit": {
+   "ease": "AJUSTE",
+   "fullness": {
+    "skirt": 2.6,
+    "sleeve": 1.15
+   },
+   "lengths": {
+    "skirtPct": 100,
+    "sleevePct": 100
+   },
+   "fabricBehavior": "STRUCTURE",
+   "fabricPrint": "POIS",
+   "fabricColor": "#EDE4D0",
+   "motifColor": "#101010"
+  },
+  "blocks": [],
+  "note": "Crème à pois et guirlandes de dentelle noire, col montant, manches longues, jupe cloche."
+ },
+ "met-dress-053.jpg": {
+  "cutType": "PRINCESSE",
+  "details": {
+   "manches": "COURTES",
+   "col": "BATEAU",
+   "decollete": "MOYEN",
+   "longueur": "SOL",
+   "corsage": "LISSE",
+   "taille": "NATURELLE"
+  },
+  "fit": {
+   "ease": "AJUSTE",
+   "fullness": {
+    "skirt": 3.6,
+    "sleeve": 1.8
+   },
+   "lengths": {
+    "skirtPct": 100,
+    "sleevePct": 18
+   },
+   "fabricBehavior": "STRUCTURE",
+   "fabricPrint": "FLEURI",
+   "fabricColor": "#E8D8B0",
+   "motifColor": "#B02020"
+  },
+  "blocks": [],
+  "note": "Crème brodée de cerises, épaules dégagées, petites manches bouffantes, ceinture, jupe cloche."
+ },
+ "_calibration": "fullness.skirt des robes Met recalé sur la silhouette de la photo (silhouette_ratio.py, ourlet ÷ taille × 0,85 pour le corset, plafond 3,6)."
+}

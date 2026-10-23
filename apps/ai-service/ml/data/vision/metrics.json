@@ -1,0 +1,95 @@
+{
+ "garmentType": {
+  "cvAccuracy": 0.688,
+  "n": 398,
+  "threshold": 0.375
+ },
+ "cutType": {
+  "cvAccuracy": 0.582,
+  "n": 337,
+  "threshold": 0.55
+ },
+ "presentation": {
+  "cvAccuracy": 0.958,
+  "n": 359,
+  "threshold": 0.2
+ },
+ "occasion": {
+  "cvAccuracy": 0.696,
+  "n": 358,
+  "threshold": 0.475
+ },
+ "style": {
+  "cvAccuracy": 0.779,
+  "n": 357,
+  "threshold": 0.35
+ },
+ "fit.ease": {
+  "cvAccuracy": 0.619,
+  "n": 354,
+  "threshold": 0.675
+ },
+ "details.longueur": {
+  "cvAccuracy": 0.692,
+  "n": 295,
+  "threshold": 0.475
+ },
+ "details.manches": {
+  "cvAccuracy": 0.467,
+  "n": 289,
+  "threshold": 0.95
+ },
+ "details.col": {
+  "cvAccuracy": 0.562,
+  "n": 130,
+  "threshold": 0.95
+ },
+ "details.decollete": {
+  "cvAccuracy": 0.46,
+  "n": 63,
+  "threshold": 0.95
+ },
+ "fullness.skirt": {
+  "cvMae": 0.469,
+  "baselineMae": 0.574,
+  "n": 193
+ },
+ "golden": {
+  "garmentType": {
+   "n": 116,
+   "answered": 82,
+   "accuracyWhenAnswered": 0.72,
+   "accuracyOverall": 0.509
+  },
+  "presentation": {
+   "n": 102,
+   "answered": 102,
+   "accuracyWhenAnswered": 0.902,
+   "accuracyOverall": 0.902
+  },
+  "details.manches": {
+   "n": 59,
+   "answered": 0,
+   "accuracyWhenAnswered": null,
+   "accuracyOverall": 0.0
+  },
+  "details.longueur": {
+   "n": 41,
+   "answered": 38,
+   "accuracyWhenAnswered": 0.974,
+   "accuracyOverall": 0.902
+  },
+  "cutType": {
+   "n": 17,
+   "answered": 9,
+   "accuracyWhenAnswered": 1.0,
+   "accuracyOverall": 0.529
+  },
+  "occasion": {
+   "n": 18,
+   "answered": 12,
+   "accuracyWhenAnswered": 0.833,
+   "accuracyOverall": 0.556
+  }
+ }
+}

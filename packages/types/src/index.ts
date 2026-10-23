@@ -3,7 +3,8 @@
 // Enums mirror packages/database/prisma/schema.prisma 1:1 — keep both in sync.
 
 import type { ProviderCredentials } from './ai-providers';
-import type { DrapeBlock, GarmentFit, PatternExtParameters } from './pattern-fit';
+import type { DrapeBlock, GarmentFit, PatternExtParameters, Trim } from './pattern-fit';
+import type { ConstructionItem } from './pattern-construction';
 
 // ============================================================
 // Enums
@@ -829,6 +830,10 @@ export interface GarmentProfile {
    * stays in `constructionNotes` as mannequin advice.
    */
   drapeBlocks?: DrapeBlock[] | null;
+  /** Garnitures read on the photo (lace berthe, sleeve frills, bead rows). Absent on older analyses. */
+  trims?: Trim[] | null;
+  /** Visible construction pieces read on the photo (flounces, godets, peplum, jabot, bustle…). Absent when none. */
+  construction?: ConstructionItem[] | null;
 }
 
 /** What the photo analysis found, stored on the pattern project so generation can use it. */
@@ -879,6 +884,18 @@ export interface PatternPieceDto {
     positionAlongEdge: number;
     edgeIndex: number;
   }> | null;
+}
+
+/** Une pièce telle qu'éditée dans l'atelier de patronage (sans identifiant : une nouvelle version recrée les pièces). */
+export type PatternPieceInput = Pick<
+  PatternPieceDto,
+  'name' | 'dimensionsJson' | 'fabricRecommendation' | 'quantity' | 'grainlineJson' | 'seamAllowanceCm' | 'notchesJson'
+>;
+
+/** POST /api/pattern-versions/:id/edits — enregistre les pièces retouchées à la main comme nouvelle version. */
+export interface SavePatternEditsRequest {
+  pieces: PatternPieceInput[];
+  changeLabel?: string | undefined;
 }
 
 export interface PatternExportDto {
@@ -1090,4 +1107,8 @@ export * from './media';
 
 export * from './ai-providers';
 export * from './pattern-detail-options';
+export * from './pattern-detail-groups';
 export * from './pattern-fit';
+export * from './pattern-construction';
+export * from './pattern-catalog';
+export * from './realistic-render';

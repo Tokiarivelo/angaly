@@ -1,3 +1,5 @@
+import { type ConstructionSpec, validateConstructionSpec } from './pattern-construction';
+import { PATTERN_DETAIL_OPTIONS } from './pattern-detail-options';
 /**
  * Single source of truth for everything the pattern-engine needs to FIT a garment to a body:
  *  - the measurement catalogue (keys, French labels, how to take them, plausible bounds, which
@@ -59,11 +61,14 @@ export interface MeasurementDefinition {
   recommendedFor: readonly FitGarmentType[];
 }
 
-const TOPS: readonly FitGarmentType[] = ['ROBE', 'VESTE', 'COSTUME', 'CHEMISE', 'ROBE_MARIEE', 'AUTRE'];
 const SLEEVED: readonly FitGarmentType[] = ['ROBE', 'VESTE', 'COSTUME', 'CHEMISE', 'ROBE_MARIEE'];
-const DRESSES: readonly FitGarmentType[] = ['ROBE', 'ROBE_MARIEE'];
 const NONE: readonly FitGarmentType[] = [];
 
+/**
+ * `recommendedFor` lists the garments whose rule (or a shared helper it calls) reads the measurement — checked against
+ * `packages/pattern-engine` on 2026-10-20 (`measurement-catalog-sync.test.ts`): asking for one the pattern ignores
+ * would mislead, and one it reads but never asks is lost fit.
+ */
 export const MEASUREMENT_CATALOG: readonly MeasurementDefinition[] = [
   // --- Tours ---
   {
@@ -77,6 +82,16 @@ export const MEASUREMENT_CATALOG: readonly MeasurementDefinition[] = [
     recommendedFor: NONE,
   },
   {
+    key: 'TOUR_HAUT_POITRINE',
+    label: 'Tour de haut de poitrine',
+    help: 'Sous les bras, au-dessus de la poitrine, le mètre bien à plat dans le dos. Comparé au tour de poitrine, il dit si la poitrine est forte.',
+    group: 'CIRCONFERENCES',
+    minCm: 60,
+    maxCm: 160,
+    requiredFor: NONE,
+    recommendedFor: ['ROBE', 'ROBE_MARIEE', 'VESTE', 'COSTUME', 'CHEMISE'],
+  },
+  {
     key: 'TOUR_SOUS_POITRINE',
     label: 'Tour sous la poitrine',
     help: 'Horizontalement juste sous la poitrine, là où s’arrête un soutien-gorge.',
@@ -84,7 +99,7 @@ export const MEASUREMENT_CATALOG: readonly MeasurementDefinition[] = [
     minCm: 55,
     maxCm: 150,
     requiredFor: NONE,
-    recommendedFor: ['ROBE_MARIEE'],
+    recommendedFor: ['ROBE', 'ROBE_MARIEE', 'VESTE', 'COSTUME', 'CHEMISE'],
   },
   {
     key: 'TOUR_TAILLE',
@@ -107,6 +122,16 @@ export const MEASUREMENT_CATALOG: readonly MeasurementDefinition[] = [
     recommendedFor: ['VESTE'],
   },
   {
+    key: 'TOUR_HANCHE_COMPLET',
+    label: 'Tour de hanches complet',
+    help: 'Comme le tour de bassin, mais en passant aussi sur le ventre (une règle posée à plat contre le ventre) : toujours un peu plus grand. Utile si le ventre est marqué.',
+    group: 'CIRCONFERENCES',
+    minCm: 65,
+    maxCm: 190,
+    requiredFor: NONE,
+    recommendedFor: ['ROBE', 'ROBE_MARIEE', 'JUPE', 'PANTALON', 'COSTUME'],
+  },
+  {
     key: 'TOUR_COU',
     label: 'Tour de cou',
     help: 'Mesurez à la base du cou.',
@@ -114,7 +139,7 @@ export const MEASUREMENT_CATALOG: readonly MeasurementDefinition[] = [
     minCm: 25,
     maxCm: 55,
     requiredFor: NONE,
-    recommendedFor: ['VESTE', 'COSTUME', 'CHEMISE'],
+    recommendedFor: ['ROBE', 'VESTE', 'COSTUME', 'CHEMISE'],
   },
   {
     key: 'TOUR_EMMANCHURE',
@@ -124,7 +149,7 @@ export const MEASUREMENT_CATALOG: readonly MeasurementDefinition[] = [
     minCm: 30,
     maxCm: 70,
     requiredFor: NONE,
-    recommendedFor: ['VESTE', 'COSTUME', 'CHEMISE'],
+    recommendedFor: ['ROBE', 'ROBE_MARIEE', 'VESTE', 'COSTUME', 'CHEMISE'],
   },
   {
     key: 'TOUR_CUISSE',
@@ -154,7 +179,7 @@ export const MEASUREMENT_CATALOG: readonly MeasurementDefinition[] = [
     minCm: 15,
     maxCm: 40,
     requiredFor: NONE,
-    recommendedFor: ['PANTALON'],
+    recommendedFor: ['PANTALON', 'COSTUME'],
   },
   {
     key: 'TOUR_BRAS',
@@ -174,7 +199,7 @@ export const MEASUREMENT_CATALOG: readonly MeasurementDefinition[] = [
     minCm: 11,
     maxCm: 30,
     requiredFor: NONE,
-    recommendedFor: ['VESTE', 'COSTUME', 'CHEMISE'],
+    recommendedFor: ['ROBE', 'ROBE_MARIEE', 'VESTE', 'COSTUME', 'CHEMISE'],
   },
   // --- Largeurs ---
   {
@@ -185,7 +210,7 @@ export const MEASUREMENT_CATALOG: readonly MeasurementDefinition[] = [
     minCm: 25,
     maxCm: 55,
     requiredFor: NONE,
-    recommendedFor: SLEEVED,
+    recommendedFor: ['ROBE', 'VESTE', 'COSTUME', 'CHEMISE'],
   },
   {
     key: 'CARRURE_DEVANT',
@@ -195,7 +220,7 @@ export const MEASUREMENT_CATALOG: readonly MeasurementDefinition[] = [
     minCm: 25,
     maxCm: 55,
     requiredFor: NONE,
-    recommendedFor: SLEEVED,
+    recommendedFor: ['ROBE', 'VESTE', 'COSTUME', 'CHEMISE'],
   },
   {
     key: 'LARGEUR_EPAULE',
@@ -205,7 +230,17 @@ export const MEASUREMENT_CATALOG: readonly MeasurementDefinition[] = [
     minCm: 8,
     maxCm: 20,
     requiredFor: NONE,
-    recommendedFor: TOPS,
+    recommendedFor: ['ROBE', 'VESTE', 'COSTUME', 'CHEMISE'],
+  },
+  {
+    key: 'PENTE_EPAULE',
+    label: 'Pente d’épaule',
+    help: 'De la base du cou jusqu’à la pointe de l’épaule, à la verticale (règle posée à plat sur les épaules) : 4 à 5 cm en moyenne, moins pour des épaules carrées, plus pour des épaules tombantes.',
+    group: 'LARGEURS',
+    minCm: 1,
+    maxCm: 9,
+    requiredFor: NONE,
+    recommendedFor: ['ROBE', 'VESTE', 'COSTUME', 'CHEMISE'],
   },
   {
     key: 'ECARTEMENT_POINTS_POITRINE',
@@ -215,7 +250,7 @@ export const MEASUREMENT_CATALOG: readonly MeasurementDefinition[] = [
     minCm: 8,
     maxCm: 30,
     requiredFor: NONE,
-    recommendedFor: ['ROBE', 'ROBE_MARIEE', 'VESTE'],
+    recommendedFor: ['ROBE', 'ROBE_MARIEE', 'VESTE', 'COSTUME', 'CHEMISE'],
   },
   // --- Longueurs du buste ---
   {
@@ -236,7 +271,7 @@ export const MEASUREMENT_CATALOG: readonly MeasurementDefinition[] = [
     minCm: 30,
     maxCm: 65,
     requiredFor: NONE,
-    recommendedFor: ['ROBE', 'ROBE_MARIEE', 'VESTE'],
+    recommendedFor: ['ROBE'],
   },
   {
     key: 'HAUTEUR_POITRINE',
@@ -246,7 +281,7 @@ export const MEASUREMENT_CATALOG: readonly MeasurementDefinition[] = [
     minCm: 18,
     maxCm: 40,
     requiredFor: NONE,
-    recommendedFor: ['ROBE', 'ROBE_MARIEE', 'VESTE'],
+    recommendedFor: ['ROBE', 'ROBE_MARIEE', 'VESTE', 'COSTUME', 'CHEMISE'],
   },
   {
     key: 'HAUTEUR_BASSIN',
@@ -256,7 +291,7 @@ export const MEASUREMENT_CATALOG: readonly MeasurementDefinition[] = [
     minCm: 14,
     maxCm: 28,
     requiredFor: NONE,
-    recommendedFor: ['ROBE', 'JUPE', 'PANTALON', 'COSTUME', 'ROBE_MARIEE'],
+    recommendedFor: ['ROBE', 'JUPE', 'PANTALON', 'COSTUME'],
   },
   {
     key: 'PROFONDEUR_EMMANCHURE',
@@ -266,7 +301,7 @@ export const MEASUREMENT_CATALOG: readonly MeasurementDefinition[] = [
     minCm: 15,
     maxCm: 30,
     requiredFor: NONE,
-    recommendedFor: ['VESTE', 'COSTUME', 'CHEMISE'],
+    recommendedFor: ['ROBE', 'VESTE', 'COSTUME', 'CHEMISE'],
   },
   // --- Bras ---
   {
@@ -288,7 +323,7 @@ export const MEASUREMENT_CATALOG: readonly MeasurementDefinition[] = [
     minCm: 25,
     maxCm: 140,
     requiredFor: NONE,
-    recommendedFor: ['JUPE', 'ROBE', 'ROBE_MARIEE'],
+    recommendedFor: ['ROBE', 'ROBE_MARIEE', 'JUPE'],
   },
   {
     key: 'HAUTEUR_TAILLE_GENOU',
@@ -298,7 +333,7 @@ export const MEASUREMENT_CATALOG: readonly MeasurementDefinition[] = [
     minCm: 40,
     maxCm: 75,
     requiredFor: NONE,
-    recommendedFor: ['JUPE', 'PANTALON', 'COSTUME'],
+    recommendedFor: ['PANTALON', 'COSTUME'],
   },
   {
     key: 'HAUTEUR_FOURCHE',
@@ -307,6 +342,16 @@ export const MEASUREMENT_CATALOG: readonly MeasurementDefinition[] = [
     group: 'BAS_DU_CORPS',
     minCm: 18,
     maxCm: 40,
+    requiredFor: NONE,
+    recommendedFor: ['PANTALON', 'COSTUME'],
+  },
+  {
+    key: 'LONGUEUR_ENFOURCHURE',
+    label: 'Longueur d’enfourchure',
+    help: 'Du milieu devant de la taille, entre les jambes, jusqu’au milieu dos de la taille (mètre ruban souple, sans serrer).',
+    group: 'BAS_DU_CORPS',
+    minCm: 50,
+    maxCm: 100,
     requiredFor: NONE,
     recommendedFor: ['PANTALON', 'COSTUME'],
   },
@@ -338,7 +383,17 @@ export const MEASUREMENT_CATALOG: readonly MeasurementDefinition[] = [
     minCm: 80,
     maxCm: 140,
     requiredFor: NONE,
-    recommendedFor: DRESSES,
+    recommendedFor: ['ROBE_MARIEE'],
+  },
+  {
+    key: 'STATURE',
+    label: 'Stature',
+    help: 'Votre taille debout, pieds nus, dos contre un mur : du sol au sommet de la tête.',
+    group: 'BAS_DU_CORPS',
+    minCm: 90,
+    maxCm: 220,
+    requiredFor: NONE,
+    recommendedFor: ['ROBE', 'ROBE_MARIEE', 'JUPE'],
   },
   {
     key: 'LONGUEUR_TRAINE',
@@ -523,23 +578,29 @@ export interface NumericBounds {
 export const FULLNESS_BOUNDS = {
   skirt: { min: 1, max: 4, step: 0.25 },
   sleeve: { min: 1, max: 2.5, step: 0.25 },
+  /** Trouser hem width relative to the cut's own (1 = the cut as drawn; 1.4 = 40 % wider at the hem). */
+  leg: { min: 0.6, max: 1.8, step: 0.05 },
 } as const satisfies Record<string, NumericBounds>;
 
 export const LENGTH_BOUNDS = {
   skirtPct: { min: 40, max: 130, step: 1 },
   sleevePct: { min: 0, max: 100, step: 1 },
   bodicePct: { min: 80, max: 120, step: 1 },
+  /** Trouser length as a % of the full leg (waist to ankle bone): 45 = short, 100 = ankle, 104 = floor. */
+  legPct: { min: 40, max: 110, step: 1 },
 } as const satisfies Record<string, NumericBounds>;
 
 export interface PatternFullness {
   skirt?: number;
   sleeve?: number;
+  leg?: number;
 }
 
 export interface PatternLengths {
   skirtPct?: number;
   sleevePct?: number;
   bodicePct?: number;
+  legPct?: number;
 }
 
 // ---- Drape blocks (Phase 5b S4) ----
@@ -613,13 +674,90 @@ export interface DrapeSpec {
   blocks: DrapeBlock[];
 }
 
+// ============================================================
+// Trims (garnitures) — lace berthe, lace sleeve frills, bead rows
+// ============================================================
+
+/**
+ * Trimmings sewn onto the finished garment: they add cut pieces (a berthe, sleeve frills) or notions (bead rows) to the
+ * pattern and show in the 3D preview, without changing the garment's own pieces.
+ *  - BERTHE: a band (lace or fabric) laid along the neckline edge, `depthMm` deep, falling to a point `pointMm` lower at
+ *    the centre front (0 = straight band);
+ *  - SLEEVE_FRILL: `tiers` gathered frills round the sleeve hem, each `depthMm` deep;
+ *  - BEADING: `rows` rows of beads (pearls) of `beadMm` along a place.
+ */
+export const TRIM_KINDS = ['BERTHE', 'SLEEVE_FRILL', 'BEADING'] as const;
+export type TrimKind = (typeof TRIM_KINDS)[number];
+export const TRIM_MATERIALS = ['DENTELLE', 'TISSU', 'TULLE'] as const;
+export type TrimMaterial = (typeof TRIM_MATERIALS)[number];
+export const TRIM_PLACES = ['ENCOLURE', 'BERTHE', 'MANCHES', 'TAILLE'] as const;
+export type TrimPlace = (typeof TRIM_PLACES)[number];
+
+export const TRIM_LABELS: Record<TrimKind, string> = {
+  BERTHE: 'Berthe (bande le long du décolleté)',
+  SLEEVE_FRILL: 'Volants de manche',
+  BEADING: 'Rang de perles',
+};
+export const TRIM_MATERIAL_LABELS: Record<TrimMaterial, string> = { DENTELLE: 'Dentelle', TISSU: 'Même tissu', TULLE: 'Tulle' };
+export const TRIM_PLACE_LABELS: Record<TrimPlace, string> = {
+  ENCOLURE: 'Bord du décolleté',
+  BERTHE: 'Pointe de la berthe',
+  MANCHES: 'Bas des manches',
+  TAILLE: 'Couture de taille',
+};
+
+export const TRIM_BOUNDS = {
+  bertheDepthMm: { min: 30, max: 200, step: 5 },
+  berthePointMm: { min: 0, max: 250, step: 5 },
+  frillTiers: { min: 1, max: 4, step: 1 },
+  frillDepthMm: { min: 15, max: 120, step: 5 },
+  beadMm: { min: 2, max: 14, step: 1 },
+  beadRows: { min: 1, max: 3, step: 1 },
+} as const satisfies Record<string, NumericBounds>;
+export const MAX_TRIMS = 6;
+
+export type Trim =
+  | { kind: 'BERTHE'; depthMm: number; pointMm: number; material: TrimMaterial; color?: string }
+  | { kind: 'SLEEVE_FRILL'; tiers: number; depthMm: number; material: TrimMaterial; color?: string }
+  | { kind: 'BEADING'; place: TrimPlace; beadMm: number; rows: number; color?: string };
+
+export interface TrimSpec {
+  items: Trim[];
+}
+
 /** Optional engine inputs stored in `pattern_projects.parametersExtJson`. Absent = historical geometry. */
 export interface PatternExtParameters {
   ease?: EaseLevel;
   fullness?: PatternFullness;
   lengths?: PatternLengths;
   drape?: DrapeSpec;
+  /** Garnitures (berthe, sleeve frills, bead rows): extra pieces and notions, plus their look in 3D. */
+  trims?: TrimSpec;
+  /** Construction pieces (lining, interfacing, flounces, godets, peplum, bustle…): `pattern-construction.ts`. */
+  construction?: ConstructionSpec;
+  /** How the cloth behaves, chosen by the customer (wins over the photo's reading): a stretch knit may fit closer. */
+  fabric?: FabricBehavior;
+  /**
+   * What the choices do not cover, in the customer's words: a note per detail group (« Autre / préciser »), a general
+   * note, measurements of their own. The engine never draws them — they travel with the pattern for the atelier.
+   */
+  notes?: PatternNotes;
+  /**
+   * Measurements typed in the wizard for this project (cm, catalogue keys), on top of the chosen profile: kept so a
+   * refresh or a later generation still uses them. They win over the profile, and the values sent with a generation
+   * win over them.
+   */
+  measurements?: Record<string, number>;
 }
+
+export interface PatternNotes {
+  details?: Partial<Record<string, string>>;
+  general?: string;
+  measurements?: Array<{ label: string; cm: number }>;
+}
+
+/** Bounds of the customer's notes (characters, count, cm). */
+export const NOTES_BOUNDS = { detailChars: 300, generalChars: 1000, measurements: 12, labelChars: 60, cm: [1, 300] as const };
 
 export interface PatternExtIssue {
   path: string;
@@ -641,7 +779,8 @@ function checkBounded(
     issues.push({ path, message: `${path} doit être compris entre ${bounds.min} et ${bounds.max}.` });
     return undefined;
   }
-  return Math.round(value / bounds.step) * bounds.step;
+  // Snapped to the step, without float noise (1.4 on a 0.05 step is 1.4, not 1.4000000000000001).
+  return Number((Math.round(value / bounds.step) * bounds.step).toFixed(6));
 }
 
 /**
@@ -679,6 +818,8 @@ export function validatePatternExtParameters(input: unknown): {
       const sleeve = checkBounded(f['sleeve'], FULLNESS_BOUNDS.sleeve, 'fullness.sleeve', issues);
       if (skirt !== undefined) fullness.skirt = skirt;
       if (sleeve !== undefined) fullness.sleeve = sleeve;
+      const leg = checkBounded(f['leg'], FULLNESS_BOUNDS.leg, 'fullness.leg', issues);
+      if (leg !== undefined) fullness.leg = leg;
       if (Object.keys(fullness).length > 0) value.fullness = fullness;
     }
   }
@@ -696,6 +837,8 @@ export function validatePatternExtParameters(input: unknown): {
       if (skirtPct !== undefined) lengths.skirtPct = skirtPct;
       if (sleevePct !== undefined) lengths.sleevePct = sleevePct;
       if (bodicePct !== undefined) lengths.bodicePct = bodicePct;
+      const legPct = checkBounded(l['legPct'], LENGTH_BOUNDS.legPct, 'lengths.legPct', issues);
+      if (legPct !== undefined) lengths.legPct = legPct;
       if (Object.keys(lengths).length > 0) value.lengths = lengths;
     }
   }
@@ -705,7 +848,176 @@ export function validatePatternExtParameters(input: unknown): {
     if (drape) value.drape = drape;
   }
 
+  if (raw['trims'] !== undefined && raw['trims'] !== null) {
+    const trims = validateTrimSpec(raw['trims'], issues);
+    if (trims) value.trims = trims;
+  }
+
+  if (raw['construction'] !== undefined && raw['construction'] !== null) {
+    const construction = validateConstructionSpec(raw['construction'], issues);
+    if (construction) value.construction = construction;
+  }
+
+  if (raw['fabric'] !== undefined && raw['fabric'] !== null) {
+    if (typeof raw['fabric'] === 'string' && (FABRIC_BEHAVIORS as readonly string[]).includes(raw['fabric'])) {
+      value.fabric = raw['fabric'] as FabricBehavior;
+    } else {
+      issues.push({ path: 'fabric', message: `fabric doit valoir ${FABRIC_BEHAVIORS.join(', ')}.` });
+    }
+  }
+
+  if (raw['notes'] !== undefined && raw['notes'] !== null) {
+    const notes = validateNotes(raw['notes'], issues);
+    if (notes) value.notes = notes;
+  }
+
+  if (raw['measurements'] !== undefined && raw['measurements'] !== null) {
+    const m = raw['measurements'];
+    if (typeof m !== 'object' || Array.isArray(m)) {
+      issues.push({ path: 'measurements', message: 'measurements doit être un objet { CLÉ: cm }.' });
+    } else {
+      const { valid, issues: bad } = validateMeasurementValues(m as Record<string, unknown>);
+      for (const issue of bad) issues.push({ path: `measurements.${issue.key}`, message: issue.message });
+      if (Object.keys(valid).length > 0) value.measurements = valid;
+    }
+  }
+
   return { value, issues };
+}
+
+/** Free text is kept as typed (cut to its bound, blank dropped); detail notes only for known groups; measurements bounded. */
+function validateNotes(input: unknown, issues: PatternExtIssue[]): PatternNotes | undefined {
+  if (typeof input !== 'object' || input === null || Array.isArray(input)) {
+    issues.push({ path: 'notes', message: 'notes doit être un objet.' });
+    return undefined;
+  }
+  const raw = input as Record<string, unknown>;
+  const text = (v: unknown, max: number): string | undefined =>
+    typeof v === 'string' && v.trim().length > 0 ? v.slice(0, max) : undefined;
+  const notes: PatternNotes = {};
+  if (raw['details'] !== undefined && raw['details'] !== null) {
+    if (typeof raw['details'] !== 'object' || Array.isArray(raw['details'])) {
+      issues.push({ path: 'notes.details', message: 'notes.details doit être un objet.' });
+    } else {
+      const details: Record<string, string> = {};
+      for (const [group, v] of Object.entries(raw['details'] as Record<string, unknown>)) {
+        if (!(group in PATTERN_DETAIL_OPTIONS)) {
+          issues.push({ path: `notes.details.${group}`, message: `Groupe de détail inconnu : ${group}.` });
+          continue;
+        }
+        const t = text(v, NOTES_BOUNDS.detailChars);
+        if (t) details[group] = t;
+      }
+      if (Object.keys(details).length > 0) notes.details = details;
+    }
+  }
+  const general = text(raw['general'], NOTES_BOUNDS.generalChars);
+  if (general) notes.general = general;
+  if (raw['measurements'] !== undefined && raw['measurements'] !== null) {
+    if (!Array.isArray(raw['measurements'])) {
+      issues.push({ path: 'notes.measurements', message: 'notes.measurements doit être une liste.' });
+    } else {
+      const list: Array<{ label: string; cm: number }> = [];
+      raw['measurements'].slice(0, NOTES_BOUNDS.measurements).forEach((m, i) => {
+        const r = (m ?? {}) as Record<string, unknown>;
+        const label = text(r['label'], NOTES_BOUNDS.labelChars);
+        const cm = r['cm'];
+        if (!label || typeof cm !== 'number' || !Number.isFinite(cm) || cm < NOTES_BOUNDS.cm[0] || cm > NOTES_BOUNDS.cm[1]) {
+          issues.push({ path: `notes.measurements.${i}`, message: `Mesure ${i + 1} : un nom et une valeur entre ${NOTES_BOUNDS.cm[0]} et ${NOTES_BOUNDS.cm[1]} cm.` });
+          return;
+        }
+        list.push({ label, cm: Math.round(cm * 10) / 10 });
+      });
+      if (list.length > 0) notes.measurements = list;
+    }
+  }
+  return Object.keys(notes).length > 0 ? notes : undefined;
+}
+
+/**
+ * Each trim is validated on its own (an invalid one is reported and dropped). A berthe and sleeve frills at most once;
+ * bead rows at most once per place. An explicit empty list means « no trims » (it beats a photo suggestion).
+ */
+function validateTrimSpec(input: unknown, issues: PatternExtIssue[]): TrimSpec | undefined {
+  const rawItems = (input as { items?: unknown })?.items;
+  if (typeof input !== 'object' || Array.isArray(input) || !Array.isArray(rawItems)) {
+    issues.push({ path: 'trims', message: 'trims doit être { items: [...] }.' });
+    return undefined;
+  }
+  if (rawItems.length === 0) return { items: [] };
+  if (rawItems.length > MAX_TRIMS) issues.push({ path: 'trims.items', message: `Au plus ${MAX_TRIMS} garnitures.` });
+  const items: Trim[] = [];
+  const seen = new Set<string>();
+  rawItems.slice(0, MAX_TRIMS).forEach((rawItem, index) => {
+    const path = `trims.items[${index}]`;
+    if (typeof rawItem !== 'object' || rawItem === null || Array.isArray(rawItem)) {
+      issues.push({ path, message: `${path} doit être un objet.` });
+      return;
+    }
+    const t = rawItem as Record<string, unknown>;
+    const kind = t['kind'];
+    if (typeof kind !== 'string' || !(TRIM_KINDS as readonly string[]).includes(kind)) {
+      issues.push({ path: `${path}.kind`, message: `kind doit valoir ${TRIM_KINDS.join(', ')}.` });
+      return;
+    }
+    const num = (name: string, bounds: NumericBounds): number | undefined => {
+      if (t[name] === undefined) {
+        issues.push({ path: `${path}.${name}`, message: `${name} est requis.` });
+        return undefined;
+      }
+      return checkBounded(t[name], bounds, `${path}.${name}`, issues);
+    };
+    const color = t['color'];
+    if (color !== undefined && !isHexColor(color)) {
+      issues.push({ path: `${path}.color`, message: 'color doit être une couleur #rrggbb.' });
+      return;
+    }
+    const colorPart = color !== undefined ? { color: color as string } : {};
+    const material = t['material'];
+    const checkMaterial = (): TrimMaterial | undefined => {
+      if (typeof material === 'string' && (TRIM_MATERIALS as readonly string[]).includes(material)) return material as TrimMaterial;
+      issues.push({ path: `${path}.material`, message: `material doit valoir ${TRIM_MATERIALS.join(', ')}.` });
+      return undefined;
+    };
+    let item: Trim | undefined;
+    let key: string = kind;
+    switch (kind) {
+      case 'BERTHE': {
+        const depthMm = num('depthMm', TRIM_BOUNDS.bertheDepthMm);
+        const pointMm = num('pointMm', TRIM_BOUNDS.berthePointMm);
+        const m = checkMaterial();
+        if (depthMm !== undefined && pointMm !== undefined && m) item = { kind, depthMm, pointMm, material: m, ...colorPart };
+        break;
+      }
+      case 'SLEEVE_FRILL': {
+        const tiers = num('tiers', TRIM_BOUNDS.frillTiers);
+        const depthMm = num('depthMm', TRIM_BOUNDS.frillDepthMm);
+        const m = checkMaterial();
+        if (tiers !== undefined && depthMm !== undefined && m) item = { kind, tiers, depthMm, material: m, ...colorPart };
+        break;
+      }
+      case 'BEADING': {
+        const place = t['place'];
+        if (typeof place !== 'string' || !(TRIM_PLACES as readonly string[]).includes(place)) {
+          issues.push({ path: `${path}.place`, message: `place doit valoir ${TRIM_PLACES.join(', ')}.` });
+          break;
+        }
+        key = `${kind}:${place}`;
+        const beadMm = num('beadMm', TRIM_BOUNDS.beadMm);
+        const rows = num('rows', TRIM_BOUNDS.beadRows);
+        if (beadMm !== undefined && rows !== undefined) item = { kind, place: place as TrimPlace, beadMm, rows, ...colorPart };
+        break;
+      }
+    }
+    if (!item) return;
+    if (seen.has(key)) {
+      issues.push({ path, message: `La garniture ${key} ne peut apparaître qu'une fois.` });
+      return;
+    }
+    seen.add(key);
+    items.push(item);
+  });
+  return items.length > 0 ? { items } : undefined;
 }
 
 /** Each block is validated on its own: an invalid block is reported and dropped, the others stay. */
@@ -861,7 +1173,7 @@ export const FABRIC_BEHAVIOR_LABELS: Record<FabricBehavior, string> = {
 };
 
 /** Look of the fabric (informative only — used by the 3D preview, never by the geometry). */
-export const FABRIC_PRINTS = ['UNI', 'POIS', 'RAYURES', 'CARREAUX', 'FLEURI', 'AUTRE'] as const;
+export const FABRIC_PRINTS = ['UNI', 'POIS', 'RAYURES', 'CARREAUX', 'FLEURI', 'BROCART', 'ARABESQUE', 'AUTRE'] as const;
 export type FabricPrint = (typeof FABRIC_PRINTS)[number];
 
 export const FABRIC_PRINT_LABELS: Record<FabricPrint, string> = {
@@ -870,7 +1182,19 @@ export const FABRIC_PRINT_LABELS: Record<FabricPrint, string> = {
   RAYURES: 'Rayé',
   CARREAUX: 'À carreaux',
   FLEURI: 'Fleuri',
+  BROCART: 'Brocart / jacquard à rinceaux fleuris',
+  ARABESQUE: 'Arabesques / volutes',
   AUTRE: 'Autre imprimé',
+};
+
+/** Surface of the fabric (informative, for the 3D preview's light): velvet glows at grazing angles, satin shines. */
+export const FABRIC_FINISHES = ['MAT', 'VELOURS', 'SATIN'] as const;
+export type FabricFinish = (typeof FABRIC_FINISHES)[number];
+
+export const FABRIC_FINISH_LABELS: Record<FabricFinish, string> = {
+  MAT: 'Mat',
+  VELOURS: 'Velours',
+  SATIN: 'Satin',
 };
 
 /** `#rrggbb` colour, as the photo analysis gives the fabric's ground and motif colours. */
@@ -891,6 +1215,33 @@ export interface GarmentFit extends PatternExtParameters {
   fabricPrint?: FabricPrint;
   fabricColor?: string;
   motifColor?: string;
+  /**
+   * Size of one motif of the print, in cm (a dot's or a flower's width), read off the photo: a 15 cm embroidered lily
+   * is not a 2 cm sprig. Informative (3D preview only), 0.5–60. Absent: the print's usual size.
+   */
+  motifSizeCm?: number;
+  /** Colour of a contrasting panel (plastron, under-dress) or trim, when the garment has one. */
+  contrastColor?: string;
+  /** Surface of the main fabric (velvet, satin…). */
+  fabricFinish?: FabricFinish;
+  /** Print of the contrasting panel and its motif colour (a brocade plastron). */
+  contrastPrint?: FabricPrint;
+  contrastMotifColor?: string;
+  /**
+   * Print of the accent fabric — the main colour with `motifColor` motifs — when only some parts carry it: the
+   * puffs of the sleeves and the borders of the plastron (the rest of the garment is plain `fabricColor`).
+   */
+  accentPrint?: FabricPrint;
+  /**
+   * The side gores of a gored skirt (`jupe = EN_LES`) are cut in the contrasting fabric (`contrastColor`,
+   * `contrastPrint`), the centre panels in the main one. Informative (3D preview only).
+   */
+  contrastGores?: boolean;
+  /**
+   * The collar and the cuffs are cut in the contrasting fabric (`contrastColor`, `contrastPrint`), like the gilet they
+   * match. Informative (3D preview only).
+   */
+  contrastTrims?: boolean;
   certainty?: Record<string, FitCertainty>;
 }
 
@@ -902,7 +1253,14 @@ export type PatternExtKey =
   | 'lengths.skirtPct'
   | 'lengths.sleevePct'
   | 'lengths.bodicePct'
-  | 'drape';
+  | 'fullness.leg'
+  | 'lengths.legPct'
+  | 'drape'
+  | 'trims'
+  | 'construction'
+  | 'fabric'
+  | 'notes'
+  | 'measurements';
 
 export function listPatternExtKeys(ext: PatternExtParameters | null | undefined): PatternExtKey[] {
   if (!ext) return [];
@@ -913,7 +1271,14 @@ export function listPatternExtKeys(ext: PatternExtParameters | null | undefined)
   if (ext.lengths?.skirtPct !== undefined) keys.push('lengths.skirtPct');
   if (ext.lengths?.sleevePct !== undefined) keys.push('lengths.sleevePct');
   if (ext.lengths?.bodicePct !== undefined) keys.push('lengths.bodicePct');
+  if (ext.fullness?.leg !== undefined) keys.push('fullness.leg');
+  if (ext.lengths?.legPct !== undefined) keys.push('lengths.legPct');
   if (ext.drape && ext.drape.blocks.length > 0) keys.push('drape');
+  if (ext.trims && ext.trims.items.length > 0) keys.push('trims');
+  if (ext.construction && ext.construction.items.length > 0) keys.push('construction');
+  if (ext.fabric) keys.push('fabric');
+  if (ext.notes) keys.push('notes');
+  if (ext.measurements) keys.push('measurements');
   return keys;
 }
 
@@ -938,6 +1303,30 @@ export function mergePatternExtParameters(
     if (valid.drape && value.drape === undefined) {
       value.drape = valid.drape;
       origin['drape'] = index;
+    }
+    // Trims likewise: one list, the first source that has one wins (an explicit empty list included).
+    if (valid.trims && value.trims === undefined) {
+      value.trims = valid.trims;
+      origin['trims'] = index;
+    }
+    // Construction pieces likewise: one list, the first source that has one wins.
+    if (valid.construction && value.construction === undefined) {
+      value.construction = valid.construction;
+      origin['construction'] = index;
+    }
+    if (valid.fabric && value.fabric === undefined) {
+      value.fabric = valid.fabric;
+      origin['fabric'] = index;
+    }
+    // The customer's notes are theirs alone: never filled from a photo suggestion.
+    if (valid.notes && value.notes === undefined && index === 0) {
+      value.notes = valid.notes;
+      origin['notes'] = index;
+    }
+    // So are the measurements they typed.
+    if (valid.measurements && value.measurements === undefined && index === 0) {
+      value.measurements = valid.measurements;
+      origin['measurements'] = index;
     }
     for (const group of ['fullness', 'lengths'] as const) {
       const from = valid[group] as Record<string, number> | undefined;
@@ -999,3 +1388,7 @@ export interface MannequinSheet {
 }
 
 export const MANNEQUIN_SHEET_LIMITS = { sectionChars: 700, totalChars: 3500 } as const;
+
+/** Bounds of `GarmentFit.motifSizeCm` (cm). */
+export const MOTIF_SIZE_BOUNDS_CM = [0.5, 60] as const;
+

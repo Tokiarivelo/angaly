@@ -2,6 +2,7 @@
 
 import React, { useState } from 'react';
 import { HelpCircle, Check } from 'lucide-react';
+import { MeasurementGuideImage } from '@/components/shared/MeasurementGuideImage';
 
 interface MeasurementFieldCardProps {
   fieldKey: string;
@@ -41,6 +42,8 @@ export const MeasurementFieldCard: React.FC<MeasurementFieldCardProps> = ({
           <button
             type="button"
             onClick={() => setShowHint((v) => !v)}
+            aria-expanded={showHint}
+            aria-label={`Comment prendre : ${label}`}
             className="text-[#C5B190] hover:text-white"
             title={hint}
           >
@@ -57,9 +60,10 @@ export const MeasurementFieldCard: React.FC<MeasurementFieldCardProps> = ({
       </div>
 
       {showHint && (
-        <p className="text-[11px] text-[#C5B190] italic mb-2 bg-[#041329] p-2 rounded border border-[#C5B190]/20">
-          {hint}
-        </p>
+        <div className="mb-2 bg-[#041329] p-2 rounded border border-[#C5B190]/20 flex gap-3 items-start">
+          <MeasurementGuideImage measurementKey={fieldKey} className="w-24 h-auto shrink-0 rounded" />
+          <p className="text-[11px] text-[#C5B190] italic">{hint}</p>
+        </div>
       )}
 
       <div className="flex items-center gap-2">

@@ -1,0 +1,20 @@
+---
+description: Génération et création de patron (photo → paramètres → patron → 3D) — suivre le skill pattern-generation
+globs: ["packages/pattern-engine/**/*", "packages/types/src/pattern-*.ts", "apps/ai-service/app/garment_knowledge.py", "apps/ai-service/ml/**/*", "apps/api/src/patterns/**/*", "apps/api/src/ai-inference/**/*", "apps/web/src/features/pattern-studio-*/**/*"]
+alwaysApply: false
+---
+
+# Génération de patron — skill obligatoire
+
+Avant toute modification de la génération ou de la création de patron, de l'analyse d'inspiration ou du rendu 3D d'un
+vêtement, lire et suivre **`.claude/skills/pattern-generation/SKILL.md`** (copie pour Antigravity :
+`.agents/skills/pattern-generation/`) et ses références :
+
+- `references/photo-reading-guide.md` — lire une photo (familles de manches, cols, robe-manteau, ampleur mesurée, couleurs) ;
+- `references/vocabulary.md` — chaque option : ce que l'œil voit, ce que le moteur et la 3D font ;
+- `references/adding-an-option.md` — liste de contrôle des ~10 fichiers à toucher pour une nouvelle option ;
+- `references/verification-loop.md` — ports, comptes, scripts de capture, de comparaison et de calibration.
+
+Règles non négociables (rappel) : `packages/pattern-engine` est la seule source de géométrie ; corriger un défaut à l'étage où
+il naît (lecture, moteur ou 3D) ; aucun patron n'est « conforme » sans comparaison face + côté de la 3D avec la photo ; tests
+dans le même changement ; `docs/handoff.md` à jour avant de clore.

@@ -153,6 +153,17 @@ describe('checkMeasurementCoherence', () => {
 });
 
 describe('validatePatternExtParameters', () => {
+  it('keeps the measurements typed for the project, flags implausible ones, and merges them from the customer only', () => {
+    const { value, issues } = validatePatternExtParameters({ measurements: { TOUR_TAILLE: 72, TOUR_BASSIN: 9 } });
+    expect(value.measurements).toEqual({ TOUR_TAILLE: 72 });
+    expect(issues.map((i) => i.path)).toEqual(['measurements.TOUR_BASSIN']);
+    expect(validatePatternExtParameters({ measurements: [72] }).issues).toHaveLength(1);
+    expect(listPatternExtKeys({ measurements: { TOUR_TAILLE: 72 } })).toContain('measurements');
+    const customer = mergePatternExtParameters({ measurements: { TOUR_TAILLE: 72 } }, { measurements: { TOUR_TAILLE: 60 } });
+    expect(customer.value.measurements).toEqual({ TOUR_TAILLE: 72 });
+    expect(mergePatternExtParameters(null, { measurements: { TOUR_TAILLE: 60 } }).value.measurements).toBeUndefined();
+  });
+
   it('returns an empty value for null / undefined (engine defaults)', () => {
     expect(validatePatternExtParameters(undefined)).toEqual({ value: {}, issues: [] });
     expect(validatePatternExtParameters(null)).toEqual({ value: {}, issues: [] });
@@ -292,5 +303,59 @@ describe('validatePatternExtParameters — drape blocks (S4)', () => {
 
     const invalid = mergePatternExtParameters({ drape: { blocks: [{ kind: 'TRAIN', lengthMm: 99999 }] } } as never, suggestion);
     expect(invalid.value.drape?.blocks).toEqual([{ kind: 'TRAIN', lengthMm: 900 }]);
+  });
+});
+
+describe('validatePatternExtParameters — trims (garnitures)', () => {
+  const trims = (...items: unknown[]) => validatePatternExtParameters({ trims: { items } });
+
+  it('accepts a berthe, sleeve frills and bead rows (one per place), snapping numbers to their step', () => {
+    const { value, issues } = trims(
+      { kind: 'BERTHE', depthMm: 112, pointMm: 140, material: 'DENTELLE', color: '#ecdcb6' },
+      { kind: 'SLEEVE_FRILL', tiers: 2, depthMm: 50, material: 'TULLE' },
+      { kind: 'BEADING', place: 'ENCOLURE', beadMm: 6, rows: 1 },
+      { kind: 'BEADING', place: 'BERTHE', beadMm: 5, rows: 2 },
+    );
+    expect(issues).toEqual([]);
+    expect(value.trims?.items).toEqual([
+      { kind: 'BERTHE', depthMm: 110, pointMm: 140, material: 'DENTELLE', color: '#ecdcb6' },
+      { kind: 'SLEEVE_FRILL', tiers: 2, depthMm: 50, material: 'TULLE' },
+      { kind: 'BEADING', place: 'ENCOLURE', beadMm: 6, rows: 1 },
+      { kind: 'BEADING', place: 'BERTHE', beadMm: 5, rows: 2 },
+    ]);
+    expect(listPatternExtKeys(value)).toContain('trims');
+  });
+
+  it('rejects bad trims one by one: range, material, place, colour, unknown kind, duplicates, missing fields', () => {
+    const { value, issues } = trims(
+      { kind: 'BERTHE', depthMm: 900, pointMm: 0, material: 'DENTELLE' },
+      { kind: 'SLEEVE_FRILL', tiers: 2, depthMm: 50, material: 'CUIR' },
+      { kind: 'BEADING', place: 'DOS', beadMm: 6, rows: 1 },
+      { kind: 'BEADING', place: 'TAILLE', beadMm: 6, rows: 1, color: 'gold' },
+      { kind: 'BEADING', place: 'MANCHES', beadMm: 6 },
+      { kind: 'PLUMES' },
+    );
+    expect(value.trims).toBeUndefined();
+    expect(issues.map((i) => i.path)).toEqual([
+      'trims.items[0].depthMm',
+      'trims.items[1].material',
+      'trims.items[2].place',
+      'trims.items[3].color',
+      'trims.items[4].rows',
+      'trims.items[5].kind',
+    ]);
+    const twice = trims({ kind: 'BEADING', place: 'TAILLE', beadMm: 6, rows: 1 }, { kind: 'BEADING', place: 'TAILLE', beadMm: 8, rows: 1 });
+    expect(twice.value.trims?.items).toHaveLength(1);
+    expect(twice.issues).toHaveLength(1);
+    expect(validatePatternExtParameters({ trims: [] }).issues[0]?.path).toBe('trims');
+    expect(trims(1).issues[0]?.path).toBe('trims.items[0]');
+    expect(trims(...Array.from({ length: 7 }, () => ({ kind: 'PLUMES' }))).issues[0]?.path).toBe('trims.items');
+  });
+
+  it('merges as one choice: the client list (even empty) beats the photo', () => {
+    const photo = { trims: { items: [{ kind: 'BEADING', place: 'ENCOLURE', beadMm: 6, rows: 1 }] } } as never;
+    expect(mergePatternExtParameters(null, photo).value.trims?.items).toHaveLength(1);
+    expect(mergePatternExtParameters(null, photo).origin.trims).toBe(1);
+    expect(mergePatternExtParameters({ trims: { items: [] } }, photo).value.trims).toEqual({ items: [] });
   });
 });

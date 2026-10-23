@@ -108,7 +108,23 @@ describe('analyzeInspirationPhoto', () => {
       confidence: 0.82,
       usedFallback: false,
       modelUsed: null,
+      aiServiceUnreachable: false,
     });
+  });
+
+  it('passes on that the AI service could not be reached', async () => {
+    vi.mocked(apiClient.post).mockResolvedValueOnce({
+      suggestedCutType: null,
+      detectedInspirationFeatures: {},
+      profile: null,
+      confidence: 0,
+      isIndicativeOnly: true,
+      aiServiceUnreachable: true,
+    });
+
+    const result = await analyzeInspirationPhoto('https://minio.local/p.jpg');
+
+    expect(result.aiServiceUnreachable).toBe(true);
   });
 
   it('sends the model chosen in the wizard, and nothing when the atelier setting applies', async () => {

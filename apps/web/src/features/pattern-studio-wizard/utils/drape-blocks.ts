@@ -1,9 +1,9 @@
 import {
-  SKIRT_DRAPE_KINDS,
-  validatePatternExtParameters,
   type DrapeBlock,
   type DrapeBlockKind,
   type DrapeSpec,
+  SKIRT_DRAPE_KINDS,
+  validatePatternExtParameters,
 } from '@angaly/types';
 
 /** Sensible starting values when a customer switches a block on (all inside the validated bounds). */
@@ -50,7 +50,7 @@ export function updateDrapeBlock(
   patch: Record<string, number | string>,
 ): DrapeSpec {
   const current = spec ?? { blocks: [] };
-  const next = current.blocks.map((b) => (b.kind === kind ? ({ ...b, ...patch } as DrapeBlock) : b));
+  const next = current.blocks.map((b) => (b.kind === kind ? { ...b, ...patch } : b));
   const { value, issues } = validatePatternExtParameters({ drape: { blocks: next } });
   return issues.length > 0 || !value.drape ? current : value.drape;
 }

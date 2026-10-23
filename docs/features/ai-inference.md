@@ -57,7 +57,7 @@ application/
     ai-suggestion-request.dto.ts, assistant-message.dto.ts   → class-validator
 infrastructure/
   repositories/prisma-ai-conversation.repository.ts
-  services/ai-service-http-client.ts         → client HTTP (AI_SERVICE_URL, timeout AI_SERVICE_TIMEOUT_MS),
+  services/ai-service-http-client.ts         → client HTTP (AI_SERVICE_URL, timeout AI_SERVICE_TIMEOUT_MS ; analyse photo : AI_SERVICE_VISION_TIMEOUT_MS, 90 s par défaut),
                                                 miroir strict de app/schemas.py (apps/ai-service) — voir
                                                 Points d'intégration. Couvre suggestPatternParameters,
                                                 sendMessageToAssistant et estimateMissingMeasurements.

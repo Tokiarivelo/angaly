@@ -6,7 +6,10 @@ import {
   type InspirationAnalysisResponse,
   type ProviderCredentials,
 } from '@angaly/types';
-import { AiServiceHttpClient } from '../../infrastructure/services/ai-service-http-client';
+import {
+  AI_SERVICE_UNREACHABLE_MODEL_VERSION,
+  AiServiceHttpClient,
+} from '../../infrastructure/services/ai-service-http-client';
 import { CollectAiTrainingSampleUseCase } from './collect-ai-training-sample.use-case';
 import { AiProviderResolverService } from '../services/ai-provider-resolver.service';
 import {
@@ -18,11 +21,20 @@ import {
   type IInspirationImagePreprocessor,
 } from '../../domain/services/inspiration-image-preprocessor.service';
 
+/**
+ * A cached profile is reusable only if it was written under the current prompt/schema: the ai-service
+ * always returns `drapeBlocks` and `constructionMethod` (null when unknown). Rows older than that miss
+ * the fit, waist, bodice and drape details, so they are re-read (and overwritten) instead of reused.
+ */
+const isCurrentProfile = (profile: object | null | undefined): boolean =>
+  Boolean(profile) && 'drapeBlocks' in (profile as object) && 'constructionMethod' in (profile as object);
+
 /** One model tried for a photo: who, and why it did not produce the answer (absent when it did). */
 export interface AnalysisAttempt {
   provider: string;
   model: string;
-  outcome: 'OK' | 'FAILED' | 'SKIPPED_NO_VISION';
+  /** UNREACHABLE: the ai-service itself did not answer, so the model was never asked. */
+  outcome: 'OK' | 'FAILED' | 'UNREACHABLE' | 'SKIPPED_NO_VISION';
 }
 
 export interface InspirationAnalysisOutcome {
@@ -62,11 +74,13 @@ export class AnalyzeInspirationImageUseCase {
   /**
    * Same as `execute`, plus the list of models tried. The chosen (or default) model goes first; when it
    * cannot read photos (the local statistical model) or fails, the admin's ordered fallbacks are tried
-   * until one answers. A cached answer is reused only if one of the candidate models produced it.
+   * until one answers. A cached answer is reused only if one of the candidate models produced it
+   * (and `refresh` is not set).
    */
   async executeWithAttempts(
     imageUrl: string,
     provider?: ProviderCredentials,
+    options: { refresh?: boolean } = {},
   ): Promise<InspirationAnalysisOutcome> {
     const original = await this.preprocessor.fetchOriginal(imageUrl);
     this.logger.log(`Photo downloaded (${Math.round(original.length / 1024)} KB) from ${new URL(imageUrl).host}`);
@@ -93,12 +107,23 @@ export class AnalyzeInspirationImageUseCase {
     for (const fallback of await this.providerResolver.resolveFallbackChain(AiUsage.PATTERN_SUGGESTION)) {
       addCandidate(fallback);
     }
+    if (!candidates.length) {
+      // The atelier default is not usable (not configured / disabled): try any model that is.
+      for (const configured of await this.providerResolver.resolveAnyConfigured(AiUsage.PATTERN_SUGGESTION)) {
+        addCandidate(configured);
+      }
+      if (candidates.length) {
+        this.logger.warn(
+          `Atelier default model unusable — using configured ${candidates.map((c) => `${c.provider}/${c.model}`).join(', ')}`,
+        );
+      }
+    }
 
     this.logger.log(
       `Analysing photo ${imageHash.slice(0, 8)} with ${candidates.length ? candidates.map((c) => `${c.provider}/${c.model}`).join(' → ') : 'NO PROVIDER (ai-service default)'}`,
     );
     const cached = await this.repository.findByHash(imageHash);
-    if (cached?.profile && (!candidates.length || candidates.some((c) => c.model === cached.modelVersion))) {
+    if (!options.refresh && cached && isCurrentProfile(cached.profile) && (!candidates.length || candidates.some((c) => c.model === cached.modelVersion))) {
       this.logger.log(`Cache hit for ${imageHash.slice(0, 8)} (model ${cached.modelVersion})`);
       attempts.push({ provider: 'cache', model: cached.modelVersion, outcome: 'OK' });
       return { analysis: cached, attempts };
@@ -131,7 +156,13 @@ export class AnalyzeInspirationImageUseCase {
         usedCredentials = credentials;
         break;
       }
-      attempts.push({ ...label, outcome: 'FAILED' });
+      const unreachable = result?.modelVersion === AI_SERVICE_UNREACHABLE_MODEL_VERSION;
+      attempts.push({ ...label, outcome: unreachable ? 'UNREACHABLE' : 'FAILED' });
+      if (unreachable) {
+        // Every other model goes through the same ai-service: trying them would only fail the same way.
+        this.logger.error(`ai-service unreachable — analysis of ${imageHash.slice(0, 8)} abandoned`);
+        break;
+      }
       this.logger.warn(`Analysis of ${imageHash.slice(0, 8)} failed with ${label.provider}/${label.model}${plan.length > 1 ? ' — trying the next model' : ''}`);
     }
 

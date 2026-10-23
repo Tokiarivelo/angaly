@@ -1,12 +1,17 @@
+import { isShawl, resolveTopAdjustments } from '../shared/cut-profile';
+import { draftTrousers } from './pantalon.rule';
+import {
+  collarLengthMm,
+  fitSleeveDims,
+  fitTorsoOutline,
+} from '../shared/fit';
+import { collarPiece, sleeveOutline } from '../shared/shapes';
 import type {
   IPatternRule,
   MeasurementSet,
   PatternParameters,
   PatternPieceGeometry,
 } from '../types';
-import { resolveLegProfile, resolveTopAdjustments, resolveTrouserLengthFactor } from '../shared/cut-profile';
-import { sleeveOutline } from '../shared/shapes';
-import { collarLengthMm, fitSleeveDims, fitTorsoOutline, trouserGirths } from '../shared/fit';
 
 /**
  * COSTUME = "ensemble tailleur veste et pantalon/jupe" (voir
@@ -48,7 +53,11 @@ export const CostumeRule: IPatternRule = {
     const tp = tourPoitrine * 10;
     const tt = tourTaille * 10;
     const lgBras = longueurBras * 10;
-    const adj = resolveTopAdjustments(parameters, lgBras);
+    // `longueur` is the trousers' length on a suit (the wizard says « Longueur du pantalon »): the jacket keeps its own,
+    // at the hips — a floor-length trouser no longer drags the jacket down to the knees.
+    const { longueur: _trouserLength, ...jacketDetails } = parameters.details;
+    void _trouserLength;
+    const adj = resolveTopAdjustments({ ...parameters, details: jacketDetails }, lgBras);
     const lgVeste = Math.round(longueurDos * 10 * 1.6 * adj.lengthFactor); // Veste mi-fesses (~720mm)
 
     const largeurDevantVeste = Math.round(tp / 4 + 40 + adj.bodiceDeltaMm); // 4cm d'aisance veste tailleur
@@ -145,122 +154,10 @@ export const CostumeRule: IPatternRule = {
       ],
     };
 
-    // --- Pantalon (adapté de pantalon.rule.ts) ---
-    const tourBassin = measurements['TOUR_BASSIN'] ?? 95;
-    const longueurJambeMesuree = measurements['LONGUEUR_JAMBE'] ?? measurements['LONGUEUR_PANTALON'];
-
-    const tb = tourBassin * 10;
-
-    const hauteurMontant =
-      measurements['HAUTEUR_FOURCHE'] !== undefined
-        ? Math.round(measurements['HAUTEUR_FOURCHE'] * 10)
-        : Math.round(tb / 4 + 20); // ~260mm
-
-    // Longueur totale : LONGUEUR_JAMBE (extérieure) sinon fourche + HAUTEUR_ENTREJAMBE (intérieure), sinon 100 cm.
-    const longueurMm =
-      longueurJambeMesuree !== undefined
-        ? longueurJambeMesuree * 10
-        : measurements['HAUTEUR_ENTREJAMBE'] !== undefined
-          ? hauteurMontant + measurements['HAUTEUR_ENTREJAMBE'] * 10
-          : 1000;
-    const lg = Math.round(longueurMm * resolveTrouserLengthFactor(parameters.details['longueur']));
-    // HAUTEUR_TAILLE_GENOU mesurée (bornée entre fourche et ourlet), sinon mi-chemin fourche/ourlet.
-    const hauteurGenou =
-      measurements['HAUTEUR_TAILLE_GENOU'] !== undefined
-        ? Math.round(Math.min(lg - 100, Math.max(hauteurMontant + 100, measurements['HAUTEUR_TAILLE_GENOU'] * 10)))
-        : Math.round(hauteurMontant + (lg - hauteurMontant) * 0.5);
-
-    const leg = resolveLegProfile(parameters.cutType, parameters.ease);
-    const girths = trouserGirths(tb, leg.hipDeltaMm, measurements);
-    const demiLargeurBasDevant = Math.max(leg.halfHemMm, girths.minHalfHemMm); // Coupe droite tailleur par défaut
-    const kneeFront = Math.max(Math.round(demiLargeurBasDevant * leg.kneeRatio), girths.minKneeMm);
-
-    const largeurBassinDevant = Math.round(tb / 4 - 10 + leg.hipDeltaMm + girths.thighExtraMm);
-    const avanceeFourcheDevant = Math.round((tb / 4) * 0.18);
-    const largeurTailleDevantPantalon = Math.round(tt / 4 + 20 + leg.waistDeltaMm);
-    const lignePliDevant = Math.round((largeurBassinDevant + avanceeFourcheDevant) / 2);
-
-    const pieceDevantPantalon: PatternPieceGeometry = {
-      name: 'Devant Pantalon (Costume)',
-      fabricRecommendation: 'Laine froide, Gabardine ou Flanelle',
-      quantity: 2,
-      seamAllowanceMm: 10,
-      grainline: { angleDegrees: 90, originX: lignePliDevant, originY: lg / 2 },
-      notches: [
-        { positionAlongEdge: 0.5, edgeIndex: 2 },
-        { positionAlongEdge: 0.8, edgeIndex: 1 },
-      ],
-      outlineMm: [
-        { x: avanceeFourcheDevant, y: 0 },
-        { x: avanceeFourcheDevant + largeurTailleDevantPantalon, y: 10 },
-        { x: avanceeFourcheDevant + largeurBassinDevant, y: 180 },
-        { x: lignePliDevant + kneeFront, y: hauteurGenou },
-        { x: lignePliDevant + demiLargeurBasDevant, y: lg },
-        { x: lignePliDevant - demiLargeurBasDevant, y: lg },
-        { x: lignePliDevant - kneeFront, y: hauteurGenou },
-        { x: 0, y: hauteurMontant },
-        { x: Math.round(avanceeFourcheDevant * 0.7), y: Math.round(hauteurMontant * 0.6) },
-        { x: avanceeFourcheDevant, y: 0 },
-      ],
-    };
-
-    const largeurBassinDos = Math.round(tb / 4 + 10 + leg.hipDeltaMm + girths.thighExtraMm);
-    const avanceeFourcheDos = Math.round((tb / 4) * 0.38);
-    const largeurTailleDosPantalon = Math.round(tt / 4 + 30 + leg.waistDeltaMm);
-    const demiLargeurBasDos = demiLargeurBasDevant + 15;
-    const kneeDos = Math.max(Math.round(demiLargeurBasDos * leg.kneeRatio), girths.minKneeMm);
-    const lignePliDos = Math.round((largeurBassinDos + avanceeFourcheDos) / 2);
-    const rehausseDos = 35;
-
-    const pieceDosPantalon: PatternPieceGeometry = {
-      name: 'Dos Pantalon (Costume)',
-      fabricRecommendation: 'Laine froide, Gabardine ou Flanelle',
-      quantity: 2,
-      seamAllowanceMm: 10,
-      grainline: { angleDegrees: 90, originX: lignePliDos, originY: lg / 2 },
-      notches: [
-        { positionAlongEdge: 0.5, edgeIndex: 2 },
-        { positionAlongEdge: 0.8, edgeIndex: 1 },
-      ],
-      outlineMm: [
-        { x: avanceeFourcheDos + 20, y: -rehausseDos },
-        { x: avanceeFourcheDos + 20 + largeurTailleDosPantalon, y: 10 },
-        { x: avanceeFourcheDos + largeurBassinDos, y: 180 },
-        { x: lignePliDos + kneeDos, y: hauteurGenou },
-        { x: lignePliDos + demiLargeurBasDos, y: lg },
-        { x: lignePliDos - demiLargeurBasDos, y: lg },
-        { x: lignePliDos - kneeDos, y: hauteurGenou },
-        { x: 0, y: hauteurMontant + 15 },
-        { x: Math.round(avanceeFourcheDos * 0.6), y: Math.round(hauteurMontant * 0.7) },
-        { x: avanceeFourcheDos + 20, y: -rehausseDos },
-      ],
-    };
-
-    const longueurCeinture = tt + 80;
-    const hauteurCeinture = 70;
-    const pieceCeinturePantalon: PatternPieceGeometry = {
-      name: 'Ceinture Pantalon (Costume)',
-      fabricRecommendation: 'Entoilage thermocollant préconisé',
-      quantity: 1,
-      seamAllowanceMm: 10,
-      grainline: {
-        angleDegrees: 0,
-        originX: longueurCeinture / 2,
-        originY: hauteurCeinture / 2,
-      },
-      notches: [
-        { positionAlongEdge: 0.25, edgeIndex: 0 },
-        { positionAlongEdge: 0.5, edgeIndex: 0 },
-        { positionAlongEdge: 0.75, edgeIndex: 0 },
-      ],
-      outlineMm: [
-        { x: 0, y: 0 },
-        { x: longueurCeinture, y: 0 },
-        { x: longueurCeinture, y: hauteurCeinture },
-        { x: 0, y: hauteurCeinture },
-        { x: 0, y: 0 },
-      ],
-    };
+    // --- Pantalon : même construction que PantalonRule (ceinture, braguette, poches…), pièces suffixées « (Costume) ».
+    const trousers = draftTrousers(parameters, measurements, ' (Costume)').pieces.map((p) =>
+      p.name === 'Ceinture (Costume)' ? { ...p, name: 'Ceinture Pantalon (Costume)' } : p,
+    );
 
     pieceDevantVeste.outlineMm = fitTorsoOutline(pieceDevantVeste.outlineMm, measurements, {
       side: 'front',
@@ -273,13 +170,12 @@ export const CostumeRule: IPatternRule = {
 
     const jacket = [pieceDevantVeste, pieceDosVeste];
     if (!adj.sleeveless) jacket.push(pieceMancheVeste);
-    if (adj.includeCollar) jacket.push(pieceColVeste);
+    const shawl = isShawl(parameters.details)
+      ? collarPiece('CHALE', measurements, pieceColVeste.fabricRecommendation)
+      : null;
+    if (adj.includeCollar)
+      jacket.push(shawl ? { ...shawl, name: 'Col châle (Costume)' } : pieceColVeste);
 
-    return [
-      ...jacket,
-      pieceDevantPantalon,
-      pieceDosPantalon,
-      pieceCeinturePantalon,
-    ];
+    return [...jacket, ...trousers];
   },
 };

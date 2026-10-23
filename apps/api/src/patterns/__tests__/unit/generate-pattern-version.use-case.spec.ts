@@ -241,6 +241,41 @@ describe('GeneratePatternVersionUseCase', () => {
     );
   });
 
+  it('uses the measurements saved with the project over the profile, and those sent over both', async () => {
+    const savedProject = PatternProjectEntity.create({
+      id: 'proj-saved',
+      projectRef: 'ANG-PAT-2026-00005',
+      customerId: 'cust-1',
+      measurementProfileId: 'profile-1',
+      garmentType: 'PANTALON',
+      occasion: null,
+      style: null,
+      cutType: 'DROITE',
+      detailsJson: null,
+      inspirationMediaId: null,
+      parametersExtJson: { measurements: { TOUR_TAILLE: 72, HAUTEUR_ENTREJAMBE: 78 } },
+      status: 'DRAFT',
+      createdAt: new Date(),
+      updatedAt: new Date(),
+    });
+    mockProjectRepo.findById.mockResolvedValueOnce(savedProject);
+    mockProjectRepo.update.mockResolvedValueOnce(savedProject);
+    mockGetMeasurementProfileUseCase.execute.mockResolvedValueOnce({
+      values: new Map([
+        ['TOUR_BASSIN', 96],
+        ['TOUR_TAILLE', 68],
+        ['HAUTEUR_ENTREJAMBE', 75],
+      ]),
+    } as any);
+
+    await useCase.execute('proj-saved', 'cust-1', { measurements: { HAUTEUR_ENTREJAMBE: 80 } });
+
+    expect(mockGeneratePiecesUseCase.execute).toHaveBeenCalledWith(
+      expect.any(Object),
+      expect.objectContaining({ TOUR_BASSIN: 96, TOUR_TAILLE: 72, HAUTEUR_ENTREJAMBE: 80 }),
+    );
+  });
+
   it('fills missing required measurements via AI estimation and retries generation once', async () => {
     const { PatternEngineValidationError } = await import('@angaly/pattern-engine');
     mockGeneratePiecesUseCase.execute
@@ -418,7 +453,7 @@ describe('GeneratePatternVersionUseCase', () => {
       mockProjectRepo.findById.mockResolvedValueOnce(
         analysedProject({
           detailsJson: {
-            manches: 'LONGUES', col: 'ROND', decollete: 'SAGE', dos: 'FERME', longueur: 'MAXI', fermeture: 'AUCUNE', corsage: 'LISSE',
+            manches: 'LONGUES', col: 'ROND', decollete: 'SAGE', dos: 'FERME', longueur: 'MAXI', fermeture: 'AUCUNE', corsage: 'LISSE', taille: 'NATURELLE', devant: 'FERME', jupe: 'DEUX_PANS', basque: 'AUCUNE',
           },
         }),
       );
@@ -428,6 +463,14 @@ describe('GeneratePatternVersionUseCase', () => {
       mockSuggest.execute.mockRejectedValueOnce(new Error('boom'));
       mockProjectRepo.findById.mockResolvedValueOnce(analysedProject());
       await expect(useCase.execute('proj-photo', 'cust-1')).resolves.toBeDefined();
+    });
+
+    it('generates without asking the AI when the stored photo reading has no features (a profile written by hand)', async () => {
+      mockProjectRepo.findById.mockResolvedValueOnce(
+        analysedProject({ inspirationAnalysisJson: { profile: { isGarment: true, garmentType: 'ROBE', occasion: null, style: null, cutType: 'EVASEE', details: {} } } }),
+      );
+      await expect(useCase.execute('proj-photo', 'cust-1')).resolves.toBeDefined();
+      expect(mockSuggest.execute).not.toHaveBeenCalled();
     });
 
     it('uses the photo fit suggestions for ease / fullness, yields to the customer, and traces them', async () => {
@@ -452,7 +495,7 @@ describe('GeneratePatternVersionUseCase', () => {
       const version = await useCase.execute('proj-photo', 'cust-1');
 
       expect(mockGeneratePiecesUseCase.execute).toHaveBeenCalledWith(
-        expect.objectContaining({ ease: 'AMPLE', fullness: { skirt: 1.5 } }),
+        expect.objectContaining({ ease: 'AMPLE', fullness: { skirt: 1.5 }, fabric: 'FLUIDE' }),
         expect.any(Object),
       );
       const trace = (version.parametersJson as any).inspiration;
@@ -554,6 +597,7 @@ describe('GeneratePatternVersionUseCase', () => {
       expect(params).not.toHaveProperty('ease');
       expect(params).not.toHaveProperty('fullness');
       expect(params).not.toHaveProperty('lengths');
+      expect(params).not.toHaveProperty('fabric');
     });
 
     it('drops out-of-range stored values instead of feeding them to the engine', async () => {

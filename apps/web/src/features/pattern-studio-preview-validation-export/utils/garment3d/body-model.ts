@@ -31,6 +31,18 @@ export interface BodyMeasurements {
   rise: number;
   /** Waist → hip level, where the hip girth is taken (m): HAUTEUR_BASSIN, else 65 % of the rise. */
   hipDrop: number;
+  /** Girth above the bust, under the arms (m): TOUR_HAUT_POITRINE, when measured. */
+  upperBust?: number;
+  /** Girth just under the bust (m): TOUR_SOUS_POITRINE, when measured. */
+  underBust?: number;
+  /** Shoulder → bust point (m): HAUTEUR_POITRINE, when measured. */
+  bustDrop?: number;
+  /** Knee height above the floor (m): from HAUTEUR_TAILLE_GENOU, when measured. */
+  kneeY?: number;
+  /** True when the shoulder width comes from a measurement (carrure or LARGEUR_EPAULE), not the template. */
+  shoulderMeasured?: boolean;
+  /** Base of the neck → shoulder point, straight down (m): PENTE_EPAULE, when measured. */
+  shoulderDrop?: number;
 }
 
 /** Height of the nape (C7, ≈ 0.853 of the stature) for the reference stature. */
@@ -40,6 +52,22 @@ export const NAPE_Y = 1.45;
 const REFERENCE_HEIGHT = 1.7;
 /** Waist height ÷ stature, to deduce stature from HAUTEUR_TAILLE_SOL when it is given. */
 const WAIST_HEIGHT_RATIO = 0.6;
+/** Ankle height ÷ stature (the landmark below: 0.08 m for 1.70 m). */
+const ANKLE_RATIO = 0.08 / 1.7;
+/** Crotch → knee line share of the crotch → ankle drop (pattern-engine `trouserKneeMm`). */
+const KNEE_SHARE = 0.47;
+/** Vertical drop ÷ HAUTEUR_POITRINE (the template's 15 cm drop for a 26 cm measure). */
+const BUST_DROP_SHARE = 0.58;
+/**
+ * Shoulder-to-shoulder width ÷ carrure. The pattern puts the shoulder point at half the carrure measured over the
+ * back's curve (pattern-engine `fitTorsoOutline`); straight across, the back reads 5 % less (size M: 37 cm → the
+ * template's 35 cm). The front carrure is taken flatter.
+ */
+const CARRURE_DOS_SPAN = 0.95;
+const CARRURE_DEVANT_SPAN = 1;
+/** Shoulder drop the template's shoulder line is drawn for (m at 1.70 m), and the bounds of a measured one (the engine's). */
+export const DEFAULT_SHOULDER_DROP = 0.05;
+const SHOULDER_DROP_BOUNDS = [0.015, 0.09] as const;
 
 const scaleOf = (body: Pick<BodyMeasurements, 'height'>): number => body.height / REFERENCE_HEIGHT;
 
@@ -58,18 +86,50 @@ export const readBodyMeasurements = (
 ): BodyMeasurements => {
   const m = measurements ?? {};
   const t = getBodyTemplate(templateId);
-  const waistFloor = cm(m['HAUTEUR_TAILLE_SOL'], 0);
-  const height = waistFloor > 0 ? clamp(waistFloor / WAIST_HEIGHT_RATIO, 1.2, 2.1) : t.height;
+  // Heights, most direct first: the stature; else the waist height (HAUTEUR_TAILLE_SOL, or the outer leg length plus the
+  // ankle, which sits at ANKLE_RATIO of the stature) over the template's waist ratio.
+  const outerLeg = cm(m['LONGUEUR_JAMBE'], 0);
+  const waistFloor = cm(m['HAUTEUR_TAILLE_SOL'], 0) || (outerLeg > 0 ? outerLeg / (1 - ANKLE_RATIO / WAIST_HEIGHT_RATIO) : 0);
+  const stature = cm(m['STATURE'], 0);
+  const height = clamp(stature > 0 ? stature : waistFloor > 0 ? waistFloor / WAIST_HEIGHT_RATIO : t.height, 1.2, 2.1);
   const neck = clamp(cm(m['TOUR_COU'], t.neck), 0.26, 0.5);
-  // LARGEUR_EPAULE is ONE shoulder (base of the neck → shoulder point, catalogue 8–20 cm): the
-  // shoulder-to-shoulder width adds the neck on both sides.
+  // As the pattern does: the carrure first (back, else front), else LARGEUR_EPAULE, which is ONE shoulder (base of
+  // the neck → shoulder point, catalogue 8–20 cm) — the shoulder-to-shoulder width then adds the neck on both sides.
+  const carrureDos = cm(m['CARRURE_DOS'], 0);
+  const carrureDevant = cm(m['CARRURE_DEVANT'], 0);
   const oneShoulder = cm(m['LARGEUR_EPAULE'], 0);
-  const shoulderWidth = oneShoulder > 0 ? 2 * (neck / (2 * Math.PI) + oneShoulder) : t.shoulderWidth;
+  const shoulderWidth =
+    carrureDos > 0
+      ? carrureDos * CARRURE_DOS_SPAN
+      : carrureDevant > 0
+        ? carrureDevant * CARRURE_DEVANT_SPAN
+        : oneShoulder > 0
+          ? 2 * (neck / (2 * Math.PI) + oneShoulder)
+          : t.shoulderWidth;
+  const shoulderDrop = cm(m['PENTE_EPAULE'], 0);
   const backLength = clamp(cm(m['LONGUEUR_DOS'], t.backLength), 0.3, 0.5);
-  const napeY = t.napeRatio * height;
+  // A measured waist height puts the waist there (the nape a back length above it), within a plausible share of the stature.
+  const napeY =
+    waistFloor > 0 ? clamp(waistFloor + backLength, 0.8 * height, 0.9 * height) : t.napeRatio * height;
   const waistY = napeY - backLength;
-  const rise = clamp(cm(m['HAUTEUR_FOURCHE'], waistY - t.crotchRatio * height), 0.12 * height, 0.22 * height);
+  // The rise: HAUTEUR_FOURCHE (seated), else the waist height less the inseam (crotch → ankle) and the ankle height.
+  const inseam = cm(m['HAUTEUR_ENTREJAMBE'], 0);
+  const riseFallback = inseam > 0 ? waistY - (inseam + ANKLE_RATIO * height) : waistY - t.crotchRatio * height;
+  const rise = clamp(cm(m['HAUTEUR_FOURCHE'], riseFallback), 0.12 * height, 0.22 * height);
   const hipDrop = clamp(cm(m['HAUTEUR_BASSIN'], 0.65 * rise), 0.35 * rise, 0.85 * rise);
+  const waistKnee = cm(m['HAUTEUR_TAILLE_GENOU'], 0);
+  const upperBust = cm(m['TOUR_HAUT_POITRINE'], 0);
+  const underBust = cm(m['TOUR_SOUS_POITRINE'], 0);
+  const bustDrop = cm(m['HAUTEUR_POITRINE'], 0);
+  const optional = {
+    ...(upperBust > 0 ? { upperBust: clamp(upperBust, 0.5, 1.5) } : {}),
+    ...(underBust > 0 ? { underBust: clamp(underBust, 0.45, 1.4) } : {}),
+    // HAUTEUR_POITRINE is taken over the chest: its drop straight down is about BUST_DROP_SHARE of it.
+    ...(bustDrop > 0 ? { bustDrop: clamp(bustDrop * BUST_DROP_SHARE, 0.06 * height, 0.12 * height) } : {}),
+    ...(waistKnee > 0 ? { kneeY: clamp(waistY - waistKnee, 0.22 * height, 0.34 * height) } : {}),
+    ...(carrureDos > 0 || carrureDevant > 0 || oneShoulder > 0 ? { shoulderMeasured: true } : {}),
+    ...(shoulderDrop > 0 ? { shoulderDrop: clamp(shoulderDrop, SHOULDER_DROP_BOUNDS[0], SHOULDER_DROP_BOUNDS[1]) } : {}),
+  };
   return {
     bust: clamp(cm(m['TOUR_POITRINE'], t.bust), 0.5, 1.5),
     waist: clamp(cm(m['TOUR_TAILLE'], t.waist), 0.5, 1.4),
@@ -90,6 +150,7 @@ export const readBodyMeasurements = (
     napeY,
     rise,
     hipDrop,
+    ...optional,
   };
 };
 
@@ -121,6 +182,8 @@ export interface BodyLandmarks {
   waistY: number;
   hipY: number;
   crotchY: number;
+  /** The pattern's knee line (as `trouserKneeMm` drafts it): measured, else 47 % of the way from the crotch to the ankle. */
+  kneeY: number;
   ankleY: number;
 }
 
@@ -134,11 +197,13 @@ export const bodyLandmarks = (body: BodyMeasurements): BodyLandmarks => {
   const waistY = napeY - body.backLength;
   return {
     napeY,
-    shoulderY: napeY - 0.05 * s,
-    bustY: napeY - 0.2 * s,
+    // The base of the neck stands about level with the nape: the shoulder point is the measured slope below it.
+    shoulderY: napeY - (body.shoulderDrop ?? DEFAULT_SHOULDER_DROP * s),
+    bustY: body.bustDrop !== undefined ? Math.max(waistY + 0.16 * s, napeY - 0.05 * s - body.bustDrop) : napeY - 0.2 * s,
     waistY,
     hipY: waistY - body.hipDrop,
     crotchY: waistY - body.rise,
+    kneeY: body.kneeY ?? waistY - body.rise - KNEE_SHARE * (waistY - body.rise - 0.08 * s),
     ankleY: 0.08 * s,
   };
 };
@@ -197,11 +262,11 @@ export const buildTorsoRings = (body: BodyMeasurements): BodyRing[] => {
     [l.napeY, body.neck, 1.0, 0.016 * s],
     [l.napeY - 0.025 * s, body.neck * 1.05, 0.9, 0.012 * s],
     [l.shoulderY, shoulderCircumference, 0.55, 0.004 * s],
-    [l.shoulderY - 0.04 * s, body.bust * 0.94, 0.65, 0.012 * s],
+    [l.shoulderY - 0.04 * s, body.upperBust !== undefined ? Math.min(body.upperBust, body.bust) : body.bust * 0.94, 0.65, 0.012 * s],
     [l.bustY + 0.04 * s, body.bust * 0.98, d.bust - 0.06, 0.022 * s],
     [l.bustY, body.bust, d.bust, 0.028 * s],
     [l.bustY - 0.05 * s, body.bust * 0.91, d.bust - 0.02, 0.016 * s],
-    [l.bustY - 0.11 * s, body.bust * 0.84, (d.bust + d.waist) / 2, 0.005 * s],
+    [l.bustY - 0.11 * s, body.underBust !== undefined ? clamp(body.underBust, body.waist, body.bust) : body.bust * 0.84, (d.bust + d.waist) / 2, 0.005 * s],
     [l.waistY + 0.04 * s, body.waist * 1.04, d.waist, -0.002 * s],
     [l.waistY, body.waist, d.waist, -0.006 * s],
     [l.waistY - 0.08 * s, body.waist * 0.55 + body.hip * 0.45, (d.waist * 0.55 + d.hip * 0.45), -0.016 * s],

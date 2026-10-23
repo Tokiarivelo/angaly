@@ -1,3 +1,4 @@
+import { customerNoteWarnings } from '../services/customer-notes';
 import {
   BadRequestException,
   ForbiddenException,
@@ -21,6 +22,7 @@ import { GetMeasurementProfileUseCase } from '../../../measurements/application/
 import {
   AiUsage,
   validateMeasurementValues,
+  validatePatternExtParameters,
   type AiProviderId,
   type InspirationAnalysisSnapshot,
 } from '@angaly/types';
@@ -81,6 +83,7 @@ export class GeneratePatternVersionUseCase {
       project.measurementProfileId,
       project.customerId,
       dto,
+      validatePatternExtParameters(project.parametersExtJson).value.measurements,
     );
 
     // The customer's confirmed choices win; the stored photo analysis fills the gaps with the most
@@ -105,6 +108,8 @@ export class GeneratePatternVersionUseCase {
     // suggestions — both re-validated by the merge, so an out-of-range value never reaches the
     // engine. Absent = defaults.
     const ext = merged.ext;
+    // How the cloth behaves: the customer's choice, else the photo's reading.
+    const fabric = ext.fabric ?? analysis?.profile?.fit?.fabricBehavior;
 
     const parameters: PatternParameters = {
       garmentType,
@@ -115,6 +120,10 @@ export class GeneratePatternVersionUseCase {
       ...(ext.fullness ? { fullness: ext.fullness } : {}),
       ...(ext.lengths ? { lengths: ext.lengths } : {}),
       ...(ext.drape ? { drape: ext.drape } : {}),
+      ...(ext.trims ? { trims: ext.trims } : {}),
+      ...(ext.construction && ext.construction.items.length > 0 ? { construction: ext.construction } : {}),
+      // A woven cloth is never cut under the body (engine floor); a stretch knit may be.
+      ...(fabric ? { fabric } : {}),
     };
 
     // Calcul géométrique déterministe via le pattern-engine — aucune valeur
@@ -172,6 +181,8 @@ export class GeneratePatternVersionUseCase {
     const warnings = [...generationResult.warnings];
     const draping = this.inspirationParameters.drapingAdvice(analysis?.profile);
     if (draping) warnings.push(draping.warning);
+    // What the choices do not cover, in the customer's words: never drawn by the engine, handed to the atelier.
+    warnings.push(...customerNoteWarnings(ext.notes));
 
     // Best way to build it (flat / flat + blocks / flat base + mannequin / mannequin only) and, when
     // part of it is moulded, the draping sheet handed to the couturière.
@@ -186,7 +197,7 @@ export class GeneratePatternVersionUseCase {
     const versionId = randomUUID();
     const piecesData = generationResult.pieces.map((piece) => ({
       name: piece.name,
-      dimensionsJson: { outlineMm: piece.outlineMm },
+      dimensionsJson: { outlineMm: piece.outlineMm, ...(piece.internalLinesMm?.length ? { internalLinesMm: piece.internalLinesMm } : {}) },
       fabricRecommendation: piece.fabricRecommendation,
       quantity: piece.quantity,
       grainlineJson: piece.grainline ? { ...piece.grainline } : null,
@@ -207,6 +218,7 @@ export class GeneratePatternVersionUseCase {
         constructionApproach: construction.approach,
         constructionApproachReason: construction.reason,
         mannequinSheet,
+        customerNotes: ext.notes ?? null,
         inspiration: analysis
           ? {
               observations: analysis.features,
@@ -254,8 +266,8 @@ export class GeneratePatternVersionUseCase {
     analysis: InspirationAnalysisSnapshot | null,
     aiProvider: AiProviderId | undefined,
   ): Promise<string[]> {
-    if (!analysis || Object.keys(analysis.features).length === 0) return [];
-    if (this.inspirationParameters.missingGroups(merged.details).length === 0) return [];
+    if (!analysis?.features || Object.keys(analysis.features).length === 0) return [];
+    if (this.inspirationParameters.missingGroups(merged.details, base.garmentType).length === 0) return [];
     try {
       const provider = await this.providerResolver.resolveSelected(aiProvider, AiUsage.PATTERN_SUGGESTION);
       const { suggestion } = await this.suggestPatternParameters.execute({
@@ -271,6 +283,7 @@ export class GeneratePatternVersionUseCase {
       const { details, acceptedKeys } = this.inspirationParameters.acceptSuggestedDetails(
         merged.details,
         suggestion.suggestedDetails,
+        base.garmentType,
       );
       Object.assign(merged.details, details);
       return acceptedKeys;
@@ -289,6 +302,7 @@ export class GeneratePatternVersionUseCase {
     measurementProfileId: string | null,
     customerId: string,
     dto?: GeneratePatternVersionDto,
+    saved: Record<string, number> = {},
   ): Promise<Record<string, number>> {
     let profileMeasurements: Record<string, number> = {};
 
@@ -312,7 +326,8 @@ export class GeneratePatternVersionUseCase {
         errors: issues.map((issue) => issue.message),
       });
     }
-    return { ...profileMeasurements, ...manual };
+    // The profile, then what was typed for this project (saved with it), then what this request sends.
+    return { ...profileMeasurements, ...saved, ...manual };
   }
 
   private resolveGarmentType(rawType: string): GarmentType {

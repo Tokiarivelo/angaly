@@ -1,10 +1,10 @@
 'use client';
 
-import React, { useEffect, useMemo, useRef } from 'react';
-import { Canvas, useThree } from '@react-three/fiber';
+import React, { useDeferredValue, useEffect, useMemo, useRef, useState } from 'react';
+import { Canvas, useFrame, useThree, type ThreeEvent } from '@react-three/fiber';
 import { AdaptiveDpr, GizmoHelper, GizmoViewport, OrbitControls } from '@react-three/drei';
 import * as THREE from 'three';
-import { drapeGarment, SLEEVE_TILT, type GarmentModel, type PanelMeshData } from '../utils/garment3d/garment-model';
+import { drapeGarment, skirtSurface, SLEEVE_TILT, type GarmentModel, type PanelMeshData } from '../utils/garment3d/garment-model';
 import { envelopeFromMesh } from '../utils/garment3d/body-envelope';
 import { loopSubdivide } from '../utils/garment3d/subdivide';
 import { cavityOcclusion } from '../utils/garment3d/surface-shading';
@@ -22,10 +22,18 @@ import {
 import { ringAt } from '../utils/garment3d/body-model';
 import { fitHumanBody, morphFor, type FitResult } from '../utils/garment3d/human-body';
 import { buildHair, eyeball, faceColors, findFaceLandmarks, sculptFace, type HairStyle } from '../utils/garment3d/head-features';
-import { fabricMaterial, type FabricLook } from './fabricTextures';
+import { accentMaterial, contrastMaterial, fabricMaterial, glow, laceAlphaMap, plastronMaterial, type Cloth, type FabricLook } from './fabricTextures';
+import { embroideryMap, embroideryMaterialParameters, smockingMaps, threadColor } from './motifTextures';
+import { isHexColor } from '@angaly/types';
+import { applyPose, forearmMask, handCentres, isNeutral, seatHandsOnSkirt, type BodyPose } from '../utils/garment3d/pose';
 import { eyeTexture, hairTexture } from './headTextures';
 import { RoomEnvironment } from 'three/examples/jsm/environments/RoomEnvironment.js';
 import { useHumanBase } from './useHumanBase';
+import { SculptBrush, type SculptHandlers, type SculptViewProps } from './SculptBrush';
+import { MeshEditLayer, type MeshEditViewProps, type ScreenBox } from './MeshEditLayer';
+import { outlineInstances, type PointInstance } from '../utils/garment3d/mesh-edit';
+import type { PatternPieceDto } from '@angaly/types';
+import { garmentFrameOf } from '../utils/garment3d/photo-frame';
 
 interface Garment3DViewerProps {
   model: GarmentModel;
@@ -42,7 +50,59 @@ interface Garment3DViewerProps {
   onContextLost?: (() => void) | undefined;
   /** Fabric read from the photo (print and colours); absent ⇒ technical zone colours. */
   fabric?: FabricLook | null | undefined;
+  /** Joint angles of the human body (absent ⇒ standing, arms along the body). */
+  pose?: BodyPose | undefined;
+  /** Modelling the pattern on the garment: the left button drags the fabric instead of turning the view. */
+  sculpt?: SculptViewProps | null | undefined;
+  /** Edit mode: the pattern's points on the garment, selected and transformed one by one (Blender's Edit Mode). */
+  edit?: MeshEditProps | null | undefined;
+  /** Seam lines over the cloth (absent ⇒ shown in the technical colours, hidden over a real fabric unless modelling). */
+  showSeams?: boolean | undefined;
+  /** Told where the garment's front box lies on the canvas (px from its top left) whenever it moves: the photo is laid over it. */
+  onGarmentScreenRect?: ((rect: ScreenRect | null) => void) | undefined;
 }
+
+/** A box on the 3D canvas, in CSS px from the canvas's top left corner. */
+export interface ScreenRect {
+  left: number;
+  top: number;
+  right: number;
+  bottom: number;
+}
+
+/**
+ * Projects the garment's front box (its widest x, its top and its hem, on the body's axis) through the camera after
+ * each frame and reports it when it moved by half a pixel or more.
+ */
+const FrameReporter: React.FC<{ panels: PanelMeshData[]; onRect: (rect: ScreenRect | null) => void }> = ({ panels, onRect }) => {
+  const frame = useMemo(() => garmentFrameOf(panels), [panels]);
+  const last = useRef<ScreenRect | null>(null);
+  const report = useRef(onRect);
+  report.current = onRect;
+  useEffect(() => () => report.current(null), []);
+  useFrame(({ camera, size }) => {
+    if (!frame) return;
+    const corner = (x: number, y: number) => {
+      const v = new THREE.Vector3(x, y, frame.axisZ).project(camera);
+      return { x: ((v.x + 1) / 2) * size.width, y: ((1 - v.y) / 2) * size.height };
+    };
+    const a = corner(frame.minX, frame.top);
+    const c = corner(frame.maxX, frame.bottom);
+    const rect = { left: Math.min(a.x, c.x), top: Math.min(a.y, c.y), right: Math.max(a.x, c.x), bottom: Math.max(a.y, c.y) };
+    const prev = last.current;
+    if (prev && Math.abs(prev.left - rect.left) < 0.5 && Math.abs(prev.top - rect.top) < 0.5 && Math.abs(prev.right - rect.right) < 0.5 && Math.abs(prev.bottom - rect.bottom) < 0.5) return;
+    last.current = rect;
+    report.current(rect);
+  });
+  return null;
+};
+
+export type MeshEditProps = Omit<MeshEditViewProps, 'instances'> & {
+  /** The pieces the model was draped from (their outline points are shown). */
+  pieces: PatternPieceDto[];
+  /** The points as placed on the garment, for the keyboard operations (select all, G / S / R). */
+  onInstances: (instances: PointInstance[]) => void;
+};
 
 export type ViewName = 'front' | 'back' | 'side' | 'top' | 'reset' | 'face';
 export interface ViewRequest {
@@ -70,7 +130,19 @@ const ZONE_COLORS: Record<PanelMeshData['zone'], string> = {
   skirt: '#0C2650',
   legs: '#061938',
   sleeve: '#1E4574',
+  collar: '#102F55',
+  plastron: '#E9DFC6',
+  cord: '#B8975A',
+  belt: '#102F55',
+  cuff: '#1E4574',
+  revers: '#18375D',
+  lace: '#EFE2C2',
+  beads: '#F3E7CC',
+  detail: '#18375D',
 };
+
+/** Pocket bags: a pale cotton lining, whatever the garment's fabric. */
+const LINING_COLOR = '#E6DCC8';
 
 /** Disposes a geometry when it is replaced or the viewer unmounts (GPU memory). */
 const useGeometry = (build: () => THREE.BufferGeometry, deps: React.DependencyList): THREE.BufferGeometry => {
@@ -172,9 +244,15 @@ const smoothstep01 = (t: number): number => {
   return x * x * (3 - 2 * x);
 };
 
-/** Hair style by morphology: long wavy hair for women and girls, a short textured cut for men and boys. */
+/** Women: the atelier's stylised face. */
+const isWoman = (templateId: string): boolean => templateId.startsWith('FEMME');
+
+/**
+ * Hair style by morphology: a high bun for women, long wavy hair for girls, a short textured cut for men
+ * and boys.
+ */
 const hairStyleFor = (templateId: string): HairStyle =>
-  templateId.startsWith('HOMME') || templateId === 'ENFANT_GARCON' ? 'short' : 'long';
+  templateId.startsWith('HOMME') || templateId === 'ENFANT_GARCON' ? 'short' : isWoman(templateId) ? 'bun' : 'long';
 
 /** Scanned-quality human body (CC0 MakeHuman mesh) fitted to the customer's measurements. */
 const Person: React.FC<{
@@ -184,10 +262,13 @@ const Person: React.FC<{
 }> = ({ model, base, fit }) => {
   const { body } = model;
   const s = bodyScale(body);
-  // The face, sculpted towards a portrait's (fuller lips, eyes a little more open).
+  // The face, sculpted towards a portrait's (fuller lips, eyes a little more open); a woman's then
+  // stylised like the atelier's reference bust (shorter lower face, V jaw, almond eyes).
   const sculpted = useMemo(() => {
     const found = findFaceLandmarks(fit.positions, base.armWeights, body, base.indices);
-    return found ? sculptFace(fit.positions, found, body) : { positions: fit.positions, face: null };
+    if (!found) return { positions: fit.positions, face: null };
+    // The stylised face (utils/garment3d/face-stylize.ts) is not plugged in yet: see docs/handoff.md.
+    return sculptFace(fit.positions, found, body);
   }, [fit, base, body]);
   const face = sculpted.face;
   const geometry = useGeometry(() => {
@@ -214,7 +295,8 @@ const Person: React.FC<{
   const hairGeometry = useGeometry(() => {
     const g = new THREE.BufferGeometry();
     if (!face) return g;
-    const hair = buildHair(fit.positions, base.armWeights, body, face, hairStyleFor(model.templateId));
+    // On the sculpted head: the locks framing the face hang outside the reshaped cheeks.
+    const hair = buildHair(sculpted.positions, base.armWeights, body, face, hairStyleFor(model.templateId));
     g.setAttribute('position', new THREE.BufferAttribute(hair.positions, 3));
     g.setAttribute('uv', new THREE.BufferAttribute(hair.uvs, 2));
     // Light factor and coverage per vertex (RGBA): the alpha test cuts the scalp layer at the hairline.
@@ -228,7 +310,7 @@ const Person: React.FC<{
     g.computeVertexNormals();
     g.computeTangents();
     return g;
-  }, [fit, base, body, face, model.templateId]);
+  }, [sculpted, base, body, face, model.templateId]);
   const hairMaps = useMemo(() => hairTexture(HAIR_COLOR), []);
   const eyeMap = useMemo(() => eyeTexture(), []);
   useEffect(
@@ -322,6 +404,37 @@ const StudioEnvironment: React.FC = () => {
   return null;
 };
 
+/**
+ * Photo-studio backdrop for a real fabric: a seamless grey paper, lighter behind the head, darker towards the floor
+ * (a dark garment reads against it, as on the fashion plates). Drawn as the scene background.
+ */
+const StudioBackdrop: React.FC = () => {
+  const scene = useThree((state) => state.scene);
+  useEffect(() => {
+    if (typeof document === 'undefined') return undefined;
+    const canvas = document.createElement('canvas');
+    canvas.width = 4;
+    canvas.height = 256;
+    const c = canvas.getContext('2d');
+    if (!c) return undefined;
+    const g = c.createLinearGradient(0, 0, 0, 256);
+    g.addColorStop(0, '#77787B');
+    g.addColorStop(0.55, '#5E5F62');
+    g.addColorStop(1, '#3B3C3F');
+    c.fillStyle = g;
+    c.fillRect(0, 0, 4, 256);
+    const texture = new THREE.CanvasTexture(canvas);
+    texture.colorSpace = THREE.SRGBColorSpace;
+    const previous = scene.background;
+    scene.background = texture;
+    return () => {
+      scene.background = previous;
+      texture.dispose();
+    };
+  }, [scene]);
+  return null;
+};
+
 const radiusOf = (circumference: number): number => circumference / (2 * Math.PI);
 
 /** Real 3D person with anatomical proportions, lifelike facial planes, styled hair, and natural posture. */
@@ -334,7 +447,7 @@ const Mannequin: React.FC<{ model: GarmentModel }> = ({ model }) => {
   const armEndX = Math.sin(SLEEVE_TILT) * body.armLength;
   const elbow = 0.55; // fraction of arm length where forearm starts
   const legX = Math.max(0.088 * s, radiusOf(body.thigh) * 0.95);
-  const kneeY = (landmarks.crotchY + landmarks.ankleY) / 2;
+  const kneeY = landmarks.kneeY;
   const skin = body.skin;
   const neckR = radiusOf(body.neck);
   const headY = landmarks.napeY + 0.08 * s + body.headRadius * 0.85;
@@ -465,21 +578,110 @@ const Mannequin: React.FC<{ model: GarmentModel }> = ({ model }) => {
   );
 };
 
+/** Triangles reordered so the accent ones (all three vertices accent) come last: two draw groups, two materials. */
+const accentGroups = (
+  indices: Uint32Array,
+  accent: Uint8Array,
+): { indices: Uint32Array; groups: Array<{ start: number; count: number; material: number }> } => {
+  const plain: number[] = [];
+  const marked: number[] = [];
+  for (let t = 0; t < indices.length; t += 3) {
+    const a = indices[t]!;
+    const b = indices[t + 1]!;
+    const c = indices[t + 2]!;
+    (accent[a] && accent[b] && accent[c] ? marked : plain).push(a, b, c);
+  }
+  return {
+    indices: Uint32Array.from([...plain, ...marked]),
+    groups: [
+      { start: 0, count: plain.length, material: 0 },
+      { start: plain.length, count: marked.length, material: 1 },
+    ],
+  };
+};
+
+/**
+ * The cloth's surface. Velvet: a deep, slightly rough ground and a soft sheen of a lighter shade where the light
+ * grazes the pile (folds and edges glow, faces turned to the eye stay dark), as on the photographs. Satin: a smooth
+ * physical sheen. Otherwise a plain matte fabric.
+ */
+const ClothMaterial: React.FC<{
+  cloth: Cloth | null;
+  zone: PanelMeshData['zone'];
+  highlighted: boolean;
+  transparent: boolean;
+  /** The geometry carries the folds' ambient occlusion as vertex colours. */
+  shaded?: boolean;
+  /** Relief drawn over the cloth (smocking's honeycomb). */
+  relief?: Relief | null | undefined;
+  attach: string;
+}> = ({ cloth, zone, highlighted, transparent, shaded = false, relief, attach }) => {
+  const common = {
+    attach,
+    ...(relief ? { normalMap: relief.normalMap, normalScale: new THREE.Vector2(1, 1), aoMap: relief.aoMap, aoMapIntensity: 0.8 } : {}),
+    vertexColors: shaded,
+    color: cloth?.color ?? ZONE_COLORS[zone],
+    map: cloth?.map ?? null,
+    emissive: highlighted ? '#936C3E' : '#000000',
+    emissiveIntensity: highlighted ? 0.6 : 0,
+    side: THREE.DoubleSide,
+    transparent,
+    opacity: transparent ? 0.5 : 1,
+    depthWrite: !transparent,
+    polygonOffset: true,
+    polygonOffsetFactor: 1,
+    polygonOffsetUnits: 1,
+  };
+  if (cloth?.finish === 'VELOURS') {
+    // The pile catches the light only at grazing angles, in the fabric's own hue (never a white plastic shine).
+    // Deep pile: a bright, blue-grey sheen of the fabric's own hue on the folds' crests and edges.
+    const sheen = glow(cloth.map ? '#2A3A78' : cloth.color, 0.32);
+    return <meshPhysicalMaterial {...common} roughness={1} metalness={0} sheen={1} sheenRoughness={0.45} sheenColor={sheen} envMapIntensity={0.35} />;
+  }
+  if (cloth?.finish === 'SATIN') {
+    return <meshPhysicalMaterial {...common} roughness={0.38} metalness={0.05} sheen={0.6} sheenRoughness={0.25} sheenColor="#ffffff" clearcoat={0.15} clearcoatRoughness={0.4} />;
+  }
+  return <meshStandardMaterial {...common} roughness={0.58} metalness={0.08} />;
+};
+
+/** Relief maps laid on a panel's cloth (smocking). */
+interface Relief {
+  normalMap: THREE.Texture;
+  aoMap: THREE.Texture;
+}
+
 const Panel: React.FC<{
   panel: PanelMeshData;
   assembly: number;
   transparent: boolean;
   highlighted: boolean;
-  cloth: { color: string; map: THREE.Texture | null } | null;
-}> = ({ panel, assembly, transparent, highlighted, cloth }) => {
+  cloth: Cloth | null;
+  /** Fabric of the panel's accent part (a sleeve's puff), when it has one. */
+  accentCloth?: Cloth | null | undefined;
+  /** Draws the seam lines over the cloth. */
+  seams?: boolean | undefined;
+  /** Brush events, while modelling (see SculptBrush). */
+  sculpt?: React.RefObject<SculptHandlers | null> | null;
+  onHoverChange?: ((over: boolean) => void) | undefined;
+  relief?: Relief | null | undefined;
+}> = ({ panel, assembly, transparent, highlighted, cloth, accentCloth, seams = true, sculpt, onHoverChange, relief }) => {
+  const split = Boolean(accentCloth && panel.accent);
   const geometry = useGeometry(() => {
     const g = new THREE.BufferGeometry();
     g.setAttribute('position', new THREE.BufferAttribute(panel.positions, 3));
     g.setAttribute('uv', new THREE.BufferAttribute(panel.uvs, 2));
-    g.setIndex(new THREE.BufferAttribute(panel.indices, 1));
+    // Ambient occlusion of the folds, as a grey vertex colour multiplying the cloth.
+    if (panel.ao) {
+      const rgb = new Float32Array(panel.ao.length * 3);
+      for (let i = 0; i < panel.ao.length; i += 1) rgb.fill(panel.ao[i]!, i * 3, i * 3 + 3);
+      g.setAttribute('color', new THREE.BufferAttribute(rgb, 3));
+    }
+    const { indices, groups } = split && panel.accent ? accentGroups(panel.indices, panel.accent) : { indices: panel.indices, groups: [] };
+    g.setIndex(new THREE.BufferAttribute(indices, 1));
+    for (const group of groups) g.addGroup(group.start, group.count, group.material);
     g.computeVertexNormals();
     return g;
-  }, [panel]);
+  }, [panel, split]);
 
   const borderGeometry = useGeometry(() => {
     const g = new THREE.BufferGeometry();
@@ -496,31 +698,143 @@ const Panel: React.FC<{
 
   return (
     <group position={offset}>
-      <mesh geometry={geometry}>
-        <meshStandardMaterial
-          color={cloth?.color ?? ZONE_COLORS[panel.zone]}
-          map={cloth?.map ?? null}
-          emissive={highlighted ? '#936C3E' : '#000000'}
-          emissiveIntensity={highlighted ? 0.6 : 0}
-          roughness={0.58}
-          metalness={0.08}
-          side={THREE.DoubleSide}
-          transparent={transparent}
-          opacity={transparent ? 0.5 : 0.98}
-          depthWrite={!transparent}
-          polygonOffset
-          polygonOffsetFactor={1}
-          polygonOffsetUnits={1}
-        />
+      <mesh
+        geometry={geometry}
+        userData={{ panel }}
+        {...(sculpt
+          ? {
+              onPointerMove: (e: ThreeEvent<PointerEvent>) => sculpt.current?.hover(e, panel),
+              onPointerOver: () => onHoverChange?.(true),
+              onPointerOut: () => {
+                onHoverChange?.(false);
+                sculpt.current?.leave();
+              },
+              onPointerDown: (e: ThreeEvent<PointerEvent>) => sculpt.current?.down(e, panel),
+            }
+          : {})}
+      >
+        <ClothMaterial cloth={cloth} zone={panel.zone} highlighted={highlighted} transparent={transparent} shaded={Boolean(panel.ao)} relief={relief} attach={split ? 'material-0' : 'material'} />
+        {split && <ClothMaterial cloth={accentCloth ?? null} zone={panel.zone} highlighted={highlighted} transparent={transparent} shaded={Boolean(panel.ao)} attach="material-1" />}
       </mesh>
       {/* Couture stitching seam line in delicate Champagne */}
-      <lineSegments geometry={borderGeometry}>
-        <lineBasicMaterial
-          color={highlighted ? '#F6F2E9' : '#C5B190'}
-          transparent
-          opacity={0.85}
+      {(seams || highlighted) && (
+        <lineSegments geometry={borderGeometry}>
+          <lineBasicMaterial color={highlighted ? '#F6F2E9' : '#C5B190'} transparent opacity={0.85} />
+        </lineSegments>
+      )}
+    </group>
+  );
+};
+
+/**
+ * A lace garniture (berthe, sleeve frill): a see-through layer, its threads cut out by the lace's alpha map (a plain
+ * fabric or tulle garniture is drawn solid or misty). Soft sheen, both sides.
+ */
+const LacePanel: React.FC<{ panel: PanelMeshData; assembly: number; highlighted: boolean; lace: THREE.Texture | null }> = ({
+  panel,
+  assembly,
+  highlighted,
+  lace,
+}) => {
+  const geometry = useGeometry(() => {
+    const g = new THREE.BufferGeometry();
+    g.setAttribute('position', new THREE.BufferAttribute(panel.positions, 3));
+    g.setAttribute('uv', new THREE.BufferAttribute(panel.uvs, 2));
+    g.setIndex(new THREE.BufferAttribute(panel.indices, 1));
+    g.computeVertexNormals();
+    return g;
+  }, [panel]);
+  const spread = (1 - assembly) * EXPLODE_DISTANCE;
+  const isLace = panel.material !== 'TISSU' && panel.material !== 'TULLE';
+  return (
+    <group position={[panel.explode.x * spread, panel.explode.y * spread * 0.5, panel.explode.z * spread]}>
+      <mesh geometry={geometry} userData={{ panel }}>
+        <meshPhysicalMaterial
+          color={panel.trimColor ?? ZONE_COLORS.lace}
+          alphaMap={isLace ? lace : null}
+          alphaTest={isLace && lace ? 0.35 : 0}
+          transparent={panel.material === 'TULLE'}
+          opacity={panel.material === 'TULLE' ? 0.55 : 1}
+          side={THREE.DoubleSide}
+          roughness={0.6}
+          sheen={0.5}
+          sheenColor="#ffffff"
+          emissive={highlighted ? '#936C3E' : '#000000'}
+          emissiveIntensity={highlighted ? 0.5 : 0}
+          polygonOffset
+          polygonOffsetFactor={-1}
+          polygonOffsetUnits={-1}
         />
-      </lineSegments>
+      </mesh>
+    </group>
+  );
+};
+
+/**
+ * An embroidery: the thread alone (scrolls, leaves, flowers, knots), its satin shading dyed in the thread colour and
+ * cut out by its coverage, laid over the cloth that shows between the motifs.
+ */
+const EmbroideryPanel: React.FC<{ panel: PanelMeshData; assembly: number; highlighted: boolean; motif: THREE.Texture; color: string }> = ({
+  panel,
+  assembly,
+  highlighted,
+  motif,
+  color,
+}) => {
+  const geometry = useGeometry(() => {
+    const g = new THREE.BufferGeometry();
+    g.setAttribute('position', new THREE.BufferAttribute(panel.positions, 3));
+    g.setAttribute('uv', new THREE.BufferAttribute(panel.uvs, 2));
+    g.setIndex(new THREE.BufferAttribute(panel.indices, 1));
+    g.computeVertexNormals();
+    return g;
+  }, [panel]);
+  // Same material as the realistic render's embroidery (`embroideryMaterialParameters`).
+  const material = useMemo(() => new THREE.MeshPhysicalMaterial(embroideryMaterialParameters(color, motif)), [color, motif]);
+  useEffect(() => () => material.dispose(), [material]);
+  const invalidate = useThree((state) => state.invalidate);
+  useEffect(() => {
+    material.emissive.set(highlighted ? '#936C3E' : '#000000');
+    material.emissiveIntensity = highlighted ? 0.5 : 0;
+    invalidate();
+  }, [material, highlighted, invalidate]);
+  const spread = (1 - assembly) * EXPLODE_DISTANCE;
+  return (
+    <group position={[panel.explode.x * spread, panel.explode.y * spread * 0.5, panel.explode.z * spread]}>
+      <mesh geometry={geometry} material={material} userData={{ panel }} />
+    </group>
+  );
+};
+
+/** A bead row: one pearl (a small lustrous sphere) per centre, drawn as instances. */
+const BeadRow: React.FC<{ panel: PanelMeshData; assembly: number; highlighted: boolean }> = ({ panel, assembly, highlighted }) => {
+  const count = panel.positions.length / 3;
+  const sphere = useGeometry(() => new THREE.SphereGeometry(panel.beadRadius ?? 0.003, 10, 8), [panel.beadRadius]);
+  const ref = useRef<THREE.InstancedMesh>(null);
+  useEffect(() => {
+    const mesh = ref.current;
+    if (!mesh) return;
+    const m = new THREE.Matrix4();
+    for (let i = 0; i < count; i += 1) {
+      m.makeTranslation(panel.positions[i * 3]!, panel.positions[i * 3 + 1]!, panel.positions[i * 3 + 2]!);
+      mesh.setMatrixAt(i, m);
+    }
+    mesh.instanceMatrix.needsUpdate = true;
+  }, [panel, count]);
+  const spread = (1 - assembly) * EXPLODE_DISTANCE;
+  return (
+    <group position={[panel.explode.x * spread, panel.explode.y * spread * 0.5, panel.explode.z * spread]}>
+      <instancedMesh ref={ref} args={[sphere, undefined, count]}>
+        <meshPhysicalMaterial
+          color={panel.trimColor ?? ZONE_COLORS.beads}
+          roughness={0.22}
+          metalness={0.1}
+          clearcoat={0.8}
+          clearcoatRoughness={0.1}
+          emissive={highlighted ? '#936C3E' : '#000000'}
+          emissiveIntensity={highlighted ? 0.5 : 0}
+        />
+      </instancedMesh>
     </group>
   );
 };
@@ -535,27 +849,138 @@ export const Garment3DViewer: React.FC<Garment3DViewerProps> = ({
   viewRequest,
   onContextLost,
   fabric,
+  pose,
+  sculpt,
+  edit,
+  showSeams,
+  onGarmentScreenRect,
 }) => {
   const human = useHumanBase();
+  const editing = Boolean(edit);
+  // Edit mode: the left button selects; Alt + left (or the middle button) orbits, as Blender's emulation.
+  const [altHeld, setAltHeld] = useState(false);
+  const [box, setBox] = useState<ScreenBox | null>(null);
+  useEffect(() => {
+    if (!editing) return undefined;
+    const onKey = (e: KeyboardEvent): void => setAltHeld(e.altKey);
+    const onBlur = (): void => setAltHeld(false);
+    window.addEventListener('keydown', onKey);
+    window.addEventListener('keyup', onKey);
+    window.addEventListener('blur', onBlur);
+    return () => {
+      window.removeEventListener('keydown', onKey);
+      window.removeEventListener('keyup', onKey);
+      window.removeEventListener('blur', onBlur);
+    };
+  }, [editing]);
+  const brush = useRef<SculptHandlers | null>(null);
+  // Over the garment while modelling (or dragging): the left button models instead of orbiting.
+  const [overGarment, setOverGarment] = useState(false);
+  const [dragging, setDragging] = useState(false);
+  const sculpting = Boolean(sculpt);
+  const leftModels = sculpting && (overGarment || dragging);
+  useEffect(() => {
+    if (!sculpting) setOverGarment(false);
+  }, [sculpting]);
   const cloth = useMemo(() => fabricMaterial(fabric), [fabric]);
+  const lace = useMemo(() => laceAlphaMap(), []);
+  useEffect(() => () => lace?.dispose(), [lace]);
+  // Embroidery and smocking motifs, built once (pure pixels, a few ms) and only when the garment has one.
+  const motifs = useMemo(() => new Set(model.panels.map((p) => p.motif).filter(Boolean)), [model.panels]);
+  const embroidery = useMemo(() => (motifs.has('BRODERIE') ? embroideryMap() : null), [motifs]);
+  useEffect(() => () => embroidery?.dispose(), [embroidery]);
+  const smocks = useMemo<Relief | null>(() => (motifs.has('SMOCKS') ? smockingMaps() : null), [motifs]);
+  useEffect(
+    () => () => {
+      smocks?.normalMap.dispose();
+      smocks?.aoMap.dispose();
+    },
+    [smocks],
+  );
+  // A fabric with a known surface is shown as a photograph: studio backdrop and light.
+  const studio = Boolean(fabric?.fabricFinish);
+  const accentCloth = useMemo(() => accentMaterial(fabric), [fabric]);
+  useEffect(() => () => accentCloth?.map?.dispose(), [accentCloth]);
+  // The plastron of a robe-manteau is a contrasting fabric; the cord matches it, and so does a collar when the
+  // analysis saw a contrasting one (a white collar on a dark dress).
+  const plastronCloth = useMemo(() => plastronMaterial(fabric, ZONE_COLORS.plastron), [fabric]);
+  useEffect(() => () => plastronCloth.map?.dispose(), [plastronCloth]);
+  const cordCloth = useMemo<Cloth>(
+    () => ({ color: isHexColor(fabric?.contrastColor) ? fabric.contrastColor : ZONE_COLORS.plastron, map: null }),
+    [fabric],
+  );
+  const liningCloth = useMemo<Cloth>(() => ({ color: LINING_COLOR, map: null }), []);
+  const goreCloth = useMemo(() => (fabric?.contrastGores ? contrastMaterial(fabric) : null), [fabric]);
+  useEffect(() => () => goreCloth?.map?.dispose(), [goreCloth]);
+  // Over a plastron the contrast colour belongs to the plastron; the collar (revers) is cut in the dress fabric.
+  const contrastCollar = isHexColor(fabric?.contrastColor) && !model.layout.trims.some((t) => t.zone === 'plastron' && /plastron/i.test(t.piece.name));
   useEffect(() => () => cloth?.map?.dispose(), [cloth]);
   // The body is fitted once per model; the garment is then draped on that very body (its hull, its
   // arms, its legs). Until the mesh is loaded, the panels draped on the procedural mannequin are shown.
-  const fit = useMemo(
+  // Keyed on the body only: modelling the pattern changes the model, never the person wearing it.
+  const fitted = useMemo(
     () => (human ? fitHumanBody(human, model.body, model.torsoRings, morphFor(model.body, model.templateId)) : null),
-    [human, model],
+    [human, model.body, model.torsoRings, model.templateId],
+  );
+  // The pose moves the joints of the fitted body; the garment is draped on the posed body. Deferred so
+  // that dragging a joint slider stays fluid while the body and the drape are rebuilt.
+  const deferredPose = useDeferredValue(pose);
+  // Forearms and hands, told apart on the body at rest: a folded forearm never passes for an upper arm.
+  const forearm = useMemo(() => (human && fitted ? forearmMask(fitted.positions, human.armWeights, model.body) : null), [human, fitted, model.body]);
+  // The skirt draped on the body at rest: where a wide skirt (a crinoline) stands out, the posed arms are moved out
+  // until the hands rest on it instead of going through it (`seatHandsOnSkirt`).
+  const restSurface = useMemo(() => {
+    if (!human || !fitted || !deferredPose || isNeutral(deferredPose)) return null;
+    const restEnv = envelopeFromMesh(fitted.positions, human.indices, human.armWeights, model.body, forearm ?? undefined);
+    return { surface: skirtSurface(drapeGarment(model.layout, model.body, restEnv), restEnv.axisZ), axisZ: restEnv.axisZ };
+  }, [human, fitted, model.layout, model.body, forearm, deferredPose]);
+  const seatedPose = useMemo(
+    () =>
+      human && fitted && deferredPose && restSurface
+        ? seatHandsOnSkirt(deferredPose, fitted.positions, human.armWeights, model.body, restSurface.surface, restSurface.axisZ)
+        : deferredPose,
+    [human, fitted, model.body, deferredPose, restSurface],
+  );
+  const fit = useMemo(
+    () =>
+      human && fitted && seatedPose && !isNeutral(seatedPose)
+        ? { ...fitted, positions: applyPose(fitted.positions, human.armWeights, model.body, seatedPose) }
+        : fitted,
+    [human, fitted, model.body, seatedPose],
+  );
+  // The body's envelope, sampled once per posed body (≈ 0.2 s): the pattern is re-draped on it at every edit.
+  const envelope = useMemo(
+    () => (human && fit ? envelopeFromMesh(fit.positions, human.indices, human.armWeights, model.body, forearm ?? undefined) : null),
+    [human, fit, model.body, forearm],
   );
   const panels = useMemo(
     () =>
-      human && fit
-        ? drapeGarment(model.layout, model.body, envelopeFromMesh(fit.positions, human.indices, human.armWeights, model.body))
+      human && fit && envelope
+        ? drapeGarment(
+            model.layout,
+            model.body,
+            envelope,
+            seatedPose && fitted && !isNeutral(seatedPose)
+              ? {
+                  hands: handCentres(fitted.positions, fit.positions, human.armWeights, model.body),
+                  legsPosed: [seatedPose.leftLeg, seatedPose.rightLeg].some((p) => p.forward > 3 || p.bend > 3 || p.raise > 3),
+                }
+              : {},
+          )
         : model.panels,
-    [human, fit, model],
+    [human, fit, fitted, model, envelope, seatedPose],
   );
+  const editPieces = edit?.pieces;
+  const instances = useMemo(() => (editPieces ? outlineInstances(panels, editPieces) : []), [panels, editPieces]);
+  const onInstances = edit?.onInstances;
+  useEffect(() => onInstances?.(instances), [instances, onInstances]);
   const lost = useRef(onContextLost);
   lost.current = onContextLost;
 
+  const leftButton = editing ? (altHeld ? THREE.MOUSE.ROTATE : (-1 as THREE.MOUSE)) : leftModels ? (-1 as THREE.MOUSE) : panMode ? THREE.MOUSE.PAN : THREE.MOUSE.ROTATE;
+
   return (
+    <div className="relative h-full w-full">
     <Canvas
       frameloop="demand"
       dpr={[1, 1.5]}
@@ -570,27 +995,58 @@ export const Garment3DViewer: React.FC<Garment3DViewerProps> = ({
         });
       }}
     >
-      <color attach="background" args={['#041329']} />
+      {studio ? <StudioBackdrop /> : <color attach="background" args={['#041329']} />}
       <StudioEnvironment />
       {/* Studio three-point light: a strong key high on one side, a weak cool fill (the relief stays readable). */}
-      <ambientLight intensity={0.15} color="#E8E2D5" />
-      <hemisphereLight args={['#FFFFFF', '#061938', 0.5]} />
-      <directionalLight position={[-2.8, 3.6, 2.2]} intensity={2.4} color="#FFF6EA" />
+      <ambientLight intensity={studio ? 0.06 : 0.15} color="#E8E2D5" />
+      <hemisphereLight args={['#FFFFFF', studio ? '#2A2B2E' : '#061938', studio ? 0.3 : 0.5]} />
+      {/* On the studio backdrop the key comes lower and more from the side: it rakes the velvet's folds. */}
+      <directionalLight position={studio ? [-3.2, 2.6, 1.6] : [-2.8, 3.6, 2.2]} intensity={studio ? 2.8 : 2.4} color="#FFF6EA" />
       <directionalLight position={[3, 1.5, 2.8]} intensity={0.4} color="#A9BAD6" />
       <directionalLight position={[0, 3.5, -3.5]} intensity={1.1} color="#F0E6D2" />
       <directionalLight position={[0, -1, 1]} intensity={0.25} color="#C5B190" />
 
       {showMannequin && (human && fit ? <Person model={model} base={human} fit={fit} /> : <Mannequin model={model} />)}
-      {panels.map((panel) => (
+      {panels.map((panel) =>
+        panel.zone === 'beads' ? (
+          <BeadRow key={panel.id} panel={panel} assembly={assembly} highlighted={selectedPieceId !== null && panel.pieceIds.includes(selectedPieceId)} />
+        ) : panel.zone === 'lace' ? (
+          <LacePanel key={panel.id} panel={panel} assembly={assembly} lace={lace} highlighted={selectedPieceId !== null && panel.pieceIds.includes(selectedPieceId)} />
+        ) : panel.motif === 'BRODERIE' && embroidery ? (
+          <EmbroideryPanel
+            key={panel.id}
+            panel={panel}
+            assembly={assembly}
+            motif={embroidery}
+            color={threadColor(panel.trimColor, fabric?.contrastColor)}
+            highlighted={selectedPieceId !== null && panel.pieceIds.includes(selectedPieceId)}
+          />
+        ) : (
         <Panel
           key={panel.id}
           panel={panel}
           assembly={assembly}
           transparent={transparent}
           highlighted={selectedPieceId !== null && panel.pieceIds.includes(selectedPieceId)}
-          cloth={cloth}
+          sculpt={sculpting ? brush : null}
+          onHoverChange={setOverGarment}
+          cloth={
+            panel.lining
+              ? liningCloth
+              : panel.zone === 'plastron' || panel.contrast || ((panel.zone === 'collar' || panel.zone === 'cuff') && fabric?.contrastTrims)
+              ? plastronCloth
+              : panel.zone === 'cord' || (panel.zone === 'collar' && contrastCollar)
+                ? cordCloth
+                : cloth
+          }
+          accentCloth={panel.accent ? (panel.zone === 'skirt' ? goreCloth : accentCloth) : null}
+          relief={panel.motif === 'SMOCKS' ? smocks : null}
+          seams={showSeams ?? (!cloth || sculpting || Boolean(edit))}
         />
-      ))}
+        ),
+      )}
+      {sculpt && <SculptBrush ref={brush} sculpt={sculpt} panels={panels} onDraggingChange={setDragging} />}
+      {edit && <MeshEditLayer edit={{ ...edit, instances }} panels={panels} onBoxChange={setBox} />}
 
       {/*
         Blender-style navigation: middle-drag (or left-drag) orbits, Shift+drag or right-drag pans (the left button too with the hand tool),
@@ -603,11 +1059,12 @@ export const Garment3DViewer: React.FC<Garment3DViewerProps> = ({
         dampingFactor={0.12}
         enablePan
         mouseButtons={{
-          LEFT: panMode ? THREE.MOUSE.PAN : THREE.MOUSE.ROTATE,
+          // -1: no action (three's OrbitControls ignores unmapped buttons) — the brush has the left button.
+          LEFT: leftButton,
           MIDDLE: THREE.MOUSE.ROTATE,
           RIGHT: THREE.MOUSE.PAN,
         }}
-        touches={{ ONE: panMode ? THREE.TOUCH.PAN : THREE.TOUCH.ROTATE, TWO: THREE.TOUCH.DOLLY_PAN }}
+        touches={{ ONE: leftModels || editing ? (-1 as THREE.TOUCH) : panMode ? THREE.TOUCH.PAN : THREE.TOUCH.ROTATE, TWO: THREE.TOUCH.DOLLY_PAN }}
         screenSpacePanning
         zoomToCursor
         rotateSpeed={0.9}
@@ -621,9 +1078,18 @@ export const Garment3DViewer: React.FC<Garment3DViewerProps> = ({
         <GizmoViewport axisColors={['#E0605A', '#7FC47F', '#6A9AE0']} labelColor="#041329" />
       </GizmoHelper>
 
+      {onGarmentScreenRect && <FrameReporter panels={panels} onRect={onGarmentScreenRect} />}
       <AdaptiveDpr pixelated />
       <CameraRig request={viewRequest} stature={model.body.height} />
       <Invalidator signal={[assembly, showMannequin, transparent, selectedPieceId, model, panels]} />
     </Canvas>
+    {box && (
+      <div
+        data-testid="box-select"
+        className="pointer-events-none absolute border border-dashed border-[#FFA436] bg-[#FFA436]/10"
+        style={{ left: box.left, top: box.top, width: box.width, height: box.height }}
+      />
+    )}
+    </div>
   );
 };

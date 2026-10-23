@@ -40,21 +40,61 @@ export function resolveDrape(parameters: Pick<PatternParameters, 'drape'>): Reso
   return resolved;
 }
 
+/** How much narrower a gathered panel is at the seam than at the hem, per cut (0 = straight rectangle). */
+export const CUT_HEM_SPREAD: Record<string, number> = { EVASEE: 0.25, PRINCESSE: 0.35 };
+
 export function buildSkirtBlock(
   block: SkirtBlock,
   waistMm: number,
   lengthMm: number,
   fabricRecommendation: string | null = null,
+  cutType: string | null = null,
 ): PatternPieceGeometry[] {
   const input = { waistMm, lengthMm, fabricRecommendation };
   switch (block.kind) {
     case 'GATHERED_SKIRT':
-      return computeGatheredSkirt({ ...input, fullness: block.fullness });
+      return computeGatheredSkirt({
+        ...input,
+        fullness: block.fullness,
+        hemSpread: CUT_HEM_SPREAD[(cutType ?? '').toUpperCase()] ?? 0,
+      });
     case 'PLEATED_SKIRT':
       return computePleatedSkirt({ ...input, pleats: block.pleats, depthMm: block.depthMm, type: block.type });
     case 'CIRCLE_SKIRT':
       return computeCircleSkirt({ ...input, fraction: block.fraction });
   }
+}
+
+/**
+ * Smallest hem ÷ waist ratio a cut implies once a gathered / pleated block stands in for the cut's own
+ * flared panels (an EVASEE panel skirt measures about 2.8×, PRINCESSE more; these floors keep ~65 %; a measured fullness above them is kept).
+ * Without it a gathered block of 1.5 on an A-line dress hangs as a straight sheath.
+ */
+export const CUT_MIN_HEM_RATIO: Record<string, number> = { EVASEE: 1.8, PRINCESSE: 2.2 };
+
+const PLEAT_DEPTH_MAX_MM = 80;
+const PLEATS_MAX = 60;
+const GATHER_MAX = 4;
+
+/**
+ * Widens a gathered / pleated skirt block so its hem is at least the cut's ratio of the waist. Never narrows,
+ * never touches a circle skirt (its flare is its geometry) and stays inside the validated block bounds.
+ */
+export function fitSkirtBlockToCut(block: SkirtBlock, waistMm: number, cutType: string | null | undefined): SkirtBlock {
+  const ratio = CUT_MIN_HEM_RATIO[(cutType ?? '').toUpperCase()];
+  if (!ratio) return block;
+  if (block.kind === 'GATHERED_SKIRT') {
+    return block.fullness >= ratio ? block : { ...block, fullness: Math.min(GATHER_MAX, ratio) };
+  }
+  if (block.kind === 'PLEATED_SKIRT') {
+    const perPleat = block.type === 'BOX' ? 2 : 1;
+    const needed = (ratio - 1) * waistMm;
+    if (block.pleats * block.depthMm * perPleat >= needed) return block;
+    const depthMm = Math.min(PLEAT_DEPTH_MAX_MM, Math.max(block.depthMm, Math.ceil(needed / (block.pleats * perPleat))));
+    const pleats = Math.min(PLEATS_MAX, Math.max(block.pleats, Math.ceil(needed / (depthMm * perPleat))));
+    return { ...block, depthMm, pleats };
+  }
+  return block;
 }
 
 /** Replaces the named front piece by its wrapped pair, in place of the original. */

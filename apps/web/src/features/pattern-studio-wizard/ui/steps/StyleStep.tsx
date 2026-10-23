@@ -1,6 +1,15 @@
 import React from 'react';
-import { Check } from 'lucide-react';
+import { Check, Flower2, Gem, Landmark, Shapes, Sparkles, Square, type LucideIcon } from 'lucide-react';
 import { STYLES } from '../../consts/styles.const';
+
+const STYLE_ICONS: Record<string, LucideIcon> = {
+  CLASSIQUE: Landmark,
+  MODERNE: Shapes,
+  ELEGANT: Gem,
+  MINIMALISTE: Square,
+  TRADITIONNEL: Flower2,
+  GLAMOUR: Sparkles,
+};
 
 interface StyleStepProps {
   selectedStyle: string;
@@ -22,6 +31,7 @@ export const StyleStep: React.FC<StyleStepProps> = ({ selectedStyle, onSelect })
       <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
         {STYLES.map((style) => {
           const isSelected = selectedStyle === style.id;
+          const Icon = STYLE_ICONS[style.id] ?? Sparkles;
 
           return (
             <button
@@ -34,8 +44,15 @@ export const StyleStep: React.FC<StyleStepProps> = ({ selectedStyle, onSelect })
                   : 'bg-[#0C2650]/60 border-[#C5B190]/20 hover:border-[#C5B190]/50 hover:bg-[#0C2650]'
               }`}
             >
-              <div className="flex justify-between items-start mb-2">
-                <h3 className="font-serif text-lg text-white font-medium">
+              <div className="flex justify-between items-start mb-2 gap-3">
+                <span
+                  className={`p-2.5 rounded-lg shrink-0 ${
+                    isSelected ? 'bg-[#C5B190] text-[#041329]' : 'bg-[#041329] text-[#C5B190] border border-[#C5B190]/20'
+                  }`}
+                >
+                  <Icon className="w-5 h-5" aria-hidden="true" />
+                </span>
+                <h3 className="font-serif text-lg text-white font-medium flex-1">
                   {style.label}
                 </h3>
                 {isSelected && (

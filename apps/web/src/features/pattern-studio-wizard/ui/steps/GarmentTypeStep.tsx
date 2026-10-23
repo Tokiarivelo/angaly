@@ -1,6 +1,8 @@
 import React from 'react';
 import { Check, Sparkles, Shirt, Scissors, Layers, Crown, Heart, Compass } from 'lucide-react';
 import { GARMENT_TYPES } from '../../consts/garment-types.const';
+import { garmentTypeSketch } from '../../utils/garment-type-sketch';
+import { SketchImage } from './OptionSketch';
 
 interface GarmentTypeStepProps {
   selectedType: string;
@@ -53,7 +55,10 @@ export const GarmentTypeStep: React.FC<GarmentTypeStepProps> = ({ selectedType, 
                   : 'bg-[#0C2650]/60 border-[#C5B190]/20 hover:border-[#C5B190]/50 hover:bg-[#0C2650]'
               }`}
             >
-              <div className="flex items-center justify-between w-full mb-6">
+              <span className="mb-4 flex justify-center rounded-lg bg-[#F7F1E6] py-2">
+                <SketchImage sketch={garmentTypeSketch(item.id)} className="h-32 w-[86px]" />
+              </span>
+              <div className="flex items-center justify-between w-full mb-4">
                 <span
                   className={`p-2.5 rounded-lg ${
                     isSelected

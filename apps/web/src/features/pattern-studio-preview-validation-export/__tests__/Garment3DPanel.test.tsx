@@ -15,6 +15,16 @@ vi.mock('next/dynamic', () => ({
       panMode?: boolean;
       viewRequest: { view: string; nonce: number } | null;
       onContextLost?: () => void;
+      pose?: { leftArm: { bend: number; forward: number } };
+      sculpt?: { radiusMm: number; propagate: boolean; onStart: (a: unknown[]) => boolean; onMove: (d: number[]) => void; onEnd: () => void } | null;
+      edit?: {
+        selection: ReadonlyMap<string, string | null>;
+        modal: { kind: string } | null;
+        onInstances: (i: unknown[]) => void;
+        onSelect: (key: string | null, panelId: string | null, extend: boolean) => void;
+        onTransform: (input: { world?: number[]; toCamera: number[] }) => void;
+        onConfirm: () => void;
+      } | null;
     }) {
       if (viewerBehaviour.shouldThrow) throw new Error('Error creating WebGL context.');
       return (
@@ -26,7 +36,56 @@ vi.mock('next/dynamic', () => ({
           data-pan={String(props.panMode)}
           data-view={props.viewRequest?.view ?? ''}
           data-nonce={props.viewRequest?.nonce ?? 0}
+          data-elbow={props.pose?.leftArm.bend ?? ''}
+          data-arm-forward={props.pose?.leftArm.forward ?? ''}
+          data-sculpt={props.sculpt ? `${props.sculpt.radiusMm}|${String(props.sculpt.propagate)}` : ''}
+          data-edit={props.edit ? [...props.edit.selection.keys()].join(',') : 'off'}
+          data-modal={props.edit?.modal?.kind ?? ''}
         >
+          {props.edit && (
+            <>
+              <button
+                type="button"
+                onClick={() =>
+                  props.edit!.onInstances(
+                    [0, 1, 2, 3, 4].map((index) => ({
+                      key: `jd#${index}`,
+                      pieceId: 'jd',
+                      index,
+                      panelId: 'skirt-front',
+                      position: [0.1, 0.5, 0.1],
+                      normal: [0, 0, 1],
+                      anchor: { pieceId: 'jd', flat: { x: 0, y: 0 }, inverse: [1000, 0, 0, 0, -1000, 0], normal: [0, 0, 1], weight: 1 },
+                    })),
+                  )
+                }
+              >
+                place-points
+              </button>
+              <button type="button" onClick={() => props.edit!.onSelect('jd#3', 'skirt-front', false)}>
+                pick-hem
+              </button>
+              <button type="button" onClick={() => props.edit!.onTransform({ world: [0, -0.05, 0], toCamera: [0, 0, 1] })}>
+                move-mouse
+              </button>
+              <button type="button" onClick={() => props.edit!.onConfirm()}>
+                click-confirm
+              </button>
+            </>
+          )}
+          {props.sculpt && (
+            <button
+              type="button"
+              onClick={() => {
+                const s = props.sculpt!;
+                s.onStart([{ pieceId: 'jd', flat: { x: 250, y: 600 }, inverse: [1000, 0, 0, 0, -1000, 0], normal: [0, 0, 1], weight: 1 }]);
+                s.onMove([0, -0.04, 0]);
+                s.onEnd();
+              }}
+            >
+              drag-hem
+            </button>
+          )}
           <button type="button" onClick={() => props.onContextLost?.()}>
             lose-context
           </button>
@@ -36,6 +95,9 @@ vi.mock('next/dynamic', () => ({
 }));
 
 import { Garment3DPanel } from '../ui/Garment3DPanel';
+import { usePatternDraft } from '../hooks/usePatternDraft';
+import { pieceOutline } from '../utils/pattern-editing';
+import { withQueryClient } from '@/lib/test-utils';
 
 const closed = (pts: Array<[number, number]>) => [...pts, pts[0]!].map(([x, y]) => ({ x, y }));
 const piece = (id: string, name: string, pts: Array<[number, number]>, quantity: number): PatternPieceDto => ({
@@ -143,6 +205,28 @@ describe('Garment3DPanel', () => {
     expect(screen.getByTestId('viewer-probe').dataset['pan']).toBe('true');
   });
 
+  it('poses the mannequin from a preset or joint by joint, to compare with the photo', async () => {
+    const user = userEvent.setup();
+    render(<Garment3DPanel pieces={pieces} garmentType="JUPE" measurements={measurements} selectedPieceId={null} />);
+    const probe = await screen.findByTestId('viewer-probe');
+    expect(probe).toHaveAttribute('data-elbow', '0');
+    await user.selectOptions(screen.getByLabelText('Pose du mannequin'), 'MIROIR');
+    expect(probe).toHaveAttribute('data-elbow', '120');
+
+    await user.click(screen.getByRole('button', { name: 'Articulations' }));
+    const elbow = screen.getByLabelText('Bras gauche — Coude');
+    fireEvent.change(elbow, { target: { value: '90' } });
+    expect(probe).toHaveAttribute('data-elbow', '90');
+    expect(screen.getByLabelText('Pose du mannequin')).toHaveValue('CUSTOM');
+    // Legs have no rotation slider; every limb has its own group.
+    expect(screen.getAllByRole('group').filter((g) => g.tagName === 'FIELDSET')).toHaveLength(4);
+    expect(screen.queryByLabelText('Jambe gauche — Rotation')).toBeNull();
+
+    await user.click(screen.getByRole('button', { name: 'Remettre debout' }));
+    expect(probe).toHaveAttribute('data-elbow', '0');
+    expect(probe).toHaveAttribute('data-arm-forward', '0');
+  });
+
   it('offers several morphologies, starting from the one closest to the measurements', async () => {
     const user = userEvent.setup();
     render(
@@ -221,5 +305,102 @@ describe('Garment3DPanel', () => {
     expect(view()).toBe('front');
     fireEvent.keyDown(stage, { key: 'Home' });
     expect(view()).toBe('reset');
+  });
+
+  describe('modelling the pattern on the garment', () => {
+    const seen: { pieces: PatternPieceDto[] } = { pieces: [] };
+    const Editable: React.FC = () => {
+      const draft = usePatternDraft(pieces);
+      seen.pieces = draft.pieces;
+      return (
+        <Garment3DPanel
+          pieces={draft.pieces}
+          garmentType="JUPE"
+          measurements={measurements}
+          selectedPieceId={null}
+          editing={{ draft, projectId: 'proj', versionId: 'v' }}
+        />
+      );
+    };
+    const Wrapper = withQueryClient();
+
+    it('is view-only without a draft', async () => {
+      render(<Garment3DPanel pieces={pieces} garmentType="JUPE" measurements={measurements} selectedPieceId={null} />);
+      await screen.findByTestId('viewer-probe');
+      expect(screen.queryByTestId('sculpt-toolbar')).toBeNull();
+    });
+
+    it('hands the brush to the viewer and writes the drag into the shared draft (2D follows)', async () => {
+      render(
+        <Wrapper>
+          <Editable />
+        </Wrapper>,
+      );
+      const probe = await screen.findByTestId('viewer-probe');
+      expect(probe.dataset['sculpt']).toBe('');
+      fireEvent.click(screen.getByRole('radio', { name: /Sculpture/ }));
+      expect(screen.getByTestId('viewer-probe').dataset['sculpt']).toBe('80|true');
+      fireEvent.click(screen.getByRole('radio', { name: /Longueur/ }));
+      fireEvent.click(screen.getByRole('button', { name: 'drag-hem' }));
+      const hem = Math.max(...pieceOutline(seen.pieces.find((p) => p.id === 'jd')!).map((p) => p.y));
+      expect(hem).toBeCloseTo(690);
+      expect(screen.getByText(/Retouches non enregistrées/)).toBeInTheDocument();
+      fireEvent.click(screen.getByRole('button', { name: 'Annuler' }));
+      expect(Math.max(...pieceOutline(seen.pieces.find((p) => p.id === 'jd')!).map((p) => p.y))).toBeCloseTo(650);
+    });
+
+    it('switches tools and brush size from the keyboard on the 3D stage', async () => {
+      render(
+        <Wrapper>
+          <Editable />
+        </Wrapper>,
+      );
+      await screen.findByTestId('viewer-probe');
+      fireEvent.click(screen.getByRole('radio', { name: /Sculpture/ }));
+      const stage = screen.getByTestId('garment-3d-stage');
+      fireEvent.keyDown(stage, { key: 'w' });
+      expect(screen.getByRole('radio', { name: /Ampleur/ })).toHaveAttribute('aria-checked', 'true');
+      fireEvent.keyDown(stage, { key: ']' });
+      expect(screen.getByTestId('viewer-probe').dataset['sculpt']).toBe('96|true');
+      fireEvent.click(screen.getByRole('checkbox', { name: /Pièces voisines/ }));
+      expect(screen.getByTestId('viewer-probe').dataset['sculpt']).toBe('96|false');
+    });
+
+    it('edit mode: picks a pattern point on the garment, grabs it (G) along an axis, the 2D outline following', async () => {
+      render(
+        <Wrapper>
+          <Editable />
+        </Wrapper>,
+      );
+      await screen.findByTestId('viewer-probe');
+      expect(screen.getByTestId('viewer-probe').dataset['edit']).toBe('off');
+      const stage = screen.getByTestId('garment-3d-stage');
+      fireEvent.keyDown(stage, { key: 'Tab' });
+      expect(screen.getByRole('radio', { name: /Édition/ })).toHaveAttribute('aria-checked', 'true');
+      expect(screen.getByTestId('mesh-edit-toolbar')).toBeInTheDocument();
+      fireEvent.click(screen.getByRole('button', { name: 'place-points' }));
+      fireEvent.click(screen.getByRole('button', { name: 'pick-hem' }));
+      expect(screen.getByTestId('viewer-probe').dataset['edit']).toBe('jd#3');
+      expect(screen.getByTestId('mesh-edit-selection')).toHaveTextContent('1 point sélectionné');
+      const before = pieceOutline(seen.pieces.find((p) => p.id === 'jd')!)[3]!;
+      fireEvent.keyDown(stage, { key: 'g' });
+      expect(screen.getByTestId('viewer-probe').dataset['modal']).toBe('grab');
+      fireEvent.keyDown(stage, { key: 'y' });
+      expect(screen.getByTestId('mesh-edit-modal')).toHaveTextContent('axe Y');
+      fireEvent.click(screen.getByRole('button', { name: 'move-mouse' }));
+      fireEvent.click(screen.getByRole('button', { name: 'click-confirm' }));
+      const after = pieceOutline(seen.pieces.find((p) => p.id === 'jd')!)[3]!;
+      expect(after.y - before.y).toBeCloseTo(50);
+      expect(after.x).toBe(before.x);
+      // Typed coordinates of the selection (Transformation panel).
+      fireEvent.change(screen.getByLabelText('Médiane X (mm)'), { target: { value: '260' } });
+      fireEvent.blur(screen.getByLabelText('Médiane X (mm)'));
+      expect(pieceOutline(seen.pieces.find((p) => p.id === 'jd')!)[3]!.x).toBe(260);
+      // X deletes the point; Tab leaves the edit mode.
+      fireEvent.keyDown(stage, { key: 'x' });
+      expect(pieceOutline(seen.pieces.find((p) => p.id === 'jd')!)).toHaveLength(4);
+      fireEvent.keyDown(stage, { key: 'Tab' });
+      expect(screen.getByTestId('viewer-probe').dataset['edit']).toBe('off');
+    });
   });
 });

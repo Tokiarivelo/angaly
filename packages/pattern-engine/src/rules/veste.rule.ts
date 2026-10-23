@@ -1,18 +1,21 @@
+import { isShawl, resolveTopAdjustments } from '../shared/cut-profile';
+import { collarLengthMm, fitSleeveDims, fitTorsoOutline } from '../shared/fit';
+import { collarPiece, sleeveOutline } from '../shared/shapes';
 import type {
   IPatternRule,
   MeasurementSet,
   PatternParameters,
   PatternPieceGeometry,
 } from '../types';
-import { resolveTopAdjustments } from '../shared/cut-profile';
-import { sleeveOutline } from '../shared/shapes';
-import { collarLengthMm, fitSleeveDims, fitTorsoOutline } from '../shared/fit';
 
 const sleeveFromDims = (
   sleeve: { topRatio: number; cuffRatio: number; lengthMm: number },
   measurements: Record<string, number>,
 ) => {
-  const d = fitSleeveDims({ topMm: 320 * sleeve.topRatio, cuffMm: 320 * sleeve.cuffRatio, capMm: 150 }, measurements);
+  const d = fitSleeveDims(
+    { topMm: 320 * sleeve.topRatio, cuffMm: 320 * sleeve.cuffRatio, capMm: 150 },
+    measurements,
+  );
   return sleeveOutline(d.topMm, d.cuffMm, d.capMm, sleeve.lengthMm);
 };
 
@@ -83,9 +86,7 @@ export const VesteRule: IPatternRule = {
         originX: largeurDos / 2,
         originY: lgVeste / 2,
       },
-      notches: [
-        { positionAlongEdge: 0.4, edgeIndex: 1 },
-      ],
+      notches: [{ positionAlongEdge: 0.4, edgeIndex: 1 }],
       outlineMm: [
         { x: 0, y: 0 }, // Encolure milieu dos
         { x: neckBackWidth, y: 0 }, // Épaule dos
@@ -154,7 +155,11 @@ export const VesteRule: IPatternRule = {
 
     const pieces = [pieceDevant, pieceDos];
     if (!adj.sleeveless) pieces.push(pieceManche);
-    if (adj.includeCollar) pieces.push(pieceCol);
+    // Col châle : le col et le revers d'une seule pièce, de la nuque au bas du revers (au lieu du col tailleur).
+    const shawl = isShawl(parameters.details)
+      ? collarPiece('CHALE', measurements, pieceCol.fabricRecommendation)
+      : null;
+    if (adj.includeCollar) pieces.push(shawl ?? pieceCol);
     return pieces;
   },
 };

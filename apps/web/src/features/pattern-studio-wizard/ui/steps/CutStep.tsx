@@ -1,8 +1,13 @@
 import React from 'react';
+
 import { Check, Sparkles } from 'lucide-react';
+
 import type { AiProviderId } from '@angaly/types';
-import { CUTS } from '../../consts/cuts.const';
+
+import { cutsFor } from '../../consts/garment-details.const';
 import { usePatternSuggestion } from '../../hooks/usePatternSuggestion';
+import { cutSketch } from '../../utils/garment-type-sketch';
+import { SketchImage } from './OptionSketch';
 
 interface CutStepProps {
   selectedCut: string;
@@ -22,20 +27,21 @@ export const CutStep: React.FC<CutStepProps> = ({
   aiProvider,
 }) => {
   const { mutate: requestSuggestion, data, isPending } = usePatternSuggestion();
+  const cuts = cutsFor(garmentType);
 
-  const failed = data !== undefined && data.suggestion.modelVersion.startsWith('fallback');
+  const failed = data?.suggestion.modelVersion.startsWith('fallback') ?? false;
   const suggestedCut = data
-    ? CUTS.find((cut) => cut.id === data.suggestion.suggestedCutType)
+    ? cuts.find((cut) => cut.id === data.suggestion.suggestedCutType)
     : undefined;
 
   return (
     <div>
-      <div className="mb-8 text-center sm:text-left flex flex-col sm:flex-row justify-between sm:items-end gap-4">
+      <div className="mb-8 flex flex-col justify-between gap-4 text-center sm:flex-row sm:items-end sm:text-left">
         <div>
-          <h2 className="font-serif text-2xl sm:text-3xl text-white font-light mb-2">
+          <h2 className="mb-2 font-serif text-2xl font-light text-white sm:text-3xl">
             Quelle coupe préférez-vous ?
           </h2>
-          <p className="text-[#D8D3C8] text-sm font-light">
+          <p className="text-sm font-light text-[#D8D3C8]">
             La coupe définit l’architecture du vêtement et le tracé des lignes maîtresses.
           </p>
         </div>
@@ -44,9 +50,9 @@ export const CutStep: React.FC<CutStepProps> = ({
           type="button"
           onClick={() => requestSuggestion({ garmentType, occasion, style, aiProvider })}
           disabled={isPending}
-          className="inline-flex items-center gap-2 px-3.5 py-2 rounded-lg text-xs font-semibold bg-[#0C2650] border border-[#C5B190]/30 text-[#C5B190] hover:border-[#C5B190] transition-colors disabled:opacity-60 shrink-0 self-start sm:self-auto"
+          className="inline-flex shrink-0 items-center gap-2 self-start rounded-lg border border-[#C5B190]/30 bg-[#0C2650] px-3.5 py-2 text-xs font-semibold text-[#C5B190] transition-colors hover:border-[#C5B190] disabled:opacity-60 sm:self-auto"
         >
-          <Sparkles className="w-3.5 h-3.5" />
+          <Sparkles className="h-3.5 w-3.5" />
           {isPending
             ? 'Analyse en cours…'
             : failed
@@ -65,10 +71,10 @@ export const CutStep: React.FC<CutStepProps> = ({
       )}
 
       {data && (
-        <div className="mb-6 p-4 rounded-xl bg-[#C5B190]/10 border border-[#C5B190]/40 flex items-center justify-between gap-4 flex-wrap">
+        <div className="mb-6 flex flex-wrap items-center justify-between gap-4 rounded-xl border border-[#C5B190]/40 bg-[#C5B190]/10 p-4">
           <p className="text-xs text-[#D8D3C8]">
             Suggestion IA{data.isIndicativeOnly ? ' (indicative — confiance faible)' : ''} :{' '}
-            <span className="text-white font-medium">
+            <span className="font-medium text-white">
               {suggestedCut?.label ?? data.suggestion.suggestedCutType}
             </span>
           </p>
@@ -76,7 +82,7 @@ export const CutStep: React.FC<CutStepProps> = ({
             <button
               type="button"
               onClick={() => onSelect(suggestedCut.id)}
-              className="px-3 py-1.5 rounded bg-[#C5B190] text-[#041329] text-xs font-semibold hover:bg-[#B59A70] transition-colors"
+              className="rounded bg-[#C5B190] px-3 py-1.5 text-xs font-semibold text-[#041329] transition-colors hover:bg-[#B59A70]"
             >
               Appliquer cette coupe
             </button>
@@ -84,8 +90,8 @@ export const CutStep: React.FC<CutStepProps> = ({
         </div>
       )}
 
-      <div className="grid grid-cols-1 sm:grid-cols-3 gap-4">
-        {CUTS.map((cut) => {
+      <div className="grid grid-cols-1 gap-4 sm:grid-cols-2 lg:grid-cols-3">
+        {cuts.map((cut) => {
           const isSelected = selectedCut === cut.id;
 
           return (
@@ -93,23 +99,26 @@ export const CutStep: React.FC<CutStepProps> = ({
               key={cut.id}
               type="button"
               onClick={() => onSelect(cut.id)}
-              className={`p-5 rounded-xl text-left border transition-all flex flex-col justify-between relative ${
+              className={`relative flex gap-4 rounded-xl border p-4 text-left transition-all ${
                 isSelected
-                  ? 'bg-[#0C2650] border-[#C5B190] ring-1 ring-[#C5B190] shadow-md'
-                  : 'bg-[#0C2650]/60 border-[#C5B190]/20 hover:border-[#C5B190]/50 hover:bg-[#0C2650]'
+                  ? 'border-[#C5B190] bg-[#0C2650] shadow-md ring-1 ring-[#C5B190]'
+                  : 'border-[#C5B190]/20 bg-[#0C2650]/60 hover:border-[#C5B190]/50 hover:bg-[#0C2650]'
               }`}
             >
-              <div className="flex justify-between items-start mb-3">
-                <h3 className="text-white font-medium text-base">{cut.label}</h3>
-                {isSelected && (
-                  <span className="w-5 h-5 rounded-full bg-[#C5B190] text-[#041329] flex items-center justify-center">
-                    <Check className="w-3.5 h-3.5 stroke-[3]" />
-                  </span>
-                )}
-              </div>
-              <p className="text-[#D8D3C8] text-xs font-light leading-relaxed">
-                {cut.description}
-              </p>
+              <span className="shrink-0 rounded-lg bg-[#F7F1E6] p-1.5">
+                <SketchImage sketch={cutSketch(garmentType, cut.id)} className="h-[120px] w-20" />
+              </span>
+              <span className="flex min-w-0 flex-1 flex-col">
+                <span className="mb-2 flex items-start justify-between gap-2">
+                  <h3 className="text-base font-medium text-white">{cut.label}</h3>
+                  {isSelected && (
+                    <span className="flex h-5 w-5 shrink-0 items-center justify-center rounded-full bg-[#C5B190] text-[#041329]">
+                      <Check className="h-3.5 w-3.5 stroke-[3]" />
+                    </span>
+                  )}
+                </span>
+                <span className="text-xs leading-relaxed font-light text-[#D8D3C8]">{cut.description}</span>
+              </span>
             </button>
           );
         })}

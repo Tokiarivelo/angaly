@@ -32,6 +32,7 @@ import { MediaController } from './presentation/controllers/media.controller';
     { provide: MEDIA_STORAGE_GATEWAY, useClass: StorageService },
   ],
   // UploadMediaBufferUseCase: `quotes`.`export-quote-pdf` uploads the generated PDF via `media`.
-  exports: [UploadMediaBufferUseCase],
+  // CreatePresignedUploadUseCase + ConfirmUploadUseCase: `realistic-render` (the cloth-sim worker uploads its `.glb`).
+  exports: [UploadMediaBufferUseCase, CreatePresignedUploadUseCase, ConfirmUploadUseCase],
 })
 export class MediaModule {}

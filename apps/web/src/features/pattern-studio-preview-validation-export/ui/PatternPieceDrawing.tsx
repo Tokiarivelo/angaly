@@ -48,6 +48,10 @@ export const PatternPieceDrawing: React.FC<PatternPieceDrawingProps> = ({
   const edges = getEdges(polygon);
   const fold = findFoldEdge(polygon, piece.quantity);
   const notchMarks = getNotchMarks(polygon, piece.notchesJson);
+  // Lines inside the piece (corset bones), drawn by the engine in the outline's frame.
+  const innerLines = (
+    (piece.dimensionsJson as { internalLinesMm?: Array<{ kind?: string; points?: Point[] }> } | null)?.internalLinesMm ?? []
+  ).filter((l) => Array.isArray(l.points) && l.points.length >= 2);
 
   const fontSize = unit * 5;
   const stroke = unit * 0.6;
@@ -110,6 +114,18 @@ export const PatternPieceDrawing: React.FC<PatternPieceDrawingProps> = ({
         strokeLinejoin="round"
         data-testid="pattern-sew-line"
       />
+
+      {innerLines.map((line, k) => (
+        <polyline
+          key={`inner-${k}`}
+          points={toPoints(line.points!)}
+          fill="none"
+          stroke={line.kind === 'BONE' ? BRONZE : GOLD}
+          strokeWidth={stroke * (line.kind === 'BONE' ? 1.6 : 0.8)}
+          strokeDasharray={line.kind === 'BONE' ? undefined : `${unit * 2} ${unit * 1.5}`}
+          data-testid={line.kind === 'BONE' ? 'pattern-bone-line' : 'pattern-placement-line'}
+        />
+      ))}
 
       {fold && (
         <g data-testid="pattern-fold">

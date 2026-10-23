@@ -1,4 +1,5 @@
 import type { PatternPieceGeometry } from '../types';
+import { DEFAULT_FABRIC_WIDTH_MM } from '../shared/yardage';
 
 /**
  * Deterministic skirt blocks (Phase 5b S4). Pure functions: finished waist circumference and skirt
@@ -26,9 +27,19 @@ function rectangle(widthMm: number, heightMm: number): PatternPieceGeometry['out
   ];
 }
 
-/** Gathered skirt: a rectangle `fullness` times the waist, gathered onto the waistband. */
-export function computeGatheredSkirt(input: SkirtBlockInput & { fullness: number }): PatternPieceGeometry[] {
+/**
+ * Gathered skirt, gathered onto the waistband. `fullness` = hem width ÷ waist. A straight cut is a rectangle;
+ * with `hemSpread` (A-line / princess cuts) the panel is a trapezoid, narrower at the seam by that share, so the
+ * skirt opens towards the hem instead of hanging straight from the gathers.
+ */
+export function computeGatheredSkirt(
+  input: SkirtBlockInput & { fullness: number; hemSpread?: number },
+): PatternPieceGeometry[] {
   const panelWidth = Math.round((input.waistMm * input.fullness) / 2);
+  const topWidth = Math.max(
+    Math.round((input.waistMm * 1.25) / 2),
+    Math.round(panelWidth / (1 + (input.hemSpread ?? 0))),
+  );
   return [
     {
       name: 'Jupe froncée (panneau)',
@@ -38,7 +49,16 @@ export function computeGatheredSkirt(input: SkirtBlockInput & { fullness: number
       grainline: { angleDegrees: 90, originX: panelWidth / 2, originY: input.lengthMm / 2 },
       // Quarter marks along the waist edge: gather evenly between them.
       notches: [0.25, 0.5, 0.75].map((positionAlongEdge) => ({ positionAlongEdge, edgeIndex: 0 })),
-      outlineMm: rectangle(panelWidth, input.lengthMm),
+      outlineMm:
+        topWidth >= panelWidth
+          ? rectangle(panelWidth, input.lengthMm)
+          : [
+              { x: 0, y: 0 },
+              { x: topWidth, y: 0 },
+              { x: panelWidth, y: input.lengthMm },
+              { x: 0, y: input.lengthMm },
+              { x: 0, y: 0 },
+            ],
     },
   ];
 }
@@ -53,13 +73,15 @@ export function computePleatedSkirt(
 ): PatternPieceGeometry[] {
   const extraPerPleat = input.type === 'BOX' ? input.depthMm * 2 : input.depthMm;
   const totalWidth = input.waistMm + input.pleats * extraPerPleat;
-  const panelWidth = Math.round(totalWidth / 2);
-  const perPanel = Math.max(1, Math.ceil(input.pleats / 2));
+  // Cut in lés no wider than the fabric (an even count: as many in front as at the back), sewn side by side.
+  const panels = Math.max(2, 2 * Math.ceil(totalWidth / (2 * (DEFAULT_FABRIC_WIDTH_MM - 2 * SEAM_ALLOWANCE_MM))));
+  const panelWidth = Math.round(totalWidth / panels);
+  const perPanel = Math.max(1, Math.ceil(input.pleats / panels));
   return [
     {
       name: input.type === 'BOX' ? 'Jupe plissée plis creux (panneau)' : 'Jupe plissée plis plats (panneau)',
       fabricRecommendation: input.fabricRecommendation ?? null,
-      quantity: 2,
+      quantity: panels,
       seamAllowanceMm: SEAM_ALLOWANCE_MM,
       grainline: { angleDegrees: 90, originX: panelWidth / 2, originY: input.lengthMm / 2 },
       notches: Array.from({ length: perPanel }, (_, i) => ({

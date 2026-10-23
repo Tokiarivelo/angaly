@@ -429,8 +429,11 @@ export interface HairMesh {
   alpha: Float32Array;
 }
 
-/** Long wavy hair with a middle parting (women, girls) or a short textured cut (men, boys). */
-export type HairStyle = 'long' | 'short';
+/**
+ * Long wavy hair with a middle parting (girls), a high bun with the hair swept back and two locks framing
+ * the face (women) or a short textured cut (men, boys).
+ */
+export type HairStyle = 'long' | 'bun' | 'short';
 
 /** Radial height field of the skull about its centre: the shell that hair lies on. */
 const skullShell = (positions: Float32Array, head: number[], C: Vec3) => {
@@ -470,7 +473,9 @@ const skullShell = (positions: Float32Array, head: number[], C: Vec3) => {
         }
         const own = grid[e * AZ + a]!;
         if (fillOnly) next[e * AZ + a] = own > 0 ? own : weight ? sum / weight : 0;
-        else next[e * AZ + a] = weight ? Math.max(sum / weight, peak * 0.97) : 0;
+        // Never under the highest skin around: between bins the interpolated shell would otherwise dip under the
+        // temples and the skin would show through the hair there.
+        else next[e * AZ + a] = weight ? Math.max(sum / weight, peak) : 0;
       }
     }
     grid = next;
@@ -555,6 +560,8 @@ interface Lock {
   /** Fraction of the length over which the lock tapers to its tip. */
   taper: number;
   tint: number;
+  /** Fraction of the length over which the lock grows from nothing at its root (hairline roots). */
+  root?: number;
 }
 
 /** Resamples a polyline to n + 1 points evenly spaced along its length. */
@@ -601,7 +608,9 @@ const lockMesh = (locks: Lock[]): HairMesh => {
       const n = unit(sub(o, { x: tangent.x * dot(o, tangent), y: tangent.y * dot(o, tangent), z: tangent.z * dot(o, tangent) }));
       const b = cross(tangent, n);
       // Narrow at the root, full in the length, a point at the tip.
-      const body = (0.6 + 0.4 * smooth(t / 0.25)) * Math.pow(1 - smooth((t - (1 - lock.taper)) / lock.taper), 0.5);
+      const body =
+        (lock.root ? smooth(t / lock.root) : 0.6 + 0.4 * smooth(t / 0.25)) *
+        Math.pow(1 - smooth((t - (1 - lock.taper)) / lock.taper), 0.5);
       const w = (lock.width / 2) * body;
       const h = (lock.thick / 2) * Math.max(body, 0.15) * scales[r]!;
       for (let k = 0; k < SIDES; k += 1) {
@@ -661,12 +670,228 @@ const merge = (parts: HairMesh[]): HairMesh => {
   return { positions, indices, uvs, shade, alpha };
 };
 
+/** Direction of the bun from the skull centre: high on the crown, a little back and to one side. */
+const BUN_AXIS = (() => {
+  const v = { x: 0.06, y: 0.72, z: -0.69 };
+  const l = Math.hypot(v.x, v.y, v.z);
+  return { x: v.x / l, y: v.y / l, z: v.z / l };
+})();
+
+/** UV sphere (the bun's core, under its coils). */
+const ellipsoid = (c: Vec3, r: Vec3, tint: number): HairMesh => {
+  const LAT = 16;
+  const LON = 28;
+  const pts: number[] = [];
+  const uvs: number[] = [];
+  const shade: number[] = [];
+  const indices: number[] = [];
+  for (let a = 0; a <= LAT; a += 1) {
+    const th = (a / LAT) * Math.PI;
+    for (let b = 0; b <= LON; b += 1) {
+      const ph = (b / LON) * 2 * Math.PI;
+      pts.push(c.x + r.x * Math.sin(th) * Math.cos(ph), c.y + r.y * Math.cos(th), c.z + r.z * Math.sin(th) * Math.sin(ph));
+      uvs.push((b / LON) * 6, a / LAT);
+      shade.push(tint * (0.7 + 0.3 * Math.cos(th / 2)));
+    }
+  }
+  for (let a = 0; a < LAT; a += 1) {
+    for (let b = 0; b < LON; b += 1) {
+      const i = a * (LON + 1) + b;
+      indices.push(i, i + 1, i + LON + 1, i + 1, i + LON + 2, i + LON + 1);
+    }
+  }
+  return {
+    positions: Float32Array.from(pts),
+    indices: Uint32Array.from(indices),
+    uvs: Float32Array.from(uvs),
+    shade: Float32Array.from(shade),
+    alpha: new Float32Array(shade.length).fill(1),
+  };
+};
+
+/** Half width of the head and neck (largest |x|) per 3 mm cell of height and depth: a lock hanging at
+ * the side of the face is kept outside it. */
+const sideWidth = (positions: Float32Array, armWeights: Float32Array, y0: number, y1: number, z0: number) => {
+  const CELL = 0.003;
+  const NX = 80;
+  const NY = Math.max(2, Math.ceil((y1 - y0) / CELL) + 1);
+  const grid = new Float32Array(NX * NY).fill(-Infinity);
+  for (let i = 0; i < armWeights.length; i += 1) {
+    if (armWeights[i]! >= 0.5) continue;
+    const y = positions[i * 3 + 1]!;
+    const z = positions[i * 3 + 2]! - z0;
+    if (y < y0 || y > y1 || z < 0 || z >= NX * CELL) continue;
+    const k = Math.floor((y - y0) / CELL) * NX + Math.floor(z / CELL);
+    grid[k] = Math.max(grid[k]!, Math.abs(positions[i * 3]!));
+  }
+  return (z: number, y: number): number => {
+    const cx = Math.floor((z - z0) / CELL);
+    const cy = Math.floor((y - y0) / CELL);
+    let best = -Infinity;
+    for (let dy = -1; dy <= 1; dy += 1) {
+      for (let dx = -1; dx <= 1; dx += 1) {
+        const ax = cx + dx;
+        const ay = cy + dy;
+        if (ax >= 0 && ay >= 0 && ax < NX && ay < NY) best = Math.max(best, grid[ay * NX + ax]!);
+      }
+    }
+    return best;
+  };
+};
+
+/**
+ * The bun on the top of the back of the head: loops coiled in a ball over a core, and three thin locks
+ * on each side from the parting, over the temples and down in front of the ears (the face stays clear
+ * between them). The hair swept back to it is the scalp layer, grooved towards the bun.
+ */
+const bunLocks = (
+  positions: Float32Array,
+  armWeights: Float32Array,
+  f: FaceLandmarks,
+  s: number,
+  shell: (dx: number, dy: number, dz: number, lift: number) => Vec3,
+  volume: (dir: Vec3) => number,
+  rnd: (a: number, b: number) => number,
+): { locks: Lock[]; core: HairMesh } => {
+  const C = f.skull;
+  const locks: Lock[] = [];
+  // The bun sits up and back on the crown, ~4 cm across its radius, its top ~3 cm over the head.
+  const axis = BUN_AXIS;
+  const base = shell(axis.x, axis.y, axis.z, volume(axis));
+  const R = 0.039 * s;
+  const centre = add(base, axis, R * 0.7);
+
+  // The hair swept back to the bun is the scalp layer itself, its grooves converging on the bun.
+
+  // 1. The coils: loops wound round the bun's axis like a rose, slices of a ball from its base to its
+  // top, each a little tilted; a few looser loops outside.
+  const COILS = 18;
+  const side = unit(cross(axis, { x: 1, y: 0, z: 0 }));
+  const across = cross(side, axis);
+  for (let k = 0; k < COILS; k += 1) {
+    const seed = rnd(k, 23);
+    const loose = k >= COILS - 3;
+    const along = loose ? (seed - 0.5) * 0.6 : lerp(-0.45, 0.6, k / (COILS - 4));
+    const turn = k * 2.4;
+    const tilt = (loose ? 0.9 : 0.6) * (0.5 + seed);
+    const plane = unit(add(add(axis, side, Math.sin(turn) * tilt), across, Math.cos(turn) * tilt));
+    const e1 = unit(cross(plane, Math.abs(plane.y) > 0.9 ? { x: 1, y: 0, z: 0 } : { x: 0, y: 1, z: 0 }));
+    const e2 = cross(plane, e1);
+    const r = loose ? R * (1.05 + 0.15 * seed) : R * (0.35 + Math.sqrt(Math.max(0, 1 - along * along)) * 0.7);
+    const c = add(centre, axis, along * R);
+    const path: Vec3[] = [];
+    const outs: Vec3[] = [];
+    const scale: number[] = [];
+    const LOOP = 40;
+    const sweep = 2 * Math.PI * (loose ? 0.6 + 0.3 * seed : 1.1 + 0.3 * seed);
+    const start = seed * 2 * Math.PI;
+    for (let q = 0; q <= LOOP; q += 1) {
+      const a = start + (q / LOOP) * sweep;
+      // A spiral: the loop draws in a little as it goes round.
+      const rr = r * (1 - 0.15 * (q / LOOP));
+      const p = add(add(c, e1, Math.cos(a) * rr), e2, Math.sin(a) * rr);
+      path.push(p);
+      outs.push(unit(sub(p, c)));
+      scale.push(1);
+    }
+    locks.push({
+      path,
+      out: outs,
+      scale,
+      width: (loose ? 0.008 : 0.022) * s * (0.8 + 0.4 * seed),
+      thick: (loose ? 0.004 : 0.009) * s,
+      taper: 0.2,
+      tint: 0.85 + 0.25 * rnd(k, 29),
+    });
+  }
+  const core = ellipsoid(centre, { x: R * 0.9, y: R * 0.85, z: R * 0.9 }, 0.8);
+
+  // 2. Locks framing the face: from the parting, over the temples, down in front of the ears.
+  const width = sideWidth(positions, armWeights, f.mouth.y - 0.08 * s, f.top, C.z - 0.06 * s);
+  const hairline = f.eye.y + 0.058 * s;
+  for (const sideX of [1, -1]) {
+    for (let k = 0; k < 3; k += 1) {
+      const seed = rnd(k, sideX * 13);
+      const spread = (k - 1) * 0.004 * s;
+      // Control points (|x|, y): the root behind the hairline, the turn over the temple, the hang.
+      const ctrl: Array<[number, number]> = [
+        [0.012 * s + spread, hairline + 0.02 * s],
+        [0.03 * s + spread, hairline + 0.004 * s],
+        [0.05 * s + spread, f.eye.y + 0.035 * s],
+        [0.058 * s + spread, f.eye.y + 0.005 * s],
+        [0.058 * s + spread * 1.5, f.eye.y - 0.035 * s],
+        // Short tendrils: they stop at the cheekbone, not along the jaw.
+        [0.057 * s + spread, f.eye.y - (0.035 + 0.01 * seed) * s],
+      ];
+      const pts: Vec3[] = [];
+      const N = 60;
+      for (let q = 0; q <= N; q += 1) {
+        // Catmull–Rom through the control points.
+        const ft = (q / N) * (ctrl.length - 1);
+        const j = Math.min(ctrl.length - 2, Math.floor(ft));
+        const t = ft - j;
+        const P = (m: number) => ctrl[clamp(m, 0, ctrl.length - 1)]!;
+        const cr = (c: 0 | 1): number => {
+          const p0 = P(j - 1)[c];
+          const p1 = P(j)[c];
+          const p2 = P(j + 1)[c];
+          const p3 = P(j + 2)[c];
+          return 0.5 * (2 * p1 + (-p0 + p2) * t + (2 * p0 - 5 * p1 + 4 * p2 - p3) * t * t + (-p0 + 3 * p1 - 3 * p2 + p3) * t * t * t);
+        };
+        const ax = cr(0) + 0.0025 * s * Math.sin(q * 0.35 + seed * 6) * smooth((q / N - 0.4) / 0.3);
+        const y = cr(1);
+        // Over the head: on the hair. Under the temple: hanging nearly straight down in front of the ear,
+        // drifting a little forward, and never inside the cheek.
+        const turnY = f.eye.y + 0.035 * s;
+        const onHead = (yy: number, xx: number): Vec3 => {
+          const dx = xx * sideX - C.x;
+          const dy = yy - C.y;
+          return shell(dx, dy, Math.sqrt(Math.max(0, (0.095 * s) ** 2 - dx * dx - dy * dy)), volume({ x: 0, y: 1, z: 0 }) + 0.0035 * s);
+        };
+        if (y >= turnY) {
+          pts.push(onHead(y, ax));
+        } else {
+          // Halfway between the ear and the nose in profile.
+          const top = onHead(turnY, ctrl[2]![0]).z;
+          const z = lerp(top, C.z + 0.04 * s, smooth((turnY - y) / (0.03 * s))) + 0.008 * s * smooth((turnY - y) / (0.1 * s));
+          const out = width(z, y);
+          pts.push({ x: Math.max(ax, Number.isFinite(out) ? out + 0.003 * s : ax) * sideX, y, z });
+        }
+      }
+      // Smoothed along the lock (the skin's width steps from cell to cell).
+      for (let pass = 0; pass < 8; pass += 1) {
+        for (let q = 1; q < pts.length - 1; q += 1) {
+          const prev = pts[q - 1]!;
+          const next = pts[q + 1]!;
+          const cur = pts[q]!;
+          const x = (prev.x + cur.x * 2 + next.x) / 4;
+          cur.x = Math.abs(x) > Math.abs(cur.x) ? x : cur.x;
+          cur.z = (prev.z + cur.z * 2 + next.z) / 4;
+        }
+      }
+      locks.push({
+        path: pts,
+        out: pts.map((p) => unit({ x: p.x * 3, y: 0, z: p.z - C.z })),
+        scale: pts.map(() => 1),
+        width: 0.009 * s * (0.8 + 0.4 * seed),
+        thick: 0.0035 * s,
+        taper: 0.35,
+        tint: 0.9 + 0.2 * seed,
+      });
+    }
+  }
+  return { locks, core };
+};
+
 /**
  * Hair built over the skull from the mesh itself. A thin scalp layer covers the whole hair area (no
  * bald patch between the locks), and sculpted locks lie on it: from a middle parting, sweeping over the
  * head and falling in waves to the shoulders (long), or short on the sides and back with a textured top
  * brushed up and back (short).
  */
+/** The thinnest hair over the scalp, at its edge (m, adult head): it never lies flush with the skin. */
+const SCALP_MIN_LIFT = 0.0022;
+
 export const buildHair = (
   positions: Float32Array,
   armWeights: Float32Array,
@@ -681,6 +906,7 @@ export const buildHair = (
   const shell = skullShell(positions, headVertices(positions, armWeights, body), C);
   const rnd = (a: number, b: number): number => noise(a * 3.7 + 1.3, b * 5.1 + 2.9);
   const short = style === 'short';
+  const bun = style === 'bun';
 
   // Hairline: ~6 cm above the eyes, an almost flat arc that curves down at the temples.
   // A man's hairline recedes a little at the temples.
@@ -694,12 +920,14 @@ export const buildHair = (
     const deg = (a * 180) / Math.PI;
     const table: Array<[number, number]> = [
       [0, f.eye.y - 0.02 * s],
-      [55, f.eye.y + 0.025 * s],
-      [70, f.eye.y + 0.012 * s],
-      [82, f.eye.y - 0.004 * s],
-      [95, f.eye.y + 0.016 * s],
-      [118, f.eye.y + 0.01 * s],
-      [140, l.napeY + 0.065 * s],
+      // A chignon sweeps the hair back over the temple and the top of the ear, and down behind it to the nape:
+      // the side of the head is never bare from the temple to behind the ear.
+      [55, f.eye.y + (bun ? 0.004 : 0.025) * s],
+      [70, f.eye.y + (bun ? -0.012 : 0.012) * s],
+      [82, f.eye.y + (bun ? 0.006 : -0.004) * s],
+      [95, f.eye.y + (bun ? 0.002 : 0.016) * s],
+      [118, f.eye.y + (bun ? -0.045 : 0.01) * s],
+      [140, l.napeY + (bun ? 0.04 : 0.065) * s],
       [180, l.napeY + (short ? 0.055 : 0.035) * s],
     ];
     for (let k = 1; k < table.length; k += 1) {
@@ -729,6 +957,13 @@ export const buildHair = (
   // Thickness of the hair mass over the scalp: volume on the top (and a front lift for the short cut).
   const volume = (dir: Vec3): number => {
     const top = smooth((Math.asin(clamp(dir.y, -1, 1)) - 0.15) / 0.7);
+    // Pulled back to the bun: close to the head, with soft volume over the top.
+    if (bun) {
+      // Grooves converging on the bun: the angle round its axis.
+      const around = Math.atan2(dir.x - BUN_AXIS.x * dot(dir, BUN_AXIS), dir.z - BUN_AXIS.z * dot(dir, BUN_AXIS));
+      const groove = Math.pow(Math.abs(Math.sin(around * 16 + 0.8 * Math.sin(around * 5))), 0.5);
+      return s * (0.005 + 0.004 * top + 0.0022 * groove);
+    }
     if (!short) return s * (0.007 + 0.006 * top);
     // Short cut: grooves along the brushing (front to back on the top, downwards on the sides), as on a
     // sculpted head: the mass reads as hair, not as a cap.
@@ -757,7 +992,7 @@ export const buildHair = (
         const m = margin(onSkin);
         if (m < -0.006 * s) continue;
         // The mass thins out over the last centimetre before the edge.
-        const lift = Math.max(0.0008 * s, volume(dir) * smooth(m / ((short ? 0.022 : 0.025) * s)));
+        const lift = Math.max(SCALP_MIN_LIFT * s, volume(dir) * smooth(m / ((short ? 0.022 : 0.025) * s)));
         const p = shell(dir.x, dir.y, dir.z, lift);
         index[e * (A + 1) + a] = pts.length / 3;
         pts.push(p.x, p.y, p.z);
@@ -796,7 +1031,13 @@ export const buildHair = (
   const radial = (p: Vec3): Vec3 => unit(sub(p, C));
 
   const locks: Lock[] = [];
-  if (!short) {
+  const extra: HairMesh[] = [];
+  if (bun) {
+    const built = bunLocks(positions, armWeights, f, s, shell, volume, rnd);
+    locks.push(...built.locks);
+    extra.push(built.core);
+  }
+  if (style === 'long') {
     // 2. Long hair: locks from the parting over the head, then hanging in waves to the shoulders.
     let axisZ = 0;
     let count = 0;
@@ -904,5 +1145,5 @@ export const buildHair = (
       }
     }
   }
-  return merge([scalp, lockMesh(locks)]);
+  return merge([scalp, lockMesh(locks), ...extra]);
 };

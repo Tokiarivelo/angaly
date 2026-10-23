@@ -4,8 +4,24 @@ import { useState, useEffect, useCallback } from 'react';
 import { usePathname, useRouter, useSearchParams } from 'next/navigation';
 import { useQuery, useMutation } from '@tanstack/react-query';
 import { fetchPatternProject, updatePatternProject } from '../api/pattern-projects.api';
-import { validateMeasurementValues, type GarmentProfile } from '@angaly/types';
+import { validateMeasurementValues, type GarmentProfile, type PatternExtParameters } from '@angaly/types';
 import { WIZARD_STEPS, stepKeyAt, type WizardFormData } from '../types/wizard-state.types';
+import { detailsFor } from '../consts/garment-details.const';
+
+/**
+ * The extended parameters to save, with the typed measurements that are valid (a value being typed — « 9 » on the way
+ * to « 92 » — would have the whole save refused): kept with the project so a refresh or a later generation uses them.
+ */
+export const withMeasurements = (
+  fit: PatternExtParameters | undefined,
+  measurements: Record<string, number> | undefined,
+): PatternExtParameters | undefined => {
+  if (measurements === undefined) return fit;
+  const { valid } = validateMeasurementValues(measurements);
+  const rest: PatternExtParameters = { ...(fit ?? {}) };
+  delete rest.measurements;
+  return Object.keys(valid).length > 0 ? { ...rest, measurements: valid } : fit ? rest : undefined;
+};
 
 export const PATTERN_PROJECT_DETAIL_KEY = (id: string) => ['pattern-project', id];
 
@@ -54,6 +70,8 @@ export const usePatternWizard = (projectId: string) => {
         details: project.detailsJson ?? prev.details,
         measurementProfileId: project.measurementProfileId ?? prev.measurementProfileId,
         fit: project.parametersExtJson ?? prev.fit,
+        // The measurements typed for this project, saved with it: a refresh on the measurements step keeps them.
+        measurements: project.parametersExtJson?.measurements ?? prev.measurements,
         ...(project.inspirationAnalysisJson
           ? {
               inspirationAnalysis: project.inspirationAnalysisJson,
@@ -80,11 +98,12 @@ export const usePatternWizard = (projectId: string) => {
         occasion: updated.occasion,
         style: updated.style,
         cutType: updated.cutType,
-        detailsJson: updated.details,
+        // Only the details the garment takes: a dress's collar left from an earlier choice is not saved on trousers.
+        detailsJson: updated.details && updated.garmentType ? detailsFor(updated.garmentType, updated.details) : updated.details,
         inspirationMediaId: updated.inspirationMediaId,
         inspirationAnalysisJson: updated.inspirationAnalysis,
         measurementProfileId: updated.measurementProfileId,
-        parametersExtJson: updated.fit,
+        parametersExtJson: withMeasurements(updated.fit, updated.measurements),
       }),
   });
 

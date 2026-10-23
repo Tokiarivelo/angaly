@@ -32,7 +32,19 @@ export interface LimbFrame {
   length: number;
   /** Distance of the wrist (the narrowest section before the hand); beyond it the hand is ignored. */
   wrist: number;
-  /** Support of the cross-section at distance t along the axis, in (side, front) coordinates. */
+  /**
+   * Centre of the cross-section at distance t, in (side, front) coordinates: the axis is the upper arm's, and a
+   * bent elbow (even the rest pose's) carries the forearm off it, 9 cm forwards at the wrist. A sleeve is draped
+   * round `start + dir·t + side·centre.s + front·centre.f`. Absent: on the axis.
+   */
+  centre?: (t: number) => { s: number; f: number };
+  /**
+   * Distance t along the axis reached after `length` (m) of arm measured along its centre line: the bent forearm is
+   * longer than its projection on the upper arm's axis, so a sleeve measured on the axis came out too long and its
+   * cuff rode onto the hand. Absent: t = length.
+   */
+  atLength?: (length: number) => number;
+  /** Support of the cross-section at distance t along the axis, about `centre(t)`, in (side, front) coordinates. */
   support: (t: number) => Support;
   /**
    * Support of the shoulder cap: every arm point from ~10 cm above the joint (the deltoid, which rises
@@ -55,6 +67,11 @@ export interface BodyEnvelope {
   /** Left (+x) arm; the right arm is its mirror image. Null when the body has no arm data. */
   arm: LimbFrame | null;
   /**
+   * Right (−x) arm when it is posed differently: described as the left arm of the body mirrored in x
+   * (a sleeve is draped on it as a left sleeve, then mirrored). Absent: the mirror image of `arm`.
+   */
+  armRight?: LimbFrame | null;
+  /**
    * Top of the shoulders at lateral distance |x| (above the armpit): height and depth of the ridge a
    * shoulder seam rests on. Null outside the measured range.
    */
@@ -64,10 +81,15 @@ export interface BodyEnvelope {
    * where no skin is there. Absent on envelopes built without a mesh.
    */
   top?: (x: number, z: number) => number | null;
+  /**
+   * Height of the skin right under (x, z) above the armpit, read on a 5 mm grid without the neighbouring cells
+   * (unlike `top`, a neck column next to it does not count), or null where no skin was sampled.
+   */
+  skinTop?: (x: number, z: number) => number | null;
 }
 
 /** Region of each point: what the fabric of a torso, a trouser leg or a sleeve rests on. */
-export const REGION = { NONE: 0, TORSO: 1, LEG: 2, ARM: 3 } as const;
+export const REGION = { NONE: 0, TORSO: 1, LEG: 2, ARM: 3, FOREARM: 4 } as const;
 
 const clamp = (v: number, lo: number, hi: number): number => Math.min(hi, Math.max(lo, v));
 
@@ -124,11 +146,13 @@ export interface EnvelopeInput {
   region: Uint8Array;
   /** Left (+x) shoulder joint, where the arm hinges (null: no arm). */
   joint: Vec3 | null;
+  /** Right shoulder joint in mirrored coordinates (x > 0), for a body whose arms are posed apart. */
+  rightJoint?: Vec3 | null;
   crotchY: number;
   armpitY: number;
 }
 
-export const buildEnvelope = ({ positions, region, joint, crotchY, armpitY }: EnvelopeInput): BodyEnvelope => {
+export const buildEnvelope = ({ positions, region, joint, rightJoint, crotchY, armpitY }: EnvelopeInput): BodyEnvelope => {
   const n = region.length;
   // Bucket the torso/leg points by height level.
   let minY = Infinity;
@@ -225,14 +249,22 @@ export const buildEnvelope = ({ positions, region, joint, crotchY, armpitY }: En
     return { x: a.x + (b.x - a.x) * t, z: a.z + (b.z - a.z) * t };
   };
 
+  // Arm skin counts for the shoulder only next to its joint: a raised hand or forearm is not a shoulder.
+  const shoulderSkin = (i: number): boolean => {
+    const r = region[i];
+    if (r === REGION.TORSO) return true;
+    if (r !== REGION.ARM) return false;
+    const x = positions[i * 3]!;
+    const j = x >= 0 ? joint : rightJoint ?? joint;
+    return !!j && Math.hypot(Math.abs(x) - j.x, positions[i * 3 + 1]! - j.y, positions[i * 3 + 2]! - j.z) < 0.13;
+  };
   // Shoulder ridge: per 1 cm of |x|, the highest point of the torso/arm skin above the armpit.
   const RIDGE = 0.01;
   const ridgeY: number[] = [];
   const ridgeZ: number[] = [];
   for (let i = 0; i < n; i += 1) {
-    const r = region[i];
     const y = positions[i * 3 + 1]!;
-    if ((r !== REGION.TORSO && r !== REGION.ARM) || y < armpitY) continue;
+    if (!shoulderSkin(i) || y < armpitY) continue;
     const b = Math.round(Math.abs(positions[i * 3]!) / RIDGE);
     if (b > 40) continue;
     if (ridgeY[b] === undefined || y > ridgeY[b]) {
@@ -255,9 +287,8 @@ export const buildEnvelope = ({ positions, region, joint, crotchY, armpitY }: En
   const tops = new Map<number, number>();
   const cell = (ix: number, iz: number): number => (ix + 500) * 1000 + (iz + 500);
   for (let i = 0; i < n; i += 1) {
-    const r = region[i];
     const y = positions[i * 3 + 1]!;
-    if ((r !== REGION.TORSO && r !== REGION.ARM) || y < armpitY) continue;
+    if (!shoulderSkin(i) || y < armpitY) continue;
     const k = cell(Math.round(positions[i * 3]! / TOP), Math.round(positions[i * 3 + 2]! / TOP));
     if (y > (tops.get(k) ?? -Infinity)) tops.set(k, y);
   }
@@ -269,14 +300,49 @@ export const buildEnvelope = ({ positions, region, joint, crotchY, armpitY }: En
     return Number.isFinite(best) ? best : null;
   };
 
-  return { axisZ, crotchY, armpitY, torso, leg, legCentre, shoulder, top, arm: joint ? buildArm(positions, region, joint) : null };
+  // The same, on a finer grid and cell by cell.
+  const FINE = 0.005;
+  const fine = new Map<number, number>();
+  for (let i = 0; i < n; i += 1) {
+    const y = positions[i * 3 + 1]!;
+    if (!shoulderSkin(i) || y < armpitY) continue;
+    const k = cell(Math.round(positions[i * 3]! / FINE), Math.round(positions[i * 3 + 2]! / FINE));
+    if (y > (fine.get(k) ?? -Infinity)) fine.set(k, y);
+  }
+  const skinTop = (x: number, z: number): number | null => fine.get(cell(Math.round(x / FINE), Math.round(z / FINE))) ?? null;
+
+  const arm = joint ? buildArm(positions, region, joint) : null;
+  let armRight: LimbFrame | null | undefined;
+  if (rightJoint) {
+    const mirrored = Float32Array.from(positions);
+    for (let i = 0; i < mirrored.length; i += 3) mirrored[i] = -mirrored[i]!;
+    armRight = buildArm(mirrored, region, rightJoint);
+  }
+  return { axisZ, crotchY, armpitY, torso, leg, legCentre, shoulder, top, skinTop, arm, ...(armRight !== undefined ? { armRight } : {}) };
 };
 
 const ARM_LEVEL = 0.015;
+/** The forearm's centre line takes over from the upper arm's axis between these distances from the joint (m). */
+const CENTRE_FROM = 0.12;
+const CENTRE_RAMP = 0.12;
+/** Length of forearm (m) above the wrist whose slope carries the centre line on past it. */
+const WRIST_SLOPE_SPAN = 0.04;
+/** Levels either side averaged for a section's centre. */
+const CENTRE_SMOOTH = 2;
+const smoothstep = (x: number): number => {
+  const t = Math.min(1, Math.max(0, x));
+  return t * t * (3 - 2 * t);
+};
 
 const buildArm = (positions: Float32Array, region: Uint8Array, joint: Vec3): LimbFrame | null => {
   const idx: number[] = [];
-  for (let i = 0; i < region.length; i += 1) if (region[i] === REGION.ARM && positions[i * 3]! > 0) idx.push(i);
+  // Forearm and hand points, when told apart (a posed body): they never steer the upper arm's axis.
+  const fore: number[] = [];
+  for (let i = 0; i < region.length; i += 1) {
+    if (positions[i * 3]! <= 0) continue;
+    if (region[i] === REGION.ARM) idx.push(i);
+    else if (region[i] === REGION.FOREARM) fore.push(i);
+  }
   if (idx.length < 20) return null;
   // Principal axis of the arm points (power iteration on the covariance).
   let mx = 0;
@@ -303,6 +369,42 @@ const buildArm = (positions: Float32Array, region: Uint8Array, joint: Vec3): Lim
   }
   // From the joint towards the hand (down and out).
   if (v[1]! > 0) v = v.map((x) => -x);
+  if (fore.length > 0) {
+    // Forearm left out (posed body): the upper arm alone is short and thick, its principal axis is not
+    // reliable — aim from the joint at the centre of the upper arm's skin 8–30 cm away instead.
+    let sx = 0;
+    let sy = 0;
+    let sz = 0;
+    for (const i of idx) {
+      const d = [positions[i * 3]! - joint.x, positions[i * 3 + 1]! - joint.y, positions[i * 3 + 2]! - joint.z];
+      const r = Math.hypot(d[0]!, d[1]!, d[2]!);
+      if (r < 0.08 || r > 0.3) continue;
+      sx += d[0]!;
+      sy += d[1]!;
+      sz += d[2]!;
+    }
+    const len = Math.hypot(sx, sy, sz);
+    if (len > 0) v = [sx / len, sy / len, sz / len];
+  }
+  // A bent elbow (a posed arm) skews the principal axis: refine it on the upper arm alone — the points
+  // 3–25 cm down from the joint and close to the current axis — so the sleeve follows the upper arm.
+  for (let pass = 0; pass < 3; pass += 1) {
+    let sx = 0;
+    let sy = 0;
+    let sz = 0;
+    for (const i of idx) {
+      const d = [positions[i * 3]! - joint.x, positions[i * 3 + 1]! - joint.y, positions[i * 3 + 2]! - joint.z];
+      const t = d[0]! * v[0]! + d[1]! * v[1]! + d[2]! * v[2]!;
+      if (t < 0.03 || t > 0.25) continue;
+      const r = Math.hypot(d[0]! - t * v[0]!, d[1]! - t * v[1]!, d[2]! - t * v[2]!);
+      if (r > 0.08) continue;
+      sx += d[0]!;
+      sy += d[1]!;
+      sz += d[2]!;
+    }
+    const len = Math.hypot(sx, sy, sz);
+    if (len > 0) v = [sx / len, sy / len, sz / len];
+  }
   const dir = { x: v[0]!, y: v[1]!, z: v[2]! };
   const dot = (a: Vec3, b: Vec3): number => a.x * b.x + a.y * b.y + a.z * b.z;
   const fz = { x: -dir.z * dir.x, y: -dir.z * dir.y, z: 1 - dir.z * dir.z };
@@ -313,20 +415,63 @@ const buildArm = (positions: Float32Array, region: Uint8Array, joint: Vec3): Lim
   if (side.x < 0) side = { x: -side.x, y: -side.y, z: -side.z };
 
   let length = 0;
-  const local = idx.map((i) => {
+  // A forearm folded back alongside the upper arm (bent elbow) is not part of the straight limb the
+  // sleeve wraps: points far from the axis are left out, and so are the forearm's points that do not
+  // lie beyond the elbow along the upper arm.
+  const toLocal = (i: number) => {
     const p = { x: positions[i * 3]! - joint.x, y: positions[i * 3 + 1]! - joint.y, z: positions[i * 3 + 2]! - joint.z };
-    const t = dot(p, dir);
-    length = Math.max(length, t);
-    return { t, s: dot(p, side), f: dot(p, front) };
-  });
+    return { t: dot(p, dir), s: dot(p, side), f: dot(p, front) };
+  };
+  const upperLocal = idx.map(toLocal).filter((p) => Math.hypot(p.s, p.f) < 0.09);
+  const elbowT = fore.length > 0 ? Math.max(0, ...upperLocal.map((p) => p.t)) : -Infinity;
+  const local = [
+    ...upperLocal,
+    ...fore
+      .map(toLocal)
+      .filter((p) => p.t > elbowT - 0.02 && Math.hypot(p.s, p.f) < 0.09),
+  ];
+  for (const p of local) length = Math.max(length, p.t);
   const count = Math.max(2, Math.ceil(length / ARM_LEVEL) + 1);
+  // Centre of each section (averaged over ±2 levels), followed from the elbow down: next to the shoulder the axis
+  // stays the centre, so the cap, the deltoid and the armhole are where they were.
+  const raw: Array<{ s: number; f: number } | null> = [];
+  for (let level = 0; level < count; level += 1) {
+    const near = local.filter((p) => Math.abs(p.t - level * ARM_LEVEL) < WINDOW && p.t > -0.01);
+    raw.push(
+      near.length > 0
+        ? { s: near.reduce((a, p) => a + p.s, 0) / near.length, f: near.reduce((a, p) => a + p.f, 0) / near.length }
+        : null,
+    );
+  }
+  const centres = raw.map((_, level) => {
+    let s = 0;
+    let f = 0;
+    let n = 0;
+    for (let k = level - CENTRE_SMOOTH; k <= level + CENTRE_SMOOTH; k += 1) {
+      const c = raw[k];
+      if (!c) continue;
+      s += c.s;
+      f += c.f;
+      n += 1;
+    }
+    const w = smoothstep((level * ARM_LEVEL - CENTRE_FROM) / CENTRE_RAMP);
+    return n > 0 ? { s: (w * s) / n, f: (w * f) / n } : { s: 0, f: 0 };
+  });
   const levels: Array<Support | null> = [];
   for (let level = 0; level < count; level += 1) {
     const t = level * ARM_LEVEL;
     const near = local.filter((p) => Math.abs(p.t - t) < WINDOW && p.t > -0.01);
-    levels.push(supportOf(near.map((p) => p.s), near.map((p) => p.f), 0, 0));
+    const c = centres[level]!;
+    levels.push(supportOf(near.map((p) => p.s - c.s), near.map((p) => p.f - c.f), 0, 0));
   }
   const sampler = levelSampler(0, ARM_LEVEL, levels);
+  const centreAt = (t: number): { s: number; f: number } => {
+    const u = clamp(t / ARM_LEVEL, 0, count - 1);
+    const k = Math.min(count - 2, Math.floor(u));
+    const a = centres[k]!;
+    const b = centres[k + 1]!;
+    return { s: a.s + (b.s - a.s) * (u - k), f: a.f + (b.f - a.f) * (u - k) };
+  };
   // Wrist: the narrowest section between 55 % and 90 % of the reach. Past it, a sleeve rests on the
   // wrist section, not on the spread fingers (else a long sleeve flared into a bell over the hand).
   let wrist = length * 0.75;
@@ -339,9 +484,32 @@ const buildArm = (positions: Float32Array, region: Uint8Array, joint: Vec3): Lim
     }
   }
   const support = (t: number): Support => sampler(Math.min(t, wrist));
+  // Past the wrist the centre carries on along the forearm (a sleeve stacking at the wrist, a cuff over it follow
+  // the hand's direction, not the upper arm's).
+  const atWrist = centreAt(wrist);
+  const beforeWrist = centreAt(Math.max(0, wrist - WRIST_SLOPE_SPAN));
+  const centre = (t: number): { s: number; f: number } => {
+    if (t <= wrist) return centreAt(t);
+    const k = (t - wrist) / WRIST_SLOPE_SPAN;
+    return { s: atWrist.s + (atWrist.s - beforeWrist.s) * k, f: atWrist.f + (atWrist.f - beforeWrist.f) * k };
+  };
   const deltoid = local.filter((p) => p.t > -0.1 && p.t < 0.03);
   const cap = supportOf(deltoid.map((p) => p.s), deltoid.map((p) => p.f), 0, 0) ?? undefined;
-  return { start: joint, dir, front, side, length, wrist, support, ...(cap ? { cap } : {}) };
+  // Arc length of the centre line, per level (and on past the arm's end along the last direction).
+  const arc: number[] = [0];
+  for (let level = 1; level < count; level += 1) {
+    const a = centre((level - 1) * ARM_LEVEL);
+    const b = centre(level * ARM_LEVEL);
+    arc.push(arc[level - 1]! + Math.hypot(ARM_LEVEL, b.s - a.s, b.f - a.f));
+  }
+  const atLength = (len: number): number => {
+    if (len <= 0) return len;
+    let k = 0;
+    while (k < count - 2 && arc[k + 1]! < len) k += 1;
+    const step = arc[k + 1]! - arc[k]! || ARM_LEVEL;
+    return (k + (len - arc[k]!) / step) * ARM_LEVEL;
+  };
+  return { start: joint, dir, front, side, length, wrist, support, centre, atLength, ...(cap ? { cap } : {}) };
 };
 
 /** Shoulder joint of the left (+x) arm: where the arm weight crosses one half, around the shoulder line. */
@@ -374,6 +542,8 @@ export const envelopeFromMesh = (
   indices: Uint32Array,
   armWeights: Float32Array,
   body: BodyMeasurements,
+  /** Per vertex, 1 for the forearm and the hand (see `forearmMask`): needed once the elbows bend. */
+  forearm?: Uint8Array,
 ): BodyEnvelope => {
   const l = bodyLandmarks(body);
   const s = bodyScale(body);
@@ -391,11 +561,20 @@ export const envelopeFromMesh = (
   const neckZ = Number.isFinite(zLo) ? (zLo + zHi) / 2 : 0;
   const neckR = body.neck / (2 * Math.PI);
   const joint = findJoint(positions, armWeights, l.shoulderY, s);
+  const mirroredPositions = Float32Array.from(positions);
+  for (let i = 0; i < mirroredPositions.length; i += 3) mirroredPositions[i] = -mirroredPositions[i]!;
+  const rightJoint = findJoint(mirroredPositions, armWeights, l.shoulderY, s);
   const armpitY = armpitHeight(body);
-  const regionAt = (aw: number, x: number, y: number, z: number): number => {
+  const regionAt = (aw: number, x: number, y: number, z: number, isForearm = false): number => {
     // Above the armpit, the skin between the neck and the shoulder joint (the front and back of the
     // shoulder, weighted to the arm) is under the bodice, not the sleeve.
-    if (aw >= 0.5) return joint && y > armpitY - 0.03 * s && Math.abs(x) < joint.x + 0.02 * s ? REGION.TORSO : REGION.ARM;
+    if (aw >= 0.5) {
+      // Only next to the joint: a posed forearm or hand held in front of the chest stays an arm.
+      const j = x >= 0 ? joint : rightJoint ?? joint;
+      const nearJoint = j && Math.hypot(Math.abs(x) - j.x, y - j.y, z - j.z) < 0.11 * s;
+      if (j && nearJoint && y > armpitY - 0.03 * s && Math.abs(x) < j.x + 0.02 * s) return REGION.TORSO;
+      return isForearm ? REGION.FOREARM : REGION.ARM;
+    }
     if (y > headCut) return REGION.NONE;
     if (y > l.napeY && Math.abs(x) < 1.5 * neckR && Math.hypot(x, z - neckZ) > 1.3 * neckR) return REGION.NONE;
     return y < l.crotchY ? REGION.LEG : REGION.TORSO;
@@ -404,7 +583,7 @@ export const envelopeFromMesh = (
   const region: number[] = [];
   for (let i = 0; i < armWeights.length; i += 1) {
     points.push(positions[i * 3]!, positions[i * 3 + 1]!, positions[i * 3 + 2]!);
-    region.push(regionAt(armWeights[i]!, positions[i * 3]!, positions[i * 3 + 1]!, positions[i * 3 + 2]!));
+    region.push(regionAt(armWeights[i]!, positions[i * 3]!, positions[i * 3 + 1]!, positions[i * 3 + 2]!, forearm?.[i] === 1));
   }
   // Inside each triangle: a barycentric grid fine enough that no cross-section misses the skin.
   for (let t = 0; t < indices.length; t += 3) {
@@ -426,7 +605,8 @@ export const envelopeFromMesh = (
         const y = ka * positions[a * 3 + 1]! + kb * positions[b * 3 + 1]! + kc * positions[c * 3 + 1]!;
         const z = ka * positions[a * 3 + 2]! + kb * positions[b * 3 + 2]! + kc * positions[c * 3 + 2]!;
         points.push(x, y, z);
-        region.push(regionAt(ka * armWeights[a]! + kb * armWeights[b]! + kc * armWeights[c]!, x, y, z));
+        const f = forearm ? ka * forearm[a]! + kb * forearm[b]! + kc * forearm[c]! : 0;
+        region.push(regionAt(ka * armWeights[a]! + kb * armWeights[b]! + kc * armWeights[c]!, x, y, z, f > 0.5));
       }
     }
   }
@@ -434,6 +614,7 @@ export const envelopeFromMesh = (
     positions: Float32Array.from(points),
     region: Uint8Array.from(region),
     joint,
+    rightJoint,
     crotchY: l.crotchY,
     armpitY,
   });

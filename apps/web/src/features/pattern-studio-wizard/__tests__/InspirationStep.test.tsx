@@ -3,6 +3,7 @@ import { describe, it, expect, vi } from 'vitest';
 import { InspirationStep } from '../ui/steps/InspirationStep';
 
 const reanalyze = vi.hoisted(() => vi.fn());
+const hookState = vi.hoisted(() => ({ aiServiceUnreachable: false }));
 vi.mock('../hooks/useUploadInspirationPhoto', () => ({
   useUploadInspirationPhoto: () => ({
     uploadAndAnalyze: vi.fn(),
@@ -10,6 +11,7 @@ vi.mock('../hooks/useUploadInspirationPhoto', () => ({
     isUploading: false,
     isAnalyzing: false,
     error: null,
+    aiServiceUnreachable: hookState.aiServiceUnreachable,
   }),
 }));
 
@@ -87,6 +89,18 @@ describe('InspirationStep', () => {
   it('tells the customer when the analysis could not run', () => {
     render(<InspirationStep inspirationImageUrl="https://cdn/p.jpg" onInspirationProcessed={vi.fn()} />);
     expect(screen.getByRole('status')).toHaveTextContent(/L’analyse IA n’a pas pu être réalisée/);
+  });
+
+  it('says the AI service is unreachable rather than blaming the model configuration', () => {
+    hookState.aiServiceUnreachable = true;
+    try {
+      render(<InspirationStep inspirationImageUrl="https://cdn/p.jpg" onInspirationProcessed={vi.fn()} />);
+      const status = screen.getByRole('status');
+      expect(status).toHaveTextContent(/service d’analyse IA est injoignable/);
+      expect(status).not.toHaveTextContent(/non configurés/);
+    } finally {
+      hookState.aiServiceUnreachable = false;
+    }
   });
 
   it('lets the customer retry the analysis on the uploaded photo', () => {

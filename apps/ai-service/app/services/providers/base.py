@@ -4,6 +4,7 @@ Specified in docs/features/ai-providers.md §6.
 
 from __future__ import annotations
 
+import os
 import json
 import re
 from abc import ABC, abstractmethod
@@ -24,6 +25,16 @@ def clean_json_text(text: str) -> str:
     if match:
         return match.group(1).strip()
     return stripped
+
+
+def provider_timeout_s() -> float:
+    """Most one provider call may take (s): a call that never answers must not hold a worker thread forever —
+    once all are held, the whole service (health included) stops answering. AI_PROVIDER_TIMEOUT_S, default 75."""
+    try:
+        value = float(os.environ.get("AI_PROVIDER_TIMEOUT_S", "75"))
+    except ValueError:
+        return 75.0
+    return value if value > 0 else 75.0
 
 
 class LlmProvider(ABC):

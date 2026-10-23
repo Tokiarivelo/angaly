@@ -148,6 +148,14 @@ class GarmentFit(BaseModel):
     fabric_print: str | None = Field(default=None, alias="fabricPrint")
     fabric_color: str | None = Field(default=None, alias="fabricColor")
     motif_color: str | None = Field(default=None, alias="motifColor")
+    motif_size_cm: float | None = Field(default=None, alias="motifSizeCm")
+    contrast_color: str | None = Field(default=None, alias="contrastColor")
+    fabric_finish: str | None = Field(default=None, alias="fabricFinish")
+    contrast_print: str | None = Field(default=None, alias="contrastPrint")
+    contrast_motif_color: str | None = Field(default=None, alias="contrastMotifColor")
+    accent_print: str | None = Field(default=None, alias="accentPrint")
+    contrast_gores: bool | None = Field(default=None, alias="contrastGores")
+    contrast_trims: bool | None = Field(default=None, alias="contrastTrims")
     certainty: dict[str, str] = Field(default_factory=dict)
 
     model_config = {"populate_by_name": True}
@@ -171,6 +179,10 @@ class GarmentProfile(BaseModel):
     fit: GarmentFit | None = None
     # Deterministic drape blocks the photo suggests (validated by `normalize_drape_blocks`).
     drape_blocks: list[dict[str, Any]] | None = Field(default=None, alias="drapeBlocks")
+    # Garnitures sewn on the finished garment (validated by `normalize_trims`).
+    trims: list[dict[str, Any]] | None = None
+    # Visible construction pieces (validated by `normalize_construction`, app/construction_knowledge.py).
+    construction: list[dict[str, Any]] | None = None
 
     model_config = {"populate_by_name": True}
 

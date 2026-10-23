@@ -33,7 +33,7 @@ describe('parseGenerationNotices', () => {
 
   it('tolerates older versions and malformed data', () => {
     for (const input of [null, undefined, {}, { warnings: 'x', constructionApproach: 'NOPE', mannequinSheet: 'x', metadata: 3 }]) {
-      expect(parseGenerationNotices(input as never)).toEqual({ warnings: [], approach: null, mannequinSheet: null, yardageMm: null });
+      expect(parseGenerationNotices(input as never)).toEqual({ warnings: [], approach: null, mannequinSheet: null, yardageMm: null, notions: [] });
     }
     expect(parseGenerationNotices({ mannequinSheet: { title: 't', sections: [{ id: 'HACK', title: 'x', body: 'y' }] } }).mannequinSheet).toBeNull();
   });
@@ -75,5 +75,28 @@ describe('GenerationNoticesPanel', () => {
     );
     expect(screen.getByText('Construction : Patron à plat complet')).toBeInTheDocument();
     expect(screen.queryByText('Zones à draper')).not.toBeInTheDocument();
+  });
+});
+
+describe('GenerationNoticesPanel — notions (mercerie)', () => {
+  it('lists the notions the engine gave, with count and running length, skipping malformed ones', () => {
+    const notices = parseGenerationNotices({
+      metadata: {
+        notions: [
+          { label: 'Perles 6 mm — bord du décolleté', lengthMm: 856, quantity: 143 },
+          { label: 'Baleines spirale 7 mm (avec embouts)', quantity: 9 },
+          { label: 42 },
+          'x',
+        ],
+      },
+    });
+    expect(notices.notions).toEqual([
+      { label: 'Perles 6 mm — bord du décolleté', lengthMm: 856, quantity: 143 },
+      { label: 'Baleines spirale 7 mm (avec embouts)', lengthMm: null, quantity: 9 },
+    ]);
+    render(<GenerationNoticesPanel notices={notices} />);
+    expect(screen.getByText('Mercerie indicative')).toBeInTheDocument();
+    expect(screen.getByText('× 143 · 0,86 m')).toBeInTheDocument();
+    expect(screen.getByText('× 9')).toBeInTheDocument();
   });
 });

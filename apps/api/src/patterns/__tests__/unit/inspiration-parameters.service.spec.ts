@@ -28,6 +28,32 @@ describe('InspirationParametersService', () => {
     expect(merged.cutType).toBe('PRINCESSE');
   });
 
+  it('keeps a shaped collar and drops the depth class the photo gave with it', () => {
+    const merged = service.merge(
+      { cutType: null, details: {} },
+      analysis({ details: { col: 'EN_V', decollete: 'MOYEN', manches: 'COURTES' } }),
+    );
+    expect(merged.details).toEqual({ col: 'EN_V', manches: 'COURTES' });
+    expect(merged.fromPhotoKeys).toEqual(['col', 'manches']);
+    const round = service.merge({ cutType: null, details: {} }, analysis({ details: { col: 'ROND', decollete: 'SAGE' } }));
+    expect(round.details).toEqual({ col: 'ROND', decollete: 'SAGE' });
+  });
+
+  it('keeps an off-the-shoulder neckline over a boat line read with it (the edge is the whole neckline)', () => {
+    const merged = service.merge({ cutType: null, details: {} }, analysis({ details: { col: 'BATEAU', decollete: 'HORS_EPAULES' } }));
+    expect(merged.details).toEqual({ decollete: 'HORS_EPAULES' });
+    expect(merged.fromPhotoKeys).toEqual(['decollete']);
+  });
+
+  it('takes the garnitures read on the photo (berthe, frills, bead rows) unless the project has its own list', () => {
+    const berthe = { kind: 'BERTHE', depthMm: 110, pointMm: 140, material: 'DENTELLE' } as const;
+    const merged = service.merge({ cutType: null, details: {} }, analysis({ trims: [berthe] }));
+    expect(merged.ext.trims).toEqual({ items: [berthe] });
+    expect(merged.extKeysFromPhoto).toEqual(['trims']);
+    const none = service.merge({ cutType: null, details: {}, parametersExt: { trims: { items: [] } } }, analysis({ trims: [berthe] }));
+    expect(none.ext.trims).toEqual({ items: [] });
+  });
+
   it('keeps the project cut, defaults to DROITE and ignores non-garment photos', () => {
     expect(service.merge({ cutType: 'SIRENE', details: {} }, analysis({})).cutType).toBe('SIRENE');
     const notGarment = analysis({ isGarment: false, details: { col: 'EN_V' } });
@@ -42,15 +68,36 @@ describe('InspirationParametersService', () => {
   });
 
   it('lists missing groups and accepts only valid non-overriding AI values', () => {
-    expect(service.missingGroups({ manches: 'LONGUES' })).toEqual([
-      'col', 'decollete', 'dos', 'longueur', 'fermeture', 'corsage',
+    expect(service.missingGroups({ manches: 'LONGUES' }, 'ROBE')).toEqual([
+      'col', 'decollete', 'dos', 'longueur', 'fermeture', 'corsage', 'taille', 'devant', 'jupe', 'basque',
     ]);
+    // Each garment its own groups: trousers are asked their rise, band, fly, pleats and pockets, never a collar.
+    expect(service.missingGroups({ longueur: 'MAXI' }, 'PANTALON')).toEqual(['taille', 'ceinture', 'fermeture', 'plis', 'poches', 'poches_dos', 'bas']);
+    expect(service.acceptSuggestedDetails({}, { col: 'ROND', poches: 'ITALIENNES' }, 'PANTALON').acceptedKeys).toEqual(['poches']);
+    expect(service.acceptSuggestedDetails({}, { col: 'ROND', poches: 'ITALIENNES' }, 'ROBE').acceptedKeys).toEqual(['col']);
     const { details, acceptedKeys } = service.acceptSuggestedDetails(
       { manches: 'LONGUES' },
       { manches: 'COURTES', col: 'ROND', dos: 'NOPE' },
     );
     expect(details).toEqual({ manches: 'LONGUES', col: 'ROND' });
     expect(acceptedKeys).toEqual(['col']);
+  });
+
+  it('never takes a collar piece from the AI: a collar is read on the photo or chosen by the customer', () => {
+    for (const col of ['OFFICIER', 'CHEMISIER', 'LAVALLIERE', 'CHALE']) {
+      const { details, acceptedKeys } = service.acceptSuggestedDetails(
+        { decollete: 'CARRE' },
+        { col, dos: 'FERME' },
+      );
+      expect(details).toEqual({ decollete: 'CARRE', dos: 'FERME' });
+      expect(acceptedKeys).toEqual(['dos']);
+    }
+    // Under a collar, no neckline depth either: the collar sits on its own neckline.
+    expect(service.acceptSuggestedDetails({ col: 'OFFICIER' }, { decollete: 'MOYEN' }).acceptedKeys).toEqual([]);
+    expect(service.acceptSuggestedDetails({ col: 'BATEAU' }, { decollete: 'MOYEN' }).acceptedKeys).toEqual([]);
+    expect(service.acceptSuggestedDetails({ col: 'ROND' }, { decollete: 'MOYEN' }).acceptedKeys).toEqual(['decollete']);
+    // A neckline (or no collar) may still be suggested.
+    expect(service.acceptSuggestedDetails({}, { col: 'SANS_COL' }).details).toEqual({ col: 'SANS_COL' });
   });
 
   it('only advises on draped or mixed construction', () => {

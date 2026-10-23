@@ -102,3 +102,23 @@ describe('PatternPieceCanvas — technical drawing', () => {
     expect(screen.queryByTestId('pattern-scale-bar')).not.toBeInTheDocument();
   });
 });
+
+describe('PatternPieceCanvas — lines inside the piece', () => {
+  it('draws the corset bones and placement lines the engine gave, ignoring malformed ones', () => {
+    renderCanvas(
+      buildPiece({
+        dimensionsJson: {
+          outlineMm: outline,
+          internalLinesMm: [
+            { kind: 'BONE', points: [{ x: 10, y: 20 }, { x: 10, y: 380 }] },
+            { kind: 'PLACEMENT', points: [{ x: 0, y: 100 }, { x: 200, y: 100 }] },
+            { kind: 'BONE', points: [{ x: 5, y: 5 }] },
+          ],
+        },
+      }),
+    );
+    expect(screen.getAllByTestId('pattern-bone-line')).toHaveLength(1);
+    expect(screen.getByTestId('pattern-bone-line').getAttribute('points')).toBe('10,20 10,380');
+    expect(screen.getAllByTestId('pattern-placement-line')).toHaveLength(1);
+  });
+});

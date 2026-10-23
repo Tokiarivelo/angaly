@@ -76,7 +76,9 @@ profil), `Customer`.
   mesure en clair dans les logs applicatifs.
 - L'icône "?" par mesure référence une illustration statique embarquée au frontend (asset,
   pas un `Media` MinIO — il ne s'agit pas de contenu utilisateur) + une définition FR courte,
-  voir `measurement-fields.const.ts`.
+  voir `measurement-fields.const.ts`. **Fait 2026-10-16** : l'infobulle montre l'image du mannequin 3D avec la mesure
+  tracée en or (`components/shared/MeasurementGuideImage.tsx`, `public/images/measurement-guide/`, une image par clé du
+  catalogue, vérifié par test).
 - "Utiliser pour un nouveau projet" crée un `PatternProject` avec `measurementProfileId`
   pré-rempli puis redirige vers `pattern-studio-landing`/le wizard, l'étape 7 (mesures) étant
   déjà considérée comme validée pour ce profil.

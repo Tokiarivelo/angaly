@@ -171,23 +171,52 @@ describe('RobeRule', () => {
           garmentType: 'ROBE',
           cutType: 'EVASEE',
           style: 'CLASSIQUE',
-          details: { manches: 'COURTES', col: 'ROND', longueur: 'MAXI', corsage: 'FRONCES_SOUS_POITRINE' },
+          details: { manches: 'COURTES', col: 'ROND', longueur: 'MAXI', corsage: 'FRONCES_SOUS_POITRINE', taille: 'BASSE' },
           ease: 'CONFORT',
-          fullness: { skirt: 1.25, sleeve: 1.25 },
-          lengths: { skirtPct: 94, sleevePct: 40 },
+          fullness: { sleeve: 1.5 },
+          lengths: { skirtPct: 94, sleevePct: 25 },
+          drape: { blocks: [{ kind: 'PLEATED_SKIRT', pleats: 20, depthMm: 55, type: 'BOX' }] },
         },
         measurements,
       );
-      expect(pieces.map((p) => p.name)).toEqual(['Corsage Devant', 'Empiècement Devant', 'Corsage Dos', 'Jupe Devant', 'Jupe Dos', 'Manche']);
-      // Skirt: 94 % of the 95 cm maxi length; the hem flares beyond the plain EVASEE one.
-      expect(maxY(pieces, 'Jupe Devant')).toBe(Math.round(950 * 0.94));
-      expect(maxX(pieces, 'Jupe Devant')).toBeGreaterThan(maxX(make('EVASEE'), 'Jupe Devant'));
-      // Short sleeve: 8 cm under the cap (40 % of 20 cm), a quarter wider at the top.
+      expect(pieces.map((p) => p.name)).toEqual([
+        'Corsage Devant',
+        'Empiècement Devant',
+        'Corsage Dos',
+        'Jupe plissée plis creux (panneau)',
+        'Manche',
+      ]);
+      // The midriff runs from under the bust to 11 cm below the waist; the pleated skirt starts there.
+      const band = pieces.find((p) => p.name === 'Empiècement Devant')!.outlineMm;
+      expect(Math.max(...band.map((p) => p.y))).toBeGreaterThan(110 + 60);
+      const skirt = pieces.find((p) => p.name.startsWith('Jupe plissée'))!;
+      expect(Math.max(...skirt.outlineMm.map((p) => p.y))).toBe(Math.round(950 * 0.94) - 110);
+      // 20 box pleats over lés no wider than the fabric (≈ 3 m of cloth: four lés of 140 cm laize).
+      expect(skirt.quantity).toBe(4);
+      expect(skirt.notches.length * skirt.quantity).toBeGreaterThanOrEqual(20);
+      expect(Math.max(...skirt.outlineMm.map((p) => p.x))).toBeLessThanOrEqual(1400 - 20);
+      // Short puffed sleeve: a quarter of the arm under the cap (25 % of 59 cm), half as wide again at the top.
       const sleeve = pieces.find((p) => p.name === 'Manche')!.outlineMm;
-      const cap = sleeve[0]!.y;
-      expect(Math.max(...sleeve.map((pt) => pt.y)) - cap).toBe(80);
+      expect(Math.max(...sleeve.map((pt) => pt.y)) - sleeve[0]!.y).toBe(148);
       const plain = make('EVASEE', { manches: 'COURTES' }).find((p) => p.name === 'Manche')!.outlineMm;
-      expect(Math.max(...sleeve.map((pt) => pt.x))).toBeCloseTo(1.25 * Math.max(...plain.map((pt) => pt.x)), 0);
+      expect(Math.max(...sleeve.map((pt) => pt.x))).toBeCloseTo(1.5 * Math.max(...plain.map((pt) => pt.x)), 0);
+    });
+
+    it('drops the waist seam over the hips with taille BASSE', () => {
+      const natural = make('EVASEE', { longueur: 'MAXI' });
+      const low = make('EVASEE', { longueur: 'MAXI', taille: 'BASSE' });
+      for (const name of ['Corsage Devant', 'Corsage Dos']) {
+        expect(maxY(low, name) - maxY(natural, name)).toBe(110);
+        const bottom = low.find((p) => p.name === name)!.outlineMm.filter((p) => p.y === maxY(low, name));
+        const waist = natural.find((p) => p.name === name)!.outlineMm.filter((p) => p.y === maxY(natural, name));
+        // Wider at the basque's lower edge than at the waist: it follows the hips.
+        expect(Math.max(...bottom.map((p) => p.x))).toBeGreaterThan(Math.max(...waist.map((p) => p.x)));
+      }
+      expect(maxY(natural, 'Jupe Devant') - maxY(low, 'Jupe Devant')).toBe(110);
+      // The skirt's top edge is as wide as the basque's lower edge.
+      const top = low.find((p) => p.name === 'Jupe Devant')!.outlineMm[1]!.x;
+      const basque = Math.max(...low.find((p) => p.name === 'Corsage Devant')!.outlineMm.filter((p) => p.y === maxY(low, 'Corsage Devant')).map((p) => p.x));
+      expect(top).toBe(basque);
     });
 
     it('keeps every outline closed', () => {
@@ -197,5 +226,79 @@ describe('RobeRule', () => {
         }
       }
     });
+  });
+});
+
+describe('RobeRule — taille haute (empire)', () => {
+  const run = (taille: 'NATURELLE' | 'HAUTE') => {
+    const pieces = RobeRule.computePieces(
+      { garmentType: 'ROBE', cutType: 'EVASEE', style: null, details: { longueur: 'MAXI', taille } },
+      { TOUR_POITRINE: 92, TOUR_TAILLE: 74, TOUR_BASSIN: 98, LONGUEUR_DOS: 42 },
+    );
+    const height = (name: string) => {
+      const p = pieces.find((q) => q.name === name)!;
+      const ys = p.outlineMm.map((q) => q.y);
+      return Math.max(...ys) - Math.min(...ys);
+    };
+    return { bodice: height('Corsage Dos'), skirt: height('Jupe Dos') };
+  };
+
+  it('shortens the bodice and lengthens the skirt by the same rise, so the hem stays put', () => {
+    const natural = run('NATURELLE');
+    const empire = run('HAUTE');
+    expect(natural.bodice - empire.bodice).toBe(120);
+    expect(empire.skirt - natural.skirt).toBe(120);
+  });
+});
+
+describe('RobeRule collars', () => {
+  const names = (col?: string) =>
+    RobeRule.computePieces(
+      { garmentType: 'ROBE', cutType: 'DROITE', style: null, details: col ? { col } : {} },
+      { TOUR_COU: 36, TOUR_POITRINE: 92, TOUR_TAILLE: 74, TOUR_BASSIN: 98, LONGUEUR_DOS: 42 },
+    ).map((p) => p.name);
+
+  it('adds the collar piece the detail asks for, and none otherwise', () => {
+    expect(names('OFFICIER')).toContain('Col officier');
+    expect(names('CHALE')).toContain('Col châle');
+    expect(names('ROND').some((n) => n.startsWith('Col'))).toBe(false);
+    expect(names().some((n) => n.startsWith('Col'))).toBe(false);
+  });
+});
+
+describe('RobeRule — neckline shapes (V, square, round)', () => {
+  const M2 = { TOUR_POITRINE: 92, TOUR_TAILLE: 74, TOUR_BASSIN: 98, LONGUEUR_DOS: 42 };
+  const front = (details: Record<string, string>) => {
+    const pieces = RobeRule.computePieces({ garmentType: 'ROBE', cutType: 'DROITE', style: null, details }, M2);
+    const o = pieces.find((p) => p.name === 'Corsage Devant')!.outlineMm;
+    // The neckline: from the centre-front point (x = 0) to the first point at the top (y = 0).
+    const end = o.findIndex((p) => p.y === 0);
+    return o.slice(0, end + 1);
+  };
+
+  it('a V neckline runs straight from the centre front to the shoulder', () => {
+    const neck = front({ col: 'EN_V' });
+    expect(neck).toHaveLength(2);
+    expect(neck[0]).toEqual({ x: 0, y: 170 });
+  });
+
+  it('keeps the V of the collar line under a chosen décolleté level, at the depth of a V (MOYEN 13 cm, SAGE 10)', () => {
+    const neck = front({ col: 'EN_V', decollete: 'MOYEN' });
+    expect(neck).toHaveLength(2);
+    expect(neck[0]).toEqual({ x: 0, y: 130 });
+    expect(front({ col: 'EN_V', decollete: 'SAGE' })[0]).toEqual({ x: 0, y: 100 });
+    // A round neckline at the same level keeps its depth; a plunging V its own.
+    expect(front({ col: 'ROND', decollete: 'MOYEN' })[0]).toEqual({ x: 0, y: 80 });
+    expect(front({ col: 'EN_V', decollete: 'PLONGEANT' })[0]).toEqual({ x: 0, y: 220 });
+  });
+
+  it('a square neckline goes across, then straight up', () => {
+    const neck = front({ decollete: 'CARRE' });
+    expect(neck).toEqual([{ x: 0, y: 120 }, { x: 110, y: 120 }, { x: 110, y: 0 }]);
+  });
+
+  it('a round neckline is still a curve', () => {
+    const neck = front({ col: 'ROND' });
+    expect(neck.length).toBeGreaterThan(4);
   });
 });

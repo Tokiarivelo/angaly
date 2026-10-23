@@ -2,6 +2,7 @@ import React from 'react';
 import Link from 'next/link';
 import { ArrowLeft, History } from 'lucide-react';
 import { PatternStatus } from '@angaly/types';
+import { ROUTES } from '@/lib/routes';
 
 interface ProjectStatusHeaderProps {
   projectRef: string;
@@ -47,9 +48,9 @@ export const ProjectStatusHeader: React.FC<ProjectStatusHeaderProps> = ({
     <header className="w-full bg-[#041329] border-b border-[#C5B190]/20 py-4 px-4 sm:px-8 flex flex-wrap items-center justify-between gap-4 sticky top-0 z-30">
       <div className="flex items-center gap-4">
         <Link
-          href="/pattern-studio"
+          href={ROUTES.mesProjetsPatron}
           className="text-[#D8D3C8] hover:text-[#C5B190] transition-colors p-1.5 rounded-full hover:bg-[#0C2650]"
-          aria-label="Retour au studio"
+          aria-label="Retour à mes projets de patron"
         >
           <ArrowLeft className="w-5 h-5" />
         </Link>

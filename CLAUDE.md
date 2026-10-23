@@ -25,7 +25,9 @@ Maison de couture numérique (vitrine, boutique, sur-mesure, espace client, back
 2. `docs/checklist-implementation.md` — situer l'élément et son statut.
 3. Fiche `docs/pages/<slug>.md` (front) ou `docs/features/<slug>.md` (back) + phase dans `docs/phases/`.
 4. **Une phase par session** — jamais plusieurs. Skills : `new-feature`, `new-page-from-stitch`,
-   `pattern-engine-rule`.
+   `pattern-engine-rule`, **`pattern-generation`** (obligatoire pour toute génération / création de patron, analyse
+   d'inspiration, rendu 3D d'un vêtement ou patron qui ne ressemble pas à son modèle :
+   `.claude/skills/pattern-generation/SKILL.md`).
 5. Tests avec chaque implémentation (voir ci-dessous) ; tous doivent passer avant de clore.
 6. Documenter : la fiche, et `docs/deployment.md`/`docs/development.md` si infra, variable
    d'env, port ou procédure de lancement changent.

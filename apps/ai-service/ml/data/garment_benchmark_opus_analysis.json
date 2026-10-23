@@ -1,0 +1,373 @@
+{
+ "_about": "Lecture des photos du banc d'essai « tous vêtements » (pantalons, jupes, vestes, costumes) par Claude Opus 5.5, session Claude Code du 2026-10-20, faute de crédits pour l'API de vision. Mêmes champs que GarmentProfile (garmentType, cutType, details, fit, blocks). Non validé par une couturière : hors entraînement. Photos : ~/angaly-garment-bench-photos (Wikimedia Commons, licences dans candidates.jsonl) et ~/angaly-eval-met (Met Open Access).",
+ "pantalon-patte-001.jpg": {
+  "garmentType": "PANTALON",
+  "occasion": "QUOTIDIEN",
+  "style": "CLASSIQUE",
+  "cutType": "SIRENE",
+  "details": {
+   "longueur": "SOL",
+   "taille": "NATURELLE",
+   "fermeture": "BRAGUETTE_ZIP",
+   "ceinture": "DROITE",
+   "plis": "AUCUN",
+   "poches": "AUCUNE"
+  },
+  "fit": {
+   "ease": "AJUSTE",
+   "fabricBehavior": "STRUCTURE",
+   "fabricColor": "#b9b2c4"
+  },
+  "presentation": "WORN",
+  "note": "Années 1970 : pattes d'éléphant lilas clair, ajustées jusqu'au genou, très évasées, ourlet au sol."
+ },
+ "pantalon-patte-005.jpg": {
+  "garmentType": "PANTALON",
+  "occasion": "QUOTIDIEN",
+  "style": "CLASSIQUE",
+  "cutType": "SIRENE",
+  "details": {
+   "longueur": "MAXI",
+   "taille": "BASSE",
+   "fermeture": "BRAGUETTE_ZIP",
+   "ceinture": "DROITE",
+   "plis": "AUCUN",
+   "poches": "AUCUNE"
+  },
+  "fit": {
+   "ease": "AJUSTE",
+   "fullness": {
+    "leg": 0.9
+   },
+   "fabricBehavior": "STRUCTURE",
+   "fabricColor": "#3e2a5e",
+   "fabricFinish": "VELOURS"
+  },
+  "presentation": "FLAT",
+  "note": "Pantalon de daim violet de Janis Joplin : taille basse à passants, évasé depuis le genou (ourlet ≈ 1,5 × genou)."
+ },
+ "pantalon-large-003.jpg": {
+  "garmentType": "PANTALON",
+  "occasion": "QUOTIDIEN",
+  "style": "ELEGANT",
+  "cutType": "PRINCESSE",
+  "details": {
+   "longueur": "SOL",
+   "taille": "HAUTE",
+   "fermeture": "ELASTIQUE",
+   "ceinture": "COULISSE",
+   "plis": "AUCUN",
+   "poches": "AUCUNE"
+  },
+  "fit": {
+   "ease": "AMPLE",
+   "fabricBehavior": "FLUIDE",
+   "fabricColor": "#f1e6da"
+  },
+  "presentation": "WORN",
+  "note": "Palazzo blanc fluide vu de dos, taille haute coulissée, jambes très larges jusqu'au sol."
+ },
+ "pantalon-droit-007.jpg": {
+  "garmentType": "PANTALON",
+  "occasion": "QUOTIDIEN",
+  "style": "CLASSIQUE",
+  "cutType": "DROITE",
+  "details": {
+   "longueur": "MAXI",
+   "taille": "HAUTE",
+   "fermeture": "BRAGUETTE_ZIP",
+   "ceinture": "DROITE",
+   "plis": "UN_PLI",
+   "poches": "ITALIENNES"
+  },
+  "fit": {
+   "ease": "AMPLE",
+   "fullness": {
+    "leg": 1.15
+   },
+   "fabricBehavior": "STRUCTURE",
+   "fabricColor": "#cdbb98"
+  },
+  "presentation": "WORN",
+  "note": "Pantalon beige taille haute, jambe droite large jusqu'à la cheville."
+ },
+ "pantalon-slim-006.jpg": {
+  "garmentType": "PANTALON",
+  "occasion": "QUOTIDIEN",
+  "style": "MODERNE",
+  "cutType": "AJUSTEE",
+  "details": {
+   "longueur": "MAXI",
+   "taille": "HAUTE",
+   "fermeture": "BRAGUETTE_ZIP",
+   "ceinture": "DROITE",
+   "plis": "AUCUN",
+   "poches": "ITALIENNES",
+   "poches_dos": "PLAQUEES"
+  },
+  "fit": {
+   "ease": "AJUSTE",
+   "lengths": {
+    "legPct": 96
+   },
+   "fabricBehavior": "STRETCH",
+   "fabricColor": "#8fa6c1"
+  },
+  "presentation": "WORN",
+  "note": "Jean skinny délavé taille haute, arrêté à la cheville."
+ },
+ "pantalon-baggy-006.jpg": {
+  "garmentType": "PANTALON",
+  "occasion": "CEREMONIE",
+  "style": "TRADITIONNEL",
+  "cutType": "OVERSIZE",
+  "details": {
+   "longueur": "MAXI",
+   "taille": "NATURELLE",
+   "fermeture": "ELASTIQUE",
+   "ceinture": "COULISSE",
+   "plis": "AUCUN",
+   "poches": "AUCUNE"
+  },
+  "fit": {
+   "ease": "AMPLE",
+   "fullness": {
+    "leg": 0.8
+   },
+   "fabricBehavior": "FLUIDE",
+   "fabricColor": "#2b2420",
+   "motifColor": "#d8d2c4",
+   "fabricPrint": "FLEURI"
+  },
+  "presentation": "WORN",
+  "note": "Sarouel brodé (photo ancienne) : très ample aux genoux, resserré à la cheville."
+ },
+ "pantalon-007m.jpg": {
+  "garmentType": "PANTALON",
+  "occasion": "QUOTIDIEN",
+  "style": "CLASSIQUE",
+  "cutType": "DROITE",
+  "details": {
+   "longueur": "MAXI",
+   "taille": "HAUTE",
+   "fermeture": "BRAGUETTE_BOUTONS",
+   "ceinture": "FORMEE",
+   "plis": "DEUX_PLIS",
+   "poches": "COUTURE"
+  },
+  "fit": {
+   "ease": "AMPLE",
+   "fullness": {
+    "leg": 1.2
+   },
+   "lengths": {
+    "legPct": 92
+   },
+   "fabricBehavior": "STRUCTURE",
+   "fabricColor": "#efe6d2"
+  },
+  "presentation": "MANNEQUIN",
+  "note": "Pantalon crème à taille très haute, ceinture boutonnée, deux plis, jambe large arrêtée au-dessus de la cheville."
+ },
+ "pantalon-006m.jpg": {
+  "garmentType": "PANTALON",
+  "occasion": "PROFESSIONNEL",
+  "style": "CLASSIQUE",
+  "cutType": "AJUSTEE",
+  "details": {
+   "longueur": "MAXI",
+   "taille": "HAUTE",
+   "fermeture": "BRAGUETTE_BOUTONS",
+   "ceinture": "DROITE",
+   "plis": "AUCUN",
+   "poches": "ITALIENNES"
+  },
+  "fit": {
+   "ease": "CONFORT",
+   "fabricBehavior": "STRUCTURE",
+   "fabricColor": "#1e1e1e"
+  },
+  "presentation": "FLAT",
+  "note": "Pantalon noir ancien sur cintre, taille haute, jambe étroite et droite, poches en biais."
+ },
+ "jupe-crayon-006.jpg": {
+  "garmentType": "JUPE",
+  "occasion": "PROFESSIONNEL",
+  "style": "CLASSIQUE",
+  "cutType": "AJUSTEE",
+  "details": {
+   "longueur": "MIDI",
+   "taille": "NATURELLE",
+   "fermeture": "ZIP_INVISIBLE",
+   "ceinture": "SANS",
+   "fente": "DOS"
+  },
+  "fit": {
+   "ease": "AJUSTE",
+   "fabricBehavior": "STRETCH",
+   "fabricColor": "#2a2523"
+  },
+  "presentation": "WORN",
+  "note": "Jupe crayon sombre sous le genou, fourreau ajusté."
+ },
+ "jupe-crayon-005.jpg": {
+  "garmentType": "JUPE",
+  "occasion": "PROFESSIONNEL",
+  "style": "CLASSIQUE",
+  "cutType": "AJUSTEE",
+  "details": {
+   "longueur": "GENOU",
+   "taille": "NATURELLE",
+   "fermeture": "ZIP_INVISIBLE",
+   "ceinture": "DROITE",
+   "fente": "DOS"
+  },
+  "fit": {
+   "ease": "AJUSTE",
+   "fabricBehavior": "STRUCTURE",
+   "fabricColor": "#141414"
+  },
+  "presentation": "WORN",
+  "note": "Jupe de tailleur noire au genou, droite et ajustée."
+ },
+ "jupe-cercle-008.jpg": {
+  "garmentType": "JUPE",
+  "occasion": "SOIREE",
+  "style": "CLASSIQUE",
+  "cutType": "PRINCESSE",
+  "details": {
+   "longueur": "MIDI",
+   "taille": "HAUTE",
+   "fermeture": "ZIP_INVISIBLE",
+   "ceinture": "FORMEE"
+  },
+  "fit": {
+   "ease": "CONFORT",
+   "fabricBehavior": "FLUIDE",
+   "fabricColor": "#3a3a3a",
+   "fabricFinish": "SATIN"
+  },
+  "blocks": [
+   {
+    "kind": "CIRCLE_SKIRT",
+    "fraction": 0.5
+   }
+  ],
+  "presentation": "WORN",
+  "note": "Années 1950 : jupe cercle mi-mollet à large ceinture haute, très ample. Tenue écartée à la main sur la photo : au repos, une demi-cercle (recalé le 2026-10-20)."
+ },
+ "jupe-trapeze-001.jpg": {
+  "garmentType": "JUPE",
+  "occasion": "QUOTIDIEN",
+  "style": "MODERNE",
+  "cutType": "EVASEE",
+  "details": {
+   "longueur": "GENOU",
+   "taille": "NATURELLE",
+   "fermeture": "ZIP_COTE",
+   "ceinture": "DROITE",
+   "poches": "AUCUNE"
+  },
+  "fit": {
+   "ease": "CONFORT",
+   "fullness": {
+    "skirt": 1.6
+   },
+   "fabricBehavior": "STRUCTURE",
+   "fabricColor": "#9cc3e6",
+   "motifColor": "#f2eee6",
+   "fabricPrint": "FLEURI",
+   "motifSizeCm": 12
+  },
+  "presentation": "WORN",
+  "note": "Jupe trapèze imprimée de grandes fleurs, au-dessus du genou."
+ },
+ "jupe-plissee-004.jpg": {
+  "garmentType": "JUPE",
+  "occasion": "QUOTIDIEN",
+  "style": "CLASSIQUE",
+  "cutType": "EVASEE",
+  "details": {
+   "longueur": "GENOU",
+   "taille": "NATURELLE",
+   "fermeture": "ZIP_COTE",
+   "ceinture": "DROITE"
+  },
+  "fit": {
+   "ease": "CONFORT",
+   "fabricBehavior": "STRUCTURE",
+   "fabricColor": "#1f2846"
+  },
+  "blocks": [
+   {
+    "kind": "PLEATED_SKIRT",
+    "pleats": 24,
+    "depthMm": 30,
+    "type": "KNIFE"
+   }
+  ],
+  "presentation": "WORN",
+  "note": "Jupe plissée marine d'uniforme, plis couchés, sous le genou."
+ },
+ "jupe-005m.jpg": {
+  "garmentType": "JUPE",
+  "occasion": "SOIREE",
+  "style": "CLASSIQUE",
+  "cutType": "EVASEE",
+  "details": {
+   "longueur": "SOL",
+   "taille": "NATURELLE",
+   "fermeture": "ZIP_INVISIBLE",
+   "ceinture": "DROITE"
+  },
+  "fit": {
+   "ease": "CONFORT",
+   "fullness": {
+    "skirt": 2.0
+   },
+   "fabricBehavior": "RIGIDE",
+   "fabricColor": "#141414",
+   "fabricFinish": "SATIN"
+  },
+  "presentation": "MANNEQUIN",
+  "note": "Jupe longue de satin noir (vers 1900), évasée en trapèze, galons à l'ourlet."
+ },
+ "veste-portee-006.jpg": {
+  "garmentType": "VESTE",
+  "occasion": "PROFESSIONNEL",
+  "style": "CLASSIQUE",
+  "cutType": "DROITE",
+  "details": {
+   "manches": "LONGUES",
+   "col": "CHALE",
+   "longueur": "GENOU"
+  },
+  "fit": {
+   "ease": "CONFORT",
+   "fabricBehavior": "STRUCTURE",
+   "fabricColor": "#d3141c"
+  },
+  "presentation": "MANNEQUIN",
+  "note": "Blazer rouge à revers crantés, deux boutons, poches à rabat, aux hanches."
+ },
+ "costume-porte-003.jpg": {
+  "garmentType": "COSTUME",
+  "occasion": "PROFESSIONNEL",
+  "style": "MODERNE",
+  "cutType": "AJUSTEE",
+  "details": {
+   "manches": "LONGUES",
+   "col": "CHALE",
+   "longueur": "MAXI",
+   "plis": "AUCUN",
+   "poches": "ITALIENNES"
+  },
+  "fit": {
+   "ease": "AJUSTE",
+   "fabricBehavior": "STRUCTURE",
+   "fabricColor": "#f3f1ec"
+  },
+  "presentation": "WORN",
+  "note": "Veste blanche croisée ceinturée sur pantalon noir (une seule couleur de tissu en 3D)."
+ }
+}

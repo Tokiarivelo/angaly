@@ -54,4 +54,16 @@ describe('VesteRule', () => {
       expect(first?.y).toBe(last?.y);
     }
   });
+
+  it('takes a shawl collar in place of the tailored collar when col = CHALE', () => {
+    const measurements: MeasurementSet = { TOUR_POITRINE: 92, TOUR_TAILLE: 76, TOUR_BASSIN: 98, LONGUEUR_DOS: 42 };
+    const names = (details: Record<string, string>) =>
+      VesteRule.computePieces({ garmentType: 'VESTE', cutType: 'AJUSTEE', style: null, details }, measurements).map(
+        (p) => p.name,
+      );
+    const shawl = names({ col: 'CHALE' });
+    expect(shawl.some((n) => n.startsWith('Col châle'))).toBe(true);
+    expect(shawl.some((n) => n.startsWith('Col Tailleur'))).toBe(false);
+    expect(names({}).some((n) => n.startsWith('Col Tailleur'))).toBe(true);
+  });
 });

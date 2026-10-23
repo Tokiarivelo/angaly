@@ -57,6 +57,12 @@ describe('MesProjetsPatronPage', () => {
     expect(screen.getByText('Ouvrir le projet')).toBeInTheDocument();
   });
 
+  it('links to the pattern catalogue', async () => {
+    vi.mocked(apiClient.get).mockResolvedValueOnce(MOCK_PROJECTS);
+    render(<MesProjetsPatronPage />, { wrapper: withQueryClient() });
+    expect(screen.getByRole('link', { name: 'Catalogue des patrons' })).toHaveAttribute('href', '/pattern-studio/catalogue');
+  });
+
   it('renders draft project, allows clicking card and button to resume wizard', async () => {
     vi.mocked(apiClient.get).mockResolvedValueOnce([DRAFT_PROJECT]);
 

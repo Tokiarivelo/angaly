@@ -27,6 +27,39 @@ export const openPolygon = (outline: Point[]): Point[] => {
   return outline;
 };
 
+/** A dart's legs end this close (mm) on the seam, at most… */
+const DART_MOUTH_MAX_MM = 80;
+/** …and its point lies at least this far (mm) inside the seam line. */
+const DART_DEPTH_MIN_MM = 40;
+
+/**
+ * The outline with its darts sewn: a dart is a wedge cut into a seam (leg, point, leg — the engine's bust dart on the
+ * side seam), its two legs close together on the seam and its point deep inside. Sewn, the seam runs straight from one
+ * leg to the other; the point goes. Draped open, the wedge pinched the bodice in to its point (the 3D bodice caved in
+ * and the waist slid down to the hips).
+ */
+export const closeDarts = (polygon: Point[]): Point[] => {
+  const out = [...polygon];
+  let changed = true;
+  while (changed && out.length > 4) {
+    changed = false;
+    for (let i = 0; i < out.length; i += 1) {
+      const a = out[i]!;
+      const m = out[(i + 1) % out.length]!;
+      const b = out[(i + 2) % out.length]!;
+      const mouth = Math.hypot(b.x - a.x, b.y - a.y);
+      const legs = Math.min(Math.hypot(m.x - a.x, m.y - a.y), Math.hypot(m.x - b.x, m.y - b.y));
+      if (mouth === 0 || mouth > DART_MOUTH_MAX_MM || mouth > 0.6 * legs) continue;
+      const depth = Math.abs((b.x - a.x) * (m.y - a.y) - (b.y - a.y) * (m.x - a.x)) / mouth;
+      if (depth < DART_DEPTH_MIN_MM) continue;
+      out.splice((i + 1) % out.length, 1);
+      changed = true;
+      break;
+    }
+  }
+  return out;
+};
+
 export const getBounds = (points: Point[]): Bounds => {
   const xs = points.map((p) => p.x);
   const ys = points.map((p) => p.y);

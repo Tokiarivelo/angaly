@@ -15,6 +15,7 @@ import {
   type PatternExtParameters,
   type SizeChartGender,
 } from '@angaly/types';
+import { CustomMeasurements } from './CustomMeasurements';
 import { FitAdjustments } from './FitAdjustments';
 import { MeasurementFieldCard } from './MeasurementFieldCard';
 import type { FitChange } from '../../utils/fit-parameters';
@@ -317,6 +318,8 @@ export const MeasurementsStep: React.FC<MeasurementsStepProps> = ({
           </div>
         )}
       </div>
+
+      {onChangeFit && <CustomMeasurements notes={fit?.notes} onChange={(notes) => onChangeFit({ field: 'notes', value: notes })} />}
 
       {onChangeFit && (
         <FitAdjustments

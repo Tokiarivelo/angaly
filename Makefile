@@ -24,6 +24,12 @@ RED     := \033[0;31m
 PNPM                := pnpm
 DOCKER_COMPOSE      := docker compose
 DOCKER_COMPOSE_PROD := docker compose -f docker-compose.prod.yml
+
+# cloth-sim (rendu réaliste) — Blender 4.5 LTS official build, pinned (the Ubuntu package renders black).
+BLENDER_VERSION := 4.5.14
+BLENDER_DIR     := apps/cloth-sim/.blender
+BLENDER         ?= $(BLENDER_DIR)/blender-$(BLENDER_VERSION)-linux-x64/blender
+CLOTH_OUT       ?= /tmp/angaly-cloth
 DOCKER_COMPOSE_CADDY:= docker compose -f docker-compose.yml -f docker-compose.caddy.yml
 ENV_FILE            := .env
 ENV_EXAMPLE         := .env.example
@@ -79,6 +85,49 @@ install.ai: ## 🐍 Create the ai-service virtualenv and install its dependencie
 	@echo "$(CYAN)🐍 Installing apps/ai-service dependencies...$(RESET)"
 	cd apps/ai-service && python3 -m venv .venv && .venv/bin/pip install -r requirements.txt
 	@echo "$(GREEN)✅ ai-service ready — activate with: source apps/ai-service/.venv/bin/activate$(RESET)"
+
+.PHONY: install.cloth
+install.cloth: ## 🧵 Create the cloth-sim virtualenv (tests of the Blender cloth prototype)
+	cd apps/cloth-sim && python3 -m venv .venv && .venv/bin/pip install -r requirements.txt
+
+.PHONY: install.blender
+install.blender: ## 🧵 Download Blender $(BLENDER_VERSION) LTS into apps/cloth-sim/.blender (SHA-256 checked, ≈ 1.2 GB)
+	@if [ -x "$(BLENDER)" ]; then echo "$(GREEN)✅ $$($(BLENDER) --version | head -1) already at $(BLENDER)$(RESET)"; exit 0; fi; \
+	set -euo pipefail; mkdir -p $(BLENDER_DIR); cd $(BLENDER_DIR); \
+	base=https://download.blender.org/release/Blender$$(echo $(BLENDER_VERSION) | cut -d. -f1,2); \
+	archive=blender-$(BLENDER_VERSION)-linux-x64.tar.xz; \
+	curl -fSLO "$$base/$$archive"; \
+	curl -fsSL "$$base/blender-$(BLENDER_VERSION).sha256" | grep " $$archive$$" | sha256sum -c -; \
+	tar -xJf "$$archive"; rm "$$archive"; \
+	echo "$(GREEN)✅ $$(./blender-$(BLENDER_VERSION)-linux-x64/blender --version | head -1)$(RESET)"
+
+.PHONY: job.cloth
+job.cloth: ## 🧵 Cloth-sim job of a pattern version (VERSION=<uuid> [POSE=PRESENTATION]) → $(CLOTH_OUT)/job.json
+	@test -n "$(VERSION)" || (echo "$(RED)VERSION=<pattern version uuid> required$(RESET)"; exit 1)
+	@mkdir -p $(CLOTH_OUT)
+	apps/cloth-sim/scripts/dump-version.sh $(VERSION) $(CLOTH_OUT)/version.json
+	cd apps/web && node $$(ls -d ../../node_modules/.pnpm/tsx@*/node_modules/tsx/dist/cli.mjs | head -1) \
+	  ../cloth-sim/tools/export-job.ts $(CLOTH_OUT)/version.json $(CLOTH_OUT)/job.json $(or $(POSE),PRESENTATION)
+
+.PHONY: sim.cloth
+sim.cloth: ## 🧵 Simulate $(CLOTH_OUT)/job.json in Blender → garment.glb, metrics.json, before/after.png (ARGS="--frames 120")
+	@test -x "$(BLENDER)" || (echo "$(RED)Blender missing: run make install.blender$(RESET)"; exit 1)
+	$(BLENDER) -b -P apps/cloth-sim/scripts/simulate.py -- $(CLOTH_OUT)/job.json $(CLOTH_OUT) --preview $(ARGS)
+
+.PHONY: worker.cloth
+worker.cloth: ## 🧵 Run the cloth-sim worker against the local API (CLOTH_SIM_WORKER_TOKEN=… as in apps/api/.env ; ONCE=1 for one job)
+	@test -n "$(CLOTH_SIM_WORKER_TOKEN)" || (echo "$(RED)CLOTH_SIM_WORKER_TOKEN=<same as the API> required$(RESET)"; exit 1)
+	cd apps/cloth-sim && CLOTH_SIM_API_URL=$${CLOTH_SIM_API_URL:-http://localhost:3003/api} \
+	  CLOTH_SIM_ONCE=$(ONCE) .venv/bin/python -m cloth_sim.worker
+
+.PHONY: docker.cloth
+docker.cloth: ## 🐳 Build the cloth-sim worker image (Blender $(BLENDER_VERSION) + Node, ≈ 1.5 GB)
+	DOCKER_BUILDKIT=1 docker build -f apps/cloth-sim/Dockerfile --build-arg BLENDER_VERSION=$(BLENDER_VERSION) -t angaly-cloth-sim .
+
+.PHONY: guide.cloth
+guide.cloth: ## 📏 Measurement guide pictures (mannequin + tape in gold) from $(CLOTH_OUT)/job.json → apps/web/public/images/measurement-guide
+	@test -x "$(BLENDER)" || (echo "$(RED)Blender missing: run make install.blender$(RESET)"; exit 1)
+	$(BLENDER) -b -P apps/cloth-sim/scripts/render_measure_guide.py -- $(CLOTH_OUT)/job.json apps/web/public/images/measurement-guide $(ARGS)
 
 .PHONY: train.ai
 train.ai: ## 🧠 Download ANSUR II + train the LOCAL_STATISTICAL measurement model — requires make install.ai first
@@ -279,6 +328,10 @@ test.api: ## ⚙️  Run backend tests (Jest)
 .PHONY: test.ai
 test.ai: ## 🤖 Run ai-service tests (pytest) — requires make install.ai first
 	cd apps/ai-service && .venv/bin/pytest
+
+.PHONY: test.cloth
+test.cloth: ## 🧵 Run cloth-sim tests (pytest, pure Python, no Blender) — requires make install.cloth first
+	cd apps/cloth-sim && .venv/bin/pytest
 
 .PHONY: eval.photo
 eval.photo: ## 📊 Photo-analysis fidelity report on the golden set (IMAGES=dir | PREDICTIONS=file.jsonl, BASELINE=file, FAIL=1)

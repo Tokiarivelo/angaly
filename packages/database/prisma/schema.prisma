@@ -751,6 +751,7 @@ model PatternVersion {
   reviewedBy User?           @relation("PatternVersionReviewer", fields: [reviewedById], references: [id])
   pieces     PatternPiece[]
   exports    PatternExport[]
+  realisticRenders RealisticRender[]
 
   @@unique([projectId, versionNumber])
   @@map("pattern_versions")
@@ -1138,4 +1139,44 @@ model AiTrainingSample {
   @@unique([task, inputHash])
   @@index([task, status])
   @@map("ai_training_samples")
+}
+
+enum RealisticRenderStatus {
+  QUEUED
+  RUNNING
+  DONE
+  FAILED
+}
+
+/// Realistic render of a pattern version: Blender cloth simulation run by the `cloth-sim` worker (apps/cloth-sim).
+/// The table is the job queue (claimed with SELECT … FOR UPDATE SKIP LOCKED, no Redis). `cacheKey` = hash of the
+/// pieces, measurements, pose and fabric: a DONE render with the same key is reused. The `.glb` lives in MinIO
+/// (`patterns` bucket, Media row `mediaId`). See docs/features/realistic-render-blender.md.
+model RealisticRender {
+  id            String                @id @default(uuid())
+  versionId     String
+  requestedById String
+  pose          String
+  cacheKey      String
+  status        RealisticRenderStatus @default(QUEUED)
+  attempts      Int                   @default(0)
+  mediaId       String?
+  glbUrl        String?
+  /// Pose the cloth was simulated in (arms opened for the sleeves): the viewer poses the mannequin with it.
+  simPoseJson   Json?
+  metricsJson   Json?
+  error         String?
+  durationMs    Int?
+  /// Set when the render was not simulated but copied from an earlier DONE render with the same `cacheKey`.
+  cachedFromId  String?
+  createdAt     DateTime              @default(now())
+  startedAt     DateTime?
+  finishedAt    DateTime?
+
+  version PatternVersion @relation(fields: [versionId], references: [id], onDelete: Cascade)
+
+  @@index([status, createdAt])
+  @@index([cacheKey, status])
+  @@index([requestedById, createdAt])
+  @@map("realistic_renders")
 }

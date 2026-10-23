@@ -1,0 +1,126 @@
+{
+ "ref-pois.jpeg": {
+  "verdict": "✅",
+  "notes": "Relu par Opus : manches courtes bouffantes (25 % du bras), fronces sous poitrine, jupe plissée, pois bordeaux."
+ },
+ "robe-portee-001.jpg": {
+  "verdict": "⚠️",
+  "notes": "Corsage ajusté + jupe froncée mi-mollet (ampleur ramenée à 1,6 pour un tissu fluide) ; épaules dénudées non rendues."
+ },
+ "robe-portee-004.jpg": {
+  "verdict": "✅",
+  "notes": "Manches cloche évasées du coude (nouvelle famille CLOCHE), col V, taille empire, imprimé."
+ },
+ "robe-portee-009.jpg": {
+  "verdict": "✅",
+  "notes": "Grand col chemise blanc rabattu à pointes (nouveau col 3D + couleur de contraste), manches longues, robe courte à pois. Manque : poignets blancs."
+ },
+ "robe-portee-019.jpg": {
+  "verdict": "✅",
+  "notes": "Mancherons (CAP), ceinture, jupe froncée au genou, gros pois. Manque : bandes noires d'ourlet."
+ },
+ "robe-portee-022.jpg": {
+  "verdict": "✅",
+  "notes": "Robe à pois sans manches, ceinturée. Ceinture non rendue."
+ },
+ "robe-portee-026.jpg": {
+  "verdict": "✅",
+  "notes": "Col montant, manches évêque froncées au poignet, taille empire. Volant d'ourlet non rendu."
+ },
+ "met-dress-002.jpg": {
+  "verdict": "⚠️",
+  "notes": "Col montant, manches au coude, silhouette en corolle : la 3D « sirène » est plus marquée que la photo ; traîne non visible de face."
+ },
+ "met-dress-003.jpg": {
+  "verdict": "⚠️",
+  "notes": "Décolleté V plongeant, corsage long, jupe étroite : la 3D montre des épaules à bretelles au lieu du hors-épaule ; drapé de traîne non rendu."
+ },
+ "met-dress-005.jpg": {
+  "verdict": "✅",
+  "notes": "Col montant, manches longues, jupe cloche recalée sur la photo (3,0). Pèlerine de dentelle et corselet de velours non rendus."
+ },
+ "met-dress-006.jpg": {
+  "verdict": "⚠️",
+  "notes": "Berthe hors épaule, manches longues, jupe à traîne ; la photo est de trois-quarts (traîne)."
+ },
+ "met-dress-007.jpg": {
+  "verdict": "✅",
+  "notes": "Encolure froncée, manches évêque, taille smockée, jupe droite."
+ },
+ "met-dress-009.jpg": {
+  "verdict": "✅",
+  "notes": "Col montant, manches gigot rondes, ligne trapèze : rapport ourlet/taille identique à la photo (1,6)."
+ },
+ "met-dress-013.jpg": {
+  "verdict": "✅",
+  "notes": "Col montant boutonné, corsage basque long, jupe plissée étroite. Plastron de velours non rendu."
+ },
+ "met-dress-030.jpg": {
+  "verdict": "⚠️",
+  "notes": "Petites manches bouffantes, jupe cloche (3,2) ; la photo est de profil avec traîne."
+ },
+ "met-dress-033.jpg": {
+  "verdict": "✅",
+  "notes": "Encolure carrée, mancherons, jupe très ample recalée (3,4)."
+ },
+ "met-dress-035.jpg": {
+  "verdict": "✅",
+  "notes": "Encolure carrée, petites manches bouffantes en ballon, jupe en A recalée (3,1)."
+ },
+ "met-dress-023.jpg": {
+  "verdict": "✅",
+  "notes": "Robe-manteau ouverte sur un plastron crème, cordelière à la taille, revers châle, col montant, manches gigot énormes (2,5). Rayures du plastron non rendues."
+ },
+ "met-dress-001.jpg": {
+  "verdict": "✅",
+  "notes": "Encolure carrée, petites manches bouffantes, jupe recalée (3,5). Boléro et volants étagés non rendus."
+ },
+ "met-dress-008.jpg": {
+  "verdict": "⚠️",
+  "notes": "Corsage croisé en V, petites manches bouffantes ; le grand drapé en écharpe de la jupe n'est pas modélisé."
+ },
+ "met-dress-019.jpg": {
+  "verdict": "✅",
+  "notes": "Col montant, manches évêque froncées, devant droit. Traîne non visible de face."
+ },
+ "met-dress-021.jpg": {
+  "verdict": "⚠️",
+  "notes": "Col montant, corsage croisé, jupe recalée (3,0) ; jabot, revers de fourrure et broderies non rendus."
+ },
+ "met-dress-038.jpg": {
+  "verdict": "✅",
+  "notes": "Manteau-robe rouge à col rabattu, manches longues, jupe recalée (2,6). Double boutonnage et bandes bleues non rendus."
+ },
+ "met-dress-041.jpg": {
+  "verdict": "⚠️",
+  "notes": "Manches courtes bouffantes désormais en ballon (plus des « ailes ») mais moins volumineuses que les énormes nœuds de la photo."
+ },
+ "met-dress-043.jpg": {
+  "verdict": "⚠️",
+  "notes": "Déshabillé ample, nœud lavallière, manches évasées 3/4 ; les volants étagés ne sont pas modélisés."
+ },
+ "met-dress-044.jpg": {
+  "verdict": "⚠️",
+  "notes": "Manches courtes, encolure ronde, silhouette sirène plus marquée que la photo ; traîne non visible."
+ },
+ "met-dress-045.jpg": {
+  "verdict": "✅",
+  "notes": "Col V, corsage basque, manches évasées, jupe ample. Volant d'ourlet non rendu."
+ },
+ "met-dress-047.jpg": {
+  "verdict": "✅",
+  "notes": "Col montant, manches gigot rondes et volumineuses, jupe cloche recalée (3,5). Jabot et bandes à pois non rendus."
+ },
+ "met-dress-050.jpg": {
+  "verdict": "✅",
+  "notes": "Col montant, veste basque, manches longues ajustées, jupe recalée (2,5)."
+ },
+ "met-dress-052.jpg": {
+  "verdict": "✅",
+  "notes": "Col montant, manches longues, jupe cloche, fond à pois. Guirlandes de dentelle noire non rendues."
+ },
+ "met-dress-053.jpg": {
+  "verdict": "✅",
+  "notes": "Épaules dégagées, petites manches bouffantes, ceinture, jupe cloche recalée (3,6), fond crème à motif."
+ }
+}

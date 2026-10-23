@@ -138,3 +138,15 @@ describe('CutStep', () => {
     expect(screen.queryByRole('status')).toBeNull();
   });
 });
+
+describe('CutStep for trousers', () => {
+  it('words the cuts for trousers and draws each one', () => {
+    const { container } = render(
+      <CutStep selectedCut="EVASEE" onSelect={() => undefined} garmentType="PANTALON" occasion={null} style={null} />,
+      { wrapper: withQueryClient() },
+    );
+    expect(screen.getByText('Pattes d’éléphant')).toBeInTheDocument();
+    expect(screen.queryByText('Sirène')).toBeNull();
+    expect(container.querySelectorAll('button svg[data-view]').length).toBe(6);
+  });
+});

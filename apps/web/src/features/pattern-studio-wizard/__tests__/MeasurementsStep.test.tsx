@@ -198,6 +198,10 @@ describe('MeasurementsStep', () => {
     const hintButtons = screen.getAllByTitle(/Mesurez horizontalement au point le plus fort de la poitrine/);
     fireEvent.click(hintButtons[0]!);
     expect(screen.getByText(/point le plus fort de la poitrine/)).toBeInTheDocument();
+    // With the picture of the mannequin showing where the tape goes.
+    const picture = screen.getByAltText('Où prendre la mesure : Tour de poitrine');
+    expect(picture.getAttribute('src')).toContain('measurement-guide%2FTOUR_POITRINE.webp');
+    expect(hintButtons[0]).toHaveAttribute('aria-expanded', 'true');
   });
 
   it('applies the chart measurements for the selected standard size', () => {

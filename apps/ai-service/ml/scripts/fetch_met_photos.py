@@ -45,20 +45,31 @@ def main() -> None:
     parser.add_argument("--out", required=True)
     parser.add_argument("--per-tag", type=int, default=14)
     parser.add_argument("--suffix", default="m")
+    parser.add_argument("--tags", nargs="*", help="only these tags (default: all)")
+    parser.add_argument("--offset", type=int, default=0, help="start the stride further in the results (other objects)")
+    parser.add_argument("--exclude", nargs="*", default=[], help="candidates.jsonl files whose objects are skipped (golden set)")
     args = parser.parse_args()
     out = Path(args.out).expanduser()
     out.mkdir(parents=True, exist_ok=True)
     seen: set[int] = set()
+    for file in args.exclude:
+        for line in Path(file).expanduser().read_text().splitlines():
+            page = json.loads(line).get("page", "") if line.strip() else ""
+            if page.rstrip("/").split("/")[-1].isdigit():
+                seen.add(int(page.rstrip("/").split("/")[-1]))
     rows: list[dict] = []
     with httpx.Client(follow_redirects=True) as client:
         for tag, queries in QUERIES.items():
+            if args.tags and tag not in args.tags:
+                continue
             kept = 0
             for query in queries:
                 if kept >= args.per_tag:
                     break
                 ids = get(client, "../v1.1/search", q=query, hasImages="true",
                           isPublicDomain="true", departmentId=8, limit=60).get("objectIDs") or []
-                for object_id in ids[:: max(1, len(ids) // (args.per_tag * 2) or 1)]:
+                step = max(1, len(ids) // (args.per_tag * 2) or 1)
+                for object_id in ids[args.offset % step :: step]:
                     if kept >= args.per_tag:
                         break
                     if object_id in seen:

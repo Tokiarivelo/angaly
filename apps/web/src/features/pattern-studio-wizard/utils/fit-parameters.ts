@@ -7,29 +7,45 @@ import {
   listPatternExtKeys,
   type DrapeSpec,
   type GarmentProfile,
+  TRIM_LABELS,
+  TRIM_PLACE_LABELS,
+  type TrimSpec,
+  CONSTRUCTION_LABELS,
+  type ConstructionSpec,
   type PatternExtKey,
   mergePatternExtParameters,
   validatePatternExtParameters,
   type EaseLevel,
+  type FabricBehavior,
   type PatternExtParameters,
+  type PatternNotes,
 } from '@angaly/types';
 
 export type FitChange =
   | { field: 'ease'; value: EaseLevel | null }
   | { field: 'drape'; value: DrapeSpec | null }
-  | { field: 'fullness.skirt' | 'fullness.sleeve' | 'lengths.skirtPct' | 'lengths.sleevePct' | 'lengths.bodicePct'; value: number | null };
+  | { field: 'trims'; value: TrimSpec | null }
+  | { field: 'construction'; value: ConstructionSpec | null }
+  | { field: 'fabric'; value: FabricBehavior | null }
+  | { field: 'notes'; value: PatternNotes | null }
+  | {
+      field: 'fullness.skirt' | 'fullness.sleeve' | 'fullness.leg' | 'lengths.skirtPct' | 'lengths.sleevePct' | 'lengths.bodicePct' | 'lengths.legPct';
+      value: number | null;
+    };
 
 /** Which adjustments make sense for a garment (a trouser has no skirt length, a skirt has no sleeve). */
 export function fitControlsFor(garment: string | null | undefined): {
   skirt: boolean;
   sleeve: boolean;
   bodice: boolean;
+  leg: boolean;
 } {
   const g = (garment ?? '').toUpperCase();
   return {
     skirt: g === 'JUPE' || g === 'ROBE' || g === 'ROBE_MARIEE',
     sleeve: ['ROBE', 'VESTE', 'COSTUME', 'CHEMISE', 'ROBE_MARIEE'].includes(g),
     bodice: ['ROBE', 'VESTE', 'COSTUME', 'CHEMISE', 'ROBE_MARIEE', 'AUTRE'].includes(g),
+    leg: g === 'PANTALON' || g === 'COSTUME',
   };
 }
 
@@ -47,11 +63,27 @@ export function applyFitChange(
     ...(current?.fullness ? { fullness: { ...current.fullness } } : {}),
     ...(current?.lengths ? { lengths: { ...current.lengths } } : {}),
     ...(current?.drape ? { drape: { blocks: [...current.drape.blocks] } } : {}),
+    ...(current?.trims ? { trims: { items: [...current.trims.items] } } : {}),
+    ...(current?.construction ? { construction: { items: [...current.construction.items] } } : {}),
+    ...(current?.fabric ? { fabric: current.fabric } : {}),
+    ...(current?.notes ? { notes: current.notes } : {}),
   };
 
-  if (change.field === 'drape') {
+  if (change.field === 'fabric') {
+    if (change.value === null) delete draft.fabric;
+    else draft.fabric = change.value;
+  } else if (change.field === 'notes') {
+    if (change.value === null) delete draft.notes;
+    else draft.notes = change.value;
+  } else if (change.field === 'drape') {
     if (change.value === null) delete draft.drape;
     else draft.drape = change.value;
+  } else if (change.field === 'trims') {
+    if (change.value === null) delete draft.trims;
+    else draft.trims = change.value;
+  } else if (change.field === 'construction') {
+    if (change.value === null) delete draft.construction;
+    else draft.construction = change.value;
   } else if (change.field === 'ease') {
     if (change.value === null) delete draft.ease;
     else if ((EASE_LEVELS as readonly string[]).includes(change.value)) draft.ease = change.value;
@@ -73,9 +105,13 @@ export function suggestedFitFrom(profile: GarmentProfile | null | undefined): Pa
   if (!profile?.isGarment) return undefined;
   // Same rule as the API: a free drape (DRAPING) never gets deterministic blocks.
   const blocks = profile.constructionMethod === 'DRAPING' ? [] : (profile.drapeBlocks ?? []);
+  const trims = profile.trims ?? [];
+  const construction = profile.construction ?? [];
   const { value } = validatePatternExtParameters({
     ...profile.fit,
     ...(blocks.length > 0 ? { drape: { blocks } } : {}),
+    ...(trims.length > 0 ? { trims: { items: trims } } : {}),
+    ...(construction.length > 0 ? { construction: { items: construction } } : {}),
   });
   return listPatternExtKeys(value).length > 0 ? value : undefined;
 }
@@ -118,10 +154,28 @@ export function buildFitRows(profile: GarmentProfile | null | undefined): Array<
       value: suggested?.lengths?.bodicePct !== undefined ? `${suggested.lengths.bodicePct} %` : undefined,
     },
     {
+      label: 'Largeur du bas de jambe',
+      value: suggested?.fullness?.leg !== undefined ? `×${suggested.fullness.leg}` : undefined,
+    },
+    {
+      label: 'Longueur de jambe',
+      value: suggested?.lengths?.legPct !== undefined ? `${suggested.lengths.legPct} %` : undefined,
+    },
+    {
       label: 'Drapé suggéré',
       value: suggested?.drape?.blocks.length
         ? suggested.drape.blocks.map((b) => DRAPE_BLOCK_LABELS[b.kind]).join(', ')
         : undefined,
+    },
+    {
+      label: 'Garnitures suggérées',
+      value: suggested?.trims?.items.length
+        ? suggested.trims.items.map((t) => (t.kind === 'BEADING' ? `${TRIM_LABELS[t.kind]} (${TRIM_PLACE_LABELS[t.place]})` : TRIM_LABELS[t.kind])).join(', ')
+        : undefined,
+    },
+    {
+      label: 'Pièces de construction suggérées',
+      value: suggested?.construction?.items.length ? suggested.construction.items.map((c) => CONSTRUCTION_LABELS[c.kind]).join(', ') : undefined,
     },
     {
       label: 'Tissu',

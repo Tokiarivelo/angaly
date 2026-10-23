@@ -1,7 +1,8 @@
 'use client';
 
 import React from 'react';
-import { Plus, Loader2 } from 'lucide-react';
+import Link from 'next/link';
+import { BookOpen, Plus, Loader2 } from 'lucide-react';
 import { usePatternProjects } from '../hooks/usePatternProjects';
 import { useOpenPatternProject } from '../hooks/useOpenPatternProject';
 import { useCreateProject } from '../hooks/useCreateProject';
@@ -26,6 +27,14 @@ export const MesProjetsPatronPage = () => {
           </p>
         </div>
 
+        <div className="flex flex-wrap items-center gap-3">
+        <Link
+          href="/pattern-studio/catalogue"
+          className="inline-flex items-center gap-2 px-6 py-3 rounded border border-angaly-gold text-angaly-gold hover:bg-angaly-gold hover:text-white text-xs uppercase tracking-wider font-semibold transition-all"
+        >
+          <BookOpen className="w-4 h-4" />
+          <span>Catalogue des patrons</span>
+        </Link>
         <button
           type="button"
           onClick={() => createProject('ROBE')}
@@ -44,6 +53,7 @@ export const MesProjetsPatronPage = () => {
             </>
           )}
         </button>
+        </div>
       </div>
 
       {/* Main Content: Loading | Empty | Grid */}

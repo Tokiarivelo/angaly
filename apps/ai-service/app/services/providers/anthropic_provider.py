@@ -13,10 +13,21 @@ from typing import TypeVar
 import anthropic
 from pydantic import BaseModel
 
-from .base import LlmProvider, clean_json_text
+from .base import LlmProvider, clean_json_text, provider_timeout_s
 
 T = TypeVar("T", bound=BaseModel)
 logger = logging.getLogger("angaly.ai_service.anthropic")
+
+
+def _answer_text(message: object) -> str:
+    """Text of the answer. Newer models (Opus…) put a `thinking` block first: skip it."""
+    for block in getattr(message, "content", None) or []:
+        if getattr(block, "type", None) in {"thinking", "redacted_thinking"}:
+            continue
+        text = getattr(block, "text", None)
+        if isinstance(text, str):
+            return text
+    return "{}"
 
 
 class AnthropicProvider(LlmProvider):
@@ -26,7 +37,8 @@ class AnthropicProvider(LlmProvider):
     def _get_client(self) -> anthropic.Anthropic:
         if not self.api_key:
             raise ValueError("Une clé API Anthropic est obligatoire.")
-        return anthropic.Anthropic(api_key=self.api_key)
+        # One retry at most, each bounded: the API waits for this service (AI_SERVICE_VISION_TIMEOUT_MS).
+        return anthropic.Anthropic(api_key=self.api_key, timeout=provider_timeout_s(), max_retries=1)
 
     def generate_json(self, prompt: str, schema: type[T]) -> T:
         client = self._get_client()
@@ -39,12 +51,12 @@ class AnthropicProvider(LlmProvider):
 
         message = client.messages.create(
             model=self.model,
-            max_tokens=2048,
+            max_tokens=4096,
             system="Tu es l'assistant de modélisme haute couture d'ANGALY. Tu réponds exclusivement en JSON valide.",
             messages=[{"role": "user", "content": user_content}],
         )
 
-        raw_text = message.content[0].text if message.content else "{}"
+        raw_text = _answer_text(message)
         cleaned = clean_json_text(raw_text)
         return schema.model_validate_json(cleaned)
 
@@ -55,7 +67,7 @@ class AnthropicProvider(LlmProvider):
         schema_json = json.dumps(schema.model_json_schema(), ensure_ascii=False)
         message = client.messages.create(
             model=self.model,
-            max_tokens=1024,
+            max_tokens=4096,
             system="Tu es l'assistant de modélisme haute couture d'ANGALY. Tu réponds exclusivement en JSON valide.",
             messages=[
                 {
@@ -77,7 +89,7 @@ class AnthropicProvider(LlmProvider):
                 }
             ],
         )
-        raw_text = message.content[0].text if message.content else "{}"
+        raw_text = _answer_text(message)
         return schema.model_validate_json(clean_json_text(raw_text))
 
     def test_connection(self) -> tuple[bool, int, str]:

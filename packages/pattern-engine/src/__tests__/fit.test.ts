@@ -11,6 +11,10 @@ import { AutreRule } from '../rules/autre.rule';
 import {
   bodiceLengthFactor,
   fitSleeve,
+  floorQuarters,
+  hipGirthCm,
+  bustDartIntakeMm,
+  MIN_WEARING_EASE_MM,
   resolveEaseProfile,
   resolveLengthMm,
   skirtFullnessExtraMm,
@@ -68,11 +72,12 @@ describe('shared/fit helpers', () => {
     expect(skirtFullnessExtraMm({ skirt: 3 }, 300)).toBe(600);
   });
 
-  it('fitSleeve: 0 % removes the sleeve, pct scales, fullness widens the top', () => {
+  it('fitSleeve: 0 % removes the sleeve, pct is a share of the arm, fullness widens the top', () => {
     const s = { lengthMm: 500, cuffRatio: 0.7, topRatio: 1 };
     expect(fitSleeve(s, {})).toEqual(s);
     expect(fitSleeve(s, { lengths: { sleevePct: 0 } })).toBeNull();
-    expect(fitSleeve(s, { lengths: { sleevePct: 50 } })?.lengthMm).toBe(250);
+    expect(fitSleeve(s, { lengths: { sleevePct: 50 } })?.lengthMm).toBe(295); // half of a 59 cm arm
+    expect(fitSleeve({ ...s, lengthMm: 200 }, { lengths: { sleevePct: 25 } }, 600)?.lengthMm).toBe(150);
     expect(fitSleeve(s, { fullness: { sleeve: 2 } })?.topRatio).toBe(2);
     expect(fitSleeve(null, { lengths: { sleevePct: 50 } })).toBeNull();
   });
@@ -84,10 +89,11 @@ describe('shared/fit helpers', () => {
 });
 
 describe('ease changes the contours (monotonic)', () => {
+  // In stretch cloth: a woven dress is never cut under the body (MIN_WEARING_EASE_MM), so AJUSTE meets CONFORT there.
   it.each(['ROBE', 'JUPE', 'PANTALON', 'VESTE', 'COSTUME', 'CHEMISE', 'ROBE_MARIEE', 'AUTRE'] as GarmentType[])(
     '%s: AJUSTE < CONFORT < AMPLE in total width',
     (garmentType) => {
-      const [a, c, l] = EASES.map((ease) => width(gen({ garmentType, ease }).pieces));
+      const [a, c, l] = EASES.map((ease) => width(gen({ garmentType, ease, fabric: 'STRETCH' }).pieces));
       expect(a!).toBeLessThan(c!);
       expect(c!).toBeLessThan(l!);
     },
@@ -144,7 +150,10 @@ describe('skirt: length, fullness and measured length', () => {
   it('ROBE and ROBE_MARIEE honour LONGUEUR_JUPE / HAUTEUR_TAILLE_SOL', () => {
     expect(height(piece(gen({ garmentType: 'ROBE' }, { ...M, LONGUEUR_JUPE: 80 }).pieces, 'Jupe Devant'))).toBe(800);
     const mariee = gen({ garmentType: 'ROBE_MARIEE' }, { ...M, HAUTEUR_TAILLE_SOL: 105 });
-    expect(height(piece(mariee.pieces, 'Jupe Devant'))).toBe(1050);
+    // Cut a little longer than the waist-to-floor height: the skirt goes over the petticoat (robe-mariee.rule.ts).
+    const cut = height(piece(mariee.pieces, 'Jupe Devant'));
+    expect(cut).toBeGreaterThanOrEqual(1050);
+    expect(cut).toBeLessThan(1050 * 1.03);
   });
 });
 
@@ -229,6 +238,18 @@ describe('torso measurements: shoulders, armhole and bust dart', () => {
     expect(tip({ LARGEUR_EPAULE: 0.1 })).toBeGreaterThanOrEqual(neck + 40);
   });
 
+  it('PENTE_EPAULE sets the shoulder drop: square shoulders higher, sloping ones lower (back a little less)', () => {
+    const drop = (m: MeasurementSet, name = 'Devant Veste') => {
+      const o = piece(gen({ garmentType: 'VESTE', details: { manches: 'LONGUES' } }, { ...M, ...m }).pieces, name).outlineMm;
+      return o[2]!.y - o[1]!.y;
+    };
+    expect(drop({ PENTE_EPAULE: 3 })).toBeLessThan(drop({ PENTE_EPAULE: 6.5 }));
+    expect(drop({ PENTE_EPAULE: 6.5 }, 'Dos Veste')).toBeLessThan(drop({ PENTE_EPAULE: 6.5 }));
+    // Bounded: never flat, never a cliff.
+    expect(drop({ PENTE_EPAULE: 0.1 })).toBeGreaterThanOrEqual(15);
+    expect(drop({ PENTE_EPAULE: 30 })).toBeLessThanOrEqual(90);
+  });
+
   it('PROFONDEUR_EMMANCHURE moves the underarm point', () => {
     const y = (m: MeasurementSet) => front('VESTE', m, 'Devant Veste').outlineMm[3]!.y;
     expect(y({})).toBe(240);
@@ -283,9 +304,13 @@ describe('arm and neck measurements', () => {
 
   it('TOUR_POIGNET keeps the cuff above the wrist; TOUR_EMMANCHURE raises the cap', () => {
     const p = (m: MeasurementSet) => piece(gen({ garmentType: 'VESTE', details: { manches: 'LONGUES' } }, { ...M, LONGUEUR_BRAS: 60, ...m }).pieces, 'Manche Veste').outlineMm;
-    const cuff = (m: MeasurementSet) => p(m)[3]!.x - p(m)[4]!.x;
+    const cuff = (m: MeasurementSet) => {
+      const o = p(m);
+      return o[o.length - 3]!.x - o[o.length - 2]!.x;
+    };
     expect(cuff({ TOUR_POIGNET: 20 })).toBeGreaterThanOrEqual(230);
     expect(p({ TOUR_EMMANCHURE: 54 })[0]!.y).toBeGreaterThan(p({ TOUR_EMMANCHURE: 36 })[0]!.y);
+    expect(Math.min(...p({ TOUR_EMMANCHURE: 54 }).map((q) => q.y))).toBe(0);
   });
 
   it('TOUR_COU sets the collar length', () => {
@@ -343,5 +368,83 @@ describe('a fully measured body', () => {
         for (const p of result.pieces) expect(p.outlineMm.every((pt) => Number.isFinite(pt.x) && Number.isFinite(pt.y))).toBe(true);
       }
     }
+  });
+});
+
+describe('wearing ease of a woven dress (MIN_WEARING_EASE_MM)', () => {
+  it('floorQuarters widens front and back alike, only when the round is short, never for stretch cloth', () => {
+    expect(floorQuarters(200, 180, 740, 20, undefined)).toEqual([200, 180]); // 760 ≥ 760
+    expect(floorQuarters(175, 145, 740, 20, 'STRUCTURE')).toEqual([205, 175]); // 640 → 760
+    expect(floorQuarters(175, 145, 740, 20, 'STRETCH')).toEqual([175, 145]);
+  });
+
+  const dress = (parameters: Partial<PatternParameters>) =>
+    gen({ garmentType: 'ROBE', ...parameters }).pieces;
+  const quarterAt = (pieces: PatternPieceGeometry[], name: string, y: number): number => {
+    const piece = pieces.find((p) => p.name === name)!;
+    const xs: number[] = [];
+    const o = piece.outlineMm;
+    for (let i = 0; i < o.length; i += 1) {
+      const a = o[i]!;
+      const b = o[(i + 1) % o.length]!;
+      if ((a.y - y) * (b.y - y) <= 0 && a.y !== b.y) xs.push(a.x + ((b.x - a.x) * (y - a.y)) / (b.y - a.y));
+    }
+    return Math.max(...xs) - Math.min(...xs);
+  };
+
+  it('a PRINCESSE dress made AJUSTE is no smaller than the body at the bust, the waist and the hips', () => {
+    const pieces = dress({ cutType: 'PRINCESSE', ease: 'AJUSTE', details: { longueur: 'SOL' } });
+    const front = pieces.find((p) => p.name === 'Corsage Devant')!;
+    const height = Math.max(...front.outlineMm.map((p) => p.y));
+    const backHeight = Math.max(...pieces.find((p) => p.name === 'Corsage Dos')!.outlineMm.map((p) => p.y));
+    const waist = 2 * (quarterAt(pieces, 'Corsage Devant', height - 1) + quarterAt(pieces, 'Corsage Dos', backHeight - 1));
+    expect(waist).toBeGreaterThanOrEqual(M.TOUR_TAILLE! * 10);
+    const hip = 2 * (quarterAt(pieces, 'Jupe Devant', 200) + quarterAt(pieces, 'Jupe Dos', 200));
+    expect(hip).toBeGreaterThanOrEqual(M.TOUR_BASSIN! * 10 + MIN_WEARING_EASE_MM.hip);
+  });
+
+  it('the A-line of a flared princess skirt stands off the hips: an A from the waist, not a mermaid', () => {
+    const pieces = dress({ cutType: 'PRINCESSE', ease: 'AJUSTE', details: { longueur: 'SOL' }, fullness: { skirt: 3.25 } });
+    const hip = 2 * (quarterAt(pieces, 'Jupe Devant', 200) + quarterAt(pieces, 'Jupe Dos', 200));
+    // Several centimetres over the hips (the side seam runs straight from the waist to the wide hem).
+    expect(hip - M.TOUR_BASSIN! * 10).toBeGreaterThan(60);
+  });
+
+  it('DROITE + CONFORT is unchanged: its own ease is the floor', () => {
+    const plain = dress({ cutType: 'DROITE', details: {} });
+    const woven = dress({ cutType: 'DROITE', details: {}, fabric: 'STRUCTURE' });
+    const stretch = dress({ cutType: 'DROITE', details: {}, fabric: 'STRETCH' });
+    expect(woven).toEqual(plain);
+    expect(stretch).toEqual(plain);
+  });
+});
+
+describe('hipGirthCm', () => {
+  it('takes the full hip when the belly makes it larger, the hip otherwise', () => {
+    expect(hipGirthCm({ TOUR_BASSIN: 98 })).toBe(98);
+    expect(hipGirthCm({ TOUR_BASSIN: 98, TOUR_HANCHE_COMPLET: 104 })).toBe(104);
+    expect(hipGirthCm({ TOUR_BASSIN: 98, TOUR_HANCHE_COMPLET: 96 })).toBe(98);
+    expect(hipGirthCm({})).toBe(95);
+  });
+
+  it('a skirt cut for a prominent belly is wider at the hip', () => {
+    const base = { TOUR_TAILLE: 74, TOUR_BASSIN: 98, LONGUEUR_DOS: 42 };
+    const width = (m: Record<string, number>): number => {
+      const front = JupeRule.computePieces({ cutType: 'DROITE', details: {} } as PatternParameters, m)[0]!;
+      const xs = front.outlineMm.map((p) => p.x);
+      return Math.max(...xs) - Math.min(...xs);
+    };
+    expect(width({ ...base, TOUR_HANCHE_COMPLET: 106 })).toBeGreaterThan(width(base));
+  });
+});
+
+describe('bustDartIntakeMm', () => {
+  it('reads the cup from the high bust first, the underbust otherwise', () => {
+    expect(bustDartIntakeMm({ TOUR_POITRINE: 92 })).toBeUndefined();
+    expect(bustDartIntakeMm({ TOUR_POITRINE: 92, TOUR_HAUT_POITRINE: 89.5 })).toBe(0); // B cup: the block's own
+    expect(bustDartIntakeMm({ TOUR_POITRINE: 98, TOUR_HAUT_POITRINE: 90 })).toBe(60); // capped
+    expect(bustDartIntakeMm({ TOUR_POITRINE: 94, TOUR_HAUT_POITRINE: 90 })).toBe(18);
+    expect(bustDartIntakeMm({ TOUR_POITRINE: 94, TOUR_HAUT_POITRINE: 90, TOUR_SOUS_POITRINE: 70 })).toBe(18);
+    expect(bustDartIntakeMm({ TOUR_POITRINE: 92, TOUR_SOUS_POITRINE: 74 })).toBe(30);
   });
 });

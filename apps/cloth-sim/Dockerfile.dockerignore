@@ -1,0 +1,12 @@
+# BuildKit reads this file for apps/cloth-sim/Dockerfile (context = repository root). Allowlist: only what the image
+# copies — never node_modules, Blender (apps/cloth-sim/.blender, 1.2 GB) or the virtualenv.
+*
+!packages/types/package.json
+!packages/types/tsconfig.build.json
+!packages/types/src
+!apps/web/src/features/pattern-studio-preview-validation-export
+!apps/web/public/models/human-base.glb
+!apps/cloth-sim/cloth_sim
+!apps/cloth-sim/scripts
+!apps/cloth-sim/tools
+**/__pycache__

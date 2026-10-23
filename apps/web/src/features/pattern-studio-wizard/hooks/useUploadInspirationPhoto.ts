@@ -17,11 +17,13 @@ export const useUploadInspirationPhoto = (
   const [isUploading, setIsUploading] = useState(false);
   const [isAnalyzing, setIsAnalyzing] = useState(false);
   const [error, setError] = useState<string | null>(null);
+  const [aiServiceUnreachable, setAiServiceUnreachable] = useState(false);
 
   const analyze = async (mediaId: string, url: string) => {
     setIsAnalyzing(true);
     try {
       const analysis = await analyzeInspirationPhoto(url, aiProvider);
+      setAiServiceUnreachable(analysis.aiServiceUnreachable === true);
       onSuccess({
         mediaId,
         url,
@@ -62,5 +64,6 @@ export const useUploadInspirationPhoto = (
     isUploading,
     isAnalyzing,
     error,
+    aiServiceUnreachable,
   };
 };

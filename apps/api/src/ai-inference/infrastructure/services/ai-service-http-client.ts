@@ -10,15 +10,28 @@ import {
   PatternMeasurementEstimationResponse,
 } from '@angaly/types';
 
+/**
+ * `modelVersion` of the neutral answer returned when the ai-service itself could not be reached
+ * (not started, wrong AI_SERVICE_URL…), as opposed to a provider error reported by the ai-service.
+ */
+export const AI_SERVICE_UNREACHABLE_MODEL_VERSION = 'fallback-unreachable-0.0.0';
+
+/** Default photo-analysis timeout (ms) when AI_SERVICE_VISION_TIMEOUT_MS is not set. */
+export const DEFAULT_VISION_TIMEOUT_MS = 90_000;
+
 @Injectable()
 export class AiServiceHttpClient {
   private readonly logger = new Logger(AiServiceHttpClient.name);
   private readonly baseUrl: string;
   private readonly timeoutMs: number;
+  /** Photo analysis: a vision model reading a full garment brief takes 20–60 s (Opus), far longer than text calls. */
+  private readonly visionTimeoutMs: number;
 
   constructor(private readonly config: ConfigService) {
     this.baseUrl = this.config.get<string>('AI_SERVICE_URL') ?? 'http://localhost:8001';
-    this.timeoutMs = this.config.get<number>('AI_SERVICE_TIMEOUT_MS') ?? 5000;
+    this.timeoutMs = Number(this.config.get<number | string>('AI_SERVICE_TIMEOUT_MS') ?? 5000);
+    const vision = Number(this.config.get<number | string>('AI_SERVICE_VISION_TIMEOUT_MS') ?? DEFAULT_VISION_TIMEOUT_MS);
+    this.visionTimeoutMs = Math.max(this.timeoutMs, Number.isFinite(vision) && vision > 0 ? vision : DEFAULT_VISION_TIMEOUT_MS);
   }
 
   async suggestPatternParameters(request: PatternAiSuggestionRequest): Promise<PatternAiSuggestionResponse> {
@@ -57,14 +70,16 @@ export class AiServiceHttpClient {
     const startedAt = Date.now();
     const model = request.provider ? `${request.provider.provider}/${request.provider.model}` : 'default';
     this.logger.log(`ai-service analyze-inspiration → model=${model} imageKB=${Math.round(request.imageBase64.length * 0.75 / 1024)}`);
+    let reached = false;
     try {
       const response = await fetch(`${this.baseUrl}/v1/pattern/analyze-inspiration`, {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify(request),
         // Vision calls are slower than text-only ones.
-        signal: AbortSignal.timeout(Math.max(this.timeoutMs, 20000)),
+        signal: AbortSignal.timeout(this.visionTimeoutMs),
       });
+      reached = true;
 
       if (!response.ok) {
         const body = await response.text().catch(() => '');
@@ -87,7 +102,15 @@ export class AiServiceHttpClient {
       this.logger.error(
         `Failed to analyze inspiration image after ${Date.now() - startedAt}ms (url=${this.baseUrl}, model=${model}): ${error instanceof Error ? error.message : String(error)}`,
       );
-      return { features: {}, suggestedCutType: null, confidence: 0, modelVersion: 'fallback-0.0.0' };
+      // fetch() rejects with a TypeError ("fetch failed": ECONNREFUSED, DNS…) when nothing answers;
+      // a timeout means the service is up but slow, which is reported like any other model failure.
+      const unreachable = !reached && error instanceof TypeError;
+      return {
+        features: {},
+        suggestedCutType: null,
+        confidence: 0,
+        modelVersion: unreachable ? AI_SERVICE_UNREACHABLE_MODEL_VERSION : 'fallback-0.0.0',
+      };
     }
   }
 

@@ -37,13 +37,24 @@ describe('applyFitChange', () => {
   });
 });
 
+describe('trouser leg adjustments', () => {
+  it('keeps a hem width and a leg length within bounds, ignores out-of-range values', () => {
+    let fit = applyFitChange(undefined, { field: 'fullness.leg', value: 1.4 });
+    fit = applyFitChange(fit, { field: 'lengths.legPct', value: 104 });
+    expect(fit).toEqual({ fullness: { leg: 1.4 }, lengths: { legPct: 104 } });
+    expect(applyFitChange(fit, { field: 'fullness.leg', value: 5 })).toEqual(fit);
+    expect(applyFitChange(fit, { field: 'lengths.legPct', value: null })).toEqual({ fullness: { leg: 1.4 } });
+  });
+});
+
 describe('fitControlsFor', () => {
   it.each([
-    ['JUPE', { skirt: true, sleeve: false, bodice: false }],
-    ['PANTALON', { skirt: false, sleeve: false, bodice: false }],
-    ['CHEMISE', { skirt: false, sleeve: true, bodice: true }],
-    ['robe_mariee', { skirt: true, sleeve: true, bodice: true }],
-    [undefined, { skirt: false, sleeve: false, bodice: false }],
+    ['JUPE', { skirt: true, sleeve: false, bodice: false, leg: false }],
+    ['PANTALON', { skirt: false, sleeve: false, bodice: false, leg: true }],
+    ['COSTUME', { skirt: false, sleeve: true, bodice: true, leg: true }],
+    ['CHEMISE', { skirt: false, sleeve: true, bodice: true, leg: false }],
+    ['robe_mariee', { skirt: true, sleeve: true, bodice: true, leg: false }],
+    [undefined, { skirt: false, sleeve: false, bodice: false, leg: false }],
   ])('%s', (garment, expected) => {
     expect(fitControlsFor(garment)).toEqual(expected);
   });

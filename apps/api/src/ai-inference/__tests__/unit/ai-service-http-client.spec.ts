@@ -1,4 +1,4 @@
-import { AiServiceHttpClient } from '../../infrastructure/services/ai-service-http-client';
+import { AI_SERVICE_UNREACHABLE_MODEL_VERSION, AiServiceHttpClient, DEFAULT_VISION_TIMEOUT_MS } from '../../infrastructure/services/ai-service-http-client';
 
 describe('AiServiceHttpClient', () => {
   let client: AiServiceHttpClient;
@@ -183,5 +183,42 @@ describe('AiServiceHttpClient', () => {
     fetchMock.mockResolvedValueOnce({ ok: false, status: 500 });
     const fallback = await client.analyzeInspiration({ imageBase64: 'abc', mimeType: 'image/jpeg' });
     expect(fallback).toMatchObject({ confidence: 0, modelVersion: 'fallback-0.0.0', features: {} });
+  });
+
+  it('analyzeInspiration tells an unreachable ai-service apart from a model failure', async () => {
+    fetchMock.mockRejectedValueOnce(new TypeError('fetch failed'));
+    await expect(client.analyzeInspiration({ imageBase64: 'abc', mimeType: 'image/jpeg' })).resolves.toMatchObject({
+      confidence: 0,
+      modelVersion: AI_SERVICE_UNREACHABLE_MODEL_VERSION,
+    });
+
+    // A timeout means the service answered too slowly, not that it is down.
+    fetchMock.mockRejectedValueOnce(new DOMException('timed out', 'TimeoutError'));
+    await expect(client.analyzeInspiration({ imageBase64: 'abc', mimeType: 'image/jpeg' })).resolves.toMatchObject({
+      modelVersion: 'fallback-0.0.0',
+    });
+  });
+
+  describe('photo analysis timeout', () => {
+    const timeoutOf = async (env: Record<string, string | number | undefined>): Promise<number> => {
+      const spy = jest.spyOn(AbortSignal, 'timeout');
+      const c = new AiServiceHttpClient({ get: (key: string) => env[key] } as any);
+      fetchMock.mockResolvedValue({ ok: true, json: () => Promise.resolve({ features: {}, confidence: 0.9, modelVersion: 'm' }) });
+      await c.analyzeInspiration({ imageBase64: 'abc', mimeType: 'image/jpeg' });
+      const ms = spy.mock.calls.at(-1)![0];
+      spy.mockRestore();
+      return ms;
+    };
+
+    it('waits long enough for a vision model by default (not the 20 s that cut every Opus analysis short)', async () => {
+      expect(await timeoutOf({ AI_SERVICE_TIMEOUT_MS: '15000' })).toBe(DEFAULT_VISION_TIMEOUT_MS);
+      expect(DEFAULT_VISION_TIMEOUT_MS).toBeGreaterThanOrEqual(60_000);
+    });
+
+    it('reads AI_SERVICE_VISION_TIMEOUT_MS (env strings included) and never goes below the general timeout', async () => {
+      expect(await timeoutOf({ AI_SERVICE_VISION_TIMEOUT_MS: '45000' })).toBe(45000);
+      expect(await timeoutOf({ AI_SERVICE_TIMEOUT_MS: 120000, AI_SERVICE_VISION_TIMEOUT_MS: 30000 })).toBe(120000);
+      expect(await timeoutOf({ AI_SERVICE_VISION_TIMEOUT_MS: 'abc' })).toBe(DEFAULT_VISION_TIMEOUT_MS);
+    });
   });
 });

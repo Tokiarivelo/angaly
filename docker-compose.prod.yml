@@ -100,6 +100,10 @@ services:
       MINIO_SECRET_KEY: ${MINIO_ROOT_PASSWORD}
       MINIO_PUBLIC_URL: ${MINIO_PUBLIC_URL}
       API_CORS_ORIGINS: ${API_CORS_ORIGINS}
+      # Realistic render (cloth-sim worker) — docs/features/realistic-render-blender.md
+      CLOTH_SIM_WORKER_TOKEN: ${CLOTH_SIM_WORKER_TOKEN:-}
+      CLOTH_SIM_MAX_PER_DAY: ${CLOTH_SIM_MAX_PER_DAY:-10}
+      CLOTH_SIM_TIMEOUT_S: ${CLOTH_SIM_TIMEOUT_S:-600}
     depends_on:
       postgres:
         condition: service_healthy
@@ -123,6 +127,35 @@ services:
         limits:
           memory: 512m
           cpus: '1.0'
+
+  # Realistic render worker (Blender cloth simulation, ≈ 1 GB image, CPU-bound for minutes per job).
+  # Opt-in: docker compose -f docker-compose.prod.yml --profile cloth-sim up -d
+  # Limited to 2 vCPU so the site keeps its share of the VPS (option A of docs/features/realistic-render-blender.md §5).
+  cloth-sim:
+    profiles: ['cloth-sim']
+    build:
+      context: .
+      dockerfile: apps/cloth-sim/Dockerfile
+    init: true
+    environment:
+      CLOTH_SIM_API_URL: 'http://api:3003/api'
+      CLOTH_SIM_WORKER_TOKEN: ${CLOTH_SIM_WORKER_TOKEN:-}  # the worker refuses to start without it
+      CLOTH_SIM_TIMEOUT_S: ${CLOTH_SIM_TIMEOUT_S:-600}
+    depends_on:
+      api:
+        condition: service_healthy
+    restart: unless-stopped
+    stop_grace_period: 11m
+    logging:
+      driver: json-file
+      options:
+        max-size: '20m'
+        max-file: '5'
+    deploy:
+      resources:
+        limits:
+          memory: 4g
+          cpus: '2.0'
 
   web:
     build:

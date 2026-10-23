@@ -9,8 +9,9 @@ interface GenerationNoticesPanelProps {
 /** What the customer must know about this pattern: warnings, how it is built, mannequin sheet, fabric. */
 export const GenerationNoticesPanel: React.FC<GenerationNoticesPanelProps> = ({ notices }) => {
   const { warnings, approach, mannequinSheet, yardageMm } = notices;
+  const notions = notices.notions ?? [];
   const isMannequin = approach?.id === 'FLAT_BASE_PLUS_MANNEQUIN' || approach?.id === 'MANNEQUIN_ONLY';
-  if (warnings.length === 0 && !approach && !mannequinSheet && yardageMm === null) return null;
+  if (warnings.length === 0 && !approach && !mannequinSheet && yardageMm === null && notions.length === 0) return null;
 
   return (
     <section aria-label="À savoir sur ce patron" className="w-full mb-6 space-y-4" data-testid="generation-notices">
@@ -45,6 +46,24 @@ export const GenerationNoticesPanel: React.FC<GenerationNoticesPanelProps> = ({ 
             laize (à confirmer par la couturière).
           </span>
         </p>
+      )}
+
+      {notions.length > 0 && (
+        <div className="border border-[#C5B190]/30 rounded-xl p-4" data-testid="notions">
+          <p className="text-white font-medium text-sm mb-2">Mercerie indicative</p>
+          <ul className="text-xs text-[#D8D3C8] space-y-1">
+            {notions.map((n) => (
+              <li key={n.label} className="flex justify-between gap-4">
+                <span>{n.label}</span>
+                <span className="font-mono text-[#C5B190] shrink-0">
+                  {[n.quantity !== null ? `× ${n.quantity}` : null, n.lengthMm !== null ? `${(n.lengthMm / 1000).toFixed(2).replace('.', ',')} m` : null]
+                    .filter(Boolean)
+                    .join(' · ')}
+                </span>
+              </li>
+            ))}
+          </ul>
+        </div>
       )}
 
       {mannequinSheet && isMannequin && (

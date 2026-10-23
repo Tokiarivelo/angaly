@@ -7,6 +7,7 @@ import { VesteRule } from '../rules/veste.rule';
 import type { GarmentType, IPatternRule, PatternParameters, PatternPieceGeometry } from '../types';
 import {
   resolveLegProfile,
+  trouserKneeMm,
   resolveTopAdjustments,
   resolveTopLengthFactor,
   resolveTrouserLengthFactor,
@@ -74,14 +75,24 @@ describe('tops (chemise, veste, costume jacket)', () => {
     expect(maxOf(front(rule, type, 'OVERSIZE'), 'x')).toBeGreaterThan(maxOf(front(rule, type, 'AJUSTEE'), 'x'));
   });
 
+  it('COSTUME: longueur is the trousers\' length, the jacket keeps its own', () => {
+    const jacket = (longueur: string) => maxOf(front(CostumeRule, 'COSTUME', 'DROITE', { longueur }), 'y');
+    const trousers = (longueur: string) =>
+      maxOf(find(make(CostumeRule, 'COSTUME', 'DROITE', { longueur }), 'Devant Pantalon (Costume)')!, 'y');
+    expect(jacket('MINI')).toBe(jacket('SOL'));
+    expect(trousers('MINI')).toBeLessThan(trousers('SOL'));
+  });
+
   it.each([
     ['CHEMISE', ChemiseRule],
     ['VESTE', VesteRule],
     ['COSTUME', CostumeRule],
   ] as Array<[GarmentType, IPatternRule]>)('%s: longueur and neckline details change the front piece', (type, rule) => {
-    expect(maxOf(front(rule, type, 'DROITE', { longueur: 'MINI' }), 'y')).toBeLessThan(
-      maxOf(front(rule, type, 'DROITE', { longueur: 'MAXI' }), 'y'),
-    );
+    if (type !== 'COSTUME') {
+      expect(maxOf(front(rule, type, 'DROITE', { longueur: 'MINI' }), 'y')).toBeLessThan(
+        maxOf(front(rule, type, 'DROITE', { longueur: 'MAXI' }), 'y'),
+      );
+    }
     expect(front(rule, type, 'DROITE', { decollete: 'PLONGEANT' }).outlineMm[0]!.y).toBeGreaterThan(
       front(rule, type, 'DROITE').outlineMm[0]!.y,
     );
@@ -133,7 +144,8 @@ describe('pantalon and costume trousers', () => {
 
   it('keeps the historical SLIM / PALAZZO keywords working', () => {
     expect(resolveLegProfile('slim').halfHemMm).toBe(80);
-    expect(resolveLegProfile('PALAZZO').halfHemMm).toBe(140);
+    expect(resolveLegProfile('PALAZZO').halfHemMm).toBe(resolveLegProfile('PRINCESSE').halfHemMm);
+    expect(resolveLegProfile('pattes d\'elephant').halfHemMm).toBe(resolveLegProfile('SIRENE').halfHemMm);
     expect(resolveLegProfile(undefined).halfHemMm).toBe(100);
   });
 
@@ -145,6 +157,53 @@ describe('pantalon and costume trousers', () => {
     const knee = piece.outlineMm[3]!; // right knee point
     const hem = piece.outlineMm[4]!; // right hem point
     expect(hem.x - piece.grainline.originX).toBeGreaterThan(knee.x - piece.grainline.originX);
+  });
+});
+
+describe('trouser leg shapes', () => {
+  const M = { TOUR_TAILLE: 74, TOUR_BASSIN: 98 };
+  /** Front + back circumference (cm) at the knee and the hem. */
+  const girths = (cut: string) => {
+    const pieces = PantalonRule.computePieces({ garmentType: 'PANTALON', cutType: cut, style: null, details: { longueur: 'SOL' } }, M);
+    const width = (name: string, k: number) => {
+      const o = find(pieces, name)!.outlineMm;
+      return o[k]!.x - o[9 - k]!.x;
+    };
+    return {
+      knee: (width('Devant Pantalon', 3) + width('Dos Pantalon', 3)) / 10,
+      hem: (width('Devant Pantalon', 4) + width('Dos Pantalon', 4)) / 10,
+    };
+  };
+
+  it('fits bell-bottoms to the knee then flares them wide (at least 1.5× the knee)', () => {
+    const bell = girths('SIRENE');
+    expect(bell.knee).toBeLessThan(44);
+    expect(bell.hem).toBeGreaterThan(65);
+    expect(bell.hem / bell.knee).toBeGreaterThan(1.5);
+    // Bootcut flares less, a straight leg not at all.
+    expect(girths('EVASEE').hem).toBeLessThan(bell.hem);
+    expect(girths('EVASEE').hem / girths('EVASEE').knee).toBeGreaterThan(1.1);
+    expect(girths('DROITE').hem).toBeLessThanOrEqual(girths('DROITE').knee);
+  });
+
+  it('puts the knee line at the knee whatever the length, clear of the crotch and of a short hem', () => {
+    const kneeY = (longueur: string) =>
+      find(PantalonRule.computePieces({ garmentType: 'PANTALON', cutType: 'SIRENE', style: null, details: { longueur } }, M), 'Devant Pantalon')!.outlineMm[3]!.y;
+    expect(kneeY('SOL')).toBe(kneeY('MAXI'));
+    expect(kneeY('MIDI')).toBe(kneeY('MAXI'));
+    expect(trouserKneeMm(265, 1000, 450)).toBe(390);
+    expect(trouserKneeMm(265, 1000, 1000)).toBe(610);
+    expect(trouserKneeMm(265, 1000, 1000, 580)).toBe(580);
+  });
+
+  it('keeps palazzo wide from the knee down and narrows baggy trousers at the ankle', () => {
+    const palazzo = girths('PRINCESSE');
+    expect(palazzo.knee).toBeGreaterThan(65);
+    expect(palazzo.hem).toBeGreaterThan(65);
+    const baggy = girths('OVERSIZE');
+    expect(baggy.hem).toBeLessThan(baggy.knee);
+    // A slim leg still clears an average knee (≈ 37 cm).
+    expect(girths('AJUSTEE').knee).toBeGreaterThan(40);
   });
 });
 

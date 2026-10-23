@@ -83,6 +83,12 @@ describe('garment-model', () => {
     expect(classifyPiece('Devant', 'JUPE')).toEqual({ role: 'front', zone: 'skirt' });
     expect(classifyPiece('Manche', 'ROBE')).toEqual({ role: 'sleeve', zone: 'sleeve' });
     expect(classifyPiece('Ceinture', 'ROBE')).toBeNull();
+    // The wedding dress's princess bustier and side panels (sewn to the front), a suit's trousers (legs).
+    expect(classifyPiece('Bustier Devant (Princesse)', 'ROBE_MARIEE')).toEqual({ role: 'front', zone: 'bodice' });
+    expect(classifyPiece('Bustier Côté (Découpe Princesse)', 'ROBE_MARIEE')).toEqual({ role: 'front', zone: 'bodice' });
+    expect(classifyPiece('Jupe Côté', 'ROBE_MARIEE')).toEqual({ role: 'front', zone: 'skirt' });
+    expect(classifyPiece('Devant Pantalon (Costume)', 'COSTUME')).toEqual({ role: 'front', zone: 'legs' });
+    expect(classifyPiece('Devant Veste (Costume)', 'COSTUME')).toEqual({ role: 'front', zone: 'torso' });
     expect(classifyPiece('Devant', 'PANTALON')).toEqual({ role: 'front', zone: 'legs' });
   });
 
@@ -123,18 +129,22 @@ describe('garment-model', () => {
     if (!result.ok) throw new Error('expected a model');
     expect(result.model.generic).toBe(false);
     const legs = result.model.panels.filter((p) => p.zone === 'legs');
-    expect(legs).toHaveLength(2);
+    // Each leg is its front and its back piece.
+    expect(legs.map((p) => p.id).sort()).toEqual(['legs--1-back', 'legs--1-front', 'legs-1-back', 'legs-1-front']);
     const meanX = (panel: (typeof legs)[number]) => {
       let sum = 0;
       for (let i = 0; i < panel.positions.length; i += 3) sum += panel.positions[i]!;
       return sum / (panel.positions.length / 3);
     };
-    expect(Math.sign(meanX(legs[0]!))).toBe(-Math.sign(meanX(legs[1]!)));
-    // Below the crotch the two legs are apart (a real crotch seam, not a tube).
+    for (const piece of ['front', 'back']) {
+      expect(meanX(legs.find((p) => p.id === `legs-1-${piece}`)!)).toBeGreaterThan(0);
+      expect(meanX(legs.find((p) => p.id === `legs--1-${piece}`)!)).toBeLessThan(0);
+    }
+    // Once the thighs part, the two legs are apart (a real crotch seam, not a tube).
     const l = bodyLandmarks(result.model.body);
     for (const panel of legs) {
       for (let i = 0; i < panel.positions.length; i += 3) {
-        if (panel.positions[i + 1]! < l.crotchY - 0.1) expect(Math.abs(panel.positions[i]!)).toBeGreaterThan(0.002);
+        if (panel.positions[i + 1]! < l.crotchY - 0.2) expect(Math.abs(panel.positions[i]!)).toBeGreaterThan(0.002);
       }
     }
     expect(result.model.fit.map((f) => f.label)).toContain('Bassin');
@@ -248,6 +258,164 @@ describe('garment-model', () => {
     expect(hip.garmentCm).toBeLessThan(72 + Math.PI * depth * 1.15);
   });
 
+  it('runs a basque bodice over the hips and starts the skirt at its lower edge (taille basse)', () => {
+    // The robe rule's taille BASSE: bodices 11 cm longer, widening below the waist; the skirt 11 cm shorter.
+    const built = buildGarmentModel(
+      [
+        piece('cd', 'Corsage Devant', closed([[0, 0], [80, 0], [240, 50], [240, 242], [195, 440], [222, 550], [0, 550]]), 1),
+        piece('cdos', 'Corsage Dos', closed([[0, 0], [75, 0], [210, 45], [210, 220], [165, 400], [190, 510], [0, 510]]), 2),
+        piece('jd', 'Jupe Devant', closed([[0, 0], [222, 10], [250, 90], [400, 540], [0, 540]]), 1),
+        piece('jdos', 'Jupe Dos', closed([[0, 0], [190, 10], [225, 90], [375, 540], [0, 540]]), 2),
+      ],
+      'ROBE',
+      { TOUR_POITRINE: 88, TOUR_TAILLE: 68, TOUR_BASSIN: 94, LONGUEUR_DOS: 40 },
+    );
+    if (!built.ok) throw new Error(built.reason);
+    const { waistY } = bodyLandmarks(built.model.body);
+    const skirtZone = built.model.layout.zones.find((z) => z.zone === 'skirt')!;
+    expect(skirtZone.topY).toBeCloseTo(waistY - 0.11, 2);
+    const extent = (zone: string, pick: (a: number, b: number) => number, start: number): number => {
+      let v = start;
+      for (const p of built.model.panels.filter((q) => q.zone === zone)) for (let i = 1; i < p.positions.length; i += 3) v = pick(v, p.positions[i]!);
+      return v;
+    };
+    // The bodice reaches the skirt's seam; the skirt does not climb above it.
+    expect(extent('bodice', Math.min, Infinity)).toBeCloseTo(waistY - 0.11, 1);
+    expect(extent('skirt', Math.max, -Infinity)).toBeLessThan(waistY - 0.09);
+    // The waist is still read at the narrowest row, not at the basque's edge.
+    const taille = built.model.fit.find((f) => f.label === 'Taille')!;
+    expect(taille.easeCm).toBeLessThan(10);
+  });
+
+  it('hangs a bodice that ends above the waist from the neck and starts the skirt at its edge (empire)', () => {
+    // The robe rule's taille HAUTE: bodices 12 cm shorter, closing round the under-bust; the skirt 12 cm longer.
+    const built = buildGarmentModel(
+      [
+        piece('cd', 'Corsage Devant', closed([[0, 0], [80, 0], [240, 50], [240, 242], [227, 320], [0, 320]]), 1),
+        piece('cdos', 'Corsage Dos', closed([[0, 0], [75, 0], [210, 45], [210, 220], [227, 280], [0, 280]]), 2),
+        piece('jd', 'Jupe Devant', closed([[0, 0], [227, 10], [250, 320], [520, 660], [0, 660]]), 1),
+        piece('jdos', 'Jupe Dos', closed([[0, 0], [227, 10], [225, 320], [495, 660], [0, 660]]), 2),
+      ],
+      'ROBE',
+      { TOUR_POITRINE: 88, TOUR_TAILLE: 68, TOUR_BASSIN: 94, LONGUEUR_DOS: 40 },
+    );
+    if (!built.ok) throw new Error(built.reason);
+    const { waistY } = bodyLandmarks(built.model.body);
+    const bodiceZone = built.model.layout.zones.find((z) => z.zone === 'bodice')!;
+    expect(bodiceZone.hanging).toBe(true);
+    const extent = (zone: string, pick: (a: number, b: number) => number, start: number): number => {
+      let v = start;
+      for (const p of built.model.panels.filter((q) => q.zone === zone)) for (let i = 1; i < p.positions.length; i += 3) v = pick(v, p.positions[i]!);
+      return v;
+    };
+    // The bodice stops above the waist, and the skirt's top edge sits on the bodice's lower edge (no gap, no climb).
+    const bodiceBottom = extent('bodice', Math.min, Infinity);
+    expect(bodiceBottom).toBeGreaterThan(waistY + 0.05);
+    expect(extent('skirt', Math.max, -Infinity)).toBeCloseTo(bodiceBottom, 1);
+  });
+
+  it('keeps a normal-length bodice anchored at the waist (not hanging)', () => {
+    const built = buildGarmentModel(robePieces(), 'ROBE', measurements);
+    if (!built.ok) throw new Error(built.reason);
+    expect(built.model.layout.zones.find((z) => z.zone === 'bodice')!.hanging).toBeUndefined();
+  });
+
+  it('lets stiff cloth keep more of a gathered skirt\'s width than fluid cloth', () => {
+    const bodice = robePieces().slice(0, 2);
+    const hem = (behavior?: string): number => {
+      const result = buildGarmentModel(
+        [...bodice, piece('g', 'Jupe froncée (panneau)', closed([[0, 0], [720, 0], [720, 900], [0, 900]]), 2)],
+        'ROBE',
+        { TOUR_POITRINE: 88, TOUR_TAILLE: 68, TOUR_BASSIN: 94, LONGUEUR_DOS: 40 },
+        null,
+        behavior,
+      );
+      if (!result.ok) throw new Error(result.reason);
+      const { waistY } = bodyLandmarks(result.model.body);
+      let w = 0;
+      for (const p of result.model.panels.filter((q) => q.zone === 'skirt'))
+        for (let i = 0; i < p.positions.length; i += 3) if (Math.abs(p.positions[i + 1]! - (waistY - 0.85)) < 0.01) w = Math.max(w, p.positions[i]!);
+      return w;
+    };
+    expect(hem('STRUCTURE')).toBeGreaterThan(hem('FLUIDE'));
+    expect(hem('RIGIDE')).toBeGreaterThan(hem(undefined));
+  });
+
+  it('keeps the head of a puffed sleeve at armhole size and opens the volume down the arm', () => {
+    const SLEEVE_RADIAL = 32;
+    const rings = (outline: Array<[number, number]>): number[] => {
+      const built = buildGarmentModel([...robePieces().slice(0, 4), piece('m', 'Manche', closed(outline), 2)], 'ROBE', measurements);
+      if (!built.ok) throw new Error(built.reason);
+      const { positions } = built.model.panels.find((p) => p.zone === 'sleeve')!;
+      const widths: number[] = [];
+      for (let o = 0; o < positions.length / 3; o += SLEEVE_RADIAL) {
+        const xs: number[] = [];
+        const zs: number[] = [];
+        for (let k = 0; k < SLEEVE_RADIAL; k += 1) {
+          xs.push(positions[(o + k) * 3]!);
+          zs.push(positions[(o + k) * 3 + 2]!);
+        }
+        widths.push(Math.max(Math.max(...xs) - Math.min(...xs), Math.max(...zs) - Math.min(...zs)));
+      }
+      return widths;
+    };
+    const normal = rings([[0, 150], [137, 0], [275, 150], [250, 580], [25, 580]]);
+    // Same sleeve with a top 1.9 times wider (gigot).
+    const puffed = rings([[0, 150], [260, 0], [520, 150], [380, 580], [140, 580]]);
+    const at = (w: number[], share: number): number => w[Math.floor((w.length - 1) * share)]!;
+    // At the very top the puffed sleeve is about the armhole's size, not 1.9 times it ...
+    expect(at(puffed, 0.02)).toBeLessThan(at(normal, 0.02) * 1.35);
+    // ... and the volume is down the arm.
+    expect(at(puffed, 0.4)).toBeGreaterThan(at(normal, 0.4) * 1.15);
+  });
+
+  it('drapes a bell sleeve open at the cuff instead of as one wide board over the shoulder', () => {
+    const SLEEVE_RADIAL = 32; // points per ring of a sleeve mesh
+    const rings = (flare: boolean): number[] => {
+      const outline = flare
+        ? closed([[0, 150], [144, 0], [288, 150], [388, 570], [-101, 570]])
+        : closed([[0, 150], [137, 0], [275, 150], [250, 580], [25, 580]]);
+      const built = buildGarmentModel([...robePieces().slice(0, 4), piece('m', 'Manche', outline, 2)], 'ROBE', measurements);
+      if (!built.ok) throw new Error(built.reason);
+      const { positions } = built.model.panels.find((p) => p.zone === 'sleeve')!;
+      const widths: number[] = [];
+      for (let o = 0; o < positions.length / 3; o += SLEEVE_RADIAL) {
+        const xs: number[] = [];
+        const zs: number[] = [];
+        for (let k = 0; k < SLEEVE_RADIAL; k += 1) {
+          xs.push(positions[(o + k) * 3]!);
+          zs.push(positions[(o + k) * 3 + 2]!);
+        }
+        widths.push(Math.max(Math.max(...xs) - Math.min(...xs), Math.max(...zs) - Math.min(...zs)));
+      }
+      return widths;
+    };
+    const straight = rings(false);
+    const bell = rings(true);
+    // A straight sleeve narrows towards the cuff; a bell sleeve opens up there (it used to stay one constant-width board).
+    expect(straight[straight.length - 1]!).toBeLessThan(straight[Math.floor(straight.length / 2)]!);
+    expect(bell[bell.length - 1]!).toBeGreaterThan(bell[Math.floor(bell.length / 2)]!);
+    expect(bell[bell.length - 1]!).toBeGreaterThan(straight[straight.length - 1]! * 1.6);
+  });
+
+  it('keeps widening a gathered A-line skirt (trapezoid panels) down to the hem, not a barrel', () => {
+    const bodice = robePieces().slice(0, 2);
+    const ringWidthAt = (outline: Array<[number, number]>, depth: number): number => {
+      const built = buildGarmentModel([...bodice, piece('g', 'Jupe froncée (panneau)', closed(outline), 2)], 'ROBE', measurements);
+      if (!built.ok) throw new Error(built.reason);
+      const { waistY } = bodyLandmarks(built.model.body);
+      let w = 0;
+      for (const p of built.model.panels.filter((q) => q.zone === 'skirt'))
+        for (let i = 0; i < p.positions.length; i += 3) if (Math.abs(p.positions[i + 1]! - (waistY - depth)) < 0.01) w = Math.max(w, p.positions[i]!);
+      return w;
+    };
+    const aLine: Array<[number, number]> = [[0, 0], [550, 0], [1000, 900], [0, 900]];
+    const barrel: Array<[number, number]> = [[0, 0], [1000, 0], [1000, 900], [0, 900]];
+    // At the hem the A-line is much wider than half-way down; the rectangle of the same hem width is not.
+    expect(ringWidthAt(aLine, 0.8)).toBeGreaterThan(ringWidthAt(aLine, 0.4) * 1.25);
+    expect(ringWidthAt(aLine, 0.4)).toBeLessThan(ringWidthAt(barrel, 0.4));
+  });
+
   it('classifies ease levels', () => {
     expect(fitStatus(-2)).toBe('tight');
     expect(fitStatus(2)).toBe('fitted');
@@ -257,12 +425,12 @@ describe('garment-model', () => {
 
   it('lists pieces that cannot be placed on the mannequin', () => {
     const result = buildGarmentModel(
-      [...robePieces(), piece('b', 'Ceinture', closed([[0, 0], [700, 0], [700, 70], [0, 70]]))],
+      [...robePieces(), piece('b', 'Martingale', closed([[0, 0], [700, 0], [700, 70], [0, 70]]))],
       'ROBE',
       measurements,
     );
     if (!result.ok) throw new Error('expected a model');
-    expect(result.model.ignored).toEqual(['Ceinture']);
+    expect(result.model.ignored).toEqual(['Martingale']);
   });
 });
 

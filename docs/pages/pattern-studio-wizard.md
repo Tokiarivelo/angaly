@@ -127,6 +127,32 @@ l'assistant a lieu pendant le wizard).
   style de bandeau déjà établi (`EstimatedMeasurementsBanner.tsx`) plutôt qu'une mise en page
   inventée.
 
+- **Ajout 2026-10-16 — illustrations** : chaque option de l'étape Détails montre un **croquis technique** de la
+  robe avec cette option, la partie concernée en or (`utils/option-sketch.ts` → `ui/steps/OptionSketch.tsx`, vue de
+  dos pour le groupe `dos` et le zip dos). Dessins propres à Angaly, générés par le code (aucune image téléchargée).
+  Le « ? » de chaque mesure (étape 7) ouvre l'aide **avec une image du mannequin 3D** où la mesure est tracée en or
+  (`components/shared/MeasurementGuideImage.tsx`, images `public/images/measurement-guide/<CLÉ>.webp` rendues par
+  Blender : `make guide.cloth`). Écrans Stitch vérifiés (MCP `get_screen`, Étape 7 et Mes mesures) : le « ? » existe,
+  l'illustration s'y rattache ; pas d'écran Stitch pour l'étape Détails, les cartes reprennent ses couleurs.
+
+### 2026-10-20 — Étapes selon le vêtement, images indicatives
+
+- **Détails selon le vêtement** (`consts/garment-details.const.ts`) : seuls les groupes que la règle du moteur lit sont
+  proposés — pantalon : longueur de jambe (short, bermuda, pantacourt, cheville, sol) ; jupe : longueur ; veste,
+  chemise, costume : manches, col, encolure (sans hors-épaules), longueur ; robe, robe de mariée, autre : comme avant
+  (la mariée sans fermeture / devant / jupe, non lus par sa règle). Libellés propres au vêtement, une description par
+  option. `detailsFor` retire à l'enregistrement les détails qui ne s'appliquent pas (un col de robe sur un pantalon).
+- **Coupes selon le vêtement** (`cutsFor`) : mêmes identifiants moteur, libellés adaptés (pantalon : droit, slim,
+  bootcut, pattes d'éléphant, palazzo, baggy — `LEG_PROFILES`) ; `SIRENE` retirée des hauts et du costume.
+- **Dessins** : `utils/sketch-geometry.ts` (primitives), `utils/garment-sketch.ts` (pantalon, jupe), `utils/garment-type-sketch.ts`
+  (vignette par vêtement, silhouette par coupe) ; `sketchForOption(group, id, garment, cut)` dessine l'option sur le
+  vêtement choisi (un haut pour veste / chemise / costume, le pantalon dans sa coupe).
+- **UI** : étape Détails — par groupe, grande vue de l'option choisie ou survolée + description, vignettes 64 × 96 ;
+  étape Coupe — silhouette par carte ; étape Vêtement — vignette par type (la maquette Stitch « Étape 1 » montre une
+  illustration sur la carte choisie) ; Occasion / Style — pictogrammes ; Inspiration — schéma photo → croquis → patron
+  quand aucune photo n'est chargée ; carte élargie à `max-w-5xl`. Pas de maquette Stitch pour les étapes 3 à 6 : style
+  existant conservé.
+
 ## Checklist d'acceptation
 
 - [ ] Les 7 étapes reproduisent fidèlement `stitch-prompts/17-*.md` (palette sombre dédiée Pattern Studio)

@@ -17,6 +17,8 @@ describe('AnalyzeInspirationImageUseCase', () => {
       style: null,
       cutType: 'EVASEE',
       details: {},
+      constructionMethod: null,
+      drapeBlocks: null,
     },
     suggestedCutType: 'EVASEE',
     confidence: 0.8,
@@ -26,7 +28,11 @@ describe('AnalyzeInspirationImageUseCase', () => {
   let preprocessor: jest.Mocked<IInspirationImagePreprocessor>;
   let repository: jest.Mocked<IInspirationAnalysisRepository>;
   const aiClient = { analyzeInspiration: jest.fn() };
-  const resolver = { resolveCredentials: jest.fn(), resolveFallbackChain: jest.fn() };
+  const resolver = {
+    resolveCredentials: jest.fn(),
+    resolveFallbackChain: jest.fn(),
+    resolveAnyConfigured: jest.fn(),
+  };
   const collector = { collectInspirationAnalysis: jest.fn().mockResolvedValue(undefined) };
   let useCase: AnalyzeInspirationImageUseCase;
 
@@ -44,6 +50,7 @@ describe('AnalyzeInspirationImageUseCase', () => {
     repository = { findByHash: jest.fn().mockResolvedValue(null), save: jest.fn() };
     resolver.resolveCredentials.mockResolvedValue({ provider: 'ANTHROPIC', model: 'claude-haiku-4-5-20251001' });
     resolver.resolveFallbackChain.mockResolvedValue([]);
+    resolver.resolveAnyConfigured.mockResolvedValue([]);
     aiClient.analyzeInspiration.mockResolvedValue(analysis);
     collector.collectInspirationAnalysis.mockClear();
     useCase = new AnalyzeInspirationImageUseCase(
@@ -90,6 +97,24 @@ describe('AnalyzeInspirationImageUseCase', () => {
     repository.findByHash.mockResolvedValue({ ...analysis, profile: null });
 
     await useCase.execute('https://cdn.angaly.test/p.jpg');
+
+    expect(aiClient.analyzeInspiration).toHaveBeenCalledTimes(1);
+  });
+
+  it('re-reads a cached row written before fit/drape details existed, then overwrites it', async () => {
+    const { constructionMethod: _c, drapeBlocks: _d, ...oldProfile } = analysis.profile!;
+    repository.findByHash.mockResolvedValue({ ...analysis, profile: oldProfile });
+
+    await useCase.execute('https://cdn.angaly.test/p.jpg');
+
+    expect(aiClient.analyzeInspiration).toHaveBeenCalledTimes(1);
+    expect(repository.save).toHaveBeenCalledWith(hash, analysis);
+  });
+
+  it('skips a valid cached answer when asked to refresh', async () => {
+    repository.findByHash.mockResolvedValue(analysis);
+
+    await useCase.executeWithAttempts('https://cdn.angaly.test/p.jpg', undefined, { refresh: true });
 
     expect(aiClient.analyzeInspiration).toHaveBeenCalledTimes(1);
   });
@@ -181,6 +206,18 @@ describe('AnalyzeInspirationImageUseCase', () => {
       expect(result.analysis.profile).toBeNull();
     });
 
+    it('stops at the first model when the ai-service itself is unreachable', async () => {
+      resolver.resolveFallbackChain.mockResolvedValue([openai]);
+      aiClient.analyzeInspiration.mockResolvedValue({ ...failed, modelVersion: 'fallback-unreachable-0.0.0' });
+
+      const result = await useCase.executeWithAttempts('https://cdn.angaly.test/p.jpg');
+
+      expect(aiClient.analyzeInspiration).toHaveBeenCalledTimes(1);
+      expect(result.attempts).toEqual([{ ...claude, outcome: 'UNREACHABLE' }]);
+      expect(result.analysis.confidence).toBe(0);
+      expect(repository.save).not.toHaveBeenCalled();
+    });
+
     it('reuses a cached answer made by a fallback model', async () => {
       resolver.resolveFallbackChain.mockResolvedValue([openai]);
       repository.findByHash.mockResolvedValue({ ...analysis, modelVersion: 'gpt-4o-mini' });
@@ -192,6 +229,16 @@ describe('AnalyzeInspirationImageUseCase', () => {
       resolver.resolveCredentials.mockResolvedValue(undefined);
       await useCase.execute('https://cdn.angaly.test/p.jpg');
       expect(aiClient.analyzeInspiration.mock.calls[0][0]).not.toHaveProperty('provider');
+    });
+
+    it('uses any other configured model when the atelier default is not usable', async () => {
+      resolver.resolveCredentials.mockResolvedValue(undefined);
+      resolver.resolveAnyConfigured.mockResolvedValue([{ provider: 'ANTHROPIC', model: 'claude-haiku-4-5-20251001' }]);
+
+      const { attempts } = await useCase.executeWithAttempts('https://cdn.angaly.test/p.jpg');
+
+      expect(aiClient.analyzeInspiration.mock.calls[0][0]).toHaveProperty('provider.provider', 'ANTHROPIC');
+      expect(attempts).toEqual([{ provider: 'ANTHROPIC', model: 'claude-haiku-4-5-20251001', outcome: 'OK' }]);
     });
   });
 });

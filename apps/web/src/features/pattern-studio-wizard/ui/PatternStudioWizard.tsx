@@ -99,7 +99,7 @@ export const PatternStudioWizard: React.FC<PatternStudioWizardProps> = ({ projec
       <WizardProgressBar currentStep={currentStep} onSelectStep={goToStep} />
 
       {/* Main Wizard Form Card */}
-      <main className="flex-1 max-w-3xl w-full mx-auto p-4 sm:p-8 flex flex-col justify-center my-6">
+      <main className="flex-1 max-w-5xl w-full mx-auto p-4 sm:p-8 flex flex-col justify-center my-6">
         <div className="bg-[#0C2650] border border-[#C5B190]/30 rounded-2xl p-6 sm:p-10 shadow-2xl">
           {stepKey === 'inspiration' && (
             <InspirationStep
@@ -149,6 +149,10 @@ export const PatternStudioWizard: React.FC<PatternStudioWizardProps> = ({ projec
             <DetailsStep
               selectedDetails={formData.details}
               onSelectDetail={updateDetail}
+              garmentType={formData.garmentType}
+              cutType={formData.cutType}
+              notes={formData.fit?.notes}
+              onChangeNotes={(notes) => updateField('fit', applyFitChange(formData.fit, { field: 'notes', value: notes }))}
             />
           )}
 

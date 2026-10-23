@@ -1,0 +1,8 @@
+# cloth_sim/ runs inside Blender's own Python (which bundles numpy): nothing to install there.
+# These are for running the pure-Python core and its tests outside Blender.
+numpy==2.2.6
+
+# Dev/test only
+pytest==9.1.1
+pytest-cov==7.1.0
+ruff==0.17.0

@@ -95,6 +95,30 @@ Sans ce service démarré, tout ce qui touche aux suggestions IA de Pattern Stud
 mode dégradé (voir `.cursor/rules/008-ai-service-integration.mdc`) — la génération manuelle
 de paramètres reste possible via `packages/pattern-engine` seul.
 
+### 7. (Optionnel) Rendu réaliste — `apps/cloth-sim`
+
+Simulation de tissu avec Blender headless (`docs/features/realistic-render-blender.md`). L'API tient la file
+(module `realistic-render`, phase 2) ; le bouton web n'existe pas encore (phase 3). Il faut **Blender 4.5 LTS** (archive officielle de download.blender.org) : le paquet
+Ubuntu jammy (3.0.1) sort des rendus Cycles noirs.
+
+```bash
+make install.cloth   # crée apps/cloth-sim/.venv (tests du cœur Python, sans Blender)
+make test.cloth      # pytest + couverture
+make install.blender # Blender 4.5.14 LTS dans apps/cloth-sim/.blender/ (≈ 1,2 Go, SHA-256 vérifié)
+make job.cloth VERSION=<uuid de version>   # → /tmp/angaly-cloth/job.json (Postgres de dev requis)
+make sim.cloth       # simulation (≈ 3 min) → /tmp/angaly-cloth/garment.glb, metrics.json, before/after.png
+```
+
+Worker branché sur l'API locale (même secret des deux côtés : `CLOTH_SIM_WORKER_TOKEN` dans `apps/api/.env`, API
+redémarrée) :
+
+```bash
+# un rendu : POST /api/pattern-versions/<versionId>/realistic-render (JWT du propriétaire), puis
+make worker.cloth CLOTH_SIM_WORKER_TOKEN=<secret> ONCE=1   # ≈ 3 à 6 min par job, .glb déposé dans MinIO
+```
+
+Détails et options : `apps/cloth-sim/README.md`.
+
 ## HTTPS local (Caddy, optionnel)
 
 ```bash

@@ -9,6 +9,9 @@ import {
   Loader2,
   AlertTriangle,
   RefreshCw,
+  Camera,
+  ArrowRight,
+  Scissors,
 } from 'lucide-react';
 import type { AiProviderId, GarmentProfile } from '@angaly/types';
 import { GARMENT_TYPES } from '../../consts/garment-types.const';
@@ -17,6 +20,8 @@ import { STYLES } from '../../consts/styles.const';
 import { CUTS } from '../../consts/cuts.const';
 import { DETAIL_GROUPS } from '../../consts/details.const';
 import { useUploadInspirationPhoto } from '../../hooks/useUploadInspirationPhoto';
+import { garmentTypeSketch } from '../../utils/garment-type-sketch';
+import { SketchImage } from './OptionSketch';
 import { buildFitRows } from '../../utils/fit-parameters';
 
 interface InspirationStepProps {
@@ -104,7 +109,7 @@ export const InspirationStep: React.FC<InspirationStepProps> = ({
   onInspirationProcessed,
 }) => {
   const fileInputRef = useRef<HTMLInputElement>(null);
-  const { uploadAndAnalyze, reanalyze, isUploading, isAnalyzing, error } =
+  const { uploadAndAnalyze, reanalyze, isUploading, isAnalyzing, error, aiServiceUnreachable } =
     useUploadInspirationPhoto(onInspirationProcessed, aiProvider);
 
   const handleFileChange = (e: React.ChangeEvent<HTMLInputElement>) => {
@@ -166,6 +171,20 @@ export const InspirationStep: React.FC<InspirationStepProps> = ({
           </div>
         ) : (
           <div className="py-6 flex flex-col items-center gap-3">
+            {/* What the photo becomes: a garment photo, read as a technical flat, then a pattern. */}
+            <div className="mb-2 flex items-center gap-3 text-[#C5B190]" aria-hidden="true">
+              <span className="flex h-20 w-16 items-center justify-center rounded-md border border-[#C5B190]/40 bg-[#041329]">
+                <Camera className="h-6 w-6" />
+              </span>
+              <ArrowRight className="h-4 w-4" />
+              <span className="rounded-md bg-[#F7F1E6] p-1">
+                <SketchImage sketch={garmentTypeSketch('ROBE')} className="h-[72px] w-12" />
+              </span>
+              <ArrowRight className="h-4 w-4" />
+              <span className="flex h-20 w-16 items-center justify-center rounded-md border border-[#C5B190]/40 bg-[#041329]">
+                <Scissors className="h-6 w-6" />
+              </span>
+            </div>
             <div className="w-12 h-12 rounded-full bg-[#041329] border border-[#C5B190]/30 flex items-center justify-center text-[#C5B190] group-hover:scale-110 transition-transform">
               <UploadCloud className="w-6 h-6" />
             </div>
@@ -207,11 +226,18 @@ export const InspirationStep: React.FC<InspirationStepProps> = ({
           className="mt-4 flex items-start gap-2 p-4 rounded-xl bg-amber-500/10 border border-amber-300/30 text-amber-200 text-xs"
         >
           <AlertTriangle className="w-4 h-4 shrink-0 mt-0.5" />
-          <span>
-            L’analyse IA n’a pas pu être réalisée pour cette photo (modèle IA sélectionné et modèles de
-            repli non configurés ou indisponibles). Aucune étape n’a été pré-remplie : poursuivez manuellement ou
-            choisissez un autre modèle IA ci-dessous puis changez la photo.
-          </span>
+          {aiServiceUnreachable ? (
+            <span>
+              Le service d’analyse IA est injoignable pour le moment : aucun modèle n’a pu être interrogé.
+              Aucune étape n’a été pré-remplie : poursuivez manuellement ou réessayez l’analyse dans un instant.
+            </span>
+          ) : (
+            <span>
+              L’analyse IA n’a pas pu être réalisée pour cette photo (modèle IA sélectionné et modèles de
+              repli non configurés ou indisponibles). Aucune étape n’a été pré-remplie : poursuivez manuellement ou
+              choisissez un autre modèle IA ci-dessous puis changez la photo.
+            </span>
+          )}
         </div>
       )}
 

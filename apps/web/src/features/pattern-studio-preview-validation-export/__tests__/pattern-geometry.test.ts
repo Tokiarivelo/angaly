@@ -1,5 +1,6 @@
 import { describe, expect, it } from 'vitest';
 import {
+  closeDarts,
   findFoldEdge,
   formatCm,
   getBounds,
@@ -106,5 +107,28 @@ describe('pattern-geometry', () => {
     ]);
     expect(width).toBe(620);
     expect(height).toBe(270);
+  });
+});
+
+describe('closeDarts', () => {
+  // The engine's robe front with a bust dart on the side seam (TOUR_HAUT_POITRINE given).
+  const withDart = [
+    { x: 0, y: 160 }, { x: 95, y: 0 }, { x: 255, y: 50 }, { x: 255, y: 253 },
+    { x: 254, y: 258 }, { x: 113, y: 273 }, { x: 247, y: 288 },
+    { x: 205, y: 460 }, { x: 0, y: 460 },
+  ];
+
+  it('sews the dart: its point goes, its legs stay on the seam', () => {
+    const sewn = closeDarts(withDart);
+    expect(sewn).toHaveLength(withDart.length - 1);
+    expect(sewn.some((p) => p.x === 113)).toBe(false);
+    expect(Math.min(...sewn.filter((p) => p.y > 200 && p.y < 300).map((p) => p.x))).toBeGreaterThan(240);
+  });
+
+  it('leaves shapes without darts alone (a V neck, a plain bodice)', () => {
+    const plain = withDart.filter((p) => p.x !== 113 && p.y !== 258 && p.y !== 288);
+    expect(closeDarts(plain)).toEqual(plain);
+    const vNeck = [{ x: 0, y: 160 }, { x: 95, y: 0 }, { x: 255, y: 50 }, { x: 255, y: 460 }, { x: 0, y: 460 }];
+    expect(closeDarts(vNeck)).toEqual(vNeck);
   });
 });

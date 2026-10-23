@@ -45,7 +45,10 @@ describe('PantalonRule', () => {
 
     const pieces = PantalonRule.computePieces(params, measurements);
 
-    expect(pieces.length).toBe(4);
+    // Front, back, waistband, slanted pockets (bag + facing), zip fly (facing + shield): the default trousers.
+    expect(pieces.map((p) => p.name).sort()).toEqual(
+      ['Ceinture', 'Devant Pantalon', 'Dos Pantalon', 'Fond de Poche', 'Garniture de poche', 'Parementure de braguette', 'Sous-patte de braguette'].sort(),
+    );
     const devant = pieces.find((p) => p.name === 'Devant Pantalon');
     const dos = pieces.find((p) => p.name === 'Dos Pantalon');
     const ceinture = pieces.find((p) => p.name === 'Ceinture');

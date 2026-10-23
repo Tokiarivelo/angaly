@@ -14,6 +14,12 @@ scikit-learn==1.9.1
 numpy==2.4.6
 joblib==1.6.0
 
+# Local photo-analysis model (app/local_vision.py): CLIP image encoder in ONNX on CPU + classifiers trained by
+# ml/scripts/train_vision_model.py. Optional at runtime: without them (or the gitignored model files) the analysis
+# falls back as before.
+onnxruntime==1.20.1
+pillow==11.0.0
+
 # Dev/test only — split into requirements-dev.txt if the list grows
 pandas==3.0.5
 pytest==8.3.4

@@ -1,0 +1,32 @@
+import { writeFileSync } from 'node:fs';
+import { it } from 'vitest';
+import { buildTorsoRings, readBodyMeasurements } from '../src/features/pattern-studio-preview-validation-export/utils/garment3d/body-model';
+import { fitHumanBody, morphFor } from '../src/features/pattern-studio-preview-validation-export/utils/garment3d/human-body';
+import { loopSubdivide } from '../src/features/pattern-studio-preview-validation-export/utils/garment3d/subdivide';
+import * as head from '../src/features/pattern-studio-preview-validation-export/utils/garment3d/head-features';
+import { stylizeFace } from '../src/features/pattern-studio-preview-validation-export/utils/garment3d/face-stylize';
+import { loadHumanBase } from '../src/features/pattern-studio-preview-validation-export/__tests__/helpers/humanBase';
+
+const OUT = process.env.HEAD_OUT ?? '/tmp/head';
+it('dumps the head', () => {
+  const human = loadHumanBase();
+  const base = { ...human, raw: { indices: human.indices } };
+  const id = process.env.TEMPLATE ?? 'FEMME_STANDARD';
+  const body = readBodyMeasurements({}, id);
+  const fit = fitHumanBody(base, body, buildTorsoRings(body), morphFor(body, id));
+  const found = head.findFaceLandmarks(fit.positions, base.armWeights, body, base.indices)!;
+  const sculpted = head.sculptFace(fit.positions, found, body);
+  const { positions, face } = process.env.PLAIN ? sculpted : stylizeFace(sculpted.positions, sculpted.face, body);
+  const sub = loopSubdivide({ positions, indices: base.indices });
+  const hair = head.buildHair(positions, base.armWeights, body, face, (process.env.STYLE ?? 'bun') as head.HairStyle);
+  const ball = head.eyeball(face, body);
+  const w = (name: string, a: Float32Array | Uint32Array) => writeFileSync(`${OUT}/${name}.bin`, Buffer.from(a.buffer, a.byteOffset, a.byteLength));
+  w('body_pos', sub.positions);
+  w('body_idx', sub.indices);
+  w('raw_pos', positions);
+  w('arm', base.armWeights);
+  w('hair_pos', hair.positions);
+  w('hair_idx', hair.indices);
+  w('hair_alpha', hair.alpha);
+  writeFileSync(`${OUT}/face.json`, JSON.stringify({ face, ball }));
+});

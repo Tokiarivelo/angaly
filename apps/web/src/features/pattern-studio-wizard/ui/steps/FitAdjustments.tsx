@@ -4,6 +4,8 @@ import React from 'react';
 import {
   EASE_LEVELS,
   EASE_LEVEL_LABELS,
+  FABRIC_BEHAVIORS,
+  FABRIC_BEHAVIOR_LABELS,
   FULLNESS_BOUNDS,
   LENGTH_BOUNDS,
   type PatternExtKey,
@@ -11,6 +13,8 @@ import {
 } from '@angaly/types';
 import { effectiveFit, fitControlsFor, type FitChange } from '../../utils/fit-parameters';
 import { DrapeBlocksEditor } from './DrapeBlocksEditor';
+import { TrimsEditor } from './TrimsEditor';
+import { ConstructionEditor } from './ConstructionEditor';
 
 interface FitAdjustmentsProps {
   garmentType: string;
@@ -42,6 +46,14 @@ interface SliderProps {
   overridden?: boolean;
   onChange: (value: number | null) => void;
 }
+
+/** What each behaviour changes in the pattern (the engine keeps a woven cloth from being cut under the body). */
+const FABRIC_HINTS: Record<(typeof FABRIC_BEHAVIORS)[number], string> = {
+  FLUIDE: 'Tombe en plis souples',
+  STRUCTURE: 'Tient sa forme',
+  RIGIDE: 'Se tient seul',
+  STRETCH: 'Extensible : peut épouser le corps',
+};
 
 const SuggestedTag: React.FC = () => (
   <span className="text-[10px] uppercase tracking-wide text-[#C5B190] border border-[#C5B190]/40 rounded px-1.5 py-0.5">
@@ -154,6 +166,33 @@ export const FitAdjustments: React.FC<FitAdjustmentsProps> = ({ garmentType, val
         </div>
       )}
 
+      <div>
+        <h4 className="text-white text-xs font-medium mb-2">Tissu</h4>
+        <div role="radiogroup" aria-label="Tissu" className="grid grid-cols-2 sm:grid-cols-4 gap-2.5">
+          {FABRIC_BEHAVIORS.map((behavior) => {
+            const selected = value?.fabric === behavior;
+            return (
+              <button
+                key={behavior}
+                type="button"
+                role="radio"
+                aria-checked={selected}
+                onClick={() => onChange({ field: 'fabric', value: selected ? null : behavior })}
+                className={`p-3 rounded-lg text-center border transition-all ${
+                  selected
+                    ? 'bg-[#041329] border-[#C5B190] ring-1 ring-[#C5B190]'
+                    : 'bg-[#041329]/60 border-[#C5B190]/20 hover:border-[#C5B190]/50'
+                }`}
+              >
+                <p className="text-white text-sm font-semibold">{FABRIC_BEHAVIOR_LABELS[behavior]}</p>
+                <p className="text-[#D8D3C8]/60 text-[10px]">{FABRIC_HINTS[behavior]}</p>
+              </button>
+            );
+          })}
+        </div>
+        <p className="text-[10px] text-[#D8D3C8]/60 mt-1">Sans choix, le comportement lu sur la photo (ou un tissu tissé) est retenu.</p>
+      </div>
+
       <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
         {controls.skirt && (
           <>
@@ -176,6 +215,30 @@ export const FitAdjustments: React.FC<FitAdjustmentsProps> = ({ garmentType, val
               {...slider('fullness.skirt', value?.fullness?.skirt)}
               defaultLabel="Selon la coupe"
               onChange={(v) => onChange({ field: 'fullness.skirt', value: v })}
+            />
+          </>
+        )}
+        {controls.leg && (
+          <>
+            <Slider
+              id="fit-leg-pct"
+              label="Longueur de jambe"
+              unit=" %"
+              {...LENGTH_BOUNDS.legPct}
+              value={shown.lengths?.legPct}
+              {...slider('lengths.legPct', value?.lengths?.legPct)}
+              defaultLabel="Selon la longueur choisie"
+              onChange={(v) => onChange({ field: 'lengths.legPct', value: v })}
+            />
+            <Slider
+              id="fit-leg-fullness"
+              label="Largeur du bas de jambe"
+              unit="×"
+              {...FULLNESS_BOUNDS.leg}
+              value={shown.fullness?.leg}
+              {...slider('fullness.leg', value?.fullness?.leg)}
+              defaultLabel="Selon la coupe"
+              onChange={(v) => onChange({ field: 'fullness.leg', value: v })}
             />
           </>
         )}
@@ -222,6 +285,20 @@ export const FitAdjustments: React.FC<FitAdjustmentsProps> = ({ garmentType, val
         value={value?.drape}
         suggested={suggested?.drape}
         onChange={(spec) => onChange({ field: 'drape', value: spec })}
+      />
+
+      <TrimsEditor
+        garmentType={garmentType}
+        value={value?.trims}
+        suggested={suggested?.trims}
+        onChange={(spec) => onChange({ field: 'trims', value: spec })}
+      />
+
+      <ConstructionEditor
+        garmentType={garmentType}
+        value={value?.construction}
+        suggested={suggested?.construction}
+        onChange={(spec) => onChange({ field: 'construction', value: spec })}
       />
     </div>
   );

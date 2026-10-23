@@ -4,6 +4,7 @@ import { bodyLandmarks } from '../utils/garment3d/body-model';
 import { envelopeFromMesh } from '../utils/garment3d/body-envelope';
 import { buildGarmentModel, drapeGarment, type PanelMeshData } from '../utils/garment3d/garment-model';
 import { fitHumanBody, morphFor } from '../utils/garment3d/human-body';
+import { applyPose, POSE_PRESETS } from '../utils/garment3d/pose';
 import { vertexNormals } from '../utils/garment3d/surface-shading';
 import reference from './fixtures/robe-pois-maxi.pieces.json';
 import { loadHumanBase } from './helpers/humanBase';
@@ -134,9 +135,22 @@ describe('reference fit: polka-dot maxi dress (robe-pois-maxi)', () => {
       });
     };
     const back = seam('bodice-back');
-    for (const [x, y, z] of seam('bodice-front')) {
-      const gap = Math.min(...back.map(([bx, by, bz]) => Math.hypot(bx - x, by - y, bz - z)));
-      expect(gap).toBeLessThan(0.012);
+    // Distance to the back seam itself (the line between its points): the two seams may slide along each other.
+    const toBack = (q: [number, number, number]): number => {
+      let best = Infinity;
+      for (let k = 1; k < back.length; k += 1) {
+        const a = back[k - 1]!;
+        const b = back[k]!;
+        const ab = [b[0] - a[0], b[1] - a[1], b[2] - a[2]];
+        const len2 = ab[0]! ** 2 + ab[1]! ** 2 + ab[2]! ** 2 || 1;
+        const t = Math.max(0, Math.min(1, ((q[0] - a[0]) * ab[0]! + (q[1] - a[1]) * ab[1]! + (q[2] - a[2]) * ab[2]!) / len2));
+        best = Math.min(best, Math.hypot(a[0] + ab[0]! * t - q[0], a[1] + ab[1]! * t - q[1], a[2] + ab[2]! * t - q[2]));
+      }
+      return best;
+    };
+    for (const q of seam('bodice-front')) {
+      if (process.env.VERBOSE) console.log('SEAMGAP', toBack(q).toFixed(4));
+      expect(toBack(q)).toBeLessThan(0.012);
     }
   });
 
@@ -206,5 +220,44 @@ describe('reference fit: polka-dot maxi dress (robe-pois-maxi)', () => {
       expect(p.uvs.length).toBe((p.positions.length / 3) * 2);
       expect(p.uvs.every((v) => Number.isFinite(v))).toBe(true);
     }
+  });
+
+  it('drapes on the posed mannequin of the photo: each sleeve on its own arm, no skin through the bodice', () => {
+    const posed = applyPose(P, W, body, POSE_PRESETS.MIROIR.pose);
+    const penv = envelopeFromMesh(posed, base.indices, W, body);
+    const pp = drapeGarment(layout, body, penv);
+    // Left sleeve (raised arm) around the left upper arm, right sleeve around the right one.
+    for (const side of [1, -1] as const) {
+      const sleeve = pp.find((p) => p.zone === 'sleeve' && p.id.endsWith(side === 1 ? '-1' : '--1'))!;
+      const c: [number, number, number] = [0, 0, 0];
+      for (let i = 0; i < sleeve.positions.length; i += 3) {
+        c[0] = c[0] + sleeve.positions[i]!;
+        c[1] = c[1] + sleeve.positions[i + 1]!;
+        c[2] = c[2] + sleeve.positions[i + 2]!;
+      }
+      const n = sleeve.positions.length / 3;
+      // Nearest upper-arm skin (arm weight ≥ ½, within 25 cm of the shoulder) to the sleeve's centre.
+      let best = Infinity;
+      for (let i = 0; i < W.length; i += 1) {
+        if (W[i]! < 0.5 || Math.sign(posed[i * 3]!) !== side) continue;
+        best = Math.min(best, Math.hypot(posed[i * 3]! - c[0] / n, posed[i * 3 + 1]! - c[1] / n, posed[i * 3 + 2]! - c[2] / n));
+      }
+      expect(best).toBeLessThan(0.06);
+    }
+    const cloth = rayCaster(pp.filter((p) => p.zone === 'bodice'));
+    const skin = rayCaster([{ positions: posed, indices: base.indices }]);
+    const normals = vertexNormals(posed, base.indices);
+    let checked = 0;
+    let bare = 0;
+    for (let i = 0; i < W.length; i += 3) {
+      const y = posed[i * 3 + 1]!;
+      if (W[i]! >= 0.5 || y < l.waistY + 0.03 || y > penv.armpitY) continue;
+      const n: [number, number, number] = [normals[i * 3]!, normals[i * 3 + 1]!, normals[i * 3 + 2]!];
+      if (skin([posed[i * 3]!, y, posed[i * 3 + 2]!], n, 0.15, 0.004)) continue; // the armpit's hollow: hidden
+      checked += 1;
+      if (!cloth([posed[i * 3]!, y, posed[i * 3 + 2]!], [normals[i * 3]!, normals[i * 3 + 1]!, normals[i * 3 + 2]!], 0.06)) bare += 1;
+    }
+    expect(checked).toBeGreaterThan(100);
+    expect(bare / checked).toBeLessThan(0.02);
   });
 });

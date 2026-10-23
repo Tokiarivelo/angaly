@@ -1,0 +1,102 @@
+# Lecture des photos par Claude Opus 5.5 (session Claude Code, 2026-10-20), à la demande de l'utilisateur, pour entraîner le
+# modèle local de lecture de photo. Non validé par une couturière. Format compact :
+#   nom: (garmentType, cutType, presentation, occasion, style, details, ease, fullness.skirt)
+L = {
+ "chemise-portee-001.jpg": ("CHEMISE", "DROITE", "WORN", "QUOTIDIEN", "ELEGANT", {"manches": "EVEQUE", "col": "CHEMISIER", "longueur": "GENOU"}, "AMPLE", None),
+ "chemise-portee-002.jpg": ("CHEMISE", "DROITE", "WORN", "QUOTIDIEN", "ELEGANT", {"manches": "EVEQUE", "col": "CHEMISIER"}, "AMPLE", None),
+ "chemise-portee-003.jpg": ("CHEMISE", None, "WORN", None, None, {"manches": "LONGUES"}, None, None),
+ "chemise-portee-005.jpg": ("CHEMISE", "DROITE", "WORN", "QUOTIDIEN", "CLASSIQUE", {"manches": "COURTES", "col": "ROND"}, "CONFORT", None),
+ "chemise-portee-006.jpg": ("CHEMISE", "DROITE", "WORN", "QUOTIDIEN", "CLASSIQUE", {"manches": "LONGUES", "col": "EN_V"}, "AMPLE", None),
+ "chemise-portee-007.jpg": ("ROBE", "DROITE", "WORN", "QUOTIDIEN", "CLASSIQUE", {"manches": "COURTES", "col": "CHEMISIER", "longueur": "MINI"}, "CONFORT", 1.4),
+ "chemise-portee-008.jpg": ("ROBE", "DROITE", "WORN", "QUOTIDIEN", "CLASSIQUE", {"manches": "COURTES", "col": "CHEMISIER", "longueur": "MINI"}, "CONFORT", 1.4),
+ "costume-porte-001.jpg": ("ROBE", None, "MANNEQUIN", "SOIREE", "ELEGANT", {"longueur": "SOL"}, None, None),
+ "costume-porte-002.jpg": ("COSTUME", "DROITE", "WORN", "PROFESSIONNEL", "CLASSIQUE", {"manches": "LONGUES", "col": "CHALE", "longueur": "MAXI"}, "CONFORT", None),
+ "costume-porte-003.jpg": ("COSTUME", "AJUSTEE", "WORN", "PROFESSIONNEL", "MODERNE", {"manches": "LONGUES", "col": "CHALE", "longueur": "MAXI"}, "AJUSTE", None),
+ "costume-porte-004.jpg": ("COSTUME", "AJUSTEE", "WORN", "PROFESSIONNEL", "MODERNE", {"manches": "LONGUES", "col": "CHALE", "longueur": "MAXI"}, "AJUSTE", None),
+}
+L.update({
+ "costume-porte-005.jpg": ("VESTE", "DROITE", "WORN", "PROFESSIONNEL", "CLASSIQUE", {"manches": "LONGUES", "col": "CHALE"}, "CONFORT", None),
+ "costume-porte-006.jpg": ("VESTE", "DROITE", "WORN", "PROFESSIONNEL", "CLASSIQUE", {"manches": "LONGUES", "col": "CHALE"}, "CONFORT", None),
+ "costume-porte-007.jpg": ("VESTE", "DROITE", "WORN", "PROFESSIONNEL", "CLASSIQUE", {"manches": "LONGUES", "col": "CHALE", "longueur": "MIDI"}, "CONFORT", None),
+ "costume-porte-008.jpg": ("VESTE", "DROITE", "WORN", "PROFESSIONNEL", "CLASSIQUE", {"manches": "LONGUES", "col": "CHALE"}, "CONFORT", None),
+ "jupe-cercle-001.jpg": ("JUPE", "PRINCESSE", "SKETCH", "SOIREE", "GLAMOUR", {"longueur": "MIDI"}, "AMPLE", 4.0),
+ "jupe-cercle-002.jpg": ("ROBE", "PRINCESSE", "SKETCH", "SOIREE", "GLAMOUR", {"longueur": "GENOU", "manches": "SANS_MANCHES"}, "AMPLE", 4.0),
+ "jupe-cercle-003.jpg": ("JUPE", "PRINCESSE", "FLAT", "AUTRE", "TRADITIONNEL", {}, "AMPLE", 4.0),
+ "jupe-cercle-004.jpg": ("ROBE", "PRINCESSE", "WORN", "SOIREE", "GLAMOUR", {"longueur": "SOL", "manches": "COURTES", "decollete": "PLONGEANT"}, "CONFORT", 3.0),
+ "jupe-cercle-005.jpg": ("ROBE", "PRINCESSE", "WORN", "SOIREE", "GLAMOUR", {"longueur": "SOL", "manches": "COURTES"}, "CONFORT", 3.5),
+ "jupe-cercle-006.jpg": ("ROBE", "PRINCESSE", "WORN", "SOIREE", "GLAMOUR", {"longueur": "SOL", "manches": "SANS_MANCHES", "decollete": "PLONGEANT"}, "CONFORT", 3.0),
+ "jupe-cercle-007.jpg": ("ROBE", "PRINCESSE", "WORN", "SOIREE", "GLAMOUR", {"longueur": "SOL", "manches": "SANS_MANCHES", "decollete": "PLONGEANT"}, "CONFORT", 3.0),
+ "jupe-cercle-008.jpg": ("JUPE", "PRINCESSE", "WORN", "SOIREE", "CLASSIQUE", {"longueur": "MIDI", "taille": "HAUTE"}, "CONFORT", 3.0),
+})
+L.update({
+ "jupe-crayon-001.jpg": ("JUPE", "AJUSTEE", "WORN", "QUOTIDIEN", "CLASSIQUE", {"longueur": "GENOU"}, "AJUSTE", 1.0),
+ "jupe-crayon-002.jpg": ("COSTUME", "DROITE", "WORN", "QUOTIDIEN", "CLASSIQUE", {"manches": "LONGUES", "longueur": "MIDI"}, "CONFORT", None),
+ "jupe-crayon-003.jpg": ("COSTUME", "AJUSTEE", "WORN", "PROFESSIONNEL", "CLASSIQUE", {"manches": "LONGUES", "col": "CHALE", "longueur": "MIDI"}, "AJUSTE", None),
+ "jupe-crayon-004.jpg": ("JUPE", "AJUSTEE", "WORN", "PROFESSIONNEL", "CLASSIQUE", {"longueur": "MIDI"}, "AJUSTE", 1.0),
+ "jupe-crayon-005.jpg": ("JUPE", "AJUSTEE", "WORN", "PROFESSIONNEL", "CLASSIQUE", {"longueur": "GENOU", "fente": "DOS"}, "AJUSTE", 1.0),
+ "jupe-crayon-006.jpg": ("JUPE", "AJUSTEE", "WORN", "PROFESSIONNEL", "CLASSIQUE", {"longueur": "MIDI", "fente": "DOS"}, "AJUSTE", 1.0),
+ "jupe-crayon-007.jpg": ("COSTUME", "DROITE", "WORN", "PROFESSIONNEL", "CLASSIQUE", {"manches": "LONGUES", "col": "CHALE", "longueur": "MIDI"}, "AMPLE", None),
+ "jupe-crayon-008.jpg": ("COSTUME", "AJUSTEE", "WORN", "PROFESSIONNEL", "CLASSIQUE", {"manches": "LONGUES", "longueur": "MIDI"}, "AJUSTE", None),
+ "jupe-plissee-001.jpg": ("COSTUME", "AJUSTEE", "MANNEQUIN", "PROFESSIONNEL", "CLASSIQUE", {"manches": "LONGUES", "col": "CHALE", "longueur": "GENOU"}, "CONFORT", None),
+ "jupe-plissee-002.jpg": ("JUPE", "EVASEE", "WORN", "QUOTIDIEN", "CLASSIQUE", {"longueur": "GENOU"}, "CONFORT", 1.6),
+ "jupe-plissee-004.jpg": ("JUPE", "EVASEE", "WORN", "QUOTIDIEN", "CLASSIQUE", {"longueur": "GENOU"}, "CONFORT", 1.6),
+})
+L.update({
+ "jupe-plissee-005.jpg": ("JUPE", "PRINCESSE", "MANNEQUIN", "CEREMONIE", "TRADITIONNEL", {"longueur": "GENOU"}, "AMPLE", 2.8),
+ "jupe-plissee-008.jpg": ("JUPE", "EVASEE", "WORN", "QUOTIDIEN", "CLASSIQUE", {"longueur": "MINI"}, "CONFORT", 1.6),
+ "jupe-trapeze-001.jpg": ("JUPE", "EVASEE", "WORN", "QUOTIDIEN", "CLASSIQUE", {"longueur": "GENOU"}, "CONFORT", 1.6),
+ "jupe-trapeze-003.jpg": ("ROBE", "EVASEE", "WORN", "QUOTIDIEN", "CLASSIQUE", {"longueur": "MINI", "manches": "SANS_MANCHES", "col": "ROND"}, "AJUSTE", 2.0),
+ "jupe-trapeze-004.jpg": ("ROBE", "EVASEE", "WORN", "QUOTIDIEN", "CLASSIQUE", {"longueur": "MINI", "manches": "SANS_MANCHES", "col": "ROND"}, "AJUSTE", 2.0),
+ "jupe-trapeze-005.jpg": ("JUPE", "EVASEE", "WORN", "QUOTIDIEN", "MODERNE", {"longueur": "MINI"}, "CONFORT", 1.6),
+ "jupe-trapeze-006.jpg": ("ROBE", "EVASEE", "WORN", "QUOTIDIEN", "CLASSIQUE", {"longueur": "MINI", "manches": "CAP", "col": "ROND"}, "AJUSTE", 2.0),
+ "jupe-trapeze-007.jpg": ("ROBE", None, "FLAT", "QUOTIDIEN", "CLASSIQUE", {"manches": "COURTES"}, None, None),
+ "jupe-trapeze-008.jpg": ("JUPE", "EVASEE", "FLAT", "QUOTIDIEN", "ELEGANT", {"longueur": "MAXI"}, "CONFORT", 2.4),
+})
+L.update({
+ "pantalon-baggy-001.jpg": ("PANTALON", "OVERSIZE", "SKETCH", "CEREMONIE", "TRADITIONNEL", {"longueur": "MAXI"}, "AMPLE", None),
+ "pantalon-baggy-004.jpg": ("PANTALON", "OVERSIZE", "WORN", "CEREMONIE", "TRADITIONNEL", {"longueur": "MAXI", "fermeture": "ELASTIQUE"}, "AMPLE", None),
+ "pantalon-baggy-005.jpg": ("PANTALON", "OVERSIZE", "WORN", "CEREMONIE", "TRADITIONNEL", {"longueur": "MAXI", "fermeture": "ELASTIQUE"}, "AMPLE", None),
+ "pantalon-baggy-006.jpg": ("PANTALON", "OVERSIZE", "WORN", "CEREMONIE", "TRADITIONNEL", {"longueur": "MAXI", "fermeture": "ELASTIQUE"}, "AMPLE", None),
+ "pantalon-baggy-007.jpg": ("PANTALON", "OVERSIZE", "WORN", "CEREMONIE", "TRADITIONNEL", {"longueur": "MAXI", "fermeture": "ELASTIQUE"}, "AMPLE", None),
+ "pantalon-baggy-008.jpg": ("PANTALON", "OVERSIZE", "WORN", "CEREMONIE", "TRADITIONNEL", {"longueur": "MAXI", "fermeture": "ELASTIQUE"}, "AMPLE", None),
+ "pantalon-droit-001.jpg": ("PANTALON", "DROITE", "WORN", "PROFESSIONNEL", "CLASSIQUE", {"longueur": "MAXI"}, "CONFORT", None),
+ "pantalon-droit-002.jpg": ("PANTALON", "DROITE", "WORN", "SOIREE", "MODERNE", {"longueur": "MAXI", "taille": "HAUTE"}, "CONFORT", None),
+ "pantalon-droit-003.jpg": ("PANTALON", "DROITE", "WORN", "SOIREE", "MODERNE", {"taille": "HAUTE", "ceinture": "DROITE"}, "CONFORT", None),
+})
+L.update({
+ "pantalon-droit-006.jpg": ("PANTALON", "DROITE", "WORN", "SOIREE", "MODERNE", {"taille": "HAUTE", "ceinture": "DROITE"}, "CONFORT", None),
+ "pantalon-droit-007.jpg": ("PANTALON", "DROITE", "WORN", "QUOTIDIEN", "CLASSIQUE", {"longueur": "MAXI", "taille": "HAUTE", "plis": "UN_PLI", "poches": "ITALIENNES"}, "AMPLE", None),
+ "pantalon-droit-008.jpg": ("PANTALON", "DROITE", "SKETCH", "AUTRE", "CLASSIQUE", {"longueur": "MAXI"}, None, None),
+ "pantalon-large-001.jpg": ("PANTALON", "SIRENE", "WORN", "QUOTIDIEN", "CLASSIQUE", {"longueur": "MAXI"}, "CONFORT", None),
+ "pantalon-large-002.jpg": ("PANTALON", "PRINCESSE", "WORN", "SOIREE", "GLAMOUR", {"longueur": "SOL"}, "AMPLE", None),
+ "pantalon-large-003.jpg": ("PANTALON", "PRINCESSE", "WORN", "QUOTIDIEN", "ELEGANT", {"longueur": "SOL", "taille": "HAUTE"}, "AMPLE", None),
+ "pantalon-large-004.jpg": ("PANTALON", "PRINCESSE", "WORN", "QUOTIDIEN", "ELEGANT", {"longueur": "SOL", "taille": "HAUTE"}, "AMPLE", None),
+ "pantalon-large-005.jpg": ("PANTALON", "PRINCESSE", "WORN", "QUOTIDIEN", "ELEGANT", {"longueur": "SOL", "taille": "HAUTE"}, "AMPLE", None),
+ "pantalon-large-006.jpg": ("PANTALON", "PRINCESSE", "WORN", "QUOTIDIEN", "ELEGANT", {"longueur": "SOL", "taille": "HAUTE"}, "AMPLE", None),
+ "pantalon-large-008.jpg": ("PANTALON", "PRINCESSE", "WORN", "QUOTIDIEN", "ELEGANT", {"longueur": "SOL", "taille": "HAUTE"}, "AMPLE", None),
+})
+L.update({
+ "pantalon-patte-001.jpg": ("PANTALON", "SIRENE", "WORN", "QUOTIDIEN", "CLASSIQUE", {"longueur": "SOL"}, "AJUSTE", None),
+ "pantalon-patte-002.jpg": ("PANTALON", "SIRENE", "WORN", "QUOTIDIEN", "CLASSIQUE", {"longueur": "SOL"}, "AJUSTE", None),
+ "pantalon-patte-003.jpg": ("PANTALON", "EVASEE", "WORN", "PROFESSIONNEL", "CLASSIQUE", {"longueur": "MAXI"}, "CONFORT", None),
+ "pantalon-patte-004.jpg": ("PANTALON", "AJUSTEE", "WORN", "QUOTIDIEN", "CLASSIQUE", {"longueur": "MAXI"}, "AJUSTE", None),
+ "pantalon-patte-005.jpg": ("PANTALON", "SIRENE", "FLAT", "QUOTIDIEN", "CLASSIQUE", {"longueur": "MAXI", "taille": "BASSE"}, "AJUSTE", None),
+ "pantalon-patte-006.jpg": ("PANTALON", "SIRENE", "FLAT", "QUOTIDIEN", "TRADITIONNEL", {"longueur": "MAXI"}, "AJUSTE", None),
+ "pantalon-patte-007.jpg": ("PANTALON", "EVASEE", "WORN", "SOIREE", "MODERNE", {"longueur": "MAXI", "taille": "HAUTE"}, "CONFORT", None),
+ "pantalon-patte-008.jpg": ("PANTALON", "EVASEE", "MANNEQUIN", "QUOTIDIEN", "CLASSIQUE", {"longueur": "MAXI"}, "CONFORT", None),
+ "pantalon-slim-001.jpg": ("PANTALON", "AJUSTEE", "WORN", "QUOTIDIEN", "MODERNE", {"longueur": "MAXI"}, "AJUSTE", None),
+ "pantalon-slim-002.jpg": ("PANTALON", "AJUSTEE", "WORN", "QUOTIDIEN", "MODERNE", {"longueur": "MAXI", "taille": "HAUTE"}, "AJUSTE", None),
+ "pantalon-slim-003.jpg": ("PANTALON", "AJUSTEE", "WORN", "QUOTIDIEN", "MODERNE", {"longueur": "MAXI"}, "AJUSTE", None),
+ "pantalon-slim-004.jpg": ("PANTALON", "AJUSTEE", "WORN", "QUOTIDIEN", "MODERNE", {"longueur": "MAXI"}, "AJUSTE", None),
+})
+L.update({
+ "pantalon-slim-006.jpg": ("PANTALON", "AJUSTEE", "WORN", "SOIREE", "MODERNE", {"longueur": "MAXI", "taille": "HAUTE"}, "AJUSTE", None),
+ "pantalon-slim-007.jpg": ("PANTALON", "AJUSTEE", "WORN", "SOIREE", "MODERNE", {"longueur": "MAXI", "taille": "HAUTE"}, "AJUSTE", None),
+ "pantalon-slim-008.jpg": ("PANTALON", "AJUSTEE", "WORN", "SOIREE", "MODERNE", {"longueur": "MAXI", "taille": "HAUTE"}, "AJUSTE", None),
+ "veste-portee-001.jpg": ("VESTE", "DROITE", "WORN", "QUOTIDIEN", "CLASSIQUE", {"manches": "LONGUES", "col": "CHALE"}, "CONFORT", None),
+ "veste-portee-002.jpg": ("VESTE", "DROITE", "WORN", "PROFESSIONNEL", "CLASSIQUE", {"manches": "LONGUES", "col": "CHALE"}, "CONFORT", None),
+ "veste-portee-003.jpg": ("VESTE", "AJUSTEE", "FLAT", "PROFESSIONNEL", "CLASSIQUE", {"manches": "LONGUES", "col": "CHALE", "longueur": "GENOU"}, "AJUSTE", None),
+ "veste-portee-006.jpg": ("VESTE", "DROITE", "MANNEQUIN", "PROFESSIONNEL", "CLASSIQUE", {"manches": "LONGUES", "col": "CHALE", "longueur": "GENOU"}, "CONFORT", None),
+ "veste-portee-007.jpg": ("VESTE", "DROITE", "WORN", "QUOTIDIEN", "CLASSIQUE", {"manches": "LONGUES", "col": "CHALE", "longueur": "GENOU"}, "CONFORT", None),
+ "veste-portee-008.jpg": ("VESTE", "DROITE", "WORN", "QUOTIDIEN", "CLASSIQUE", {"manches": "LONGUES", "col": "CHALE"}, "CONFORT", None),
+})

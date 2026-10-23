@@ -70,6 +70,7 @@
 | mes-projets-patron                               | `docs/pages/mes-projets-patron.md`                  | `stitch-prompts/27-espace-client-patron-mesures.md`                            | ANGALY — Mes projets de patron                          | §53, §66      | ✅     |
 | mes-mesures                                        | `docs/pages/mes-mesures.md`                         | `stitch-prompts/27-espace-client-patron-mesures.md`                            | ANGALY — Mes mesures                                     | §22-23, §56   | ✅     |
 | mes-creations                                      | `docs/pages/mes-creations.md`                       | (écran généré directement dans Stitch, pas de prompt)                          | ANGALY — Mes créations                                   | §53       | ✅     |
+| pattern-studio-catalogue                           | `docs/pages/pattern-studio-catalogue.md`            | (écran généré directement dans Stitch, pas de prompt)                          | (à générer : « ANGALY Pattern Studio — Catalogue des patrons ») — reprend « Mes projets de patron » | §18-24    | ✅     |
 
 ## PHASE 5 — IA avancée
 
