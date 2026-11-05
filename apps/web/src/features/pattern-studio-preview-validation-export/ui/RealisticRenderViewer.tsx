@@ -18,6 +18,7 @@ import { LIGHTING_PRESETS, SIMULATED_CLOTH_AO_BLEND, dprRange } from '../utils/s
 import { applyStudioShadows, configureStudioRenderer } from '../utils/studio3d/studio-scene';
 import { withNormalGuard } from '../utils/studio3d/normal-guard';
 import { useStudioQuality } from '../hooks/useStudioQuality';
+import type { StudioViewSettings } from '../utils/studio3d/studio-settings';
 import { StudioBackdrop } from './studio3d/StudioBackdrop';
 import { StudioEnvironment } from './studio3d/StudioEnvironment';
 import { StudioLights } from './studio3d/StudioLights';
@@ -45,6 +46,8 @@ interface RealisticRenderViewerProps {
   showMannequin?: boolean | undefined;
   onError?: ((message: string) => void) | undefined;
   onContextLost?: (() => void) | undefined;
+  /** Same studio settings as the preview (light, shadows, AO, tier); absent ⇒ `studio` light, automatic tier. */
+  studio?: StudioViewSettings | undefined;
 }
 
 /** Same surfaces as the preview (velvet sheen, satin, matte), so both renders read as the same fabric. */
@@ -205,12 +208,16 @@ export const RealisticRenderViewer: React.FC<RealisticRenderViewerProps> = ({
   showMannequin = true,
   onError,
   onContextLost,
+  studio: studioSettings,
 }) => {
   const scene = useSimulatedGarment(glbUrl, onError);
   const human = useHumanBase();
   // Same studio as the preview (`Garment3DViewer`): both renders must read as the same garment under the same light.
-  const preset = LIGHTING_PRESETS.studio;
-  const { tier, reportFrame } = useStudioQuality();
+  const preset = LIGHTING_PRESETS[studioSettings?.lighting ?? 'studio'];
+  const ownQuality = useStudioQuality();
+  const tier = studioSettings?.tier ?? ownQuality.tier;
+  const reportFrame = studioSettings?.reportFrame ?? ownQuality.reportFrame;
+  const shadows = studioSettings?.shadows ?? true;
   const [renderReady, setRenderReady] = useState(false);
   const dpr = useMemo(() => dprRange(tier, typeof window === 'undefined' ? 1 : window.devicePixelRatio || 1), [tier]);
   // A fabric with a known surface is shown as a photograph: grey paper backdrop.
@@ -239,14 +246,14 @@ export const RealisticRenderViewer: React.FC<RealisticRenderViewerProps> = ({
       >
         {paper ? <StudioBackdrop /> : <color attach="background" args={['#041329']} />}
         <StudioEnvironment preset={preset} backdrop={paper ? 'paper' : 'navy'} />
-        <StudioLights preset={preset} tier={tier} />
-        {showMannequin && <ShadowFloor opacity={preset.floorShadowOpacity} />}
+        <StudioLights preset={preset} tier={tier} shadows={shadows} />
+        {showMannequin && shadows && <ShadowFloor opacity={preset.floorShadowOpacity} />}
         {showMannequin && <Mannequin human={human} model={model} pose={pose} />}
         {scene && <Garment scene={scene} fabric={fabric} motifs={motifs} />}
         <OrbitControls target={[0, 0.95, 0]} enableDamping={false} minDistance={0.6} maxDistance={8} />
         <StudioPost
           tier={tier}
-          aoAllowed
+          aoAllowed={studioSettings?.ao ?? true}
           aoBlend={SIMULATED_CLOTH_AO_BLEND}
           warmKey={`${scene ? glbUrl : 'loading'}:${human ? 'person' : 'none'}`}
           onReadyChange={setRenderReady}

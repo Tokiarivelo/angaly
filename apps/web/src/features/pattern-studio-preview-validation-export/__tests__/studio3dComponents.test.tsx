@@ -124,6 +124,19 @@ describe('StudioLights', () => {
     expect(key.position.toArray()).toEqual([...LIGHTING_PRESETS.soft.key.position]);
     expect(key.shadow.mapSize.x).toBe(QUALITY_TIERS.low.shadowMap);
   });
+
+  it('keeps the key light without its shadow when shadows are off', () => {
+    const seen: THREE.DirectionalLight[] = [];
+    const original = THREE.DirectionalLight.prototype.dispose;
+    vi.spyOn(THREE.DirectionalLight.prototype, 'dispose').mockImplementation(function (this: THREE.DirectionalLight) {
+      seen.push(this);
+      original.call(this);
+    });
+    const { unmount } = render(<StudioLights preset={LIGHTING_PRESETS.studio} tier="high" shadows={false} />);
+    unmount();
+    expect(seen[0]!.castShadow).toBe(false);
+    expect(seen[0]!.intensity).toBe(LIGHTING_PRESETS.studio.key.intensity);
+  });
 });
 
 describe('StudioPost', () => {

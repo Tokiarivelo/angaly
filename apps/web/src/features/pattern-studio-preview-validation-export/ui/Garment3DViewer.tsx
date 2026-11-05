@@ -28,12 +28,15 @@ import { isHexColor } from '@angaly/types';
 import { applyPose, forearmMask, handCentres, isNeutral, seatHandsOnSkirt, type BodyPose } from '../utils/garment3d/pose';
 import { eyeTexture, hairTexture } from './headTextures';
 import { useHumanBase } from './useHumanBase';
+import { poseAt, type CameraPose } from '../utils/studio3d/camera-tween';
+import { VIEW_DISTANCE, VIEW_TARGET, hemHeight, viewPose, type ViewName } from '../utils/studio3d/camera-views';
 import { SculptBrush, type SculptHandlers, type SculptViewProps } from './SculptBrush';
 import { MeshEditLayer, type MeshEditViewProps, type ScreenBox } from './MeshEditLayer';
 import { outlineInstances, type PointInstance } from '../utils/garment3d/mesh-edit';
 import type { PatternPieceDto } from '@angaly/types';
 import { garmentFrameOf } from '../utils/garment3d/photo-frame';
-import { LIGHTING_PRESETS, dprRange, type LightingPresetName } from '../utils/studio3d/studio-config';
+import { LIGHTING_PRESETS, dprRange } from '../utils/studio3d/studio-config';
+import type { StudioViewSettings } from '../utils/studio3d/studio-settings';
 import { configureStudioRenderer } from '../utils/studio3d/studio-scene';
 import { guardPerturbedNormal, withNormalGuard } from '../utils/studio3d/normal-guard';
 import { useStudioQuality } from '../hooks/useStudioQuality';
@@ -68,8 +71,8 @@ interface Garment3DViewerProps {
   showSeams?: boolean | undefined;
   /** Told where the garment's front box lies on the canvas (px from its top left) whenever it moves: the photo is laid over it. */
   onGarmentScreenRect?: ((rect: ScreenRect | null) => void) | undefined;
-  /** Studio light setup (softboxes, key light, shadow); `studio` by default. */
-  lighting?: LightingPresetName | undefined;
+  /** Studio settings of the panel (light, shadows, AO, tier); absent ⇒ `studio` light, automatic tier. */
+  studio?: StudioViewSettings | undefined;
 }
 
 /** A box on the 3D canvas, in CSS px from the canvas's top left corner. */
@@ -114,24 +117,11 @@ export type MeshEditProps = Omit<MeshEditViewProps, 'instances'> & {
   onInstances: (instances: PointInstance[]) => void;
 };
 
-export type ViewName = 'front' | 'back' | 'side' | 'top' | 'reset' | 'face';
+export type { ViewName } from '../utils/studio3d/camera-views';
 export interface ViewRequest {
   view: ViewName;
   nonce: number;
 }
-
-const VIEW_DISTANCE = 3.3;
-const VIEW_TARGET = new THREE.Vector3(0, 0.88, 0);
-/** Close-up on the face (head height of a 1.70 m body), looking at the eyes. */
-const FACE_TARGET = new THREE.Vector3(0, 1.58, 0.02);
-const VIEW_POSITIONS: Record<ViewName, [number, number, number]> = {
-  face: [0.12, 1.6, 0.85],
-  front: [0, VIEW_TARGET.y, VIEW_DISTANCE],
-  back: [0, VIEW_TARGET.y, -VIEW_DISTANCE],
-  side: [VIEW_DISTANCE, VIEW_TARGET.y, 0],
-  top: [0, VIEW_TARGET.y + VIEW_DISTANCE, 0.001],
-  reset: [0, 1.0, VIEW_DISTANCE],
-};
 
 /**
  * Given to R3F as renderer props (R3F would otherwise put its ACES tone mapping back on re-render). Opaque canvas: the
@@ -176,27 +166,64 @@ const Invalidator: React.FC<{ signal: unknown[] }> = ({ signal }) => {
   return null;
 };
 
-/** Applies a preset view to the camera and the (default) orbit controls. */
-const CameraRig: React.FC<{ request: ViewRequest | null; stature: number }> = ({ request, stature }) => {
-  const camera = useThree((state) => state.camera);
-  const controls = useThree((state) => state.controls) as { target: THREE.Vector3; update: () => void } | null;
-  const invalidate = useThree((state) => state.invalidate);
+const prefersReducedMotion = (): boolean =>
+  typeof window !== 'undefined' && window.matchMedia?.('(prefers-reduced-motion: reduce)').matches === true;
 
-  useEffect(() => {
-    if (!request) return;
-    const [x, y, z] = VIEW_POSITIONS[request.view];
-    // The face close-up follows the head height (a child's head is lower).
-    const k = stature / 1.7;
-    const target = request.view === 'face' ? new THREE.Vector3(0, FACE_TARGET.y * k, FACE_TARGET.z) : VIEW_TARGET;
-    if (request.view === 'face') camera.position.set(x, y * k, z * Math.sqrt(k));
-    else camera.position.set(x, y, z);
+type OrbitLike = { target: THREE.Vector3; update: () => void; addEventListener: (type: 'start', fn: () => void) => void; removeEventListener: (type: 'start', fn: () => void) => void };
+
+/**
+ * Moves the camera and the (default) orbit controls to a preset view: an eased 600 ms turn around the target,
+ * instant under `prefers-reduced-motion`. Grabbing the view (orbit/pan/zoom start) cancels the move.
+ */
+const CameraRig: React.FC<{ request: ViewRequest | null; stature: number; hemY: number }> = ({ request, stature, hemY }) => {
+  const camera = useThree((state) => state.camera);
+  const controls = useThree((state) => state.controls) as unknown as OrbitLike | null;
+  const invalidate = useThree((state) => state.invalidate);
+  const move = useRef<{ from: CameraPose; to: CameraPose; start: number | null } | null>(null);
+
+  const apply = (pose: CameraPose): void => {
+    camera.position.set(...pose.position);
+    const target = new THREE.Vector3(...pose.target);
     if (controls) {
       controls.target.copy(target);
       controls.update();
     }
     camera.lookAt(target);
+  };
+
+  useEffect(() => {
+    if (!request) return;
+    const to = viewPose(request.view, { stature, hemY });
+    if (prefersReducedMotion()) {
+      move.current = null;
+      apply(to);
+    } else {
+      const target = controls?.target ?? new THREE.Vector3(...VIEW_TARGET);
+      move.current = { from: { position: [camera.position.x, camera.position.y, camera.position.z], target: [target.x, target.y, target.z] }, to, start: null };
+    }
     invalidate();
-  }, [request, stature, camera, controls, invalidate]);
+    // eslint-disable-next-line react-hooks/exhaustive-deps -- a new request (nonce) starts a move; the body size does not.
+  }, [request]);
+
+  useEffect(() => {
+    if (!controls?.addEventListener) return;
+    const cancel = (): void => {
+      move.current = null;
+    };
+    controls.addEventListener('start', cancel);
+    return () => controls.removeEventListener('start', cancel);
+  }, [controls]);
+
+  useFrame(() => {
+    const current = move.current;
+    if (!current) return;
+    const now = performance.now();
+    current.start ??= now;
+    const { pose, done } = poseAt(current.from, current.to, now - current.start);
+    apply(pose);
+    if (done) move.current = null;
+    else invalidate();
+  });
 
   return null;
 };
@@ -825,11 +852,15 @@ export const Garment3DViewer: React.FC<Garment3DViewerProps> = ({
   edit,
   showSeams,
   onGarmentScreenRect,
-  lighting = 'studio',
+  studio: studioSettings,
 }) => {
   const human = useHumanBase();
-  const preset = LIGHTING_PRESETS[lighting];
-  const { tier, reportFrame } = useStudioQuality();
+  const preset = LIGHTING_PRESETS[studioSettings?.lighting ?? 'studio'];
+  const ownQuality = useStudioQuality();
+  const tier = studioSettings?.tier ?? ownQuality.tier;
+  const reportFrame = studioSettings?.reportFrame ?? ownQuality.reportFrame;
+  const shadows = studioSettings?.shadows ?? true;
+  const aoOn = studioSettings?.ao ?? true;
   const [renderReady, setRenderReady] = useState(false);
   const dpr = useMemo(() => dprRange(tier, typeof window === 'undefined' ? 1 : window.devicePixelRatio || 1), [tier]);
   const editing = Boolean(edit);
@@ -946,6 +977,8 @@ export const Garment3DViewer: React.FC<Garment3DViewerProps> = ({
         : model.panels,
     [human, fit, fitted, model, envelope, seatedPose],
   );
+  // « Ourlet » close-up: the garment's lowest edge, the knee when nothing hangs below the waist.
+  const hemY = useMemo(() => hemHeight(panels, bodyLandmarks(model.body).kneeY), [panels, model.body]);
   const editPieces = edit?.pieces;
   const instances = useMemo(() => (editPieces ? outlineInstances(panels, editPieces) : []), [panels, editPieces]);
   const onInstances = edit?.onInstances;
@@ -976,8 +1009,8 @@ export const Garment3DViewer: React.FC<Garment3DViewerProps> = ({
     >
       {studio ? <StudioBackdrop /> : <color attach="background" args={['#041329']} />}
       <StudioEnvironment preset={preset} backdrop={studio ? 'paper' : 'navy'} />
-      <StudioLights preset={preset} tier={tier} />
-      {showMannequin && <ShadowFloor opacity={preset.floorShadowOpacity} />}
+      <StudioLights preset={preset} tier={tier} shadows={shadows} />
+      {showMannequin && shadows && <ShadowFloor opacity={preset.floorShadowOpacity} />}
 
       {showMannequin && (human && fit ? <Person model={model} base={human} fit={fit} /> : <Mannequin model={model} />)}
       {panels.map((panel) =>
@@ -1054,9 +1087,9 @@ export const Garment3DViewer: React.FC<Garment3DViewerProps> = ({
 
       {onGarmentScreenRect && <FrameReporter panels={panels} onRect={onGarmentScreenRect} />}
       <AdaptiveDpr pixelated />
-      <CameraRig request={viewRequest} stature={model.body.height} />
+      <CameraRig request={viewRequest} stature={model.body.height} hemY={hemY} />
       <Invalidator signal={[assembly, showMannequin, transparent, selectedPieceId, model, panels]} />
-      <StudioPost tier={tier} aoAllowed={!transparent} warmKey={human ? 'person' : 'mannequin'} onReadyChange={setRenderReady} onFrame={reportFrame} />
+      <StudioPost tier={tier} aoAllowed={aoOn && !transparent} warmKey={human ? 'person' : 'mannequin'} onReadyChange={setRenderReady} onFrame={reportFrame} />
     </Canvas>
     {!renderReady && (
       <div

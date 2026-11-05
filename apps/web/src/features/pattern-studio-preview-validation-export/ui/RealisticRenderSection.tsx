@@ -8,6 +8,7 @@ import { useRealisticRender } from '../hooks/useRealisticRender';
 import { isRenderPending, RENDER_STATUS_LABELS, simulatedPose, toRenderPose } from '../utils/realistic-render';
 import type { FabricLook } from './fabricTextures';
 import { WebGlBoundary } from './WebGlBoundary';
+import type { StudioViewSettings } from '../utils/studio3d/studio-settings';
 
 const RealisticRenderViewer = dynamic(() => import('./RealisticRenderViewer').then((m) => m.RealisticRenderViewer), {
   ssr: false,
@@ -23,6 +24,8 @@ interface RealisticRenderSectionProps {
   presetId: string;
   fabric?: FabricLook | null | undefined;
   showMannequin?: boolean | undefined;
+  /** The 3D panel's studio settings, so both renders share the same light. */
+  studio?: StudioViewSettings | undefined;
 }
 
 const BUTTON =
@@ -40,6 +43,7 @@ export const RealisticRenderSection: React.FC<RealisticRenderSectionProps> = ({
   presetId,
   fabric,
   showMannequin = true,
+  studio,
 }) => {
   const pose = toRenderPose(presetId);
   const { render, request } = useRealisticRender(versionId, pose);
@@ -119,6 +123,7 @@ export const RealisticRenderSection: React.FC<RealisticRenderSectionProps> = ({
               showMannequin={showMannequin}
               onError={setLoadError}
               onContextLost={() => setContextLost(true)}
+              studio={studio}
             />
           </WebGlBoundary>
         </div>

@@ -7,6 +7,8 @@ import type { MeshEditProps, ScreenRect, ViewName, ViewRequest } from './Garment
 import type { FabricLook } from './fabricTextures';
 import { WebGlBoundary } from './WebGlBoundary';
 import { RealisticRenderSection } from './RealisticRenderSection';
+import { StudioControls } from './StudioControls';
+import { useStudioSettings } from '../hooks/useStudioSettings';
 import type { PatternPieceDto, Trim } from '@angaly/types';
 import type { FitStatus } from '../utils/garment3d/garment-model';
 import { buildGarmentModelCached } from '../utils/garment3d/model-cache';
@@ -246,6 +248,8 @@ export const Garment3DPanel: React.FC<Garment3DPanelProps> = ({
   const [viewRequest, setViewRequest] = useState<ViewRequest | null>(null);
   const [viewerKey, setViewerKey] = useState(0);
   const [contextLost, setContextLost] = useState(false);
+  // Light, shadows, AO and quality: one set of settings for the preview and the realistic render.
+  const studio = useStudioSettings();
   const frame = useRef<number | null>(null);
   // Starts on the silhouette closest to the customer's measurements; the user can pick another one.
   const [templateId, setTemplateId] = useState<BodyTemplateId>(() => suggestTemplate(measurements));
@@ -311,7 +315,7 @@ export const Garment3DPanel: React.FC<Garment3DPanelProps> = ({
     if (overlaid) setViewRequest((previous) => ({ view: 'front', nonce: (previous?.nonce ?? 0) + 1 }));
   }, [overlaid]);
 
-  // Blender numpad habits: 1 front, Ctrl+1 / 9 back, 3 side, 7 top, Home or 5 reset.
+  // Blender numpad habits: 1 front, Ctrl+1 / 9 back, 3 side, 7 top, 5 three-quarter, 2 hem close-up, Home reset.
   /** Blender's edit-mode keys; true when the key was used. */
   const handleEditKey = (event: React.KeyboardEvent<HTMLDivElement>): boolean => {
     const key = event.key.toLowerCase();
@@ -370,7 +374,7 @@ export const Garment3DPanel: React.FC<Garment3DPanelProps> = ({
         return;
       }
     }
-    const views: Record<string, ViewName> = { '1': 'front', '3': 'side', '7': 'top', '9': 'back', Home: 'reset' };
+    const views: Record<string, ViewName> = { '1': 'front', '2': 'hem', '3': 'side', '5': 'threeQuarter', '7': 'top', '9': 'back', Home: 'reset' };
     const view = event.ctrlKey && event.key === '1' ? 'back' : views[event.key];
     if (view) {
       event.preventDefault();
@@ -439,8 +443,17 @@ export const Garment3DPanel: React.FC<Garment3DPanelProps> = ({
             sculpt={sculptView}
             edit={editView}
             onGarmentScreenRect={onGarmentScreenRect}
+            studio={studio.view}
           />
         </WebGlBoundary>
+        <StudioControls
+          settings={studio.settings}
+          tier={studio.tier}
+          onLightingChange={studio.setLighting}
+          onShadowsChange={studio.setShadows}
+          onAoChange={studio.setAo}
+          onQualityChange={studio.setQuality}
+        />
         <p className="pointer-events-none absolute bottom-2 left-3 text-[11px] text-[#D8D3C8]/60">
           {mode === 'edit'
             ? 'Clic : point · glisser : rectangle · Alt + glisser ou clic molette : tourner · clic droit : déplacer · molette : zoomer'
@@ -503,9 +516,11 @@ export const Garment3DPanel: React.FC<Garment3DPanelProps> = ({
           {(
             [
               ['front', 'Face'],
+              ['threeQuarter', '3/4'],
               ['back', 'Dos'],
               ['side', 'Côté'],
               ['top', 'Dessus'],
+              ['hem', 'Ourlet'],
               ['reset', 'Recentrer'],
             ] as Array<[ViewName, string]>
           ).map(([view, label]) => (
@@ -639,6 +654,7 @@ export const Garment3DPanel: React.FC<Garment3DPanelProps> = ({
           presetId={presetId}
           fabric={fabric}
           showMannequin={showMannequin}
+          studio={studio.view}
         />
       )}
 

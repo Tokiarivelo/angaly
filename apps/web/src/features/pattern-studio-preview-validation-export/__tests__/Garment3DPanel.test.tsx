@@ -25,6 +25,7 @@ vi.mock('next/dynamic', () => ({
         onTransform: (input: { world?: number[]; toCamera: number[] }) => void;
         onConfirm: () => void;
       } | null;
+      studio?: { lighting: string; shadows: boolean; ao: boolean; tier: string };
     }) {
       if (viewerBehaviour.shouldThrow) throw new Error('Error creating WebGL context.');
       return (
@@ -41,6 +42,7 @@ vi.mock('next/dynamic', () => ({
           data-sculpt={props.sculpt ? `${props.sculpt.radiusMm}|${String(props.sculpt.propagate)}` : ''}
           data-edit={props.edit ? [...props.edit.selection.keys()].join(',') : 'off'}
           data-modal={props.edit?.modal?.kind ?? ''}
+          data-studio={props.studio ? `${props.studio.lighting}|${String(props.studio.shadows)}|${String(props.studio.ao)}|${props.studio.tier}` : ''}
         >
           {props.edit && (
             <>
@@ -133,6 +135,21 @@ describe('Garment3DPanel', () => {
     expect(probe.getAttribute('data-assembly')).toBe('1');
     expect(probe.getAttribute('data-mannequin')).toBe('true');
     expect(screen.getByTestId('garment-fit-report')).toHaveTextContent('Bassin');
+  });
+
+  it('hands the studio settings chosen in « Réglages du rendu » to the viewer', async () => {
+    window.localStorage.removeItem('angaly.studio3d.settings');
+    const user = userEvent.setup();
+    render(<Garment3DPanel pieces={pieces} garmentType="JUPE" measurements={measurements} selectedPieceId={null} />);
+    const probe = await screen.findByTestId('viewer-probe');
+    expect(probe.getAttribute('data-studio')).toMatch(/^studio\|true\|true\|/);
+
+    await user.click(screen.getByRole('button', { name: 'Réglages du rendu' }));
+    await user.click(screen.getByRole('button', { name: 'Contraste' }));
+    await user.click(screen.getByRole('switch', { name: 'Ombres' }));
+    await user.click(screen.getByRole('button', { name: 'Basse' }));
+    expect(screen.getByTestId('viewer-probe').getAttribute('data-studio')).toBe('contrast|false|true|low');
+    window.localStorage.removeItem('angaly.studio3d.settings');
   });
 
   it('lets the user explode the pieces with the slider and the Éclater button', async () => {
@@ -303,8 +320,23 @@ describe('Garment3DPanel', () => {
     expect(view()).toBe('back');
     fireEvent.keyDown(stage, { key: '1' });
     expect(view()).toBe('front');
+    fireEvent.keyDown(stage, { key: '5' });
+    expect(view()).toBe('threeQuarter');
+    fireEvent.keyDown(stage, { key: '2' });
+    expect(view()).toBe('hem');
     fireEvent.keyDown(stage, { key: 'Home' });
     expect(view()).toBe('reset');
+  });
+
+  it('offers the 3/4 and hem close-up views', async () => {
+    render(<Garment3DPanel pieces={pieces} garmentType="JUPE" measurements={measurements} selectedPieceId={null} />);
+    await screen.findByTestId('viewer-probe');
+    const views = screen.getByRole('group', { name: 'Vues' });
+    expect(Array.from(views.querySelectorAll('button')).map((b) => b.textContent)).toEqual(['Face', '3/4', 'Dos', 'Côté', 'Dessus', 'Ourlet', 'Recentrer']);
+    fireEvent.click(screen.getByRole('button', { name: '3/4' }));
+    expect(screen.getByTestId('viewer-probe').getAttribute('data-view')).toBe('threeQuarter');
+    fireEvent.click(screen.getByRole('button', { name: 'Ourlet' }));
+    expect(screen.getByTestId('viewer-probe').getAttribute('data-view')).toBe('hem');
   });
 
   describe('modelling the pattern on the garment', () => {

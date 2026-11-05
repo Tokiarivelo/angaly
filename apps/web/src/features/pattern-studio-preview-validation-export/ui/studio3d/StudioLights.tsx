@@ -6,8 +6,15 @@ import * as THREE from 'three';
 import { SHADOW_TARGET, type LightingPreset, type QualityTierName } from '../../utils/studio3d/studio-config';
 import { configureKeyShadow } from '../../utils/studio3d/studio-scene';
 
-/** The preset's lights: one shadow-casting key aimed at the body, shadowless fills, a sky/ground hemisphere. */
-export const StudioLights: React.FC<{ preset: LightingPreset; tier: QualityTierName }> = ({ preset, tier }) => {
+/**
+ * The preset's lights: one shadow-casting key aimed at the body, shadowless fills, a sky/ground hemisphere.
+ * `shadows: false` keeps the same key light without its shadow.
+ */
+export const StudioLights: React.FC<{ preset: LightingPreset; tier: QualityTierName; shadows?: boolean | undefined }> = ({
+  preset,
+  tier,
+  shadows = true,
+}) => {
   const invalidate = useThree((state) => state.invalidate);
   const key = useMemo(() => new THREE.DirectionalLight(), []);
   useEffect(() => () => key.dispose(), [key]);
@@ -18,8 +25,9 @@ export const StudioLights: React.FC<{ preset: LightingPreset; tier: QualityTierN
     key.target.position.set(...SHADOW_TARGET);
     key.target.updateMatrixWorld();
     configureKeyShadow(key, preset, tier);
+    key.castShadow = shadows;
     invalidate();
-  }, [key, preset, tier, invalidate]);
+  }, [key, preset, tier, shadows, invalidate]);
   return (
     <>
       <primitive object={key} />
