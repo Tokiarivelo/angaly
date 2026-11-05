@@ -1,12 +1,12 @@
 # Plan d'implémentation — suite des pièces de construction et du catalogue des patrons
 
-> Rédigé le 2026-10-23 par Claude Code, après les sessions du 2026-10-21 (`docs/handoff.md` § sexquadragies et
+> Rédigé le 2026-10-23 par Claude Code, après les sessions du 2026-10-21 (`docs/handoff-archive/2026-10-et-avant.md` § sexquadragies et
 > quinquadragies, `docs/reviews/dress-pattern-catalog.md` §6–7). Ce plan couvre les cinq écarts restants. Chaque lot
 > est autonome, se livre avec ses tests et se vérifie en 3D sur les projets réels du catalogue.
 
 ## 0. Avant de commencer (tous les lots)
 
-1. Lire `docs/handoff.md` (section la plus récente), puis la section du lot ci-dessous.
+1. Lire `docs/handoff.md`, puis la section du lot ci-dessous.
 2. **Relancer l'API 3003** si ce n'est pas fait : sans cela, ni `construction` ni `GET /api/pattern-catalog` ne
    répondent (404). Vérifier qu'aucune autre session ne l'utilise (`docs/handoff.md`, activité récente du dépôt) ;
    sinon travailler sur une seconde instance (§7).
@@ -34,7 +34,7 @@
 ## Lot 1 — Maquette Stitch dédiée « Catalogue des patrons »
 
 > **Statut 2026-10-23 : bloqué** — génération Stitch en délai dépassé (×2 de plus) ; prompt prêt dans
-> `stitch-prompts/34-pattern-studio-catalogue.md`, à créer à la main (voir `docs/handoff.md`).
+> `stitch-prompts/34-pattern-studio-catalogue.md`, à créer à la main (voir `docs/handoff-archive/2026-10-et-avant.md`).
 
 ### Constat
 
@@ -75,7 +75,7 @@ réel « ANGALY — Mes projets de patron », faute d'écran dédié. La génér
 
 ## Lot 2 — Paniers, coussin et pouf portent la jupe en 3D
 
-> **Statut 2026-10-23 : fait** — voir `docs/handoff.md` (session du 2026-10-23).
+> **Statut 2026-10-23 : fait** — voir `docs/handoff-archive/2026-10-et-avant.md` (session du 2026-10-23).
 
 ### Constat
 
@@ -147,7 +147,7 @@ Les quatre robes ont la silhouette de leur photo, face et côté, et les tests p
 
 ## Lot 3 — Broderie et smocks rendus comme des motifs
 
-> **Statut 2026-10-23 : fait** — voir `docs/handoff.md` (session du 2026-10-23, lot 3).
+> **Statut 2026-10-23 : fait** — voir `docs/handoff-archive/2026-10-et-avant.md` (session du 2026-10-23, lot 3).
 
 ### Constat
 
@@ -201,7 +201,7 @@ La broderie se lit comme un motif dans sa couleur de fil et les smocks comme un 
 
 ## Lot 4 — Photos d'inspiration plus fidèles
 
-> **Statut 2026-10-23 : fait** — voir `docs/handoff.md` (session du 2026-10-23, lot 4) et
+> **Statut 2026-10-23 : fait** — voir `docs/handoff-archive/2026-10-et-avant.md` (session du 2026-10-23, lot 4) et
 > `docs/reviews/dress-pattern-catalog.md` §7 limite 3.
 
 ### Constat

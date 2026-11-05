@@ -1,6 +1,6 @@
 # Pattern Studio — pistes à reprendre (fiche autonome, 2026-10-16)
 
-Fiche de reprise pour un **nouveau contexte**. Elle se lit seule ; pour l'historique complet : `docs/handoff.md`
+Fiche de reprise pour un **nouveau contexte**. Elle se lit seule ; pour l'historique complet : `docs/handoff-archive/2026-10-et-avant.md`
 (sections « 0 quatertricies » et « 0 tertricies »). Avant de coder, charger le skill **`pattern-generation`**
 (`.claude/skills/pattern-generation/SKILL.md`) — obligatoire pour toute génération de patron / rendu 3D (règle 4 de
 `CLAUDE.md`). Une piste = une session.
@@ -35,7 +35,7 @@ Lis docs/features/pattern-studio-pistes.md et implémente la piste 1 (ou 2), en 
 
 ---
 
-## Piste 1 — Option d'encolure hors-épaule (bardot) — ✅ FAIT (2026-10-16, voir `docs/handoff.md` § 0 quinquetricies)
+## Piste 1 — Option d'encolure hors-épaule (bardot) — ✅ FAIT (2026-10-16, voir `docs/handoff-archive/2026-10-et-avant.md` § 0 quinquetricies)
 
 ### Pourquoi
 
@@ -97,7 +97,7 @@ listés en « État de départ » sont verts ; `references/vocabulary.md`, `docs
 
 ---
 
-## Piste 2 — Avertir quand une jupe est plus étroite que son jupon — ✅ FAIT (2026-10-16, voir `docs/handoff.md` § 0 quinquetricies)
+## Piste 2 — Avertir quand une jupe est plus étroite que son jupon — ✅ FAIT (2026-10-16, voir `docs/handoff-archive/2026-10-et-avant.md` § 0 quinquetricies)
 
 ### Pourquoi
 

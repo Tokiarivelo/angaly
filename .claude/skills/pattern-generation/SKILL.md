@@ -14,7 +14,7 @@ Argument facultatif : un id de projet (`/pattern-studio/projects/<id>`), une pho
 
 ## 0. Avant de toucher au code (5 min, obligatoire)
 
-1. Lire `docs/handoff.md` (section la plus récente) et la ligne concernée de `docs/checklist-implementation.md`.
+1. Lire `docs/handoff.md` et la ligne concernée de `docs/checklist-implementation.md`.
 2. Situer la tâche dans le pipeline — **un défaut se corrige à l'étage où il naît**, jamais en compensant plus loin :
 
 ```
@@ -82,7 +82,7 @@ Suivre `references/adding-an-option.md` (liste de contrôle fichier par fichier,
 - Tests : `pnpm --filter @angaly/pattern-engine test`, `cd apps/web && npx vitest run src/features/pattern-studio-preview-validation-export src/features/pattern-studio-wizard`,
   `cd apps/api && npx jest src/patterns src/ai-inference`, `cd apps/ai-service && .venv/bin/python -m pytest -q`, `pnpm typecheck`.
 - Docs : `docs/features/pattern-engine.md` (vocabulaire, géométrie), `docs/features/patterns.md` (flux), la fiche de revue si un
-  banc a été rejoué (`dress_benchmark_report.py`), puis **`docs/handoff.md`** (règle 8 de `CLAUDE.md`).
+  banc a été rejoué (`dress_benchmark_report.py`), puis **`docs/handoff.md`** (étape 8 du processus d’`AGENTS.md`).
 - Rapport à l'utilisateur : ce qui correspond, ce qui reste différent (avec la cause), liens `http://localhost:3100/pattern-studio/projects/<id>`
   et le compte propriétaire.
 

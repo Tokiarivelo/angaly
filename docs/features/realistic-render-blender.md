@@ -177,7 +177,7 @@ déclencheur change. **B** ne devient intéressant qu'avec un volume élevé et 
 | `CLOTH_SIM_CONCURRENCY` | worker | nombre de jobs simultanés (1 par défaut) |
 | `GCP_PROJECT` / `GCP_REGION` / `CLOTH_SIM_JOB_NAME` | api | uniquement en mode `cloudrun` |
 
-Les reporter dans `docs/environment-variables.md` et `docs/deployment.md` au moment de l'implémentation (règle 6 de `CLAUDE.md`).
+Les reporter dans `docs/environment-variables.md` et `docs/deployment.md` au moment de l'implémentation (étape 6 du processus d’`AGENTS.md`).
 
 ## 8. Plan d'implémentation (une phase par session)
 
