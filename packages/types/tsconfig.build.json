@@ -15,7 +15,9 @@
     "esModuleInterop": true,
     "verbatimModuleSyntax": false,
     "allowImportingTsExtensions": false,
-    "noEmit": false
+    "noEmit": false,
+    "composite": true,
+    "tsBuildInfoFile": "./dist/.tsbuildinfo"
   },
   "include": ["src/**/*.ts"],
   "exclude": ["node_modules", "dist"]

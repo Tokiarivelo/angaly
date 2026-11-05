@@ -8,8 +8,17 @@ export default defineConfig({
     globals: true,
     environment: 'jsdom',
     setupFiles: ['./vitest.setup.ts'],
+    // Local runs: half the cores (each jsdom worker can take ~1 GB with three.js) — VITEST_MAX_WORKERS to override.
+    ...(process.env['CI']
+      ? {}
+      : { maxWorkers: process.env['VITEST_MAX_WORKERS'] ?? '50%', minWorkers: 1 }),
     // e2e/ holds Playwright specs (separate runner, separate test/expect).
-    exclude: [...configDefaults.exclude, 'e2e/**'],
+    // .headdump/ is a manual mesh-dump tool, run only with HEAD_OUT set: HEAD_OUT=/tmp/head vitest run .headdump
+    exclude: [
+      ...configDefaults.exclude,
+      'e2e/**',
+      ...(process.env['HEAD_OUT'] ? [] : ['.headdump/**']),
+    ],
     coverage: {
       provider: 'v8',
       reporter: ['text', 'json', 'html', 'lcov'],

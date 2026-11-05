@@ -36,6 +36,10 @@ ENV_EXAMPLE         := .env.example
 WEB_ENV_FILE        := apps/web/.env.local
 API_ENV_FILE        := apps/api/.env
 AI_SERVICE_PORT     ?= 8001
+# Self-hosted AI models (CLIP photo model, ANSUR II imputer) — off for now: providers only. make dev AI_LOCAL_MODELS=true
+AI_LOCAL_MODELS     ?= false
+# uvicorn only watches the code (not .venv, 730 MB, nor ml/, 91 MB)
+AI_SERVICE_RUN       = AI_LOCAL_MODELS_ENABLED=$(AI_LOCAL_MODELS) .venv/bin/uvicorn app.main:app --reload --reload-dir app --port $(AI_SERVICE_PORT)
 # Web dev port (3000 is taken by another project on this machine). Override: make dev.web WEB_PORT=3005
 WEB_PORT            ?= 3001
 export WEB_PORT
@@ -195,15 +199,16 @@ env.generate-secret: ## 🔑 Generate NEXTAUTH_SECRET for apps/web/.env.local
 # =============================================================================
 
 .PHONY: dev
-dev: ## 🔥 Start web + api + ai-service together in development mode
+dev: ## 🔥 Start web + api + ai-service (providers only, local models off) in development mode
 	@echo "$(CYAN)🔥 Starting development servers...$(RESET)"
 	@echo "  Web:         http://localhost:$(WEB_PORT)"
 	@echo "  API:         http://localhost:3003/docs"
-	@echo "  AI Service:  http://localhost:$(AI_SERVICE_PORT)/health"
+	@echo "  AI Service:  http://localhost:$(AI_SERVICE_PORT)/health (modèles locaux : $(AI_LOCAL_MODELS))"
 	@trap 'kill 0' EXIT INT TERM; \
-	$(PNPM) dev --ui=stream & \
+	$(PNPM) dev:packages & \
+	$(PNPM) dev:apps --ui=stream & \
 	if [ -x apps/ai-service/.venv/bin/uvicorn ]; then \
-	  (cd apps/ai-service && .venv/bin/uvicorn app.main:app --reload --port $(AI_SERVICE_PORT)) & \
+	  (cd apps/ai-service && $(AI_SERVICE_RUN)) & \
 	else \
 	  echo "$(YELLOW)⚠️  apps/ai-service/.venv introuvable — AI Service non démarré ($(BOLD)make install.ai$(RESET)$(YELLOW) pour le créer)$(RESET)"; \
 	fi; \
@@ -219,7 +224,7 @@ dev.api: ## ⚙️  Start only the NestJS backend (port 3003)
 
 .PHONY: dev.ai
 dev.ai: ## 🤖 Start only the AI service (port 8001) — requires make install.ai first
-	cd apps/ai-service && .venv/bin/uvicorn app.main:app --reload --port $(AI_SERVICE_PORT)
+	cd apps/ai-service && $(AI_SERVICE_RUN)
 
 # =============================================================================
 # ── BUILD ────────────────────────────────────────────────────────────────────

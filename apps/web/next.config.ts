@@ -9,6 +9,15 @@ const nextConfig: NextConfig = {
   outputFileTracingRoot: path.resolve(__dirname, '../../'),
   experimental: {
     reactCompiler: true,
+    // Dev-machine memory (docs/development.md « Ressources ») : lower webpack peak memory, and do not compile every
+    // route's server entry at boot — routes are compiled on first visit.
+    webpackMemoryOptimizations: true,
+    preloadEntriesOnStart: false,
+  },
+  // Compiled pages kept in memory by `next dev`: 3 for 30 s instead of 5 for 60 s.
+  onDemandEntries: {
+    maxInactiveAge: 30_000,
+    pagesBufferLength: 3,
   },
   images: {
     remotePatterns: [

@@ -8,7 +8,9 @@ export default defineConfig({
   fullyParallel: true,
   forbidOnly: isCI,
   retries: isCI ? 2 : 0,
-  ...(isCI ? { workers: 1 } : {}),
+  // Each worker is a Chromium drawing WebGL in software (SwiftShader) next to `next dev`: 2 locally, not half the
+  // cores. PLAYWRIGHT_WORKERS to override.
+  workers: isCI ? 1 : Number(process.env['PLAYWRIGHT_WORKERS'] ?? 2),
   reporter: isCI ? [['html', { open: 'never' }], ['github']] : 'html',
   timeout: 60_000,
   expect: {
@@ -27,7 +29,18 @@ export default defineConfig({
       // PLAYWRIGHT_CHANNEL=chrome uses the installed Google Chrome instead of Playwright's own Chromium.
       use: {
         ...devices['Desktop Chrome'],
-        ...(process.env['PLAYWRIGHT_CHANNEL'] ? { channel: process.env['PLAYWRIGHT_CHANNEL'] } : {}),
+        ...(process.env['PLAYWRIGHT_CHANNEL']
+          ? { channel: process.env['PLAYWRIGHT_CHANNEL'] }
+          : {}),
+        // Locally, draw WebGL on the real GPU: in software (SwiftShader) the 3D pages starve the CPU and the
+        // realistic-render spec times out. CI, or PLAYWRIGHT_SOFTWARE_GL=1, keeps the software renderer.
+        ...(isCI || process.env['PLAYWRIGHT_SOFTWARE_GL']
+          ? {}
+          : {
+              launchOptions: {
+                args: ['--enable-gpu', '--ignore-gpu-blocklist', '--use-angle=gl-egl'],
+              },
+            }),
       },
     },
   ],

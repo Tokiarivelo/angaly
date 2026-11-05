@@ -96,6 +96,27 @@ Sans ce service démarré, tout ce qui touche aux suggestions IA de Pattern Stud
 mode dégradé (voir `.cursor/rules/008-ai-service-integration.mdc`) — la génération manuelle
 de paramètres reste possible via `packages/pattern-engine` seul.
 
+**Modèles locaux désactivés par défaut** (2026-11-05) : l'ai-service ne sert que de passerelle vers les providers
+configurés (Gemini, Anthropic, OpenAI…). Le modèle photo local (CLIP ONNX, tous les cœurs CPU) et le modèle statistique
+ANSUR II ne sont ni proposés ni chargés tant que `AI_LOCAL_MODELS_ENABLED` n'est pas `true`
+(`make dev AI_LOCAL_MODELS=true` ou `make dev.ai AI_LOCAL_MODELS=true` pour les réactiver). Interrupteur :
+`apps/ai-service/app/feature_flags.py`.
+
+### Ressources de la machine de dev
+
+Réglages pour une machine de 16 Go (la stack complète plantait sous charge) :
+
+| Où                        | Réglage                                                                                                                                                     |
+| ------------------------- | ----------------------------------------------------------------------------------------------------------------------------------------------------------- |
+| `make dev`                | un seul `tsc -b --watch` pour types/storage/pattern-engine (`pnpm dev:packages`, ≈ 80 Mo au lieu de ≈ 800 Mo pour 3 watchers) + `pnpm dev:apps` (web + API) |
+| ai-service                | uvicorn ne surveille que `app/` (`--reload-dir app`, pas `.venv` ni `ml/`) ; modèles locaux coupés (≈ 30 Mo)                                                |
+| `apps/web/next.config.ts` | `webpackMemoryOptimizations`, pas de précompilation des routes au démarrage, 3 pages gardées 30 s                                                           |
+| Vitest (web + config)     | 50 % des cœurs en local (`VITEST_MAX_WORKERS` pour changer) ; inchangé en CI                                                                                |
+| Playwright                | 2 workers en local (`PLAYWRIGHT_WORKERS`) et WebGL sur le vrai GPU (`PLAYWRIGHT_SOFTWARE_GL=1` pour revenir à SwiftShader) ; CI inchangée                   |
+
+Mesures au démarrage (2026-11-05) : `next dev` ≈ 1,1 Go, `nest start --watch` ≈ 670 Mo + l'API ≈ 220 Mo. Piste
+suivante si besoin : builder SWC de Nest (`@swc/cli`, `@swc/core`, non installés).
+
 ### 7. (Optionnel) Rendu réaliste — `apps/cloth-sim`
 
 Simulation de tissu avec Blender headless (`docs/features/realistic-render-blender.md`). L'API tient la file

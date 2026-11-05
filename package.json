@@ -6,6 +6,8 @@
   "scripts": {
     "build": "turbo run build",
     "dev": "turbo run dev",
+    "dev:apps": "turbo run dev --filter=@angaly/web --filter=@angaly/api",
+    "dev:packages": "tsc -b -w --preserveWatchOutput packages/types/tsconfig.build.json packages/storage/tsconfig.build.json packages/pattern-engine/tsconfig.build.json",
     "lint": "turbo run lint",
     "lint:fix": "turbo run lint:fix",
     "typecheck": "turbo run typecheck",

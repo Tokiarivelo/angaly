@@ -4,6 +4,10 @@ export const baseVitestConfig = defineConfig({
   test: {
     globals: true,
     environment: 'jsdom',
+    // Local runs: half the cores (each jsdom worker can take ~1 GB with three.js) — VITEST_MAX_WORKERS to override.
+    ...(process.env['CI']
+      ? {}
+      : { maxWorkers: process.env['VITEST_MAX_WORKERS'] ?? '50%', minWorkers: 1 }),
     coverage: {
       provider: 'v8',
       reporter: ['text', 'json', 'html', 'lcov'],
