@@ -18,23 +18,10 @@ Avec Claude Code : `/start` (skill `.claude/skills/start/`, même procédure, en
 
 ## 1. État du dépôt
 
-- Branche `master`, dernier commit `4fd4b20`. **Non commité, trois sessions du 2026-11-05** :
-  - session « ressources de dev » : `Makefile`, `package.json`, `apps/web/{next,vitest,playwright}.config.ts`,
-    `packages/config/vitest/base.ts`, `packages/{types,storage,pattern-engine}/tsconfig.build.json`, ai-service
-    (`app/feature_flags.py`, `local_model.py`, `local_vision.py`, `main.py`, `tests/conftest.py`,
-    `tests/test_local_models_switch.py`), cloth-sim (`measure_guide.py`, `scripts/render_measure_guide.py`, test),
-    2 images `measurement-guide/` + `index.json`, `docs/development.md`. Commits suggérés : `chore(config)`,
-    `feat(ai)` (interrupteur), `feat(web)` (images du guide) ;
-  - session lot 3 : `features/pattern-studio-preview-validation-export/` — `hooks/useStudioSettings.ts`,
-    `utils/studio3d/studio-settings.ts`, `ui/StudioControls.tsx`, leurs tests, `e2e/pattern-studio/reglages-rendu.spec.ts`,
-    `ui/{Garment3DPanel,Garment3DViewer,RealisticRenderViewer,RealisticRenderSection}.tsx`, `ui/studio3d/StudioLights.tsx`.
-    Commit suggéré : `feat(web): studio render settings in the 3D viewers` ;
-  - session lot 4 (cette session) : nouveaux `utils/studio3d/{camera-tween,camera-views}.ts` + tests
-    `utils/studio3d/__tests__/camera-{tween,views}.test.ts`, `e2e/pattern-studio/vues-camera.spec.ts` ; modifiés
-    `ui/Garment3DViewer.tsx` (`CameraRig` animé, `hemY`), `ui/Garment3DPanel.tsx` (boutons 3/4 / Ourlet, touches 5 / 2),
-    `__tests__/Garment3DPanel.test.tsx` ; docs (fiche page, plan, checklist, handoff + archive). Les lots 3 et 4 touchent
-    les mêmes fichiers `Garment3DViewer/Panel` : commiter le lot 3 puis le lot 4 avec `git add -p`, ou ensemble.
-    Commit suggéré : `feat(web): 3/4 and hem camera views with eased transitions`.
+- Branche `master`, à jour avec `origin/master` (poussé le 2026-11-05). Les trois sessions du 2026-11-05 sont commitées :
+  `7763dc6` chore(config) stack de dev allégée, `8ce4288` feat(ai-service) interrupteur des modèles locaux,
+  `31e4920` feat(measurements) images du guide, `1c65e37` feat(web) réglages du rendu + vues caméra (lots 3 et 4),
+  `fe611b3` docs. Arbre de travail propre.
 - Tests au 2026-11-05 (fin de lot 4) : `pnpm typecheck` 10/10 ; web **355 fichiers ✓ (1 ignoré), 1 543 tests,
   coverage lignes 86,2 %, fonctions 80,2 %** ; e2e `pattern-studio/vues-camera` ✓ (28 s, GPU). Lint des fichiers
   touchés : 0 erreur.
@@ -51,12 +38,11 @@ Avec Claude Code : `/start` (skill `.claude/skills/start/`, même procédure, en
 - Stitch revu via `agy --print` : aucun groupe de vues caméra dans la maquette → style du groupe existant gardé (écart noté).
 - e2e : une capture d'écran est trop lente pour saisir 600 ms → le test compte les images dessinées (0 au repos,
   ≈ 12 pendant la transition). Captures 3/4 et ourlet relues : cadrage correct.
-- Pas de commit (consigne : commits sur demande de l'utilisateur).
+- Commité et poussé sur `master` à la demande de l'utilisateur (5 commits, voir rubrique 1).
 
 ## 3. Prochaines actions (dans l'ordre)
 
-1. Faire relire/commiter les changements des trois sessions (rubrique 1) ; confirmer la stabilité de `make dev` en
-   usage réel (Pattern Studio 3D ouvert + API + ai-service).
+1. Confirmer la stabilité de `make dev` en usage réel (Pattern Studio 3D ouvert + API + ai-service).
 2. **Lot 5 de `docs/plans/studio-3d-rendering.md`** (capture HD + planches de revue) : lire §0 + « Lot 5 ».
    `viewPose` (`utils/studio3d/camera-views.ts`) donne les poses pour `setView(v)` du hook de capture ;
    `e2e/pattern-studio/reglages-rendu.spec.ts` capture déjà le canevas par éclairage. Écran Stitch à revoir
