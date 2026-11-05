@@ -221,14 +221,21 @@ renderPng(scale) }` et coupe animations et amortissement (comme `render(t)` pur 
 ## Suivi
 
 - [x] Lot 1 — Module studio partagé + aperçu 3D (2026-11-05). Écarts : composants R3F dans `ui/studio3d/` (pas
-  `utils/`), hooks dans `hooks/` ; `normal-guard.ts` ajouté (normales NaN de la broderie) ; flou d'ombre exprimé pour une
-  carte 2048 et mis à l'échelle ; contre-lumière du preset `studio` relevée (dos trop sombre). Fps non mesurés sur GPU
-  réel (captures en SwiftShader) : à vérifier au lot 3.
+      `utils/`), hooks dans `hooks/` ; `normal-guard.ts` ajouté (normales NaN de la broderie) ; flou d'ombre exprimé pour une
+      carte 2048 et mis à l'échelle ; contre-lumière du preset `studio` relevée (dos trop sombre). Fps non mesurés sur GPU
+      réel (captures en SwiftShader) : à vérifier au lot 3.
 - [x] Lot 2 — Rendu réaliste sur le même studio (2026-11-05). Écarts : `StudioBackdrop` sorti de `Garment3DViewer` vers
-  `ui/studio3d/` ; option `aoBlend` (0,9) ajoutée à `StudioPost`/composer ; `applyStudioShadows` ajouté. **e2e et revue
-  visuelle non faits** (API 3003 arrêtée) : à faire au début du lot 3.
-- [ ] Lot 3 — Réglages studio
-- [ ] Lot 4 — Vues caméra et transitions
+      `ui/studio3d/` ; option `aoBlend` (0,9) ajoutée à `StudioPost`/composer ; `applyStudioShadows` ajouté. Vérifié le 2026-11-05 :
+      e2e `rendu-realiste` ✓ (26 s, WebGL sur GPU — en SwiftShader le `.glb` ne finit pas de charger en 60 s), capture
+      sans pixel noir, plis marqués, AO 0,9 acceptable. Pas de capture « avant » (ancien code non relancé).
+- [x] Lot 3 — Réglages studio (2026-11-05). Écarts : réglages purs dans `utils/studio3d/studio-settings.ts` ; le hook
+      porte aussi le niveau auto (via `useStudioQuality`) et le passe aux deux viewers (prop `studio`) ; fermeture au clic
+      extérieur et note « occlusion en qualité haute seulement » ajoutées ; e2e `reglages-rendu.spec.ts`. Fps sur GPU réel :
+      60 images/s en rotation, niveau haute.
+- [x] Lot 4 — Vues caméra et transitions (2026-11-05). Écarts : positions des vues sorties dans
+      `utils/studio3d/camera-views.ts` (`viewPose`, `hemHeight` : point le plus bas des panneaux devant/dos principaux,
+      genou à défaut) ; e2e `vues-camera.spec.ts` ajouté (compte les images dessinées pendant la transition, une capture
+      est trop lente pour saisir 600 ms).
 - [ ] Lot 5 — Capture HD et planches de revue
 
 ## Risques connus

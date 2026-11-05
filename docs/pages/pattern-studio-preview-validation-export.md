@@ -141,8 +141,9 @@ indisponible. Vêtements pris en charge : robe, jupe, chemise, veste, costume (p
 
 - **Navigation** (`OrbitControls` de drei, inertie activée) : clic milieu ou glisser = tourner, Maj + glisser ou clic
   droit = déplacer, molette = zoom vers le curseur ; tactile : 1 doigt tourne, 2 doigts déplacent/zooment.
-  Gizmo d'axes cliquable (comme Blender), boutons Face / Dos / Côté / Dessus / Recentrer et raccourcis pavé numérique
-  quand la scène a le focus : `1` face, `Ctrl+1` ou `9` dos, `3` côté, `7` dessus, `Home` recentrer.
+  Gizmo d'axes cliquable (comme Blender), boutons Face / 3/4 / Dos / Côté / Dessus / Ourlet / Recentrer et raccourcis
+  pavé numérique quand la scène a le focus : `1` face, `5` 3/4, `Ctrl+1` ou `9` dos, `3` côté, `7` dessus, `2` ourlet,
+  `Home` recentrer (3/4 et ourlet : lot 4 du 2026-11-05, voir plus bas).
 - **WebGL** : plus de contexte « sonde » jetable (il fuyait et épuisait la limite de ~16 contextes du navigateur,
   d'où un faux « WebGL indisponible »). Le démarrage réel est protégé par `WebGlBoundary` : en cas d'échec, message
   actionnable (accélération matérielle, extensions anti-canvas), erreur technique et bouton « Réessayer » ; perte de
@@ -579,3 +580,47 @@ Méthode de rendu portée de `~/Documents/Projects/teardown` (scène V8) dans `G
   chargement), `studio-scene.test.ts` (`applyStudioShadows`), `studio-composer.test.ts` (`aoBlend`).
 - **Non vérifié à l'écran** dans cette session : l'API 3003 était arrêtée et son redémarrage refusé en mode auto ;
   e2e `rendu-realiste.spec.ts` et captures avant/après à faire.
+
+### 2026-11-05 — Réglages du rendu dans le viewer (lot 3 de `docs/plans/studio-3d-rendering.md`)
+
+- Bouton icône « Réglages du rendu » (`SlidersHorizontal`) en surimpression **en haut à droite** du canevas de l'aperçu
+  (`ui/StudioControls.tsx`, présentationnel) : Éclairage Studio / Doux / Contraste (onglets segmentés), Ombres et
+  Occlusion (interrupteurs `role="switch"`), Qualité Auto / Haute / Moyenne / Basse avec le niveau réel en `font-mono`
+  quand Auto. Échap ou un clic ailleurs ferme ; le focus revient au bouton ; les touches du panneau ne déclenchent pas
+  les raccourcis de la scène. Une note dit que l'occlusion n'est calculée qu'en qualité haute.
+- État : `hooks/useStudioSettings.ts` (défauts `studio / ombres / occlusion / auto`), mémorisé en `localStorage`
+  (`angaly.studio3d.settings`, try/catch, confort par navigateur ; lecture validée par `parseStudioSettings`,
+  `utils/studio3d/studio-settings.ts`). En Auto, le niveau descend sur images lentes (`useStudioQuality`) ; un niveau
+  choisi reste fixe. Appelé une fois dans `Garment3DPanel` : l'aperçu et le rendu réaliste (`RealisticRenderSection` →
+  `RealisticRenderViewer`) reçoivent la même prop `studio` (lumière, ombres, AO, niveau, `reportFrame`). Sans prop,
+  chaque viewer garde son niveau automatique et la lumière `studio`.
+- Ombres coupées : la lumière clé reste, sans ombre (`StudioLights shadows={false}`), et le sol « ombre seule » est retiré.
+- Style Stitch (écran `ade57b6cba4241ae9464fd96b7e46d89`, revu via `agy` le 2026-11-05) : boîtier
+  `bg-[#041329]/80 backdrop-blur-md border-[#18375D] rounded-sm`, segment actif `bg-[#18375D] text-[#F6F2E9]`, inactif
+  `#8A877F`. Écart : la maquette n'a ni viewer 3D ni interrupteur ; les interrupteurs reprennent ce style (angles nets).
+- Mesure sur GPU réel (Playwright local, WebGL matériel) : **60 images/s** pendant une rotation, niveau Auto resté en
+  « haute » (critère du lot 1 vérifié).
+- Tests : `__tests__/useStudioSettings.test.ts`, `__tests__/StudioControls.test.tsx`, `Garment3DPanel.test.tsx`
+  (réglages transmis au viewer), `studio3dComponents.test.tsx` (clé sans ombre), e2e
+  `e2e/pattern-studio/reglages-rendu.spec.ts` (réglages, captures par éclairage, mémorisation au rechargement, fps).
+
+### 2026-11-05 — Vues caméra prédéfinies, transitions douces (lot 4 de `docs/plans/studio-3d-rendering.md`)
+
+- Deux vues de plus dans le groupe « Vues » de `Garment3DPanel` : **3/4** (35° depuis la face, un peu au-dessus de la
+  taille ; touche `5`) et **Ourlet** (gros plan du bas du vêtement ; touche `2`). L'ourlet vise le point le plus bas
+  des panneaux principaux (devant/dos du corsage, de la jupe, du buste ou des jambes — traîne, manches et détails
+  exclus), le genou à défaut (`hemHeight`, `utils/studio3d/camera-views.ts`).
+- Les positions des vues sont sorties du viewer vers `utils/studio3d/camera-views.ts` (`viewPose`, `ViewName`
+  réexporté par `Garment3DViewer`).
+- Transition : `utils/studio3d/camera-tween.ts` (pur) — 600 ms, `cubic-bezier(0.65, 0, 0.35, 1)`, la cible avance en
+  ligne droite et la caméra tourne autour d'elle sur une sphère par le plus court chemin (elle ne traverse pas le
+  mannequin). `CameraRig` l'anime dans `useFrame` + `invalidate()` (canevas rendu à la demande) ; instantané sous
+  `prefers-reduced-motion` ; saisir la vue (événement `start` d'`OrbitControls`) annule la transition.
+- Stitch (écran `ade57b6cba4241ae9464fd96b7e46d89`, revu via `agy --print` le 2026-11-05) : pas de groupe de vues
+  caméra sur le canevas (seuls zoom/recentrage en bas à gauche et « Vue technique / simplifiée » en bas à droite). Écart :
+  les boutons 3/4 et Ourlet reprennent le style du groupe « Vues » existant (`rounded-lg`, hors périmètre du plan).
+- Vérifié sur GPU réel (e2e) : 0 image dessinée au repos, ≈ 12 pendant la transition vers 3/4 ; vue figée ensuite ;
+  captures 3/4 et ourlet relues (robe du compte client : bas de jupe et pieds cadrés).
+- Tests : `utils/studio3d/__tests__/camera-tween.test.ts` (extrémités, monotonie, distance constante, plus court
+  chemin), `camera-views.test.ts`, `Garment3DPanel.test.tsx` (boutons et touches `5` / `2`), e2e
+  `e2e/pattern-studio/vues-camera.spec.ts`.
