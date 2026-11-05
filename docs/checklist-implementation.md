@@ -218,6 +218,8 @@ phase n'a pas été traitée en session dédiée (voir `.cursor/rules/006-phase-
   - [x] ✅ Modelage du patron sur le mannequin 3D (outils Modeler / Ampleur / Longueur / Lisser, 2D synchronisée) — 2026-10-14
   - [x] ✅ Pièces de finition robe : ceinture nouée + nœud, poignets, parementures de robe-manteau (moteur + 3D) ; gigot ajusté au coude — 2026-10-14
   - [x] ✅ Revers, jupe en lés, manche en deux pièces ; rendu 3D réaliste (velours, brocart, fond studio, occlusion, col sur le cou, chignon) — 2026-10-14
+  - [x] ✅ Rendu « studio » de l'aperçu 3D : softboxes, ombres VSM au sol, GTAO, MSAA, niveaux de qualité, shaders préchauffés (plan `studio-3d-rendering`, lot 1) — 2026-11-05
+  - [x] Rendu réaliste (Blender) sur le même studio : softboxes, ombres VSM du `.glb`, GTAO 0,9 sur les plis simulés (plan `studio-3d-rendering`, lot 2) — 2026-11-05 · revue visuelle + e2e à faire
 - [x] ✅ **mes-projets-patron** — Liste des projets de patron
 - [x] ✅ **mes-mesures** — Profils de mesures
 - [x] ✅ **mes-creations** — Suivi des créations sur-mesure (stepper 6 étapes, `docs/pages/mes-creations.md`)

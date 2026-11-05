@@ -532,3 +532,50 @@ voisines (`FOLD_AO_DEPTH` 3 cm), et un corsage n'a pas de godets (seulement ses 
   mannequin sans visage ni chignon (peau unie), éclairage simple.
 - Tests : `realisticRender.test.ts`, `useRealisticRender.test.ts`, `RealisticRenderSection.test.tsx` ; e2e
   `e2e/pattern-studio/rendu-realiste.spec.ts` (voir `docs/testing.md`).
+
+### 2026-11-05 — Rendu « studio » de l'aperçu 3D (lot 1 de `docs/plans/studio-3d-rendering.md`)
+
+Méthode de rendu portée de `~/Documents/Projects/teardown` (scène V8) dans `Garment3DViewer` :
+
+- `utils/studio3d/` (pur, testé) : `studio-config.ts` (niveaux de qualité `high/medium/low`, `pickInitialTier`,
+  `nextTierOnSlowFrames` + `pushFrameTime`, préréglages d'éclairage `studio` / `soft` / `contrast`, réglages GTAO),
+  `studio-scene.ts` (pièce à softboxes pour PMREM, sol « ombre seule » avec `polygonOffset`, ombre VSM de la clé
+  dont le flou suit la taille de la carte, objets exclus de l'AO), `studio-composer.ts` (RenderPass → masquage →
+  GTAO → réaffichage → OutputPass, cible HalfFloat + MSAA selon le niveau), `shader-warmup.ts` (portage de
+  `warm.js`), `normal-guard.ts` (normale NaN d'une carte de relief → normale de la surface).
+- `ui/studio3d/` : `StudioEnvironment`, `StudioLights`, `ShadowFloor`, `StudioPost` (rendu en `useFrame` priorité 1,
+  gizmo en priorité 2, rien n'est dessiné avant la compilation des shaders : surimpression « Préparation du rendu… »
+  au style des contrôles en surimpression de la maquette). Hooks : `useStudioQuality`, `useShaderWarmup`.
+- Renderer : `NeutralToneMapping` (passé dans les props `gl`, sinon R3F remet ACES), ombres VSM, canevas opaque sans
+  antialiasing (le MSAA vient du composer). Le disque noir sous les pieds est remplacé par l'ombre portée.
+- Ombres : corps, tête, cheveux, panneaux, perles projettent ; la dentelle ne projette ni ne reçoit (ses jours se
+  projettent sur elle-même) ; la broderie reçoit seulement. AO coupée en mode « Transparence ».
+- Pièges rencontrés : la carte de relief de la broderie donne des normales NaN par endroits → pixels noirs après le
+  post-traitement (corrigé par `normal-guard`) ; le préchauffage de l'OutputPass laissait une cible hors écran liée →
+  gizmo invisible à partir du 2e projet ouvert (cible du canevas remise).
+- Revue visuelle : 6 projets du catalogue face / côté / dos, avant / après (captures Playwright, script dans le
+  scratchpad de la session, non versionné — le lot 5 en fera un outil du dépôt). Volumes plus lisibles, ombres des bras
+  et du col, couleurs inchangées ; dos éclairé par une contre-lumière renforcée.
+- Écart Stitch : la maquette n'a pas de viewer 3D ; les barres du panneau 3D gardent leur `rounded-lg` (hors périmètre
+  du plan, à reprendre avec la maquette).
+- Tests : `utils/studio3d/__tests__/*` (config, scène, composer, warm-up, normal-guard), `useStudioQuality.test.ts`,
+  `useShaderWarmup.test.ts`, `studio3dComponents.test.tsx`.
+
+### 2026-11-05 — Rendu réaliste sur le même studio (lot 2 de `docs/plans/studio-3d-rendering.md`)
+
+- `RealisticRenderViewer` reprend tel quel le studio du lot 1 : `StudioEnvironment`, `StudioLights` (préréglage
+  `studio`), `ShadowFloor` (avec mannequin), `StudioPost`, niveaux de qualité (`useStudioQuality`), renderer
+  `configureStudioRenderer` + `NeutralToneMapping`, canevas sans antialiasing. Les 3 lumières codées en dur et le fond
+  navy fixe ont disparu : fond papier gris (`ui/studio3d/StudioBackdrop.tsx`, sorti de `Garment3DViewer`) quand le
+  tissu a une surface connue, navy sinon — comme l'aperçu.
+- Ombres du `.glb` : `applyStudioShadows` (`utils/studio3d/studio-scene.ts`) — chaque maillage reçoit, et projette
+  sauf une couche transparente (fil de broderie). Le mannequin projette et reçoit.
+- AO plus forte sur les vrais plis simulés : `SIMULATED_CLOTH_AO_BLEND = 0.9` (option `aoBlend` de `StudioPost` /
+  `createStudioComposer`, 0,75 par défaut pour l'aperçu).
+- Smocks et broderie passent par `withNormalGuard` (normales NaN → pixels noirs).
+- Attente : « Chargement du rendu réaliste… » pendant le chargement du `.glb`, puis « Préparation du rendu… »
+  pendant la compilation des shaders (préchauffage relancé quand le `.glb` ou le corps scanné arrive).
+- Tests : `__tests__/RealisticRenderViewer.test.tsx` (studio monté, ombres des maillages, fond papier, erreur de
+  chargement), `studio-scene.test.ts` (`applyStudioShadows`), `studio-composer.test.ts` (`aoBlend`).
+- **Non vérifié à l'écran** dans cette session : l'API 3003 était arrêtée et son redémarrage refusé en mode auto ;
+  e2e `rendu-realiste.spec.ts` et captures avant/après à faire.

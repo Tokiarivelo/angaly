@@ -13,6 +13,16 @@ import { clothRoleForMaterial, motifForMaterial, panelMotifs, type RenderClothRo
 import { accentMaterial, fabricMaterial, glow, plastronMaterial, type Cloth, type FabricLook } from './fabricTextures';
 import { embroideryMap, embroideryMaterialParameters, smockingMaps, threadColor } from './motifTextures';
 import { useHumanBase } from './useHumanBase';
+import type { HumanBaseData } from '../utils/garment3d/human-body';
+import { LIGHTING_PRESETS, SIMULATED_CLOTH_AO_BLEND, dprRange } from '../utils/studio3d/studio-config';
+import { applyStudioShadows, configureStudioRenderer } from '../utils/studio3d/studio-scene';
+import { withNormalGuard } from '../utils/studio3d/normal-guard';
+import { useStudioQuality } from '../hooks/useStudioQuality';
+import { StudioBackdrop } from './studio3d/StudioBackdrop';
+import { StudioEnvironment } from './studio3d/StudioEnvironment';
+import { StudioLights } from './studio3d/StudioLights';
+import { ShadowFloor } from './studio3d/ShadowFloor';
+import { StudioPost } from './studio3d/StudioPost';
 
 /** Draco decoder copied from three (`examples/jsm/libs/draco/gltf`) into `public/draco/`: no CDN. */
 export const DRACO_DECODER_PATH = '/draco/';
@@ -20,6 +30,9 @@ const VIEW_DISTANCE = 3.3;
 
 /** The plain-coloured fabric of the 3D preview when the photo gave none (the `.glb` keeps its own material). */
 const PLASTRON_FALLBACK = '#efe6d2';
+
+/** The preview's renderer: no canvas anti-aliasing (the studio's MSAA does it), neutral tone mapping. */
+const GL_OPTIONS = { antialias: false, alpha: false, powerPreference: 'high-performance', toneMapping: THREE.NeutralToneMapping } as const;
 
 interface RealisticRenderViewerProps {
   /** The simulated garment (`.glb`, Draco) produced by the cloth-sim worker. */
@@ -91,6 +104,8 @@ const withSmocks = (surface: THREE.Material, relief: { normalMap: THREE.Texture;
     surface.normalMap = relief.normalMap;
     surface.aoMap = relief.aoMap;
     surface.aoMapIntensity = 0.8;
+    // A NaN normal from the relief map would come out as a black pixel through the post-processing.
+    withNormalGuard(surface);
     surface.needsUpdate = true;
   }
   return surface;
@@ -131,7 +146,7 @@ const Garment: React.FC<{ scene: THREE.Group; fabric?: FabricLook | null | undef
         const motif = motifForMaterial(material.name, motifs);
         if (motif?.motif === 'BRODERIE' && embroidery) {
           // The thread alone over the cloth beneath (Blender simulated it as a layer on the dress).
-          const thread = new THREE.MeshPhysicalMaterial(embroideryMaterialParameters(threadColor(motif.color, fabric?.contrastColor), embroidery));
+          const thread = withNormalGuard(new THREE.MeshPhysicalMaterial(embroideryMaterialParameters(threadColor(motif.color, fabric?.contrastColor), embroidery)));
           thread.name = material.name;
           created.push(thread);
           return thread;
@@ -147,7 +162,8 @@ const Garment: React.FC<{ scene: THREE.Group; fabric?: FabricLook | null | undef
         return motif?.motif === 'SMOCKS' && smocks ? withSmocks(surface, smocks) : surface;
       };
       mesh.material = Array.isArray(mesh.material) ? mesh.material.map(swap) : swap(mesh.material);
-      mesh.castShadow = true;
+      // The simulated folds shade each other and the body (the AO deepens their hollows).
+      applyStudioShadows(mesh);
     });
     return () => created.forEach((m) => m.dispose());
   }, [scene, cloths, motifs, embroidery, smocks, fabric?.contrastColor]);
@@ -157,8 +173,7 @@ const Garment: React.FC<{ scene: THREE.Group; fabric?: FabricLook | null | undef
   return <primitive object={scene} />;
 };
 
-const Mannequin: React.FC<{ model: GarmentModel; pose: BodyPose }> = ({ model, pose }) => {
-  const human = useHumanBase();
+const Mannequin: React.FC<{ human: HumanBaseData | null; model: GarmentModel; pose: BodyPose }> = ({ human, model, pose }) => {
   const geometry = useMemo(() => {
     if (!human) return null;
     const fitted = fitHumanBody(human, model.body, model.torsoRings, morphFor(model.body, model.templateId));
@@ -172,7 +187,7 @@ const Mannequin: React.FC<{ model: GarmentModel; pose: BodyPose }> = ({ model, p
   useEffect(() => () => geometry?.dispose(), [geometry]);
   if (!geometry) return null;
   return (
-    <mesh geometry={geometry}>
+    <mesh geometry={geometry} castShadow receiveShadow>
       <meshStandardMaterial color={model.body.skin} roughness={0.55} metalness={0} />
     </mesh>
   );
@@ -192,6 +207,14 @@ export const RealisticRenderViewer: React.FC<RealisticRenderViewerProps> = ({
   onContextLost,
 }) => {
   const scene = useSimulatedGarment(glbUrl, onError);
+  const human = useHumanBase();
+  // Same studio as the preview (`Garment3DViewer`): both renders must read as the same garment under the same light.
+  const preset = LIGHTING_PRESETS.studio;
+  const { tier, reportFrame } = useStudioQuality();
+  const [renderReady, setRenderReady] = useState(false);
+  const dpr = useMemo(() => dprRange(tier, typeof window === 'undefined' ? 1 : window.devicePixelRatio || 1), [tier]);
+  // A fabric with a known surface is shown as a photograph: grey paper backdrop.
+  const paper = Boolean(fabric?.fabricFinish);
   // The preview's panels say which `.glb` materials are an embroidery or a smocked panel (materials = panel ids).
   const motifs = useMemo(() => panelMotifs(model.panels), [model.panels]);
   const lost = useRef(onContextLost);
@@ -201,29 +224,40 @@ export const RealisticRenderViewer: React.FC<RealisticRenderViewerProps> = ({
     <div className="relative h-full w-full" data-testid="realistic-render-viewer">
       <Canvas
         frameloop="demand"
-        dpr={[1, 1.5]}
+        dpr={dpr}
+        shadows="variance"
         camera={{ position: [0, 1.0, VIEW_DISTANCE], fov: 32, near: 0.1, far: 30 }}
-        gl={{ antialias: true }}
+        gl={GL_OPTIONS}
         aria-label="Rendu réaliste du vêtement simulé sur le mannequin"
         onCreated={({ gl }) => {
+          configureStudioRenderer(gl);
           gl.domElement.addEventListener('webglcontextlost', (event) => {
             event.preventDefault();
             lost.current?.();
           });
         }}
       >
-        <color attach="background" args={['#041329']} />
-        <hemisphereLight args={['#ffffff', '#3a3530', 0.6]} />
-        <directionalLight position={[2.5, 3.5, 2.5]} intensity={2.2} />
-        <directionalLight position={[-2.5, 2, 1.5]} intensity={0.6} color="#cfd8ff" />
-        <directionalLight position={[0, 2.5, -3]} intensity={0.8} />
-        {showMannequin && <Mannequin model={model} pose={pose} />}
+        {paper ? <StudioBackdrop /> : <color attach="background" args={['#041329']} />}
+        <StudioEnvironment preset={preset} backdrop={paper ? 'paper' : 'navy'} />
+        <StudioLights preset={preset} tier={tier} />
+        {showMannequin && <ShadowFloor opacity={preset.floorShadowOpacity} />}
+        {showMannequin && <Mannequin human={human} model={model} pose={pose} />}
         {scene && <Garment scene={scene} fabric={fabric} motifs={motifs} />}
         <OrbitControls target={[0, 0.95, 0]} enableDamping={false} minDistance={0.6} maxDistance={8} />
+        <StudioPost
+          tier={tier}
+          aoAllowed
+          aoBlend={SIMULATED_CLOTH_AO_BLEND}
+          warmKey={`${scene ? glbUrl : 'loading'}:${human ? 'person' : 'none'}`}
+          onReadyChange={setRenderReady}
+          onFrame={reportFrame}
+        />
       </Canvas>
-      {!scene && (
-        <div className="pointer-events-none absolute inset-0 flex items-center justify-center text-sm text-[#D8D3C8]">
-          Chargement du rendu réaliste…
+      {(!scene || !renderReady) && (
+        <div role="status" className="pointer-events-none absolute inset-0 flex items-center justify-center">
+          <span className="rounded-sm border border-[#18375D] bg-[#041329]/80 px-3 py-2 font-sans text-[10px] uppercase tracking-widest text-[#D8D3C8] backdrop-blur-md">
+            {scene ? 'Préparation du rendu…' : 'Chargement du rendu réaliste…'}
+          </span>
         </div>
       )}
     </div>

@@ -27,13 +27,21 @@ import { embroideryMap, embroideryMaterialParameters, smockingMaps, threadColor 
 import { isHexColor } from '@angaly/types';
 import { applyPose, forearmMask, handCentres, isNeutral, seatHandsOnSkirt, type BodyPose } from '../utils/garment3d/pose';
 import { eyeTexture, hairTexture } from './headTextures';
-import { RoomEnvironment } from 'three/examples/jsm/environments/RoomEnvironment.js';
 import { useHumanBase } from './useHumanBase';
 import { SculptBrush, type SculptHandlers, type SculptViewProps } from './SculptBrush';
 import { MeshEditLayer, type MeshEditViewProps, type ScreenBox } from './MeshEditLayer';
 import { outlineInstances, type PointInstance } from '../utils/garment3d/mesh-edit';
 import type { PatternPieceDto } from '@angaly/types';
 import { garmentFrameOf } from '../utils/garment3d/photo-frame';
+import { LIGHTING_PRESETS, dprRange, type LightingPresetName } from '../utils/studio3d/studio-config';
+import { configureStudioRenderer } from '../utils/studio3d/studio-scene';
+import { guardPerturbedNormal, withNormalGuard } from '../utils/studio3d/normal-guard';
+import { useStudioQuality } from '../hooks/useStudioQuality';
+import { StudioEnvironment } from './studio3d/StudioEnvironment';
+import { StudioLights } from './studio3d/StudioLights';
+import { ShadowFloor } from './studio3d/ShadowFloor';
+import { StudioPost } from './studio3d/StudioPost';
+import { StudioBackdrop } from './studio3d/StudioBackdrop';
 
 interface Garment3DViewerProps {
   model: GarmentModel;
@@ -60,6 +68,8 @@ interface Garment3DViewerProps {
   showSeams?: boolean | undefined;
   /** Told where the garment's front box lies on the canvas (px from its top left) whenever it moves: the photo is laid over it. */
   onGarmentScreenRect?: ((rect: ScreenRect | null) => void) | undefined;
+  /** Studio light setup (softboxes, key light, shadow); `studio` by default. */
+  lighting?: LightingPresetName | undefined;
 }
 
 /** A box on the 3D canvas, in CSS px from the canvas's top left corner. */
@@ -122,6 +132,12 @@ const VIEW_POSITIONS: Record<ViewName, [number, number, number]> = {
   top: [0, VIEW_TARGET.y + VIEW_DISTANCE, 0.001],
   reset: [0, 1.0, VIEW_DISTANCE],
 };
+
+/**
+ * Given to R3F as renderer props (R3F would otherwise put its ACES tone mapping back on re-render). Opaque canvas: the
+ * cut-out hair writes an alpha below 1, which the post-processing turns into black holes on a transparent canvas.
+ */
+const GL_OPTIONS = { antialias: false, alpha: false, powerPreference: 'high-performance', toneMapping: THREE.NeutralToneMapping } as const;
 
 const EXPLODE_DISTANCE = 0.3;
 const ZONE_COLORS: Record<PanelMeshData['zone'], string> = {
@@ -198,7 +214,7 @@ const Torso: React.FC<{ model: GarmentModel }> = ({ model }) => {
   }, [model.torsoRings]);
 
   return (
-    <mesh geometry={geometry}>
+    <mesh geometry={geometry} castShadow receiveShadow>
       <meshStandardMaterial color={skin} roughness={0.55} metalness={0.0} />
     </mesh>
   );
@@ -230,7 +246,7 @@ const SculptedLimbMesh: React.FC<{
   );
 
   return (
-    <mesh position={position} quaternion={quaternion} geometry={geometry}>
+    <mesh position={position} quaternion={quaternion} geometry={geometry} castShadow receiveShadow>
       <meshStandardMaterial color={color} roughness={0.55} metalness={0.0} />
     </mesh>
   );
@@ -261,7 +277,6 @@ const Person: React.FC<{
   fit: FitResult;
 }> = ({ model, base, fit }) => {
   const { body } = model;
-  const s = bodyScale(body);
   // The face, sculpted towards a portrait's (fuller lips, eyes a little more open); a woman's then
   // stylised like the atelier's reference bust (shorter lower face, V jaw, almond eyes).
   const sculpted = useMemo(() => {
@@ -339,11 +354,7 @@ const Person: React.FC<{
 
   return (
     <group>
-      <mesh position={[0, 0.001, 0.02 * s]} rotation={[-Math.PI / 2, 0, 0]}>
-        <circleGeometry args={[0.34 * s, 48]} />
-        <meshBasicMaterial color="#020B17" transparent opacity={0.45} />
-      </mesh>
-      <mesh geometry={geometry}>
+      <mesh geometry={geometry} castShadow receiveShadow>
         <meshPhysicalMaterial
           userData={{ skin: true }}
           vertexColors
@@ -364,7 +375,7 @@ const Person: React.FC<{
         ))}
       {face && hairMaps && (
         <>
-          <mesh geometry={hairGeometry}>
+          <mesh geometry={hairGeometry} castShadow>
             <meshPhysicalMaterial
               userData={{ hair: true }}
               map={hairMaps}
@@ -383,56 +394,6 @@ const Person: React.FC<{
       )}
     </group>
   );
-};
-
-/** Soft studio reflections (eyes, skin sheen, fabric) from a generated room, no network asset. */
-const StudioEnvironment: React.FC = () => {
-  const gl = useThree((state) => state.gl);
-  const scene = useThree((state) => state.scene);
-  useEffect(() => {
-    const pmrem = new THREE.PMREMGenerator(gl);
-    const room = new RoomEnvironment();
-    const env = pmrem.fromScene(room, 0.04).texture;
-    scene.environment = env;
-    scene.environmentIntensity = 0.25;
-    return () => {
-      scene.environment = null;
-      env.dispose();
-      pmrem.dispose();
-    };
-  }, [gl, scene]);
-  return null;
-};
-
-/**
- * Photo-studio backdrop for a real fabric: a seamless grey paper, lighter behind the head, darker towards the floor
- * (a dark garment reads against it, as on the fashion plates). Drawn as the scene background.
- */
-const StudioBackdrop: React.FC = () => {
-  const scene = useThree((state) => state.scene);
-  useEffect(() => {
-    if (typeof document === 'undefined') return undefined;
-    const canvas = document.createElement('canvas');
-    canvas.width = 4;
-    canvas.height = 256;
-    const c = canvas.getContext('2d');
-    if (!c) return undefined;
-    const g = c.createLinearGradient(0, 0, 0, 256);
-    g.addColorStop(0, '#77787B');
-    g.addColorStop(0.55, '#5E5F62');
-    g.addColorStop(1, '#3B3C3F');
-    c.fillStyle = g;
-    c.fillRect(0, 0, 4, 256);
-    const texture = new THREE.CanvasTexture(canvas);
-    texture.colorSpace = THREE.SRGBColorSpace;
-    const previous = scene.background;
-    scene.background = texture;
-    return () => {
-      scene.background = previous;
-      texture.dispose();
-    };
-  }, [scene]);
-  return null;
 };
 
 const radiusOf = (circumference: number): number => circumference / (2 * Math.PI);
@@ -462,12 +423,6 @@ const Mannequin: React.FC<{ model: GarmentModel }> = ({ model }) => {
     <group>
       <Torso model={model} />
 
-      {/* Natural ground contact shadow beneath feet on the floor */}
-      <mesh position={[0, 0.001, 0.02 * s]} rotation={[-Math.PI / 2, 0, 0]}>
-        <circleGeometry args={[0.34 * s, 48]} />
-        <meshBasicMaterial color="#020B17" transparent opacity={0.45} />
-      </mesh>
-
       {/* Graceful contoured neck */}
       <SculptedLimbMesh
         from={[0, landmarks.napeY - 0.01, 0.008]}
@@ -479,12 +434,12 @@ const Mannequin: React.FC<{ model: GarmentModel }> = ({ model }) => {
       />
 
       {/* Realistic Head with Sculpted Facial Anatomy */}
-      <mesh position={[0, headY, 0.018]} geometry={headGeometry}>
+      <mesh position={[0, headY, 0.018]} geometry={headGeometry} castShadow receiveShadow>
         <meshStandardMaterial color={skin} roughness={0.55} metalness={0.0} />
       </mesh>
 
       {/* Styled Hair Coiffure */}
-      <mesh position={[0, headY, 0.018]} geometry={hairGeometry}>
+      <mesh position={[0, headY, 0.018]} geometry={hairGeometry} castShadow>
         <meshStandardMaterial color="#2B1E18" roughness={0.48} metalness={0.08} />
       </mesh>
 
@@ -498,7 +453,7 @@ const Mannequin: React.FC<{ model: GarmentModel }> = ({ model }) => {
         return (
           <React.Fragment key={side}>
             {/* Shoulder deltoid articulation cap */}
-            <mesh position={[sx, landmarks.shoulderY - 0.01, 0.004]}>
+            <mesh position={[sx, landmarks.shoulderY - 0.01, 0.004]} castShadow receiveShadow>
               <sphereGeometry args={[radiusOf(body.upperArm) * 1.02, 32, 24]} />
               <meshStandardMaterial color={skin} roughness={0.55} metalness={0.0} />
             </mesh>
@@ -514,7 +469,7 @@ const Mannequin: React.FC<{ model: GarmentModel }> = ({ model }) => {
             />
 
             {/* Elbow joint */}
-            <mesh position={[ex, ey, 0]}>
+            <mesh position={[ex, ey, 0]} castShadow receiveShadow>
               <sphereGeometry args={[radiusOf(body.upperArm) * 0.80, 28, 20]} />
               <meshStandardMaterial color={skin} roughness={0.55} metalness={0.0} />
             </mesh>
@@ -534,6 +489,8 @@ const Mannequin: React.FC<{ model: GarmentModel }> = ({ model }) => {
               position={[wx, armEndY, 0]}
               rotation={[0, 0, -side * SLEEVE_TILT]}
               geometry={isLeft ? leftHandGeometry : rightHandGeometry}
+              castShadow
+              receiveShadow
             >
               <meshStandardMaterial color={skin} roughness={0.55} metalness={0.0} />
             </mesh>
@@ -549,7 +506,7 @@ const Mannequin: React.FC<{ model: GarmentModel }> = ({ model }) => {
             />
 
             {/* Knee patella joint */}
-            <mesh position={[side * legX * 0.95, kneeY, 0.004]}>
+            <mesh position={[side * legX * 0.95, kneeY, 0.004]} castShadow receiveShadow>
               <sphereGeometry args={[radiusOf(body.knee) * 0.96, 28, 20]} />
               <meshStandardMaterial color={skin} roughness={0.55} metalness={0.0} />
             </mesh>
@@ -568,6 +525,8 @@ const Mannequin: React.FC<{ model: GarmentModel }> = ({ model }) => {
             <mesh
               position={[side * legX * 0.9, 0, 0.02 * s]}
               geometry={footGeometry}
+              castShadow
+              receiveShadow
             >
               <meshStandardMaterial color={skin} roughness={0.55} metalness={0.0} />
             </mesh>
@@ -618,7 +577,17 @@ const ClothMaterial: React.FC<{
 }> = ({ cloth, zone, highlighted, transparent, shaded = false, relief, attach }) => {
   const common = {
     attach,
-    ...(relief ? { normalMap: relief.normalMap, normalScale: new THREE.Vector2(1, 1), aoMap: relief.aoMap, aoMapIntensity: 0.8 } : {}),
+    ...(relief
+      ? {
+          normalMap: relief.normalMap,
+          normalScale: new THREE.Vector2(1, 1),
+          aoMap: relief.aoMap,
+          aoMapIntensity: 0.8,
+          // A NaN normal from the relief map would come out as a black pixel through the post-processing.
+          onBeforeCompile: guardPerturbedNormal,
+          customProgramCacheKey: () => 'normal-guard',
+        }
+      : {}),
     vertexColors: shaded,
     color: cloth?.color ?? ZONE_COLORS[zone],
     map: cloth?.map ?? null,
@@ -701,6 +670,8 @@ const Panel: React.FC<{
       <mesh
         geometry={geometry}
         userData={{ panel }}
+        castShadow
+        receiveShadow
         {...(sculpt
           ? {
               onPointerMove: (e: ThreeEvent<PointerEvent>) => sculpt.current?.hover(e, panel),
@@ -790,7 +761,7 @@ const EmbroideryPanel: React.FC<{ panel: PanelMeshData; assembly: number; highli
     return g;
   }, [panel]);
   // Same material as the realistic render's embroidery (`embroideryMaterialParameters`).
-  const material = useMemo(() => new THREE.MeshPhysicalMaterial(embroideryMaterialParameters(color, motif)), [color, motif]);
+  const material = useMemo(() => withNormalGuard(new THREE.MeshPhysicalMaterial(embroideryMaterialParameters(color, motif))), [color, motif]);
   useEffect(() => () => material.dispose(), [material]);
   const invalidate = useThree((state) => state.invalidate);
   useEffect(() => {
@@ -801,7 +772,7 @@ const EmbroideryPanel: React.FC<{ panel: PanelMeshData; assembly: number; highli
   const spread = (1 - assembly) * EXPLODE_DISTANCE;
   return (
     <group position={[panel.explode.x * spread, panel.explode.y * spread * 0.5, panel.explode.z * spread]}>
-      <mesh geometry={geometry} material={material} userData={{ panel }} />
+      <mesh geometry={geometry} material={material} userData={{ panel }} receiveShadow />
     </group>
   );
 };
@@ -824,7 +795,7 @@ const BeadRow: React.FC<{ panel: PanelMeshData; assembly: number; highlighted: b
   const spread = (1 - assembly) * EXPLODE_DISTANCE;
   return (
     <group position={[panel.explode.x * spread, panel.explode.y * spread * 0.5, panel.explode.z * spread]}>
-      <instancedMesh ref={ref} args={[sphere, undefined, count]}>
+      <instancedMesh ref={ref} args={[sphere, undefined, count]} castShadow>
         <meshPhysicalMaterial
           color={panel.trimColor ?? ZONE_COLORS.beads}
           roughness={0.22}
@@ -854,8 +825,13 @@ export const Garment3DViewer: React.FC<Garment3DViewerProps> = ({
   edit,
   showSeams,
   onGarmentScreenRect,
+  lighting = 'studio',
 }) => {
   const human = useHumanBase();
+  const preset = LIGHTING_PRESETS[lighting];
+  const { tier, reportFrame } = useStudioQuality();
+  const [renderReady, setRenderReady] = useState(false);
+  const dpr = useMemo(() => dprRange(tier, typeof window === 'undefined' ? 1 : window.devicePixelRatio || 1), [tier]);
   const editing = Boolean(edit);
   // Edit mode: the left button selects; Alt + left (or the middle button) orbits, as Blender's emulation.
   const [altHeld, setAltHeld] = useState(false);
@@ -983,11 +959,14 @@ export const Garment3DViewer: React.FC<Garment3DViewerProps> = ({
     <div className="relative h-full w-full">
     <Canvas
       frameloop="demand"
-      dpr={[1, 1.5]}
+      dpr={dpr}
+      shadows="variance"
       camera={{ position: [0, 1.0, VIEW_DISTANCE], fov: 32, near: 0.1, far: 30 }}
-      gl={{ antialias: true, powerPreference: 'high-performance' }}
+      // The anti-aliasing is the post-processing target's MSAA (StudioPost); the canvas itself has none.
+      gl={GL_OPTIONS}
       aria-label="Prévisualisation 3D du patron assemblé sur un mannequin"
       onCreated={({ gl }) => {
+        configureStudioRenderer(gl);
         // A lost context (GPU reset, too many contexts) must not leave a frozen black canvas.
         gl.domElement.addEventListener('webglcontextlost', (event) => {
           event.preventDefault();
@@ -996,15 +975,9 @@ export const Garment3DViewer: React.FC<Garment3DViewerProps> = ({
       }}
     >
       {studio ? <StudioBackdrop /> : <color attach="background" args={['#041329']} />}
-      <StudioEnvironment />
-      {/* Studio three-point light: a strong key high on one side, a weak cool fill (the relief stays readable). */}
-      <ambientLight intensity={studio ? 0.06 : 0.15} color="#E8E2D5" />
-      <hemisphereLight args={['#FFFFFF', studio ? '#2A2B2E' : '#061938', studio ? 0.3 : 0.5]} />
-      {/* On the studio backdrop the key comes lower and more from the side: it rakes the velvet's folds. */}
-      <directionalLight position={studio ? [-3.2, 2.6, 1.6] : [-2.8, 3.6, 2.2]} intensity={studio ? 2.8 : 2.4} color="#FFF6EA" />
-      <directionalLight position={[3, 1.5, 2.8]} intensity={0.4} color="#A9BAD6" />
-      <directionalLight position={[0, 3.5, -3.5]} intensity={1.1} color="#F0E6D2" />
-      <directionalLight position={[0, -1, 1]} intensity={0.25} color="#C5B190" />
+      <StudioEnvironment preset={preset} backdrop={studio ? 'paper' : 'navy'} />
+      <StudioLights preset={preset} tier={tier} />
+      {showMannequin && <ShadowFloor opacity={preset.floorShadowOpacity} />}
 
       {showMannequin && (human && fit ? <Person model={model} base={human} fit={fit} /> : <Mannequin model={model} />)}
       {panels.map((panel) =>
@@ -1074,7 +1047,8 @@ export const Garment3DViewer: React.FC<Garment3DViewerProps> = ({
       />
 
       {/* Click an axis to snap the view, like Blender's navigation gizmo. */}
-      <GizmoHelper alignment="bottom-right" margin={[56, 56]}>
+      {/* renderPriority 2: drawn over the studio's post-processed frame (StudioPost renders at 1). */}
+      <GizmoHelper alignment="bottom-right" margin={[56, 56]} renderPriority={2}>
         <GizmoViewport axisColors={['#E0605A', '#7FC47F', '#6A9AE0']} labelColor="#041329" />
       </GizmoHelper>
 
@@ -1082,7 +1056,18 @@ export const Garment3DViewer: React.FC<Garment3DViewerProps> = ({
       <AdaptiveDpr pixelated />
       <CameraRig request={viewRequest} stature={model.body.height} />
       <Invalidator signal={[assembly, showMannequin, transparent, selectedPieceId, model, panels]} />
+      <StudioPost tier={tier} aoAllowed={!transparent} warmKey={human ? 'person' : 'mannequin'} onReadyChange={setRenderReady} onFrame={reportFrame} />
     </Canvas>
+    {!renderReady && (
+      <div
+        role="status"
+        className="pointer-events-none absolute inset-0 flex items-center justify-center"
+      >
+        <span className="rounded-sm border border-[#18375D] bg-[#041329]/80 px-3 py-2 font-sans text-[10px] uppercase tracking-widest text-[#D8D3C8] backdrop-blur-md">
+          Préparation du rendu…
+        </span>
+      </div>
+    )}
     {box && (
       <div
         data-testid="box-select"
