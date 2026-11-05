@@ -19,6 +19,8 @@ from typing import Any
 
 import numpy as np
 
+from .feature_flags import local_models_enabled
+
 ROOT = Path(__file__).resolve().parent.parent
 MODELS = Path(os.environ.get("ANGALY_ML_MODELS", ROOT / "ml" / "models"))
 ENCODER = MODELS / "clip" / "vision_model_quantized.onnx"
@@ -95,7 +97,7 @@ def _profile_model() -> dict[str, Any] | None:
 
 
 def available() -> bool:
-    return encoder_available() and PROFILE_MODEL.exists()
+    return local_models_enabled() and encoder_available() and PROFILE_MODEL.exists()
 
 
 def model_version() -> str | None:

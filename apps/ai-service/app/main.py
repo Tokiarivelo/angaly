@@ -61,6 +61,13 @@ def test_provider(payload: TestProviderRequest) -> TestProviderResponse:
     """
     provider_id = (payload.provider or "").upper()
     if provider_id == "LOCAL_STATISTICAL":
+        if not is_local_model_available():
+            return TestProviderResponse(
+                provider=payload.provider,
+                status="INVALID",
+                latencyMs=0,
+                message="Modèle statistique local désactivé (AI_LOCAL_MODELS_ENABLED) ou non entraîné.",
+            )
         return TestProviderResponse(
             provider=payload.provider,
             status="OK",

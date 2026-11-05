@@ -19,6 +19,8 @@ from typing import Any
 
 import numpy as np
 
+from .feature_flags import local_models_enabled
+
 logger = logging.getLogger("angaly.ai_service")
 
 MODELS_DIR = Path(__file__).resolve().parent.parent / "ml" / "models"
@@ -47,6 +49,8 @@ def _load_artifacts() -> None:
 
 
 def is_local_model_available(gender: str | None = None) -> bool:
+    if not local_models_enabled():
+        return False
     if not _load_attempted:
         _load_artifacts()
     if gender:
