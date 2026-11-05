@@ -36,6 +36,9 @@ ENV_EXAMPLE         := .env.example
 WEB_ENV_FILE        := apps/web/.env.local
 API_ENV_FILE        := apps/api/.env
 AI_SERVICE_PORT     ?= 8001
+# Web dev port (3000 is taken by another project on this machine). Override: make dev.web WEB_PORT=3005
+WEB_PORT            ?= 3001
+export WEB_PORT
 
 # =============================================================================
 # ── HELP ─────────────────────────────────────────────────────────────────────
@@ -70,7 +73,7 @@ setup: ## 🚀 Complete first-time setup (install + env + infra + db)
 	@echo "$(GREEN)✅ Setup complete!$(RESET)"
 	@echo "  Configure secrets first: make env.generate-keys && make env.generate-secret"
 	@echo "  Then start the app with: $(BOLD)make dev$(RESET)"
-	@echo "  Web:         http://localhost:3000"
+	@echo "  Web:         http://localhost:$(WEB_PORT)"
 	@echo "  API:         http://localhost:3003/docs"
 	@echo "  AI Service:  http://localhost:$(AI_SERVICE_PORT)/health"
 	@echo "  MinIO:       http://localhost:9001"
@@ -194,7 +197,7 @@ env.generate-secret: ## 🔑 Generate NEXTAUTH_SECRET for apps/web/.env.local
 .PHONY: dev
 dev: ## 🔥 Start web + api + ai-service together in development mode
 	@echo "$(CYAN)🔥 Starting development servers...$(RESET)"
-	@echo "  Web:         http://localhost:3000"
+	@echo "  Web:         http://localhost:$(WEB_PORT)"
 	@echo "  API:         http://localhost:3003/docs"
 	@echo "  AI Service:  http://localhost:$(AI_SERVICE_PORT)/health"
 	@trap 'kill 0' EXIT INT TERM; \
@@ -207,7 +210,7 @@ dev: ## 🔥 Start web + api + ai-service together in development mode
 	wait
 
 .PHONY: dev.web
-dev.web: ## 🌐 Start only the Next.js frontend (port 3000)
+dev.web: ## 🌐 Start only the Next.js frontend (port 3001; other port: WEB_PORT=3005)
 	$(PNPM) --filter @angaly/web dev
 
 .PHONY: dev.api

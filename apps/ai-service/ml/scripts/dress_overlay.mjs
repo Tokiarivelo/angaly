@@ -1,9 +1,9 @@
 // Captures the 3D mannequin of ONE project with the inspiration photo superposed (page's « Superposer » mode).
-//   node ml/scripts/dress_overlay.mjs <projectId> <out.png> [opacity 0-100] [web=http://localhost:3100]
+//   node ml/scripts/dress_overlay.mjs <projectId> <out.png> [opacity 0-100] [web=http://localhost:3001]
 import { createRequire } from 'node:module';
 const require = createRequire(new URL('../../../web/package.json', import.meta.url));
 const { chromium } = require('@playwright/test');
-const [projectId, out, opacity = '50', web = 'http://localhost:3100'] = process.argv.slice(2);
+const [projectId, out, opacity = '50', web = 'http://localhost:3001'] = process.argv.slice(2);
 const browser = await chromium.launch({ executablePath: '/usr/bin/google-chrome', args: ['--use-gl=swiftshader', '--enable-unsafe-swiftshader'] });
 const page = await browser.newPage({ viewport: { width: 1400, height: 1000 } });
 await page.goto(`${web}/connexion`);

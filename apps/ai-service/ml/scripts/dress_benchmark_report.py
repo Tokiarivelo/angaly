@@ -12,7 +12,7 @@ import argparse
 import json
 from pathlib import Path
 
-WEB = "http://localhost:3100"
+WEB = "http://localhost:3001"
 
 
 def load_candidates(paths: list[str]) -> dict[str, dict]:

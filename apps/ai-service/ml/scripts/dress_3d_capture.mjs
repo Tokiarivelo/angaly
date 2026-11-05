@@ -1,11 +1,11 @@
 // Captures the 3D mannequin (front + side) of every project in a dress_benchmark results.json.
-//   node ml/scripts/dress_3d_capture.mjs <results.json> <out-dir> [web=http://localhost:3100]
+//   node ml/scripts/dress_3d_capture.mjs <results.json> <out-dir> [web=http://localhost:3001]
 // Logs in as the seed client (owner of the benchmark projects; EMAIL/PASSWORD to override). Needs the web app, the API, Google Chrome and playwright (resolved from apps/web).
 import { createRequire } from 'node:module';
 import { readFileSync, mkdirSync } from 'node:fs';
 const require = createRequire(new URL('../../../web/package.json', import.meta.url));
 const { chromium } = require('@playwright/test');
-const [resultsPath, outDir, web = 'http://localhost:3100'] = process.argv.slice(2);
+const [resultsPath, outDir, web = 'http://localhost:3001'] = process.argv.slice(2);
 mkdirSync(outDir, { recursive: true });
 const results = Object.values(JSON.parse(readFileSync(resultsPath, 'utf8'))).filter((r) => r.projectId);
 const browser = await chromium.launch({ executablePath: '/usr/bin/google-chrome', args: ['--use-gl=swiftshader', '--enable-unsafe-swiftshader'] });

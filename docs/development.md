@@ -80,7 +80,8 @@ pnpm --filter @angaly/database db:backfill:creation-projects    # un projet de c
 
 ```bash
 make dev
-# Web  → http://localhost:3000
+# Web  → http://localhost:3001  (WEB_PORT du Makefile ; 3000 est pris par un autre projet sur la machine de dev)
+# Web seul : make dev.web            (autre port : make dev.web WEB_PORT=3005)
 # API  → http://localhost:3003/docs (Swagger)
 ```
 
