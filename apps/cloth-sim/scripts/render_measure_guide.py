@@ -167,6 +167,7 @@ def main() -> None:
     gold = gold_material()
     only = {k for k in args.only.split(",") if k}
     index: dict[str, str] = {}
+    rendered = 0
     for guide in guides(job.body):
         if only and guide.key not in only:
             continue
@@ -177,9 +178,13 @@ def main() -> None:
         for o in objs:
             bpy.data.objects.remove(o)
         index[guide.key] = guide.view
+        rendered += 1
         print(f"{guide.key} ({guide.view})", flush=True)
-    (out / "index.json").write_text(json.dumps(index, indent=2))
-    print(f"{len(index)} pictures in {time.perf_counter() - started:.0f}s")
+    index_file = out / "index.json"
+    if only and index_file.exists():  # --only re-renders a few pictures: keep the others' entries
+        index = {**json.loads(index_file.read_text()), **index}
+    index_file.write_text(json.dumps(index, indent=2))
+    print(f"{rendered} pictures in {time.perf_counter() - started:.0f}s")
 
 
 if __name__ == "__main__":

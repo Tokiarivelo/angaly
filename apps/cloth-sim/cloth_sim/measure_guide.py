@@ -370,6 +370,15 @@ def guides(body: Body) -> list[Guide]:
     out.append(Guide("CARRURE_DOS", [_across(torso, across_y, half, front=False)], "BACK"))
     out.append(Guide("CARRURE_DEVANT", [_across(torso, across_y, half - 0.01 * s, front=True)], "FRONT"))
     out.append(Guide("LARGEUR_EPAULE", [_straight(lm.neck_side + up * 0.006, tip + up * 0.008)], "FRONT"))
+    # Shoulder slope: a ruler laid flat from the neck base over the shoulder, then the drop to the shoulder tip.
+    ruler_end = np.array([tip[0], lm.neck_side[1], tip[2]]) + up * 0.006
+    out.append(
+        Guide(
+            "PENTE_EPAULE",
+            [_straight(lm.neck_side + up * 0.006, ruler_end), _straight(ruler_end, tip + up * 0.008)],
+            "FRONT",
+        )
+    )
     # Armhole depth: from the shoulder line down to the armpit, drawn just in front of the arm's root.
     out.append(
         Guide(
@@ -433,6 +442,19 @@ def guides(body: Body) -> list[Guide]:
             "HAUTEUR_FOURCHE",
             [_straight(np.array([hip_side, lm.waist_y, 0.0]), np.array([hip_side, lm.crotch_y, 0.0]))],
             "FRONT",
+        )
+    )
+    # Crotch length: centre front waist, down between the legs, up to the centre back waist (seen from the side,
+    # where the tape follows the body's front and back outline).
+    low = lm.crotch_y + 0.015 * s
+    front = _profile(torso, np.linspace(lm.waist_y, low, 40), _near_x(0, True), outward=fwd)
+    back = _profile(torso, np.linspace(lm.waist_y, low, 40), _near_x(0, False), outward=-fwd)
+    bottom = np.array([0.0, lm.crotch_y - TAPE_LIFT, (front.points[-1][2] + back.points[-1][2]) / 2])
+    out.append(
+        Guide(
+            "LONGUEUR_ENFOURCHURE",
+            [front, _straight(front.points[-1], bottom), _straight(bottom, back.points[-1]), back],
+            "SIDE",
         )
     )
     inner = np.array([0.012, 0.0, 0.03])

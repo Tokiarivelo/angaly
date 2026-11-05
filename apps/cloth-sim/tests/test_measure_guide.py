@@ -148,8 +148,18 @@ def test_draws_every_measurement_of_the_catalogue() -> None:
         "CARRURE_DOS",
         "HAUTEUR_TAILLE_SOL",
         "STATURE",
+        "PENTE_EPAULE",
+        "LONGUEUR_ENFOURCHURE",
     ):
         assert key in out, key
+    # Shoulder slope: a level ruler from the neck base, then a vertical drop of 1 to 9 cm (catalogue range).
+    ruler, drop = out["PENTE_EPAULE"].paths
+    assert abs(ruler.points[0][1] - ruler.points[-1][1]) < 1e-9
+    assert 0.01 <= drop.points[0][1] - drop.points[-1][1] <= 0.09
+    # Crotch length: from the front waist under the crotch to the back waist, longer than front + back rise.
+    rise = out["LONGUEUR_ENFOURCHURE"].paths
+    front, back = rise[0].points, rise[-1].points
+    assert front[0][2] > back[0][2] and min(p.points[:, 1].min() for p in rise) < front[-1][1]
     assert {g.view for g in out.values()} <= {"FRONT", "BACK", "SIDE"}
     # Girths are closed and close to the tube's ellipse (the hull of an ellipse is the ellipse).
     bust = out["TOUR_POITRINE"].paths[0]
